@@ -5,11 +5,20 @@
 #include <vector>
 #include <iostream>
 
-typedef std::vector<struct name_descr> name_list; 
+#define EVENT_KEY 0
+#define EVENT_AXIS 1
+
+typedef std::vector<struct name_descr> name_list;
+struct category {
+  const char* name;
+  name_list entries;
+};
+typedef std::vector<category> cat_list;
 
 struct name_descr {
   const char* name;
   const char* descr;
+  int data;
 };
 
 struct source_event {
@@ -22,7 +31,7 @@ class input_source {
 public:
   const char* name;
   int set_player(int player_num);
-  virtual void list_events(name_list &list) {
+  virtual void list_events(cat_list &list) {
   }
   virtual void list_options(name_list &list) {
   }

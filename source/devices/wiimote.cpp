@@ -130,6 +130,61 @@ void wiimote::remove_node(const char* name) {
   }
 }
 
+void wiimote::list_events(cat_list &list) {
+  struct category cat;
+  struct name_descr info;
+  
+  cat.name = "Wiimote";
+  info.data = EVENT_KEY;
+  for (int i = wm_a; i <= wm_down; i++) {
+    info.name = wiimote_events_keys[i].name;
+    info.descr = wiimote_events_keys[i].descr;
+    cat.entries.push_back(info);
+  }
+  info.data = EVENT_AXIS;
+  for (int i = wm_accel_x; i <= wm_accel_z; i++) {
+    info.name = wiimote_events_axes[i].name;
+    info.descr = wiimote_events_axes[i].descr;
+    cat.entries.push_back(info);
+  }
+  list.push_back(cat);
+  cat.entries.clear();
+  
+  cat.name = "Nunchuk";
+  info.data = EVENT_KEY;
+  for (int i = nk_a; i <= nk_z; i++) {
+    info.name = wiimote_events_keys[i].name;
+    info.descr = wiimote_events_keys[i].descr;
+    cat.entries.push_back(info);
+  }
+  info.data = EVENT_AXIS;
+  for (int i = nk_wm_accel_x; i <= nk_accel_z; i++) {
+    info.name = wiimote_events_axes[i].name;
+    info.descr = wiimote_events_axes[i].descr;
+    cat.entries.push_back(info);
+  }
+  list.push_back(cat);
+  cat.entries.clear();
+  
+  cat.name = "Classic";
+  info.data = EVENT_KEY;
+  for (int i = cc_a; i <= cc_zr; i++) {
+    info.name = wiimote_events_keys[i].name;
+    info.descr = wiimote_events_keys[i].descr;
+    cat.entries.push_back(info);
+  }
+  info.data = EVENT_AXIS;
+  for (int i = cc_left_x; i <= cc_right_y; i++) {
+    info.name = wiimote_events_axes[i].name;
+    info.descr = wiimote_events_axes[i].descr;
+    cat.entries.push_back(info);
+  }
+  list.push_back(cat);
+  cat.entries.clear();
+  
+  
+}
+
 int wiimotes::accept_device(struct udev* udev, struct udev_device* dev) {
   const char* path = udev_device_get_syspath(dev);
   const char* subsystem = udev_device_get_subsystem(dev);

@@ -4,6 +4,7 @@
 #include <cstring>
 #include <iostream>
 #include "device.h"
+#include "wii_events.h"
 
 #define WIIMOTE_NAME "Nintendo Wii Remote"
 #define WIIMOTE_ACCEL_NAME  "Nintendo Wii Remote Accelerometer"
@@ -87,6 +88,7 @@ public:
    void *ptr = name;
    free (ptr);
   }
+  virtual void list_events(cat_list &list);
   virtual void handle_event(struct udev_device* dev);
   virtual struct name_descr get_info() {
     struct name_descr desc;

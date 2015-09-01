@@ -1,56 +1,9 @@
+#include "wii_events.h"
 
-#define EVNAME(X) X,"X"
 
-struct wiimote_event {
-  int id;
-  const char* name;
-  const char* descr;
-};
+#define EVNAME(X) X,#X
 
-enum wii_keys {
-wm_a,
-wm_b,
-wm_plus,
-wm_minus,
-wm_1,
-wm_2,
-wm_home,
-wm_left,
-wm_right,
-wm_down,
-wm_up,
-
-nk_a,
-nk_b,
-nk_plus,
-nk_minus,
-nk_1,
-nk_2,
-nk_home,
-nk_left,
-nk_right,
-nk_down,
-nk_up,
-nk_c,
-nk_z,
-
-cc_a,
-cc_b,
-cc_x,
-cc_y,
-cc_plus,
-cc_minus,
-cc_home,
-cc_left,
-cc_right,
-cc_up,
-cc_down,
-cc_l,
-cc_zl,
-cc_r,
-cc_zr
-};
-wiimote_event wiimote_events_keys[][2] = {
+const wiimote_event wiimote_events_keys[] = {
 {EVNAME(wm_a),"Wiimote A button"},
 {EVNAME(wm_b),"Wiimote B button"},
 {EVNAME(wm_plus),"Wiimote + button"},
@@ -93,28 +46,14 @@ wiimote_event wiimote_events_keys[][2] = {
 {EVNAME(cc_r),"Classic Controller R button"},
 {EVNAME(cc_zr),"Classic Controller ZR button"},
 
-{-1,nullptr, nullptr}
 };
 
-enum wii_abs {
-wm_accel_x,
-wm_accel_y,
-wm_accel_z,
 
-nk_wm_accel_x,
-nk_wm_accel_y,
-nk_wm_accel_z,
-nk_accel_x,
-nk_accel_y,
-nk_accel_z,
 
-cc_left_x,
-cc_left_y,
-cc_right_x,
-cc_right_y
-};
 
-wiimote_event wiimote_events_axes[] = {
+
+
+const wiimote_event wiimote_events_axes[] = {
 {EVNAME(wm_accel_x),"Wiimote X acceleration (long axis)"},
 {EVNAME(wm_accel_y),"Wiimote Y acceleration ((+) <--> (-) axis)"},
 {EVNAME(wm_accel_z),"Wiimote Z acceleration (top <--> bottom axis)"},
