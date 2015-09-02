@@ -111,6 +111,13 @@ public:
    if (accel.dev) udev_device_unref(accel.dev);
    if (ir.dev) udev_device_unref(ir.dev);
    if (motionplus.dev) udev_device_unref(motionplus.dev);
+   
+   for (int i = 0; i < wii_key_max; i++) {
+     delete key_trans[i];
+   }
+   for (int i = 0; i < wii_abs_max; i++) {
+     delete abs_trans[i];
+   }
    void *ptr = name;
    free (ptr);
   }
@@ -134,15 +141,23 @@ public:
     extension = nullptr;
     mode = NO_EXT;
   }
+  
+  virtual void set_slot(virtual_device* out_dev) {
+    this->out_dev = out_dev;
+  }
+  
+  void init_profile();
   void store_node(struct udev_device* dev, const char* name);
   void remove_node(const char* name);
+  
+  void read_wiimote();
+private:
+  void listen_node(int type,int fd);
+  void open_node(struct dev_node* node);
   void process_core();
   void process_classic(int fd);
   void process_nunchuk(int fd);
   void process(int type, int event_id, long long value);
-private:
-  void listen_node(int type,int fd);
-  void open_node(struct dev_node* node);
   
 
 };
@@ -194,6 +209,10 @@ public:
     }
   }
 
+  wiimotes(slot_manager* slot_man) : device_manager(slot_man) {
+    
+  }
+  
   ~wiimotes() {
     for (auto it = wii_devs.begin(); it != wii_devs.end(); ++it) {
       delete (*it);

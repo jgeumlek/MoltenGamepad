@@ -24,7 +24,7 @@ moltengamepad::~moltengamepad() {
 
 int moltengamepad::init() {
   
-  devs.push_back( new wiimotes());
+  devs.push_back( new wiimotes(slots));
 
   udev.set_managers(&devs);
   udev.start_monitor();

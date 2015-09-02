@@ -25,7 +25,8 @@ public:
    
   virtual_gamepad(uinput* ui);
   virtual void take_event(struct input_event in) {
-    std::cout << in.type << " " << in.code << " " << in.value;
+    std::cout << "virtpad: " << in.type << " " << in.code << " " << in.value << std::endl;
+    write(uinput_fd,&in,sizeof(in));
   };
 };
 

@@ -76,13 +76,14 @@ const wiimote_event wiimote_events_axes[] = {
 };
 
 void wiimote::process(int type, int event_id, long long value) {
+  if (!out_dev) return;
   if (type == EVENT_KEY) {
-    //key_trans[event_id]->process({type,value}, out_dev);
+    key_trans[event_id]->process({type,value}, out_dev);
     std::cout << name <<"."<< wiimote_events_keys[event_id].name << " " <<  value << std::endl;
     return;
   }
   if (type == EVENT_AXIS) {
-    //abs_trans[event_id]->process({type,value}, out_dev);
+    abs_trans[event_id]->process({type,value}, out_dev);
     std::cout << name <<"."<< wiimote_events_axes[event_id].name << " " <<  value << std::endl;
     return;
   }
@@ -110,7 +111,7 @@ void wiimote::process_core() {
       case KEY_PREVIOUS: process(EVENT_KEY, offset+wm_minus,ev.value); break;
       case KEY_NEXT: process(EVENT_KEY, offset+wm_plus,ev.value); break;
       case BTN_MODE: process(EVENT_KEY, offset+wm_home,ev.value); break;
-      case SYN_REPORT: break;
+      case SYN_REPORT: out_dev->take_event(ev);
     }
   }
   }
@@ -141,14 +142,16 @@ void wiimote::process_classic(int fd) {
       case BTN_TR:   process(EVENT_KEY, cc_r,ev.value); break;
       case BTN_TL2:  process(EVENT_KEY, cc_zl,ev.value); break;
       case BTN_TR2:  process(EVENT_KEY, cc_zr,ev.value); break;
-    };
-    
-    if (ev.type == EV_ABS) switch (ev.code) {
+    } else if (ev.type == EV_ABS) switch (ev.code) {
       case ABS_HAT1X:  process(EVENT_AXIS, cc_left_x,ev.value*CLASSIC_STICK_SCALE); break;
       case ABS_HAT1Y:  process(EVENT_AXIS, cc_left_y,-ev.value*CLASSIC_STICK_SCALE); break;
       case ABS_HAT2X:  process(EVENT_AXIS, cc_right_x,ev.value*CLASSIC_STICK_SCALE); break;
       case ABS_HAT2Y:  process(EVENT_AXIS, cc_right_y,-ev.value*CLASSIC_STICK_SCALE); break;
-    };
+    } else {
+    
+      out_dev->take_event(ev);
+
+    }
       
   }
 }
@@ -163,15 +166,15 @@ void wiimote::process_nunchuk(int fd) {
     if (ev.type == EV_KEY) switch (ev.code) {
       case BTN_C: process(EVENT_KEY, cc_left,ev.value); break;
       case BTN_Z: process(EVENT_KEY, cc_right,ev.value); break;
-    };
-    
-    if (ev.type == EV_ABS) switch (ev.code) {
+    } else if (ev.type == EV_ABS) switch (ev.code) {
       case ABS_HAT0X:  process(EVENT_AXIS, nk_stick_x,ev.value*NUNCHUK_STICK_SCALE); break;
       case ABS_HAT1Y:  process(EVENT_AXIS, nk_stick_y,ev.value*NUNCHUK_STICK_SCALE); break;
       case ABS_RX:     process(EVENT_AXIS, nk_accel_x,ev.value*NUNCHUK_ACCEL_SCALE); break;
       case ABS_RY:     process(EVENT_AXIS, nk_accel_y,ev.value*NUNCHUK_ACCEL_SCALE); break;
       case ABS_RZ:     process(EVENT_AXIS, nk_accel_z,ev.value*NUNCHUK_ACCEL_SCALE); break;
-    };
+    } else {
       
+      out_dev->take_event(ev);
+    }
   }
 }

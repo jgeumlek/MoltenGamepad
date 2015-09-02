@@ -45,7 +45,7 @@ int udev_handler::start_monitor() {
 
   udev_monitor_enable_receiving(monitor);
 
-  monitor_thread = new std::thread(reads_monitor, this);
+  monitor_thread = new std::thread(&udev_handler::read_monitor, this);
   return 0;
 }
 
@@ -71,7 +71,7 @@ int udev_handler::enumerate() {
 }
 
 
-int reads_monitor(udev_handler* uh) {
+int udev_handler::read_monitor() {
   static const int EPOLL_MAX_EVENTS = 1;
   struct epoll_event event;
   struct epoll_event events[EPOLL_MAX_EVENTS];
@@ -81,27 +81,27 @@ int reads_monitor(udev_handler* uh) {
   memset(&event,0,sizeof(event));
 
   event.events = EPOLLIN | EPOLLPRI | EPOLLERR | EPOLLHUP;
-  event.data.ptr = uh;
-  epoll_ctl(epfd, EPOLL_CTL_ADD, udev_monitor_get_fd(uh->monitor), &event);
+  event.data.ptr = this;
+  epoll_ctl(epfd, EPOLL_CTL_ADD, udev_monitor_get_fd(monitor), &event);
 
   int pipes[2];
   pipe(pipes);
   event.data.ptr = nullptr;
   epoll_ctl(epfd, EPOLL_CTL_ADD, pipes[0], &event);
 
-  uh->pipe_fd = pipes[1];
+  pipe_fd = pipes[1];
 
 
-  while (!(uh->stop_thread)) {
+  while (!stop_thread) {
     int n = epoll_wait(epfd, events, EPOLL_MAX_EVENTS, -1);
     if (!events[0].data.ptr) {
       char buffer[2];
       int ret = 1;
         ret = read(pipes[0],&buffer,sizeof(buffer));
     } else {
-      struct udev_device *dev = udev_monitor_receive_device(uh->monitor);
+      struct udev_device *dev = udev_monitor_receive_device(monitor);
       if (dev) {
-        pass_along_device(uh->managers, uh->udev, dev);
+        pass_along_device(managers, udev, dev);
         udev_device_unref(dev);
       }
     }

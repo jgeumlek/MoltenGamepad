@@ -7,6 +7,8 @@
 wiimote::wiimote(){
     epfd = epoll_create(1);
     if (epfd < 1) perror("epc");
+    
+    init_profile();
 }
 
 wii_dev* find_wii_dev_by_path(std::vector<wii_dev*>* devs, const char* syspath) {
@@ -219,7 +221,7 @@ void wiimote::listen_node(int type, int fd) {
 }
 
 
-void read_wiimote(wiimote* wm) {
+void wiimote::read_wiimote() {
   struct epoll_event event;
   struct epoll_event events[1];
 
@@ -229,13 +231,12 @@ void read_wiimote(wiimote* wm) {
   int pipes[2];
   pipe(pipes);
   event.data.u32 = NONE;
-  int epfd = wm->epfd;
   epoll_ctl(epfd, EPOLL_CTL_ADD, pipes[0], &event);
 
-  wm->pipe_fd = pipes[1];
+  pipe_fd = pipes[1];
 
-  while (!(wm->stop_thread)) {
-    int n = epoll_wait(wm->epfd, events, 1, -1);
+  while (!(stop_thread)) {
+    int n = epoll_wait(epfd, events, 1, -1);
     if (n < 0) {perror("epoll wait:");break;}
     if (events[0].data.u32 == NONE) {
       struct wii_msg msg;
@@ -244,13 +245,13 @@ void read_wiimote(wiimote* wm) {
     } else {
       switch (events[0].data.u32) {
         case CORE:
-          wm->process_core();
+          process_core();
           break;
         case E_CC:
-          if(wm->extension) wm->process_classic(wm->extension->node.fd);
+          if(extension) process_classic(extension->node.fd);
           break;
         case E_NK:
-          if(wm->extension) wm->process_nunchuk(wm->extension->node.fd);
+          if(extension) process_nunchuk(extension->node.fd);
       }
     }
   }
@@ -308,7 +309,8 @@ int wiimotes::accept_device(struct udev* udev, struct udev_device* dev) {
     wm->base.dev = udev_device_ref(parent);
     wm->handle_event(dev);
     wii_devs.push_back(wm);
-    wm->thread = new std::thread(read_wiimote,wm);
+    slot_man->request_slot(wm);
+    wm->thread = new std::thread(&wiimote::read_wiimote,wm);
   } else {
     //pass this device to it for proper storage
     existing->handle_event(dev);
