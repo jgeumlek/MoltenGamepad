@@ -3,6 +3,8 @@
 #include <vector>
 #include <cstring>
 #include <iostream>
+#include <thread>
+#include <sys/epoll.h>
 #include "device.h"
 #include "wii_events.h"
 
@@ -18,6 +20,12 @@ struct dev_node {
   struct udev_device* dev = nullptr;
   int fd = -1;
 };
+enum wmsg {ADD_FD, POKE};
+struct wii_msg {
+  wmsg msg;
+  int body;
+  int arg;
+};
 
 enum ext_type {NUNCHUK, CLASSIC, GUITAR, DRUMS, UNKNOWN};
 class wii_extension {
@@ -30,6 +38,7 @@ public:
   ext_type type = UNKNOWN;
   virtual ~wii_extension() {
     if(node.dev) udev_device_unref(node.dev);
+    if (node.fd >= 0) close(node.fd);
   }
 };
 
@@ -40,6 +49,9 @@ public:
 
   const char* name = "unnamed";
   const char* descr = "unidentified Wii device";
+  std::thread* thread;
+  volatile bool stop_thread = false;
+  int pipe_fd;
 
   virtual struct name_descr get_info() {
     struct name_descr info;
@@ -56,6 +68,12 @@ public:
   virtual void list_options(name_list &list) {
   }
   virtual ~wii_dev() {
+    if(thread) {
+      stop_thread = true;
+      write(pipe_fd,"h",sizeof(char));
+      thread->join();
+      delete thread;
+    }
     if(base.dev) udev_device_unref(base.dev);
   };
 
@@ -66,6 +84,8 @@ struct wii_leds {
 };
 
 enum modes {NO_EXT, NUNCHUK_EXT, CLASSIC_EXT};
+
+
 class wiimote : public wii_dev {
 public:
   struct dev_node buttons;
@@ -78,6 +98,12 @@ public:
   modes mode = NO_EXT;
 
   char* name;
+  event_translator* key_trans[wii_key_max];
+  event_translator* abs_trans[wii_abs_max];
+  virtual_device* out_dev;
+  int epfd;
+  
+  wiimote();
 
   ~wiimote() {
    if (extension) remove_extension();
@@ -110,6 +136,14 @@ public:
   }
   void store_node(struct udev_device* dev, const char* name);
   void remove_node(const char* name);
+  void process_core();
+  void process_classic(int fd);
+  void process_nunchuk(int fd);
+  void process(int type, int event_id, long long value);
+private:
+  void listen_node(int type,int fd);
+  void open_node(struct dev_node* node);
+  
 
 };
 

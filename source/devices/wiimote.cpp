@@ -1,6 +1,13 @@
 #include "wiimote.h"
 #include <iostream>
 #include <cstring>
+#include <sys/epoll.h>
+#include <fcntl.h>
+#include <errno.h>
+wiimote::wiimote(){
+    epfd = epoll_create(1);
+    if (epfd < 1) perror("epc");
+}
 
 wii_dev* find_wii_dev_by_path(std::vector<wii_dev*>* devs, const char* syspath) {
   if (syspath == nullptr) return nullptr;
@@ -81,10 +88,14 @@ int name_to_node(const char* name) {
 void wiimote::store_node(struct udev_device* dev, const char* name) {
   if (!name || !dev) return;
   int node = name_to_node(name);
+  struct wii_msg msg;
   switch (node) {
   case CORE:
     std::cout<< this->name << " core found." << std::endl;
+    
     buttons.dev = udev_device_ref(dev);
+    open_node(&buttons);
+    listen_node(CORE,buttons.fd);
     break;
   case IR:
     std::cout<< this->name << " IR found." << std::endl;
@@ -104,6 +115,8 @@ void wiimote::store_node(struct udev_device* dev, const char* name) {
     mode = NUNCHUK_EXT;
     extension->parent = this;
     extension->node.dev = udev_device_ref(dev);
+    open_node(&extension->node);
+    listen_node(E_NK,extension->node.fd);
     std::cout<< this->name << " gained a nunchuk." << std::endl;
     break;
   case E_CC:
@@ -112,6 +125,8 @@ void wiimote::store_node(struct udev_device* dev, const char* name) {
     mode = CLASSIC_EXT;
     extension->parent = this;
     extension->node.dev = udev_device_ref(dev);
+    open_node(&extension->node);
+    listen_node(E_CC,extension->node.fd);
     std::cout<< this->name << " gained a classic controller." << std::endl;
     break;
   }
@@ -142,7 +157,7 @@ void wiimote::list_events(cat_list &list) {
     cat.entries.push_back(info);
   }
   info.data = EVENT_AXIS;
-  for (int i = wm_accel_x; i <= wm_accel_z; i++) {
+  for (int i = wm_accel_x; i <= wm_ir_y; i++) {
     info.name = wiimote_events_axes[i].name;
     info.descr = wiimote_events_axes[i].descr;
     cat.entries.push_back(info);
@@ -158,7 +173,7 @@ void wiimote::list_events(cat_list &list) {
     cat.entries.push_back(info);
   }
   info.data = EVENT_AXIS;
-  for (int i = nk_wm_accel_x; i <= nk_accel_z; i++) {
+  for (int i = nk_wm_accel_x; i <= nk_stick_y; i++) {
     info.name = wiimote_events_axes[i].name;
     info.descr = wiimote_events_axes[i].descr;
     cat.entries.push_back(info);
@@ -185,15 +200,66 @@ void wiimote::list_events(cat_list &list) {
   
 }
 
+void wiimote::open_node(struct dev_node* node) {
+  node->fd = open(udev_device_get_devnode(node->dev), O_RDONLY | O_NONBLOCK | O_CLOEXEC);
+  if (node->fd < 0)
+    perror("open subdevice:");
+  ioctl(node->fd, EVIOCGRAB, this);
+};
+
+void wiimote::listen_node(int type, int fd) {
+  struct epoll_event event;
+  memset(&event,0,sizeof(event));
+
+
+  event.events = EPOLLIN | EPOLLPRI | EPOLLERR | EPOLLHUP;
+  event.data.u32 = type;
+  int ret = epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &event);
+  if (ret< 0) perror("epoll add");
+}
+
+
+void read_wiimote(wiimote* wm) {
+  struct epoll_event event;
+  struct epoll_event events[1];
+
+  memset(&event,0,sizeof(event));
+
+  event.events = EPOLLIN | EPOLLPRI | EPOLLERR | EPOLLHUP;
+  int pipes[2];
+  pipe(pipes);
+  event.data.u32 = NONE;
+  int epfd = wm->epfd;
+  epoll_ctl(epfd, EPOLL_CTL_ADD, pipes[0], &event);
+
+  wm->pipe_fd = pipes[1];
+
+  while (!(wm->stop_thread)) {
+    int n = epoll_wait(wm->epfd, events, 1, -1);
+    if (n < 0) {perror("epoll wait:");break;}
+    if (events[0].data.u32 == NONE) {
+      struct wii_msg msg;
+      int ret = 1;
+        ret = read(pipes[0],&msg,sizeof(msg));
+    } else {
+      switch (events[0].data.u32) {
+        case CORE:
+          wm->process_core();
+          break;
+        case E_CC:
+          if(wm->extension) wm->process_classic(wm->extension->node.fd);
+          break;
+        case E_NK:
+          if(wm->extension) wm->process_nunchuk(wm->extension->node.fd);
+      }
+    }
+  }
+  std::cout << "stopping wiimote thread" << std::endl;
+};
+
 int wiimotes::accept_device(struct udev* udev, struct udev_device* dev) {
   const char* path = udev_device_get_syspath(dev);
   const char* subsystem = udev_device_get_subsystem(dev);
-
-
-
-  //Check this is a hid driven by the wiimote driver. 
-  //Only the base wiimote device passes this check.
-  //(extensions, leds, etc. are not hid)
 
   const char* action = udev_device_get_action(dev);
   if (!action) action = "null";
@@ -242,6 +308,7 @@ int wiimotes::accept_device(struct udev* udev, struct udev_device* dev) {
     wm->base.dev = udev_device_ref(parent);
     wm->handle_event(dev);
     wii_devs.push_back(wm);
+    wm->thread = new std::thread(read_wiimote,wm);
   } else {
     //pass this device to it for proper storage
     existing->handle_event(dev);
@@ -250,4 +317,5 @@ int wiimotes::accept_device(struct udev* udev, struct udev_device* dev) {
 
   return 0;
 }
+
 

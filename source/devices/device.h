@@ -4,9 +4,9 @@
 #include <libudev.h>
 #include <vector>
 #include <iostream>
+#include "../event_change.h"
 
-#define EVENT_KEY 0
-#define EVENT_AXIS 1
+#define ABS_RANGE 32000
 
 typedef std::vector<struct name_descr> name_list;
 struct category {

@@ -6,7 +6,7 @@
 
 class slot_manager {
 public:
-   virtual_device* devs[3];
+   virtual_device* devs[2];
 
    slot_manager();
 
