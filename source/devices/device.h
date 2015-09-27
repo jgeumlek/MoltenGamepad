@@ -6,6 +6,7 @@
 #include <iostream>
 #include "../event_change.h"
 #include "../slot_manager.h"
+#include "../profile.h"
 
 #define ABS_RANGE 32000
 
@@ -28,6 +29,8 @@ struct source_event {
   enum {ABSOLUTE, RELATIVE, BUTTON} type;
 };
 
+enum entry_type {DEV_OPTION, DEV_KEY, DEV_AXIS, DEV_REL, NO_ENTRY} ;
+
 class input_source {
 public:
   const char* name;
@@ -38,6 +41,15 @@ public:
   virtual void list_options(name_list &list) {
   }
   virtual void set_slot(virtual_device* outdev) {
+  }
+  
+  virtual void update_map(const char* evname, event_translator* trans) {
+  }
+  
+  virtual void update_option(const char* opname, const char* value) {
+  }
+  
+  virtual enum entry_type entry_type(const char* name) {
   }
 
 };
@@ -58,6 +70,23 @@ public:
 
   virtual ~device_manager() {
   }; 
+  
+  
+  
+  virtual void update_maps(const char* evname, event_translator* trans) {
+  }
+  
+  virtual void update_option(const char* opname, const char* value) {
+  }
+  
+  virtual input_source* find_device(const char* name) {
+  }
+  
+  virtual enum entry_type entry_type(const char* name) {
+  }
+  
+  const char* name;
+  profile mapprofile;
 
 };
 

@@ -1,0 +1,33 @@
+#include "eventlist.h"
+
+
+const event_listing gamepad_btn_list[] = {
+  {BTN_SOUTH, "south", "Primary face button (Confirm)"},
+  {BTN_EAST, "east", "Second face button (Go Back)"},
+  {BTN_WEST, "west", "Third face button"},
+  {BTN_NORTH, "north", "Fourth face button"},
+  {BTN_START, "start", "Start button"},
+  {BTN_SELECT, "select", "Select button"},
+  {BTN_MODE, "mode", "Special button, often with a logo"},
+  {BTN_TL, "lt", "Upper left trigger"},
+  {BTN_TL2,"lt2", "Lower left trigger"},
+  {BTN_TR, "tr", "Upper right trigger"},
+  {BTN_TR2, "tr2", "Lower left trigger"},
+  {BTN_THUMBL, "thumbl", "Left thumb stick click"},
+  {BTN_THUMBR, "thumbr", "Right thumb sitck click"},
+  {BTN_DPAD_UP,"up", "Up on the dpad"},
+  {BTN_DPAD_DOWN, "down", "Down on the dpad"},
+  {BTN_DPAD_LEFT,"left", "Left on the dpad"},
+  {BTN_DPAD_RIGHT,"right","Right on the dpad"},
+  {-1,nullptr,nullptr},
+};
+
+const event_listing gamepad_axis_list[] = {
+  {ABS_X, "left_x", "Left stick X-axis"},
+  {ABS_Y, "left_y", "Left stick Y-axis"},
+  {ABS_RX, "right_x", "Right stick X-axis"},
+  {ABS_RY, "right_y", "Right stick Y-axis"},
+  {ABS_HAT2Y, "tl2_axis", "Analog lower left trigger"},
+  {ABS_HAT2X, "tr2_axis", "Analog lower right trigger"},
+  {-1,nullptr,nullptr},
+};

@@ -1,5 +1,6 @@
 #ifndef WII_EVENTS_H
 #define WII_EVENTS_H
+
 struct wiimote_event {
   int id;
   const char* name;

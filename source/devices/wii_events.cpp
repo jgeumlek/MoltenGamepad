@@ -46,6 +46,7 @@ const wiimote_event wiimote_events_keys[] = {
 {EVNAME(cc_r),"Classic Controller R button"},
 {EVNAME(cc_zr),"Classic Controller ZR button"},
 
+{-1,nullptr, nullptr}
 };
 
 const wiimote_event wiimote_events_axes[] = {

@@ -2,6 +2,8 @@
 #define EVENT_CHANGE_H
 #include "virtual_device.h"
 #include <linux/input.h>
+#include <string>
+#include "eventlists/eventlist.h"
 
 
 #define EVENT_KEY 0
@@ -22,6 +24,13 @@ public:
   void write_out(struct input_event ev, virtual_device* out) {
     out->take_event(ev);
   }
+  
+  virtual std::string to_string() {
+    return "nothing";
+  }
+  
+  virtual event_translator* clone() {return new event_translator(*this);}
+  
 };
 
 class btn2btn : public event_translator {
@@ -37,12 +46,34 @@ public:
     out_ev.value = ev.value;
     write_out(out_ev,out);
   }
+  virtual std::string to_string() {
+    std::string text = "btn2btn(";
+    text += std::to_string(out_button);
+    text += ")";
+    return text;
+  }
+  
+  virtual btn2btn* clone() {return new btn2btn(*this);}
 };
 
 class btn2axis : public event_translator {
 public:
   int out_axis;
   int direction;
+  
+  btn2axis(int out_axis, int direction) : out_axis(out_axis), direction(direction) {
+  }
+  
+  virtual std::string to_string() {
+    std::string text = "btn2axis(";
+    text += std::to_string(out_axis);
+    text += ",";
+    text += std::to_string(direction);
+    text += ")";
+    return text;
+  }
+  
+  virtual btn2axis* clone() {return new btn2axis(*this);}
 };
 
 class axis2axis : public event_translator {
@@ -61,13 +92,37 @@ public:
     out_ev.value = value;
     write_out(out_ev,out);
   }
+  virtual std::string to_string() {
+    std::string text = "axis2axis(";
+    text += std::to_string(out_axis);
+    text += ",";
+    text += std::to_string(direction);
+    text += ")";
+    return text;
+  }
+  virtual axis2axis* clone() {return new axis2axis(*this);}
 };
 
 class axis2btns : public event_translator {
 public:
   int neg_btn;
   int pos_btn;
+  axis2btns(int neg_btn, int pos_btn) : neg_btn(neg_btn), pos_btn(pos_btn) {
+  }
   
+  virtual std::string to_string() {
+    std::string text = "axis2btns(";
+    text += std::to_string(neg_btn);
+    text += ",";
+    text += std::to_string(pos_btn);
+    text += ")";
+    return text;
+  }
+  
+  virtual axis2btns* clone() {return new axis2btns(*this);}
+
 };
+
+
 
 #endif

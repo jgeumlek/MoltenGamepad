@@ -28,19 +28,7 @@ struct wii_msg {
 };
 
 enum ext_type {NUNCHUK, CLASSIC, GUITAR, DRUMS, UNKNOWN};
-class wii_extension {
-public:
-  const char* descr = "unknown extension";
-  struct dev_node node;
-  struct wii_dev* parent;
-  struct dev_node classic;
 
-  ext_type type = UNKNOWN;
-  virtual ~wii_extension() {
-    if(node.dev) udev_device_unref(node.dev);
-    if (node.fd >= 0) close(node.fd);
-  }
-};
 
 class wii_dev : public input_source {
 public:
@@ -92,7 +80,8 @@ public:
   struct dev_node accel;
   struct dev_node ir;
   struct dev_node motionplus;
-  wii_extension* extension = nullptr;
+  struct dev_node nunchuk;
+  struct dev_node classic;
   struct wii_leds leds;
 
   modes mode = NO_EXT;
@@ -105,22 +94,8 @@ public:
   
   wiimote();
 
-  ~wiimote() {
-   if (extension) remove_extension();
-   if (buttons.dev) udev_device_unref(buttons.dev);
-   if (accel.dev) udev_device_unref(accel.dev);
-   if (ir.dev) udev_device_unref(ir.dev);
-   if (motionplus.dev) udev_device_unref(motionplus.dev);
-   
-   for (int i = 0; i < wii_key_max; i++) {
-     delete key_trans[i];
-   }
-   for (int i = 0; i < wii_abs_max; i++) {
-     delete abs_trans[i];
-   }
-   void *ptr = name;
-   free (ptr);
-  }
+  ~wiimote();
+  
   virtual void list_events(cat_list &list);
   virtual void handle_event(struct udev_device* dev);
   virtual struct name_descr get_info() {
@@ -134,11 +109,7 @@ public:
   void enable_motionplus(bool enable);
 
   void remove_extension() {
-    if(extension) {
-      std::cout<< name << " lost its extension." << std::endl;
-      delete extension;
-    }
-    extension = nullptr;
+    if (mode != NO_EXT) std::cout<< name << " lost its extension." << std::endl;
     mode = NO_EXT;
   }
   
@@ -146,12 +117,20 @@ public:
     this->out_dev = out_dev;
   }
   
-  void init_profile();
+  void load_profile(profile* profile);
   void store_node(struct udev_device* dev, const char* name);
   void remove_node(const char* name);
   
+  virtual void update_map(const char* evname, event_translator* trans);
+  
+  virtual enum entry_type entry_type(const char* name);
+  
   void read_wiimote();
 private:
+  bool toggle_ir;
+  bool toggle_accel;
+  bool toggle_motionplus;
+  bool toggle_nunchuk_accel;
   void listen_node(int type,int fd);
   void open_node(struct dev_node* node);
   void process_core();
@@ -159,33 +138,16 @@ private:
   void process_nunchuk(int fd);
   void process(int type, int event_id, long long value);
   
-
-};
-
-
-
-class ext_nunchuk : public wii_extension {
-public:
-struct dev_node nunchuk;
-  bool accel_enabled;
+  void clear_node(struct dev_node* node);
   
-  ext_nunchuk() {
-    type = NUNCHUK;
-    descr = "Nunchuk extension";
-  }
+  int priv_pipe;
+  
+  
+  
 
-  void enable_accel(bool enable);
 };
 
-class ext_classic : public wii_extension {
-public:
-struct dev_node classic;
 
-  ext_classic() {
-    type = CLASSIC;
-    descr = "Classic Controller extension";
-  }
-};
 
 class balance_board : public wii_dev {
 public:
@@ -208,9 +170,18 @@ public:
       list.push_back((*it)->get_info());
     }
   }
+  
+  virtual void update_maps(const char* evname, event_translator* trans);
+  
+  virtual input_source* find_device(const char* name);
+  virtual enum entry_type entry_type(const char* name);
+  
+  void init_profile();
 
   wiimotes(slot_manager* slot_man) : device_manager(slot_man) {
-    
+    name = "wiimote";
+    mapprofile.name = "wiimote";
+    init_profile();
   }
   
   ~wiimotes() {
