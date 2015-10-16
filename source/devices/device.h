@@ -24,10 +24,13 @@ struct name_descr {
   int data;
 };
 
+enum ev_type {ABSOLUTE,RELATIVE,BUTTON};
+
 struct source_event {
+  int id;
   const char* name;
   const char* descr;
-  enum {ABSOLUTE, RELATIVE, BUTTON} type;
+  enum ev_type type;
   long long value;
   event_translator* trans;
 };
@@ -67,6 +70,8 @@ protected:
   std::vector<source_event> events;
   std::thread* thread;
   volatile bool keep_looping;
+  virtual_device* out_dev;
+
   
   void register_event(source_event ev);
   void watch_file(int fd, void* tag);

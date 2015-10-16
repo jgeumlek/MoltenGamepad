@@ -5,8 +5,9 @@
 #include <fcntl.h>
 #include <errno.h>
 wiimote::wiimote(){
-    epfd = epoll_create(1);
-    if (epfd < 1) perror("epoll create");
+    for (int i = 0; i < wii_event_max; i++) {
+      register_event(wiimote_events[i]);
+    }
     
 }
 
@@ -18,12 +19,10 @@ wiimote::~wiimote() {
    clear_node(&nunchuk);
    clear_node(&classic);
    
-   for (int i = 0; i < wii_key_max; i++) {
-     delete key_trans[i];
+   for (int i = 0; i < wii_event_max; i++) {
+     delete events[i].trans;
    }
-   for (int i = 0; i < wii_abs_max; i++) {
-     delete abs_trans[i];
-   }
+   
    void *ptr = name;
    free (ptr);
 }
@@ -122,7 +121,6 @@ void wiimote::store_node(struct udev_device* dev, const char* name) {
     
     buttons.dev = udev_device_ref(dev);
     open_node(&buttons);
-    listen_node(CORE,buttons.fd);
     break;
   case IR:
     std::cout<< this->name << " IR found." << std::endl;
@@ -140,14 +138,12 @@ void wiimote::store_node(struct udev_device* dev, const char* name) {
     mode = NUNCHUK_EXT;
     nunchuk.dev = udev_device_ref(dev);
     open_node(&nunchuk);
-    listen_node(E_NK,nunchuk.fd);
     std::cout<< this->name << " gained a nunchuk." << std::endl;
     break;
   case E_CC:
     mode = CLASSIC_EXT;
     classic.dev = udev_device_ref(dev);
     open_node(&classic);
-    listen_node(E_CC,classic.fd);
     std::cout<< this->name << " gained a classic controller." << std::endl;
     break;
   }
@@ -171,52 +167,16 @@ void wiimote::list_events(cat_list &list) {
   struct name_descr info;
   
   cat.name = "Wiimote";
-  info.data = EVENT_KEY;
-  for (int i = wm_a; i <= wm_down; i++) {
-    info.name = wiimote_events_keys[i].name;
-    info.descr = wiimote_events_keys[i].descr;
+  for (int i = 0; i <= events.size(); i++) {
+    info.name = wiimote_events[i].name;
+    info.descr = wiimote_events[i].descr;
+    info.data = wiimote_events[i].type;
     cat.entries.push_back(info);
   }
-  info.data = EVENT_AXIS;
-  for (int i = wm_accel_x; i <= wm_ir_y; i++) {
-    info.name = wiimote_events_axes[i].name;
-    info.descr = wiimote_events_axes[i].descr;
-    cat.entries.push_back(info);
-  }
+  
   list.push_back(cat);
   cat.entries.clear();
   
-  cat.name = "Nunchuk";
-  info.data = EVENT_KEY;
-  for (int i = nk_a; i <= nk_z; i++) {
-    info.name = wiimote_events_keys[i].name;
-    info.descr = wiimote_events_keys[i].descr;
-    cat.entries.push_back(info);
-  }
-  info.data = EVENT_AXIS;
-  for (int i = nk_wm_accel_x; i <= nk_stick_y; i++) {
-    info.name = wiimote_events_axes[i].name;
-    info.descr = wiimote_events_axes[i].descr;
-    cat.entries.push_back(info);
-  }
-  list.push_back(cat);
-  cat.entries.clear();
-  
-  cat.name = "Classic";
-  info.data = EVENT_KEY;
-  for (int i = cc_a; i <= cc_zr; i++) {
-    info.name = wiimote_events_keys[i].name;
-    info.descr = wiimote_events_keys[i].descr;
-    cat.entries.push_back(info);
-  }
-  info.data = EVENT_AXIS;
-  for (int i = cc_left_x; i <= cc_right_y; i++) {
-    info.name = wiimote_events_axes[i].name;
-    info.descr = wiimote_events_axes[i].descr;
-    cat.entries.push_back(info);
-  }
-  list.push_back(cat);
-  cat.entries.clear();
   
   
 }
@@ -226,18 +186,10 @@ void wiimote::open_node(struct dev_node* node) {
   if (node->fd < 0)
     perror("open subdevice:");
   ioctl(node->fd, EVIOCGRAB, this);
+  
+  watch_file(node->fd,node);
 };
 
-void wiimote::listen_node(int type, int fd) {
-  struct epoll_event event;
-  memset(&event,0,sizeof(event));
-
-
-  event.events = EPOLLIN | EPOLLPRI | EPOLLERR | EPOLLHUP;
-  event.data.u32 = type;
-  int ret = epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &event);
-  if (ret< 0) perror("epoll add");
-}
 
 struct new_event {
   int type;
@@ -245,104 +197,64 @@ struct new_event {
   event_translator* trans;
 };
 
-int lookup_key(const char* evname) {
+int lookup_wii_event(const char* evname) {
   if (evname == nullptr) return -1;
-  for (int i = 0; i < wii_key_max; i++) {
-    if (!strcmp(evname,wiimote_events_keys[i].name))
+  for (int i = 0; i < wii_event_max; i++) {
+    if (!strcmp(evname,wiimote_events[i].name))
       return i;
   }
   return -1;
 }
-int lookup_abs(const char* evname) {
-  for (int i = 0; i < wii_abs_max; i++) {
-    if (!strcmp(evname,wiimote_events_axes[i].name))
-      return i;
-  }
-  return -1;
-}
+
 
 void wiimote::update_map(const char* evname, event_translator* trans) {
   struct new_event msg = {0,0,trans->clone()};
-  int key_id = lookup_key(evname);
-  if (key_id >= 0) {
-    msg.type = EVENT_KEY; msg.id = key_id;
+  int id = lookup_wii_event(evname);
+  if (id >= 0) {
+    msg.type = EVENT_KEY; msg.id = id;
     write(priv_pipe,&msg,sizeof(msg));
     return;
   }
-  int abs_id = lookup_abs(evname);
-  if (abs_id >= 0) {
-    msg.type = EVENT_AXIS; msg.id = abs_id;
-    write(priv_pipe,&msg,sizeof(msg));
-    return;
-  }
-  
 }
 
 enum entry_type wiimote::entry_type(const char* name) {
-  int ret = lookup_key(name);
-  if (ret != -1) return DEV_KEY;
-  
-  ret = lookup_abs(name);
-  if (ret != -1) return DEV_AXIS;
+  int ret = lookup_wii_event(name);
+  if (ret != -1) {
+    if (events[ret].type == ABSOLUTE) return DEV_AXIS;
+    return DEV_KEY;
+  }
   
   return NO_ENTRY;
 }
 
 enum entry_type wiimotes::entry_type(const char* name) {
-  int ret = lookup_key(name);
-  if (ret != -1) return DEV_KEY;
-  
-  ret = lookup_abs(name);
-  if (ret != -1) return DEV_AXIS;
+  int ret = lookup_wii_event(name);
+  if (ret != -1) {
+    if (wiimote_events[ret].type == ABSOLUTE) return DEV_AXIS;
+    return DEV_KEY;
+  }
   
   return NO_ENTRY;
 }
 
 
-void wiimote::read_wiimote() {
-  struct epoll_event event;
-  struct epoll_event events[1];
 
-  memset(&event,0,sizeof(event));
-
-  event.events = EPOLLIN | EPOLLPRI | EPOLLERR | EPOLLHUP;
-  
-  int internal[2];
-  pipe(internal);
-  event.data.ptr = this;
-  epoll_ctl(epfd, EPOLL_CTL_ADD, internal[0], &event);
-
-  
-  priv_pipe = internal[1];
-
-  while (!(keep_looping)) {
-    int n = epoll_wait(epfd, events, 1, -1);
-    if (n < 0) {perror("epoll wait:");break;}
-    if (events[0].data.ptr == this) {
-      struct new_event msg;
-      int ret = 1;
-      ret = read(internal[0],&msg,sizeof(msg));
-      if (ret = sizeof(msg)) {
-        event_translator** array = (msg.type = EVENT_KEY) ? key_trans : abs_trans;
-        delete (array + msg.id);
-        *(array + msg.id) = msg.trans;
-      }
-    } else {
-      switch (events[0].data.u32) {
-        case CORE:
-          process_core();
-          break;
-        case E_CC:
-          process_classic(classic.fd);
-          break;
-        case E_NK:
-          process_nunchuk(nunchuk.fd);
-      }
-    }
+void wiimote::process(void* tag) {
+  int type = CORE;
+  if (tag == &classic) type = E_CC;
+  if (tag == &nunchuk) type = E_NK;
+  switch(type) {
+    case CORE:
+      process_core();
+      break;
+    case E_CC:
+      process_classic(classic.fd);
+      break;
+    case E_NK:
+      process_nunchuk(nunchuk.fd);
+      break;
   }
-  std::cout << "stopping wiimote thread" << std::endl;
-};
-
+}
 
 int wiimotes::accept_device(struct udev* udev, struct udev_device* dev) {
   const char* path = udev_device_get_syspath(dev);
@@ -397,7 +309,7 @@ int wiimotes::accept_device(struct udev* udev, struct udev_device* dev) {
     wm->handle_event(dev);
     wii_devs.push_back(wm);
     slot_man->request_slot(wm);
-    wm->thread = new std::thread(&wiimote::read_wiimote,wm);
+    wm->start_thread();
     wm->load_profile(&mapprofile);
   } else {
     //pass this device to it for proper storage

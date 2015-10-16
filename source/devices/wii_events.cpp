@@ -2,92 +2,84 @@
 
 
 #define EVNAME(X) X,#X
+#define BTN BUTTON,0,nullptr
+#define ABS ABSOLUTE,0,nullptr
 
-const wiimote_event wiimote_events_keys[] = {
-{EVNAME(wm_a),"Wiimote A button"},
-{EVNAME(wm_b),"Wiimote B button"},
-{EVNAME(wm_plus),"Wiimote + button"},
-{EVNAME(wm_minus),"Wiimote - button"},
-{EVNAME(wm_1),"Wiimote 1 button"},
-{EVNAME(wm_2),"Wiimote 2 button"},
-{EVNAME(wm_home),"Wiimote home button"},
-{EVNAME(wm_left),"Wiimote Dpad left"},
-{EVNAME(wm_right),"Wiimote Dpad right"},
-{EVNAME(wm_up),"Wiimote Dpad up"},
-{EVNAME(wm_down),"Wiimote Dpad down"},
+const source_event wiimote_events[] = {
+{EVNAME(wm_a),"Wiimote A button",BTN},
+{EVNAME(wm_b),"Wiimote B button",BTN},
+{EVNAME(wm_plus),"Wiimote + button",BTN},
+{EVNAME(wm_minus),"Wiimote - button",BTN},
+{EVNAME(wm_1),"Wiimote 1 button",BTN},
+{EVNAME(wm_2),"Wiimote 2 button",BTN},
+{EVNAME(wm_home),"Wiimote home button",BTN},
+{EVNAME(wm_left),"Wiimote Dpad left",BTN},
+{EVNAME(wm_right),"Wiimote Dpad right",BTN},
+{EVNAME(wm_up),"Wiimote Dpad up",BTN},
+{EVNAME(wm_down),"Wiimote Dpad down",BTN},
 
-{EVNAME(nk_a),"Wiimote A button with Nunchuk"},
-{EVNAME(nk_b),"Wiimote B button with Nunchuk"},
-{EVNAME(nk_plus),"Wiimote + button with Nunchuk"},
-{EVNAME(nk_minus),"Wiimote - button with Nunchuk"},
-{EVNAME(nk_1),"Wiimote 1 button with Nunchuk"},
-{EVNAME(nk_2),"Wiimote 2 button with Nunchuk"},
-{EVNAME(nk_home),"Wiimote home button with Nunchuk"},
-{EVNAME(nk_left),"Wiimote Dpad left with Nunchuk"},
-{EVNAME(nk_right),"Wiimote Dpad right with Nunchuk"},
-{EVNAME(nk_up),"Wiimote Dpad up with Nunchuk"},
-{EVNAME(nk_down),"Wiimote Dpad down with Nunchuk"},
-{EVNAME(nk_c),"Nunchuk C button"},
-{EVNAME(nk_z),"Nunchuk Z button"},
+{EVNAME(nk_a),"Wiimote A button with Nunchuk",BTN},
+{EVNAME(nk_b),"Wiimote B button with Nunchuk",BTN},
+{EVNAME(nk_plus),"Wiimote + button with Nunchuk",BTN},
+{EVNAME(nk_minus),"Wiimote - button with Nunchuk",BTN},
+{EVNAME(nk_1),"Wiimote 1 button with Nunchuk",BTN},
+{EVNAME(nk_2),"Wiimote 2 button with Nunchuk",BTN},
+{EVNAME(nk_home),"Wiimote home button with Nunchuk",BTN},
+{EVNAME(nk_left),"Wiimote Dpad left with Nunchuk",BTN},
+{EVNAME(nk_right),"Wiimote Dpad right with Nunchuk",BTN},
+{EVNAME(nk_up),"Wiimote Dpad up with Nunchuk",BTN},
+{EVNAME(nk_down),"Wiimote Dpad down with Nunchuk",BTN},
+{EVNAME(nk_c),"Nunchuk C button",BTN},
+{EVNAME(nk_z),"Nunchuk Z button",BTN},
 
-{EVNAME(cc_a),"Classic Controller A button"},
-{EVNAME(cc_b),"Classic Controller B button"},
-{EVNAME(cc_x),"Classic Controller X button"},
-{EVNAME(cc_y),"Classic Controller Y button"},
-{EVNAME(cc_plus),"Classic Controller + button"},
-{EVNAME(cc_minus),"Classic Controller - button"},
-{EVNAME(cc_home),"Classic Controller Home button"},
-{EVNAME(cc_left),"Classic Controller Dpad left"},
-{EVNAME(cc_right),"Classic Controller Dpad right"},
-{EVNAME(cc_up),"Classic Controller Dpad up"},
-{EVNAME(cc_down),"Classic Controller Dpad down"},
-{EVNAME(cc_l),"Classic Controller L button"},
-{EVNAME(cc_zl),"Classic Controller ZL button"},
-{EVNAME(cc_r),"Classic Controller R button"},
-{EVNAME(cc_zr),"Classic Controller ZR button"},
+{EVNAME(cc_a),"Classic Controller A button",BTN},
+{EVNAME(cc_b),"Classic Controller B button",BTN},
+{EVNAME(cc_x),"Classic Controller X button",BTN},
+{EVNAME(cc_y),"Classic Controller Y button",BTN},
+{EVNAME(cc_plus),"Classic Controller + button",BTN},
+{EVNAME(cc_minus),"Classic Controller - button",BTN},
+{EVNAME(cc_home),"Classic Controller Home button",BTN},
+{EVNAME(cc_left),"Classic Controller Dpad left",BTN},
+{EVNAME(cc_right),"Classic Controller Dpad right",BTN},
+{EVNAME(cc_up),"Classic Controller Dpad up",BTN},
+{EVNAME(cc_down),"Classic Controller Dpad down",BTN},
+{EVNAME(cc_l),"Classic Controller L button",BTN},
+{EVNAME(cc_zl),"Classic Controller ZL button",BTN},
+{EVNAME(cc_r),"Classic Controller R button",BTN},
+{EVNAME(cc_zr),"Classic Controller ZR button",BTN},
 
-{-1,nullptr, nullptr}
-};
-
-const wiimote_event wiimote_events_axes[] = {
-{EVNAME(wm_accel_x),"Wiimote X acceleration (long axis)"},
-{EVNAME(wm_accel_y),"Wiimote Y acceleration ((+) <--> (-) axis)"},
-{EVNAME(wm_accel_z),"Wiimote Z acceleration (top <--> bottom axis)"},
-{EVNAME(wm_ir_x),"Wiimote IR pointer X"},
-{EVNAME(wm_ir_y),"Wiimote IR pointer Y"},
+{EVNAME(wm_accel_x),"Wiimote X acceleration (long axis)",ABS},
+{EVNAME(wm_accel_y),"Wiimote Y acceleration ((+) <--> (-) axis)",ABS},
+{EVNAME(wm_accel_z),"Wiimote Z acceleration (top <--> bottom axis)",ABS},
+{EVNAME(wm_ir_x),"Wiimote IR pointer X",ABS},
+{EVNAME(wm_ir_y),"Wiimote IR pointer Y",ABS},
 
 
-{EVNAME(nk_wm_accel_x),"Wiimote X acceleration with Nunchuk"},
-{EVNAME(nk_wm_accel_y),"Wiimote Y acceleration with Nunchuk"},
-{EVNAME(nk_wm_accel_z),"Wiimote Z acceleration with Nunchuk"},
-{EVNAME(nk_ir_x),"Wiimote IR pointer X with Nunchuk"},
-{EVNAME(nk_ir_y),"Wiimote IR pointer Y with Nunchuk"},
-{EVNAME(nk_accel_x),"Nunchuk X acceleration"},
-{EVNAME(nk_accel_y),"Nunchuk Y acceleration"},
-{EVNAME(nk_accel_z),"Nunchuk Z acceleration"},
-{EVNAME(nk_stick_x),"Nunchuk stick X"},
-{EVNAME(nk_stick_y),"Nunchuk stick Y"},
+{EVNAME(nk_wm_accel_x),"Wiimote X acceleration with Nunchuk",ABS},
+{EVNAME(nk_wm_accel_y),"Wiimote Y acceleration with Nunchuk",ABS},
+{EVNAME(nk_wm_accel_z),"Wiimote Z acceleration with Nunchuk",ABS},
+{EVNAME(nk_ir_x),"Wiimote IR pointer X with Nunchuk",ABS},
+{EVNAME(nk_ir_y),"Wiimote IR pointer Y with Nunchuk",ABS},
+{EVNAME(nk_accel_x),"Nunchuk X acceleration",ABS},
+{EVNAME(nk_accel_y),"Nunchuk Y acceleration",ABS},
+{EVNAME(nk_accel_z),"Nunchuk Z acceleration",ABS},
+{EVNAME(nk_stick_x),"Nunchuk stick X",ABS},
+{EVNAME(nk_stick_y),"Nunchuk stick Y",ABS},
 
-{EVNAME(cc_left_x),"Classic Controller Left Stick X"},
-{EVNAME(cc_left_y),"Classic Controller Left Stick Y"},
-{EVNAME(cc_right_x),"Classic Controller Right Stick X"},
-{EVNAME(cc_right_y),"Classic Controller Right Stick Y"},
+{EVNAME(cc_left_x),"Classic Controller Left Stick X",ABS},
+{EVNAME(cc_left_y),"Classic Controller Left Stick Y",ABS},
+{EVNAME(cc_right_x),"Classic Controller Right Stick X",ABS},
+{EVNAME(cc_right_y),"Classic Controller Right Stick Y",ABS},
 
 {-1,nullptr, nullptr}
 };
 
 void wiimote::process(int type, int event_id, long long value) {
   if (!out_dev) return;
-  if (type == EVENT_KEY) {
-    key_trans[event_id]->process({type,value}, out_dev);
-    std::cout << name <<"."<< wiimote_events_keys[event_id].name << " " <<  value << std::endl;
-    return;
-  }
-  if (type == EVENT_AXIS) {
-    abs_trans[event_id]->process({type,value}, out_dev);
-    std::cout << name <<"."<< wiimote_events_axes[event_id].name << " " <<  value << std::endl;
-    return;
-  }
+  
+  send_value(event_id,value);
+  
+  std::cout << name <<"."<< wiimote_events[event_id].name << " " <<  value << std::endl;
   
 }
   

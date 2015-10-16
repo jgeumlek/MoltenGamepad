@@ -1,11 +1,6 @@
 #ifndef WII_EVENTS_H
 #define WII_EVENTS_H
 
-struct wiimote_event {
-  int id;
-  const char* name;
-  const char* descr;
-};
 
 
 enum wii_keys {
@@ -51,10 +46,6 @@ cc_zl,
 cc_r,
 cc_zr,
 
-wii_key_max
-};
-
-enum wii_abs {
 wm_accel_x,
 wm_accel_y,
 wm_accel_z,
@@ -63,6 +54,8 @@ wm_ir_y,
 
 nk_wm_accel_x,
 nk_wm_accel_y,
+  
+  
 nk_wm_accel_z,
 nk_ir_x,
 nk_ir_y,
@@ -77,11 +70,10 @@ cc_left_y,
 cc_right_x,
 cc_right_y,
 
-wii_abs_max
+wii_event_max
 };
 
 
-extern const wiimote_event wiimote_events_keys[];
-extern const wiimote_event wiimote_events_axes[];
+extern const source_event wiimote_events[];
 
 #endif

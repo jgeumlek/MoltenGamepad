@@ -12,7 +12,6 @@
 #define RANGE 32768
 
 struct mg_ev {
-  int type;
   long long value;
 };
 

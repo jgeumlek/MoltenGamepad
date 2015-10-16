@@ -19,6 +19,8 @@ input_source::~input_source() {
 void input_source::register_event(source_event ev) {
   events.push_back(ev);
 }
+
+
 void input_source::watch_file(int fd, void* tag) {
   struct epoll_event event;
   memset(&event,0,sizeof(event));
@@ -47,6 +49,8 @@ void input_source::set_trans(int id, event_translator* trans) {
 
 void input_source::send_value(int id, long long value) {
   events.at(id).value = value;
+  
+  if (events.at(id).trans && out_dev) events.at(id).trans->process({value},out_dev);
 }
   
 void input_source::thread_loop() {

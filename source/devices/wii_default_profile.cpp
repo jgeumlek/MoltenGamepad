@@ -57,14 +57,9 @@ void wiimotes::init_profile() {
 }
 
 void wiimote::load_profile(profile* map) {
-  memset(key_trans, 0, sizeof(key_trans));
   
-  for (int i = 0; wiimote_events_keys[i].name != nullptr; i++) {
-    key_trans[wiimote_events_keys[i].id] = map->copy_mapping(wiimote_events_keys[i].name);
-  }
-  
-  for (int i = 0; wiimote_events_axes[i].name != nullptr; i++) {
-    abs_trans[wiimote_events_axes[i].id] = map->copy_mapping(wiimote_events_axes[i].name);
+  for (int i = 0; wiimote_events[i].name != nullptr; i++) {
+    events[wiimote_events[i].id].trans = map->copy_mapping(wiimote_events[i].name);
   }
   
 }

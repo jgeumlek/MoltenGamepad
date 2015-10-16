@@ -79,9 +79,6 @@ public:
   modes mode = NO_EXT;
 
   char* name;
-  event_translator* key_trans[wii_key_max];
-  event_translator* abs_trans[wii_abs_max];
-  virtual_device* out_dev;
   
   wiimote();
 
@@ -117,6 +114,8 @@ public:
   virtual enum entry_type entry_type(const char* name);
   
   void read_wiimote();
+protected:
+  void process(void*);
 private:
   bool toggle_ir;
   bool toggle_accel;
