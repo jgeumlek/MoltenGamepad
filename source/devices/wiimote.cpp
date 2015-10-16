@@ -266,7 +266,7 @@ void wiimote::update_map(const char* evname, event_translator* trans) {
   int key_id = lookup_key(evname);
   if (key_id >= 0) {
     msg.type = EVENT_KEY; msg.id = key_id;
-    write(pipe_fd,&msg,sizeof(msg));
+    write(priv_pipe,&msg,sizeof(msg));
     return;
   }
   int abs_id = lookup_abs(evname);
@@ -306,21 +306,16 @@ void wiimote::read_wiimote() {
   memset(&event,0,sizeof(event));
 
   event.events = EPOLLIN | EPOLLPRI | EPOLLERR | EPOLLHUP;
-  int external[2];
-  pipe(external);
-  event.data.u32 = NONE;
-  epoll_ctl(epfd, EPOLL_CTL_ADD, external[0], &event);
   
   int internal[2];
   pipe(internal);
   event.data.ptr = this;
   epoll_ctl(epfd, EPOLL_CTL_ADD, internal[0], &event);
 
-  pipe_fd = external[1];
   
   priv_pipe = internal[1];
 
-  while (!(stop_thread)) {
+  while (!(keep_looping)) {
     int n = epoll_wait(epfd, events, 1, -1);
     if (n < 0) {perror("epoll wait:");break;}
     if (events[0].data.ptr == this) {
@@ -332,8 +327,6 @@ void wiimote::read_wiimote() {
         delete (array + msg.id);
         *(array + msg.id) = msg.trans;
       }
-    } else if (events[0].data.u32 == NONE) {
-      read(external[0], &event, sizeof(event));
     } else {
       switch (events[0].data.u32) {
         case CORE:

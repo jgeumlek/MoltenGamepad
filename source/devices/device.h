@@ -4,6 +4,7 @@
 #include <libudev.h>
 #include <vector>
 #include <iostream>
+#include <thread>
 #include "../event_change.h"
 #include "../slot_manager.h"
 #include "../profile.h"
@@ -27,12 +28,16 @@ struct source_event {
   const char* name;
   const char* descr;
   enum {ABSOLUTE, RELATIVE, BUTTON} type;
+  long long value;
+  event_translator* trans;
 };
 
 enum entry_type {DEV_OPTION, DEV_KEY, DEV_AXIS, DEV_REL, NO_ENTRY} ;
 
 class input_source {
 public:
+  input_source();
+  ~input_source();
   const char* name;
   virtual int set_player(int player_num) {
   }
@@ -51,6 +56,27 @@ public:
   
   virtual enum entry_type entry_type(const char* name) {
   }
+  
+  void start_thread();
+  void end_thread();
+  
+  
+protected:
+  int epfd;
+  int priv_pipe;
+  std::vector<source_event> events;
+  std::thread* thread;
+  volatile bool keep_looping;
+  
+  void register_event(source_event ev);
+  void watch_file(int fd, void* tag);
+  void set_trans(int id, event_translator* trans);
+  void send_value(int id, long long value);
+  
+  void thread_loop();
+  
+  virtual void process(void* tag) {};
+  
 
 };
 

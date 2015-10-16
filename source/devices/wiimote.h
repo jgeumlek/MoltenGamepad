@@ -37,9 +37,6 @@ public:
 
   const char* name = "unnamed";
   const char* descr = "unidentified Wii device";
-  std::thread* thread;
-  volatile bool stop_thread = false;
-  int pipe_fd;
 
   virtual struct name_descr get_info() {
     struct name_descr info;
@@ -56,12 +53,7 @@ public:
   virtual void list_options(name_list &list) {
   }
   virtual ~wii_dev() {
-    if(thread) {
-      stop_thread = true;
-      write(pipe_fd,"h",sizeof(char));
-      thread->join();
-      delete thread;
-    }
+    
     if(base.dev) udev_device_unref(base.dev);
   };
 
@@ -90,7 +82,6 @@ public:
   event_translator* key_trans[wii_key_max];
   event_translator* abs_trans[wii_abs_max];
   virtual_device* out_dev;
-  int epfd;
   
   wiimote();
 
@@ -149,13 +140,7 @@ private:
 
 
 
-class balance_board : public wii_dev {
-public:
-balance_board() {
-    wii_type = BALANCE_BOARD;
-    descr = "Balance Board";
-  }
-};
+
 
 
 
