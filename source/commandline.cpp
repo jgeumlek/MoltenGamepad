@@ -75,12 +75,13 @@ int do_update(moltengamepad* mg, const char* header, char* leftside, char* right
     
 }
 
-int shell_loop(moltengamepad* mg) {
+int shell_loop(moltengamepad* mg, std::istream &in) {
   bool keep_looping = true;
   std::string header = "";
   char* buff = new char [1024];
   while(keep_looping) {
-    std::cin.getline(buff,1024);
+    in.getline(buff,1024);
+    if (in.eof()) break;
     
     
     

@@ -1,5 +1,6 @@
 #include "moltengamepad.h"
 #include <iostream>
+#include <sys/stat.h>
 
 moltengamepad::moltengamepad() {
   slots = new slot_manager();
@@ -22,6 +23,17 @@ moltengamepad::~moltengamepad() {
   }
 }
 
+std::string find_config_folder() {
+  const char *config_home = getenv("XDG_CONFIG_HOME");
+  if (!config_home || config_home[0] == '\0') {
+    return (std::string(getenv("HOME")) + std::string("/.config/"));
+  }
+};
+
+std::string find_profile_folder() {
+  return "";
+};
+
 int moltengamepad::init() {
   
   devs.push_back( new wiimotes(slots));
@@ -29,10 +41,12 @@ int moltengamepad::init() {
   udev.set_managers(&devs);
   udev.start_monitor();
   udev.enumerate();
-
-  
-
+  if (options.config_dir.empty()) config_dir = find_config_folder();
+  std::cout<< config_dir+"/moltengamepad"<< std::endl;
+  mkdir((config_dir + "/moltengamepad").c_str(),0660);
 }
+
+
 
 device_manager* moltengamepad::find_manager(const char* name) {
   for (auto it = devs.begin(); it != devs.end(); it++) {

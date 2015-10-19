@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <thread>
+#include <string>
 #include <devices/device.h>
 #include <devices/wiimote.h>
 #include "slot_manager.h"
@@ -18,6 +19,9 @@ public:
     bool make_mouse = false;
     bool make_pointer = false;
     int  num_gamepads = 4;
+    std::string config_dir;
+    std::string profile_dir;
+    
   } options;
 
   std::vector<device_manager*> devs;

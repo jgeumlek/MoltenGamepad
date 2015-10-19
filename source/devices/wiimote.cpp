@@ -19,8 +19,8 @@ wiimote::~wiimote() {
    clear_node(&nunchuk);
    clear_node(&classic);
    
-   for (int i = 0; i < wii_event_max; i++) {
-     delete events[i].trans;
+   for (int i = 0; i < events.size(); i++) {
+     if (events[i].trans) delete events[i].trans;
    }
    
    void *ptr = name;
@@ -33,7 +33,9 @@ void wiimote::clear_node(struct dev_node* node) {
   if (node->fd >= 0) close(node->fd);
 }
 
-/*NOTE: Finding uses prefixes, but destroying needs an exact match.*/
+/*NOTE: Finding uses prefixes, but destroying needs an exact match.
+  This allows easily adding/removing subnodes while only deleting
+  if the base node is removed                                    */
 wii_dev* find_wii_dev_by_path(std::vector<wii_dev*>* devs, const char* syspath) {
   if (syspath == nullptr) return nullptr;
   for (auto it = devs->begin(); it != devs->end(); ++it) {
@@ -114,7 +116,6 @@ int name_to_node(const char* name) {
 void wiimote::store_node(struct udev_device* dev, const char* name) {
   if (!name || !dev) return;
   int node = name_to_node(name);
-  struct wii_msg msg;
   switch (node) {
   case CORE:
     std::cout<< this->name << " core found." << std::endl;
@@ -176,9 +177,6 @@ void wiimote::list_events(cat_list &list) {
   
   list.push_back(cat);
   cat.entries.clear();
-  
-  
-  
 }
 
 void wiimote::open_node(struct dev_node* node) {
@@ -191,11 +189,6 @@ void wiimote::open_node(struct dev_node* node) {
 };
 
 
-struct new_event {
-  int type;
-  int id;
-  event_translator* trans;
-};
 
 int lookup_wii_event(const char* evname) {
   if (evname == nullptr) return -1;
@@ -207,15 +200,6 @@ int lookup_wii_event(const char* evname) {
 }
 
 
-void wiimote::update_map(const char* evname, event_translator* trans) {
-  struct new_event msg = {0,0,trans->clone()};
-  int id = lookup_wii_event(evname);
-  if (id >= 0) {
-    msg.type = EVENT_KEY; msg.id = id;
-    write(priv_pipe,&msg,sizeof(msg));
-    return;
-  }
-}
 
 enum entry_type wiimote::entry_type(const char* name) {
   int ret = lookup_wii_event(name);

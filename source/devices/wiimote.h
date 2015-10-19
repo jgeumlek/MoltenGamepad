@@ -20,12 +20,7 @@ struct dev_node {
   struct udev_device* dev = nullptr;
   int fd = -1;
 };
-enum wmsg {ADD_FD, POKE};
-struct wii_msg {
-  wmsg msg;
-  int body;
-  int arg;
-};
+
 
 enum ext_type {NUNCHUK, CLASSIC, GUITAR, DRUMS, UNKNOWN};
 
@@ -33,7 +28,6 @@ enum ext_type {NUNCHUK, CLASSIC, GUITAR, DRUMS, UNKNOWN};
 class wii_dev : public input_source {
 public:
   struct dev_node base;
-  enum {WIIMOTE,  BALANCE_BOARD} wii_type;
 
   const char* name = "unnamed";
   const char* descr = "unidentified Wii device";
@@ -109,7 +103,6 @@ public:
   void store_node(struct udev_device* dev, const char* name);
   void remove_node(const char* name);
   
-  virtual void update_map(const char* evname, event_translator* trans);
   
   virtual enum entry_type entry_type(const char* name);
   
@@ -132,13 +125,7 @@ private:
   
   int priv_pipe;
   
-  
-  
-
 };
-
-
-
 
 
 

@@ -4,6 +4,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <thread>
+#include <iostream>
 
 input_source::input_source(){
     epfd = epoll_create(1);
@@ -31,6 +32,13 @@ void input_source::watch_file(int fd, void* tag) {
   if (ret< 0) perror("epoll add");
 }
 
+
+void input_source::update_map(const char* evname, event_translator* trans) {
+  for (int i = 0; i < events.size(); i++) {
+    if (!strcmp(evname,events[i].name)) set_trans(i,trans);
+  }
+}
+
 struct pass_trans {
   int id;
   event_translator* trans;
@@ -51,6 +59,7 @@ void input_source::send_value(int id, long long value) {
   events.at(id).value = value;
   
   if (events.at(id).trans && out_dev) events.at(id).trans->process({value},out_dev);
+  
 }
   
 void input_source::thread_loop() {
@@ -74,7 +83,7 @@ void input_source::thread_loop() {
       struct pass_trans msg;
       int ret = 1;
       ret = read(internal[0],&msg,sizeof(msg));
-      if (ret = sizeof(msg)) {
+      if (ret == sizeof(msg)) {
         event_translator** trans = &(this->events.at(msg.id).trans);
         delete *trans;
         *(trans) = msg.trans;
@@ -86,6 +95,8 @@ void input_source::thread_loop() {
 }
   
 void input_source::start_thread() {
+  keep_looping = true;
+  
   thread = new std::thread(&input_source::thread_loop, this);
 }
 
@@ -96,5 +107,6 @@ void input_source::end_thread() {
     write(priv_pipe,"h",sizeof(char));
     thread->join();
     delete thread;
+    thread = nullptr;
   }
 }

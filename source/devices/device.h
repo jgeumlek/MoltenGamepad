@@ -49,11 +49,10 @@ public:
   virtual void list_options(name_list &list) {
   }
   virtual void set_slot(virtual_device* outdev) {
+    this->out_dev = out_dev;
   }
   
-  virtual void update_map(const char* evname, event_translator* trans) {
-  }
-  
+  void update_map(const char* evname, event_translator* trans);
   virtual void update_option(const char* opname, const char* value) {
   }
   

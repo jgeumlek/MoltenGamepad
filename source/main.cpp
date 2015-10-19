@@ -1,7 +1,7 @@
 #include <iostream>
 #include "moltengamepad.h"
 
-int shell_loop(moltengamepad* mg);
+int shell_loop(moltengamepad* mg, std::istream &in);
 
 int main(int argc, char* argv[]) {
   try {
@@ -10,7 +10,7 @@ int main(int argc, char* argv[]) {
 
    mg.init();
    
-   shell_loop(&mg);
+   shell_loop(&mg, std::cin);
 
   } catch (int e) {
     return e;
