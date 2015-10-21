@@ -41,9 +41,14 @@ int moltengamepad::init() {
   udev.set_managers(&devs);
   udev.start_monitor();
   udev.enumerate();
-  if (options.config_dir.empty()) config_dir = find_config_folder();
-  std::cout<< config_dir+"/moltengamepad"<< std::endl;
-  mkdir((config_dir + "/moltengamepad").c_str(),0660);
+  if (options.config_dir.empty()) options.config_dir = find_config_folder();
+  
+  std::cout<< options.config_dir+"/moltengamepad"<< std::endl;
+  mkdir((options.config_dir + "/moltengamepad").c_str(),0770);
+  
+  options.config_dir = options.config_dir + "/moltengamepad/";
+  options.profile_dir = options.config_dir + "/profiles/";
+  mkdir((options.profile_dir).c_str(),0770);
 }
 
 

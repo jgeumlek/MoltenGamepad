@@ -47,7 +47,7 @@ public:
   }
   virtual std::string to_string() {
     std::string text = "btn2btn(";
-    text += std::to_string(out_button);
+    text += std::string(get_key_name(out_button));
     text += ")";
     return text;
   }
@@ -65,7 +65,7 @@ public:
   
   virtual std::string to_string() {
     std::string text = "btn2axis(";
-    text += std::to_string(out_axis);
+    text += std::string(get_axis_name(out_axis));
     text += ",";
     text += std::to_string(direction);
     text += ")";
@@ -93,7 +93,7 @@ public:
   }
   virtual std::string to_string() {
     std::string text = "axis2axis(";
-    text += std::to_string(out_axis);
+    text += std::string(get_axis_name(out_axis));
     text += ",";
     text += std::to_string(direction);
     text += ")";
@@ -111,9 +111,9 @@ public:
   
   virtual std::string to_string() {
     std::string text = "axis2btns(";
-    text += std::to_string(neg_btn);
+    text += std::string(get_key_name(neg_btn));
     text += ",";
-    text += std::to_string(pos_btn);
+    text += std::string(get_key_name(pos_btn));
     text += ")";
     return text;
   }

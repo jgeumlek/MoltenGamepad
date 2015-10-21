@@ -12,7 +12,7 @@
 
 class moltengamepad {
 public:
-  static struct mg_options {
+  struct mg_options {
     bool look_for_devices = true;
     bool listen_for_devices = true;
     bool make_keyboard = false;
