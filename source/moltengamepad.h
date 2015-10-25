@@ -6,6 +6,7 @@
 #include <string>
 #include <devices/device.h>
 #include <devices/wiimote.h>
+#include <devices/generic/generic.h>
 #include "slot_manager.h"
 #include "uinput.h"
 #include "udev.h"

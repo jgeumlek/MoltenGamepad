@@ -34,13 +34,15 @@ std::string find_profile_folder() {
   return "";
 };
 
+
+
 int moltengamepad::init() {
   
-  devs.push_back( new wiimotes(slots));
 
-  udev.set_managers(&devs);
-  udev.start_monitor();
-  udev.enumerate();
+  
+  
+  devs.push_back( new wiimotes(slots));
+  
   if (options.config_dir.empty()) options.config_dir = find_config_folder();
   
   std::cout<< options.config_dir+"/moltengamepad"<< std::endl;
@@ -49,6 +51,25 @@ int moltengamepad::init() {
   options.config_dir = options.config_dir + "/moltengamepad/";
   options.profile_dir = options.config_dir + "/profiles/";
   mkdir((options.profile_dir).c_str(),0770);
+  
+  mkdir((options.config_dir + "/generics").c_str(),0770);
+  
+  std::ifstream file;
+  file.open(options.config_dir + "/moltengamepad.cfg", std::istream::in);
+  
+  if (!file.fail()) {
+    generic_config_loop(this, file);
+  }
+    
+  
+  std::cout << devs.size() <<  std::endl;
+  
+
+  udev.set_managers(&devs);
+  udev.start_monitor();
+  udev.enumerate();
+  
+  
 }
 
 

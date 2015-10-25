@@ -40,6 +40,7 @@ public:
   
   virtual void process(struct mg_ev ev, virtual_device* out) {
     struct input_event out_ev;
+    memset(&out_ev,0,sizeof(out_ev));
     out_ev.type = EV_KEY;
     out_ev.code = out_button;
     out_ev.value = ev.value;
@@ -61,6 +62,15 @@ public:
   int direction;
   
   btn2axis(int out_axis, int direction) : out_axis(out_axis), direction(direction) {
+  }
+  
+  virtual void process(struct mg_ev ev, virtual_device* out) {
+    struct input_event out_ev;
+    memset(&out_ev,0,sizeof(out_ev));
+    out_ev.type = EV_ABS;
+    out_ev.code = out_axis;
+    out_ev.value = ev.value*direction*RANGE;
+    write_out(out_ev,out);
   }
   
   virtual std::string to_string() {
@@ -86,6 +96,7 @@ public:
     if (value < -RANGE) value = -RANGE;
     if (value > RANGE) value = RANGE;
     struct input_event out_ev;
+    memset(&out_ev,0,sizeof(out_ev));
     out_ev.type = EV_ABS;
     out_ev.code = out_axis;
     out_ev.value = value;
@@ -107,6 +118,21 @@ public:
   int neg_btn;
   int pos_btn;
   axis2btns(int neg_btn, int pos_btn) : neg_btn(neg_btn), pos_btn(pos_btn) {
+  }
+  
+  virtual void process(struct mg_ev ev, virtual_device* out) {
+    struct input_event out_ev;
+    memset(&out_ev,0,sizeof(out_ev));
+    out_ev.type = EV_KEY;
+    out_ev.code = neg_btn;
+    out_ev.value = ev.value < -.8*RANGE;
+    write_out(out_ev,out);
+    
+    out_ev.type = EV_KEY;
+    out_ev.code = pos_btn;
+    out_ev.value = ev.value > .8*RANGE;
+    write_out(out_ev,out);
+    
   }
   
   virtual std::string to_string() {

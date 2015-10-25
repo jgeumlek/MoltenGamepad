@@ -56,10 +56,3 @@ void wiimotes::init_profile() {
   
 }
 
-void wiimote::load_profile(profile* map) {
-  
-  for (int i = 0; wiimote_events[i].name != nullptr; i++) {
-    events[wiimote_events[i].id].trans = map->copy_mapping(wiimote_events[i].name);
-  }
-  
-}

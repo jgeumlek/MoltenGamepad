@@ -29,4 +29,8 @@ int do_command(moltengamepad* mg,std::vector<token> &command);
 
 int shell_loop(moltengamepad* mg, std::istream &in);
 
+bool find_token_type(enum tokentype type, std::vector<token> &tokens);
+
+void do_header_line(std::vector<token> &line, std::string &header);
+
 #endif

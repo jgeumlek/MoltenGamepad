@@ -99,7 +99,6 @@ public:
     this->out_dev = out_dev;
   }
   
-  void load_profile(profile* profile);
   void store_node(struct udev_device* dev, const char* name);
   void remove_node(const char* name);
   

@@ -139,14 +139,14 @@ void do_header_line(std::vector<token> &line, std::string &header) {
       header = newheader;
       return;
     }
-    
+    if (!newheader.empty()) newheader.push_back(' ');
     newheader += (*it).value;
-    newheader.push_back(' ');
+    
   }
 }
 
 void do_assignment(moltengamepad* mg, std::string header, std::string field, std::vector<token> rhs) {
-  enum entry_type left_type;
+  enum entry_type left_type = NO_ENTRY;
   const char* entry = field.c_str();
   device_manager* man = mg->find_manager(header.c_str());
   input_source* dev = nullptr;
@@ -154,7 +154,9 @@ void do_assignment(moltengamepad* mg, std::string header, std::string field, std
     left_type = man->entry_type(entry);
   } else {
     dev =mg->find_device(header.c_str());
+    if (dev != nullptr) {
     left_type = dev->entry_type(entry);
+    }
   }
   
   if (left_type == DEV_KEY || left_type == DEV_AXIS) {

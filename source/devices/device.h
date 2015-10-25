@@ -24,24 +24,23 @@ struct name_descr {
   int data;
 };
 
-enum ev_type {ABSOLUTE,RELATIVE,BUTTON};
+enum entry_type {DEV_OPTION, DEV_KEY, DEV_AXIS, DEV_REL, NO_ENTRY} ;
 
 struct source_event {
   int id;
   const char* name;
   const char* descr;
-  enum ev_type type;
+  enum entry_type type;
   long long value;
   event_translator* trans;
 };
 
-enum entry_type {DEV_OPTION, DEV_KEY, DEV_AXIS, DEV_REL, NO_ENTRY} ;
 
 class input_source {
 public:
   input_source();
   ~input_source();
-  const char* name;
+  const char* name = nullptr;
   virtual int set_player(int player_num) {
   }
   virtual void list_events(cat_list &list) {
@@ -49,7 +48,7 @@ public:
   virtual void list_options(name_list &list) {
   }
   virtual void set_slot(virtual_device* outdev) {
-    this->out_dev = out_dev;
+    this->out_dev = outdev;
   }
   
   void update_map(const char* evname, event_translator* trans);
@@ -62,14 +61,17 @@ public:
   void start_thread();
   void end_thread();
   
+  void load_profile(profile* profile);
+  
   
 protected:
-  int epfd;
-  int priv_pipe;
+  int epfd = 0;
+  int priv_pipe = 0;
+  int internalpipe = 0;
   std::vector<source_event> events;
-  std::thread* thread;
-  volatile bool keep_looping;
-  virtual_device* out_dev;
+  std::thread* thread = nullptr;
+  volatile bool keep_looping = true;
+  virtual_device* out_dev = nullptr;
 
   
   void register_event(source_event ev);

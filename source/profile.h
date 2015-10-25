@@ -25,7 +25,7 @@ public:
     event_translator* oldmap = get_mapping(in_event_name);
     if (oldmap) delete oldmap;
     mapping.erase(in_event_name);
-    mapping[in_event_name] = mapper->clone();
+    mapping[in_event_name] = mapper;
   }
   
   ~profile() {

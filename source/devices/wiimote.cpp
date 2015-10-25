@@ -19,9 +19,7 @@ wiimote::~wiimote() {
    clear_node(&nunchuk);
    clear_node(&classic);
    
-   for (int i = 0; i < events.size(); i++) {
-     if (events[i].trans) delete events[i].trans;
-   }
+   
    
    void *ptr = name;
    free (ptr);
@@ -204,8 +202,7 @@ int lookup_wii_event(const char* evname) {
 enum entry_type wiimote::entry_type(const char* name) {
   int ret = lookup_wii_event(name);
   if (ret != -1) {
-    if (events[ret].type == ABSOLUTE) return DEV_AXIS;
-    return DEV_KEY;
+    return events[ret].type;
   }
   
   return NO_ENTRY;
@@ -214,8 +211,7 @@ enum entry_type wiimote::entry_type(const char* name) {
 enum entry_type wiimotes::entry_type(const char* name) {
   int ret = lookup_wii_event(name);
   if (ret != -1) {
-    if (wiimote_events[ret].type == ABSOLUTE) return DEV_AXIS;
-    return DEV_KEY;
+    return wiimote_events[ret].type;
   }
   
   return NO_ENTRY;
@@ -305,7 +301,7 @@ int wiimotes::accept_device(struct udev* udev, struct udev_device* dev) {
 }
 
 void wiimotes::update_maps(const char* evname, event_translator* trans) {
-  mapprofile.set_mapping(evname, trans);
+  mapprofile.set_mapping(evname, trans->clone());
   for (auto it = wii_devs.begin(); it != wii_devs.end(); it++)
     (*it)->update_map(evname,trans);
 }

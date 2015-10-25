@@ -1,4 +1,4 @@
-#ifndef EVENTLiST_H
+#ifndef EVENTLIST_H
 #define EVENTLIST_H
 
 #include <linux/input.h>

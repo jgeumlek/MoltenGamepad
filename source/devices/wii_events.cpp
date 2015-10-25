@@ -2,8 +2,8 @@
 
 
 #define EVNAME(X) X,#X
-#define BTN BUTTON,0,nullptr
-#define ABS ABSOLUTE,0,nullptr
+#define BTN DEV_KEY,0,nullptr
+#define ABS DEV_AXIS,0,nullptr
 
 const source_event wiimote_events[] = {
 {EVNAME(wm_a),"Wiimote A button",BTN},
