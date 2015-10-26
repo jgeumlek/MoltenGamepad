@@ -54,7 +54,7 @@ int uinput::make_gamepad() {
     ioctl(fd, UI_SET_ABSBIT, abs[i]);
     uidev.absmin[abs[i]] = -32768;
     uidev.absmax[abs[i]] = 32768;
-    uidev.absflat[abs[i]] = 4096;
+    uidev.absflat[abs[i]] = 1024;
   }
 
   ioctl(fd, UI_SET_EVBIT, EV_KEY);

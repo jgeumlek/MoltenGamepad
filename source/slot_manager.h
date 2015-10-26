@@ -18,11 +18,14 @@ public:
    ~slot_manager();
    
    void request_slot(input_source* dev);
+   
+   void remove_from(virtual_device* slot);
 
 private:
    uinput* ui;
    virtual_device* devs[2];
    std::mutex lock;
+   int num_slots = 2;
 };
 
 #endif

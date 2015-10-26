@@ -6,7 +6,7 @@
 #include <thread>
 #include <iostream>
 
-input_source::input_source(){
+input_source::input_source(slot_manager* slot_man) : slot_man(slot_man){
     epfd = epoll_create(1);
     if (epfd < 1) perror("epoll create");
     
@@ -24,6 +24,8 @@ input_source::~input_source() {
   for (int i = 0; i < events.size(); i++) {
      if (events[i].trans) delete events[i].trans;
   }
+  
+  if (out_dev) { slot_man->remove_from(out_dev); };
 }
 
 

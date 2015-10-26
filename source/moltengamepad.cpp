@@ -1,14 +1,15 @@
 #include "moltengamepad.h"
 #include <iostream>
 #include <sys/stat.h>
+#include <errno.h>
 
 moltengamepad::moltengamepad() {
   slots = new slot_manager();
 }
 
 moltengamepad::~moltengamepad() {
-  std::cout<< "Shutting down."<< std::endl;
-  delete slots;
+  
+  
   udev.set_managers(nullptr);
   if (udev.monitor_thread) {
     udev.stop_thread = true;
@@ -18,9 +19,14 @@ moltengamepad::~moltengamepad() {
     delete udev.monitor_thread;
     udev.monitor_thread = nullptr;
   }
+  std::cout<< "Shutting down."<< std::endl;
+  
+  unlink(options.fifo_path.c_str());
+  
   for (auto it = devs.begin(); it != devs.end(); ++it) {
     delete (*it);
   }
+  delete slots;
 }
 
 std::string find_config_folder() {
@@ -34,7 +40,15 @@ std::string find_profile_folder() {
   return "";
 };
 
-
+int fifo_loop(moltengamepad* mg) {
+  bool keep_looping = true;
+  while (keep_looping) {
+    std::ifstream file;
+    file.open(mg->options.fifo_path,std::istream::in);
+    shell_loop(mg,file);
+    file.close();
+  }
+}
 
 int moltengamepad::init() {
   
@@ -62,13 +76,25 @@ int moltengamepad::init() {
   }
     
   
-  std::cout << devs.size() <<  std::endl;
-  
+   
 
   udev.set_managers(&devs);
   udev.start_monitor();
   udev.enumerate();
   
+  const char *run_dir = getenv("XDG_RUNTIME_DIR");
+  if (!run_dir || run_dir) {
+    options.fifo_path = std::string(run_dir) + "/moltengamepad";
+    int ret = mkfifo(options.fifo_path.c_str(),0666);
+    if (ret < 0 && errno != EEXIST)  {
+      perror("making fifo:");
+    } else {
+      remote_handler = new std::thread(fifo_loop,this);
+      remote_handler->detach();
+      delete remote_handler;
+      remote_handler = nullptr;
+    }
+  }
   
 }
 

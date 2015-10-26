@@ -2,6 +2,26 @@
 #include "parser.h"
 #include "event_change.h"
 
+/*Want a modified INI syntax.
+ * Three main line formats.
+ * 
+ * [header]
+ * 
+ * this = that
+ * 
+ * do this
+ * 
+ * the square brackets or equals signs uniquely identify the first two formats.
+ * 
+ * The third format is arbitrary shell-style 
+ *   command arg1 arg2 ...
+ * 
+ * The extra complication is in letting the right-hand side of
+ *    this = that
+ * grow complicated and nested, like redirect(mouse_slot, btn2btn(BTN_1))
+ */
+
+
 event_translator* parse_simple_trans(enum entry_type intype, const char* outname);
 event_translator* parse_special_trans(enum entry_type intype, std::vector<token> &rhs);
 event_translator* parse_complex_trans(enum entry_type intype, std::vector<token> &srhs);
@@ -99,24 +119,7 @@ std::vector<token> tokenize(std::string line) {
   return tokens;
 }
 
-/*Want a modified INI syntax.
- * Three main line formats.
- * 
- * [header]
- * 
- * this = that
- * 
- * do this
- * 
- * the square brackets or equals signs uniquely identify the first two formats.
- * 
- * The third format is arbitrary shell-style 
- *   command arg1 arg2 ...
- * 
- * The extra complication is in letting the right-hand side of
- *    this = that
- * grow complicated and nested, like redirect(mouse_slot, btn2btn(BTN_1))
- */
+
 bool find_token_type(enum tokentype type, std::vector<token> &tokens) {
   for (auto it = tokens.begin(); it != tokens.end(); it++) {
     if ((*it).type == type) return true;
@@ -261,6 +264,10 @@ void parse_line(std::vector<token> &line, std::string &header, moltengamepad* mg
 
 
 event_translator* parse_simple_trans(enum entry_type intype, const char* outname) {
+  if (outname == nullptr || outname[0] == '\0') return nullptr;
+  
+  if (!strcmp(outname,"nothing")) return new event_translator();
+  
   int direction = 1;
   if (outname[0] == '-')  {
     direction = -1;
@@ -289,6 +296,7 @@ event_translator* parse_simple_trans(enum entry_type intype, const char* outname
 }
 
 event_translator* parse_special_trans(enum entry_type intype, std::vector<token> &rhs) {
+  
   if (intype == DEV_AXIS) {
     //Check for two buttons "neg,pos" for mapping the axis.
     //We want exactly three tokens: TK_IDENT TK_COMMA TK_IDENT

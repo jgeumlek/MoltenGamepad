@@ -17,6 +17,7 @@ struct device_match {
 };
 struct gen_source_event {
   int id;
+  int split_id = 1;
   std::string name;
   std::string descr;
   enum entry_type type;
@@ -38,7 +39,7 @@ int generic_config_loop(moltengamepad* mg, std::istream &in);
 
 
 typedef std::pair<int,int> evcode;
-typedef std::pair<int,int> slotevent;
+typedef std::pair<int,input_absinfo> decodedevent;
 
 class generic_device : public input_source {
 public:
@@ -48,10 +49,10 @@ public:
   int pipe_read = -1;
   int pipe_write = -1;
   
-  std::map<int,int> eventcodes;
+  std::map<evcode,decodedevent> eventcodes;
   struct udev_device* node = nullptr;
   
-  generic_device(std::vector<gen_source_event> &events, int fd);
+  generic_device(std::vector<gen_source_event> &events, int fd, bool watch, slot_manager* slot_man);
   ~generic_device();
   
   virtual int set_player(int player_num);
@@ -83,6 +84,7 @@ public:
   generic_file(struct udev_device* node, bool grab) {
     epfd = epoll_create(1);
     if (epfd < 1) perror("epoll create");
+    this->grab = grab;
     open_node(node);
     
     thread = new std::thread(&generic_file::thread_loop,this);
@@ -110,7 +112,7 @@ public:
     int fd = open(udev_device_get_devnode(node), O_RDONLY | O_NONBLOCK | O_CLOEXEC);
     if (fd < 0)
       perror("open subdevice:");
-    ioctl(fd, EVIOCGRAB, this);
+    if (grab) ioctl(fd, EVIOCGRAB, this);
   
     struct epoll_event event;
     memset(&event,0,sizeof(event));
@@ -189,10 +191,11 @@ public:
   
 protected:
   std::vector<generic_file*> openfiles;
+  std::vector<std::vector<gen_source_event>> splitevents;
   int dev_counter = 0;
   std::string devname = "";
   int open_device(struct udev* udev, struct udev_device* dev);
-  void create_inputs(generic_file* opened_file);
+  void create_inputs(generic_file* opened_file,int fd, bool watch);
   
 };
 

@@ -10,6 +10,19 @@ generic_manager::generic_manager(slot_manager* slot_man, generic_driver_info &de
   split = descr.split;
   flatten = descr.flatten;
   
+  if (split > 1) {
+    for (int i = 1; i <= split; i++) {
+      splitevents.push_back(std::vector<gen_source_event>());
+    }
+    
+    for (auto gen_ev : descr.events) {
+      if (gen_ev.split_id < 1 || gen_ev.split_id > split) continue;
+      splitevents.at(gen_ev.split_id-1).push_back(gen_ev);
+      
+    }
+    
+  }
+  
   
   std::cout << name <<" driver initialized." << std::endl;
   
@@ -79,27 +92,41 @@ int generic_manager::open_device(struct udev* udev, struct udev_device* dev) {
   if (flatten) {
     if (openfiles.size() < 1) {
       openfiles.push_back(new generic_file(dev,descr->grab_exclusive));
-      create_inputs(openfiles.front());
+      create_inputs(openfiles.front(),openfiles.front()->fds.front(),false);
     } else {
       openfiles.front()->open_node(dev);
     }
   } else { 
      openfiles.push_back(new generic_file(dev,descr->grab_exclusive));
-     create_inputs(openfiles.back());
+     create_inputs(openfiles.back(),openfiles.back()->fds.front(),false);
   }
   return 0;
 }
 
-void generic_manager::create_inputs(generic_file* opened_file) {
-  generic_device* gendev = new generic_device(descr->events,-1);
-  char* newdevname = nullptr;
-  asprintf(&newdevname,"%s%d",devname.c_str(),++dev_counter);
-  gendev->nameptr = newdevname;
-  gendev->name = newdevname;
-  opened_file->add_dev(gendev);
-  slot_man->request_slot(gendev);
-  gendev->start_thread();
-  gendev->load_profile(&mapprofile);
+void generic_manager::create_inputs(generic_file* opened_file,int fd, bool watch) {
+  if (split == 1) {
+    generic_device* gendev = new generic_device(descr->events,fd,watch,slot_man);
+    char* newdevname = nullptr;
+    asprintf(&newdevname,"%s%d",devname.c_str(),++dev_counter);
+    gendev->nameptr = newdevname;
+    gendev->name = newdevname;
+    opened_file->add_dev(gendev);
+    slot_man->request_slot(gendev);
+    gendev->start_thread();
+    gendev->load_profile(&mapprofile);
+  } else {
+    for (int i = 1; i <= split; i++) {
+      generic_device* gendev = new generic_device(splitevents.at(i-1),fd,watch,slot_man);
+      char* newdevname = nullptr;
+      asprintf(&newdevname,"%s%d",devname.c_str(),++dev_counter);
+      gendev->nameptr = newdevname;
+      gendev->name = newdevname;
+      opened_file->add_dev(gendev);
+      slot_man->request_slot(gendev);
+      gendev->start_thread();
+      gendev->load_profile(&mapprofile);
+    }
+  }
 }
   
 void generic_manager::update_maps(const char* evname, event_translator* trans) {

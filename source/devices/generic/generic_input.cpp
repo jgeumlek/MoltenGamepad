@@ -1,9 +1,11 @@
 #include "generic.h"
 
-generic_device::generic_device(std::vector<gen_source_event> &inevents, int fd) {
+generic_device::generic_device(std::vector<gen_source_event> &inevents, int fd, bool watch, slot_manager* slot_man) : input_source(slot_man) {
   this->fd = fd;
   for (int i = 0; i < inevents.size(); i++) {
     source_event ev;
+    input_absinfo     abs;
+    memset(&abs,0,sizeof(abs));
     ev.id = i;
     ev.name = inevents.at(i).name.c_str();
     ev.descr = inevents.at(i).descr.c_str();
@@ -11,10 +13,22 @@ generic_device::generic_device(std::vector<gen_source_event> &inevents, int fd) 
     ev.value = 0;
     ev.trans = nullptr;
     register_event(ev);
-    eventcodes.insert(std::pair<int,int>(inevents.at(i).id,i));
+    
+    int type = EV_KEY;
+    if (ev.type == DEV_AXIS) type = EV_ABS;
+    if (ev.type == DEV_REL)  type = EV_REL;
+    
+    evcode code(type,inevents.at(i).id);
+    if (ev.type == DEV_AXIS) {
+      if(ioctl(fd, EVIOCGABS(inevents.at(i).id), &abs)) {
+            perror("evdev EVIOCGABS ioctl");
+      }
+    }
+    decodedevent decoded(i,abs);
+    eventcodes.insert(std::pair<evcode,decodedevent>(code,decoded));
   }
   
-  watch_file(fd,&fd);
+  if (watch) watch_file(fd,&fd);
 }
 
 generic_device::~generic_device() {
@@ -59,9 +73,28 @@ void generic_device::process(void* tag) {
   if (pipe_read >= 0 && tag == &pipe_read) {file = pipe_read;};
   int ret = read(file,&ev,sizeof(ev));
   if (ret > 0) {
-    auto it = eventcodes.find(ev.code);
+    if (ev.type == EV_SYN) {
+      out_dev->take_event(ev);
+      return;
+    }
+    evcode code(ev.type,ev.code);
+    auto it = eventcodes.find(code);
     if (it == eventcodes.end()) return;
-    send_value(it->second,ev.value);
+    decodedevent decoded = it->second;
+    int id = decoded.first;
+    if (ev.type == EV_KEY) {
+      send_value(id,ev.value);
+    } if (ev.type == EV_ABS) {
+      //do some ABS rescaling.
+      //currently ignoring old deadzone ("flat")
+      input_absinfo info = decoded.second;
+      int value = ev.value;
+      int oldscale = info.maximum - info.minimum;
+      if (oldscale == 0) { send_value(id,value); return;}
+      int newscale = 2*ABS_RANGE;
+      long long int scaledvalue = -ABS_RANGE + (value - info.minimum)*newscale/oldscale;
+      send_value(id,scaledvalue);
+    }
   }
 }
 

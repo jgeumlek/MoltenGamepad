@@ -31,6 +31,8 @@ public:
 
   const char* name = "unnamed";
   const char* descr = "unidentified Wii device";
+  
+  wii_dev(slot_manager* slot_man) : input_source(slot_man) {};
 
   virtual struct name_descr get_info() {
     struct name_descr info;
@@ -74,7 +76,7 @@ public:
 
   char* name;
   
-  wiimote();
+  wiimote(slot_manager* slot_man);
 
   ~wiimote();
   

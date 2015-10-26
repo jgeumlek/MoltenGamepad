@@ -14,10 +14,21 @@ void generic_assignment_line(std::vector<token> &line, generic_driver_info* &inf
   if (it == line.end()) return;
   
   std::string field = line.front().value;
+  std::string prefix = "";
   
   it++;
   
   if (it == line.end()) return;
+  
+  if ((*it).type == TK_DOT) {
+    it++;
+    if (it == line.end()) return;
+    prefix = field;
+    field = (*it).value;
+    it++;
+    
+  }
+    
   
   if ((*it).type != TK_EQUAL) return;
   
@@ -57,7 +68,26 @@ void generic_assignment_line(std::vector<token> &line, generic_driver_info* &inf
     return;
   }
   
+  if (field == "split") {
+    try {
+      int split_count  = std::stoi(value);
+      info->split = split_count;
+      
+    } catch (...) {
+      
+    }
+    return;
+  }
   
+  int split_id = 1;
+  if (!prefix.empty()) {
+    try {
+      split_id  = std::stoi(prefix);
+      
+    } catch (...) {
+      
+    }
+  }
   
   int id = get_key_id(field.c_str());
   if (id != -1) {
@@ -66,8 +96,24 @@ void generic_assignment_line(std::vector<token> &line, generic_driver_info* &inf
     ev.id = id;
     ev.descr = descr;
     ev.type = DEV_KEY;
+    ev.split_id = split_id;
     info->events.push_back(ev);
+    return;
   }
+  
+  id = get_axis_id(field.c_str());
+  if (id != -1) {
+    gen_source_event ev;
+    ev.name = value;
+    ev.id = id;
+    ev.descr = descr;
+    ev.type = DEV_AXIS;
+    ev.split_id = split_id;
+    info->events.push_back(ev);
+    return;
+  }
+  
+  
   
 }
 

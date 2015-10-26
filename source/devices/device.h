@@ -11,6 +11,10 @@
 
 #define ABS_RANGE 32000
 
+
+class slot_manager;
+
+
 typedef std::vector<struct name_descr> name_list;
 struct category {
   const char* name;
@@ -38,7 +42,7 @@ struct source_event {
 
 class input_source {
 public:
-  input_source();
+  input_source(slot_manager* slot_man);
   ~input_source();
   const char* name = nullptr;
   virtual int set_player(int player_num) {
@@ -65,6 +69,7 @@ public:
   
   
 protected:
+  slot_manager* slot_man;
   int epfd = 0;
   int priv_pipe = 0;
   int internalpipe = 0;
@@ -85,8 +90,6 @@ protected:
   
 
 };
-
-class slot_manager;
 
 class device_manager {
 public:

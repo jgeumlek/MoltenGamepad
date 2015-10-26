@@ -22,6 +22,7 @@ public:
     int  num_gamepads = 4;
     std::string config_dir;
     std::string profile_dir;
+    std::string fifo_path;
     
   } options;
 
@@ -40,10 +41,13 @@ public:
 private:
   bool udev_loop = true;
   void udev_run();
-  std::thread* udev_thread();
+  std::thread* udev_thread;
+  std::thread* remote_handler;
 
 
 };
+
+int shell_loop(moltengamepad* mg, std::istream &in);
 
 
 #endif

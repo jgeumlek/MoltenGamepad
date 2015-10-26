@@ -4,7 +4,7 @@
 #include <sys/epoll.h>
 #include <fcntl.h>
 #include <errno.h>
-wiimote::wiimote(){
+wiimote::wiimote(slot_manager* slot_man) : wii_dev(slot_man) {
     for (int i = 0; i < wii_event_max; i++) {
       register_event(wiimote_events[i]);
     }
@@ -281,7 +281,7 @@ int wiimotes::accept_device(struct udev* udev, struct udev_device* dev) {
   if (existing == nullptr) {
     //time to add a device;
     std::cout << "Wiimote found (count:" << wii_devs.size() << " )" << std::endl;;
-    wiimote* wm = new wiimote();
+    wiimote* wm = new wiimote(slot_man);
     char* devname;
     asprintf(&devname, "wm%d",++dev_counter);
     wm->name = devname;
