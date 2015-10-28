@@ -40,7 +40,7 @@ void udev_handler::set_managers(std::vector<device_manager*> *devs) {
 
 int udev_handler::start_monitor() {
   monitor = udev_monitor_new_from_netlink(udev,"udev");
-  //udev_monitor_filter_add_match_subsystem_devtype(monitor,"hid",NULL);
+  udev_monitor_filter_add_match_subsystem_devtype(monitor,"hid",NULL);
   udev_monitor_filter_add_match_subsystem_devtype(monitor,"input",NULL);
 
   udev_monitor_enable_receiving(monitor);
@@ -51,7 +51,7 @@ int udev_handler::start_monitor() {
 
 int udev_handler::enumerate() {
   struct udev_enumerate* enumerate = udev_enumerate_new(udev);
-  //udev_enumerate_add_match_subsystem(enumerate,"hid");
+  udev_enumerate_add_match_subsystem(enumerate,"hid");
   udev_enumerate_add_match_subsystem(enumerate,"input");
 
   udev_enumerate_scan_devices(enumerate);

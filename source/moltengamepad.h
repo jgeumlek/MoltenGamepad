@@ -37,9 +37,10 @@ public:
   
   device_manager* find_manager(const char* name);
   input_source* find_device(const char* name);
-
+  
 private:
   bool udev_loop = true;
+  
   void udev_run();
   std::thread* udev_thread;
   std::thread* remote_handler;

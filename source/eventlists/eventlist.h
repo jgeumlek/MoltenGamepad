@@ -3,6 +3,28 @@
 
 #include <linux/input.h>
 
+
+#ifndef BTN_DPAD_UP
+#define BTN_DPAD_UP 544
+#define DPAD_AS_HAT
+#endif
+
+#ifndef BTN_DPAD_DOWN
+#define BTN_DPAD_DOWN 545
+#define DPAD_AS_HAT
+#endif
+
+
+#ifndef BTN_DPAD_LEFT
+#define BTN_DPAD_LEFT 546
+#define DPAD_AS_HAT
+#endif
+
+#ifndef BTN_DPAD_RIGHT
+#define BTN_DPAD_UP 547
+#define DPAD_AS_HAT
+#endif
+
 struct event_listing {
   int id;
   const char* name;

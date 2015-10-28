@@ -1,4 +1,5 @@
 #include "uinput.h"
+#include "eventlists/eventlist.h"
 
 
 const char* try_to_find_uinput() {
@@ -30,9 +31,9 @@ uinput::uinput() {
   keyboard_name = "Virtual Keyboard (MoltenGamepad)";
 }
 
-int uinput::make_gamepad() {
+int uinput::make_gamepad(bool dpad_as_hat) {
   static int abs[] = { ABS_X, ABS_Y, ABS_RX, ABS_RY};
-  static int key[] = { BTN_SOUTH, BTN_EAST, BTN_NORTH, BTN_WEST, BTN_SELECT, BTN_MODE, BTN_START, BTN_TL, BTN_TL2, BTN_TR, BTN_TR2, BTN_DPAD_DOWN, BTN_DPAD_LEFT, BTN_DPAD_RIGHT, BTN_DPAD_UP,BTN_THUMBL, BTN_THUMBR};
+  static int key[] = { BTN_SOUTH, BTN_EAST, BTN_NORTH, BTN_WEST, BTN_SELECT, BTN_MODE, BTN_START, BTN_TL, BTN_TL2, BTN_TR, BTN_TR2, BTN_THUMBL, BTN_THUMBR};
   struct uinput_user_dev uidev;
   int fd;
   int i;
@@ -56,10 +57,29 @@ int uinput::make_gamepad() {
     uidev.absmax[abs[i]] = 32768;
     uidev.absflat[abs[i]] = 1024;
   }
+  
+  
+    
 
   ioctl(fd, UI_SET_EVBIT, EV_KEY);
   for (i = 0; i < 17; i++) {
     ioctl(fd, UI_SET_KEYBIT, key[i]);
+  }
+  
+  if (dpad_as_hat) {
+    ioctl(fd, UI_SET_ABSBIT, ABS_HAT0X);
+    uidev.absmin[ABS_HAT0X] = -1;
+    uidev.absmax[ABS_HAT0X] = 1;
+    uidev.absflat[ABS_HAT0X] = 0;
+    ioctl(fd, UI_SET_ABSBIT, ABS_HAT0Y);
+    uidev.absmin[ABS_HAT0Y] = -1;
+    uidev.absmax[ABS_HAT0Y] = 1;
+    uidev.absflat[ABS_HAT0Y] = 0;
+  } else {
+    ioctl(fd, UI_SET_KEYBIT, BTN_DPAD_UP);
+    ioctl(fd, UI_SET_KEYBIT, BTN_DPAD_DOWN);
+    ioctl(fd, UI_SET_KEYBIT, BTN_DPAD_LEFT);
+    ioctl(fd, UI_SET_KEYBIT, BTN_DPAD_RIGHT);
   }
 
   write(fd, &uidev, sizeof(uidev));

@@ -1,7 +1,9 @@
 #include "moltengamepad.h"
 #include <iostream>
+#include <fstream>
 #include <sys/stat.h>
 #include <errno.h>
+#include <glob.h>
 
 moltengamepad::moltengamepad() {
   slots = new slot_manager();
@@ -21,7 +23,14 @@ moltengamepad::~moltengamepad() {
   }
   std::cout<< "Shutting down."<< std::endl;
   
+  std::ofstream fifo;
+  fifo.open(options.fifo_path,std::ostream::out);
   unlink(options.fifo_path.c_str());
+  fifo << "quit" << std::endl;
+  if (remote_handler) {
+    remote_handler->join();
+    delete remote_handler;
+  }
   
   for (auto it = devs.begin(); it != devs.end(); ++it) {
     delete (*it);
@@ -45,6 +54,7 @@ int fifo_loop(moltengamepad* mg) {
   while (keep_looping) {
     std::ifstream file;
     file.open(mg->options.fifo_path,std::istream::in);
+    if (file.fail()) break;
     shell_loop(mg,file);
     file.close();
   }
@@ -68,12 +78,19 @@ int moltengamepad::init() {
   
   mkdir((options.config_dir + "/generics").c_str(),0770);
   
-  std::ifstream file;
-  file.open(options.config_dir + "/moltengamepad.cfg", std::istream::in);
+  glob_t globbuffer;
+  glob((options.config_dir + "/gendevices/*.cfg").c_str(), 0, nullptr, &globbuffer);
   
-  if (!file.fail()) {
-    generic_config_loop(this, file);
+  for (int i = 0; i < globbuffer.gl_pathc; i++) {
+    std::ifstream file;
+    file.open(globbuffer.gl_pathv[i], std::istream::in);
+    
+    if (!file.fail()) {
+      generic_config_loop(this, file);
+    }
   }
+  
+  globfree(&globbuffer);
     
   
    
@@ -86,13 +103,13 @@ int moltengamepad::init() {
   if (!run_dir || run_dir) {
     options.fifo_path = std::string(run_dir) + "/moltengamepad";
     int ret = mkfifo(options.fifo_path.c_str(),0666);
-    if (ret < 0 && errno != EEXIST)  {
+    if (ret < 0)  {
       perror("making fifo:");
+      options.fifo_path = "";
+      
     } else {
       remote_handler = new std::thread(fifo_loop,this);
-      remote_handler->detach();
-      delete remote_handler;
-      remote_handler = nullptr;
+      
     }
   }
   

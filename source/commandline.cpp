@@ -19,8 +19,11 @@ int do_print_profile(moltengamepad* mg, std::string name, std::ostream &out) {
     
 }
 int do_print_drivers(moltengamepad* mg, std::string name, std::ostream &out) {
-  for (auto drv : mg->devs) {
-    out << drv->name <<  std::endl;
+  if (name.empty()) {
+    for (auto drv : mg->devs) {
+      out << drv->name <<  std::endl;
+    }
+    return 0;
   }
   device_manager* man = mg->find_manager(name.c_str());
   if (man) {
@@ -49,9 +52,12 @@ int do_print_drivers(moltengamepad* mg, std::string name, std::ostream &out) {
 }
 
 int do_print(moltengamepad* mg, std::vector<token> &command) {
-  if (command.size() < 3) return -1;
-  if (command.at(1).value == "profile") return do_print_profile(mg,command.at(2).value,std::cout);
-  if (command.at(1).value == "drivers") return do_print_drivers(mg,command.at(2).value,std::cout);
+  if (command.size() < 2) return -1;
+  std::string arg = (command.size() >= 3) ? command.at(2).value : "";
+  if (command.at(1).value == "drivers") return do_print_drivers(mg,arg,std::cout);
+  
+  if (command.at(1).value == "profile") return do_print_profile(mg,arg,std::cout);
+  
   
   return 0;
 }

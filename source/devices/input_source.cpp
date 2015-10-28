@@ -25,6 +25,10 @@ input_source::~input_source() {
      if (events[i].trans) delete events[i].trans;
   }
   
+  for (auto it : chords) {
+    if (it.second) delete it.second;
+  }
+  
   if (out_dev) { slot_man->remove_from(out_dev); };
 }
 
@@ -49,14 +53,48 @@ void input_source::watch_file(int fd, void* tag) {
 
 void input_source::update_map(const char* evname, event_translator* trans) {
   for (int i = 0; i < events.size(); i++) {
-    if (!strcmp(evname,events[i].name)) set_trans(i,trans->clone());
+    if (!strcmp(evname,events[i].name)) {
+      set_trans(i,trans->clone());
+      return;
+    }
   }
 }
 
 struct pass_trans {
   int id;
+  int id2; //for chords.
   event_translator* trans;
 };
+
+void input_source::update_chord(const char* evname1,const char* evname2, event_translator* trans) {
+  std::cout << name << " doing chord " << evname1 << "+" << evname2 << "->" << trans->to_string() << std::endl;
+  int id1 = -1;
+  int id2 = -1;
+  for (int i = 0; i < events.size(); i++) {
+    if (!strcmp(evname1,events[i].name)) {
+      id1 = i;
+      break;
+    }
+  }
+  for (int i = 0; i < events.size(); i++) {
+    if (!strcmp(evname2,events[i].name)) {
+      id2 = i;
+      break;
+    }
+  }
+  
+  if (id1 != -1 && id2 != -1 && id1 != id2) {
+    struct pass_trans msg;
+    memset(&msg,0,sizeof(msg));
+    msg.id = id1;
+    msg.id2 = id2;
+    msg.trans = trans->clone();
+    write(priv_pipe,&msg,sizeof(msg));
+  }
+    
+}
+
+
 
 void input_source::set_trans(int id, event_translator* trans) {
   if (id < 0 || id >= events.size()) return;
@@ -64,6 +102,7 @@ void input_source::set_trans(int id, event_translator* trans) {
   struct pass_trans msg;
   memset(&msg,0,sizeof(msg));
   msg.id = id;
+  msg.id2 = -1;
   msg.trans = trans;
   write(priv_pipe,&msg,sizeof(msg));
 };
@@ -73,6 +112,8 @@ void input_source::send_value(int id, long long value) {
   events.at(id).value = value;
   
   if (events.at(id).trans && out_dev) events.at(id).trans->process({value},out_dev);
+  
+  process_chords();
   
 }
 
@@ -91,10 +132,6 @@ void input_source::thread_loop() {
   struct epoll_event events[1];
   memset(&event,0,sizeof(event));
 
-  
-  
-  
-
   while ((keep_looping)) {
     int n = epoll_wait(epfd, events, 1, -1);
     if (n < 0) {perror("epoll wait:");break;}
@@ -103,13 +140,36 @@ void input_source::thread_loop() {
       int ret = 1;
       ret = read(internalpipe,&msg,sizeof(msg));
       if (ret == sizeof(msg)) {
-        event_translator** trans = &(this->events.at(msg.id).trans);
-        delete *trans;
-        *(trans) = msg.trans;
+        if (msg.id < 0 ) continue;
+        if (msg.id2 < 0) {
+          event_translator** trans = &(this->events.at(msg.id).trans);
+          delete *trans;
+          *(trans) = msg.trans;
+        } else {
+          std::pair<int,int> keypair(msg.id,msg.id2);
+          auto it = chords.find(std::pair<int,int>(msg.id,msg.id2));
+          if (it != chords.end()) {
+            delete (*it).second;
+            chords.erase(it);
+          }
+          if (msg.trans)
+            chords.insert(std::pair<std::pair<int,int>,event_translator*>(keypair,msg.trans));
+        }
+        
       }
     } else {
       process(events[0].data.ptr);
     }
+  }
+}
+
+void input_source::process_chords() {
+  for (auto chord : chords) {
+    int id1 = chord.first.first;
+    int id2 = chord.first.second;
+    event_translator* trans = chord.second;
+    bool chordvalue = (events.at(id1).value && events.at(id2).value);
+    trans->process({chordvalue},out_dev);
   }
 }
   

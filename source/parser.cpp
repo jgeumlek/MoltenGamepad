@@ -21,10 +21,10 @@
  * grow complicated and nested, like redirect(mouse_slot, btn2btn(BTN_1))
  */
 
-
+event_translator* parse_trans(enum entry_type intype, std::vector<token> &rhs);
 event_translator* parse_simple_trans(enum entry_type intype, const char* outname);
 event_translator* parse_special_trans(enum entry_type intype, std::vector<token> &rhs);
-event_translator* parse_complex_trans(enum entry_type intype, std::vector<token> &srhs);
+event_translator* parse_complex_trans(enum entry_type intype, std::vector<token> &rhs);
 
 void print_tokens(std::vector<token> &tokens) {
   for (auto it = tokens.begin(); it != tokens.end(); it++) {
@@ -163,11 +163,9 @@ void do_assignment(moltengamepad* mg, std::string header, std::string field, std
   }
   
   if (left_type == DEV_KEY || left_type == DEV_AXIS) {
-    event_translator* trans = parse_special_trans(left_type, rhs);
-    if (!trans) trans = parse_simple_trans(left_type, rhs.front().value.c_str());
-    if (!trans) trans = parse_complex_trans(left_type, rhs);
+    event_translator* trans = parse_trans(left_type, rhs);
     
-    if (!trans) return; //abort.it++;
+    if (!trans) return; //abort
     if (trans) { std::cout << "parse to " << trans->to_string() << std::endl;}
     if (man) man->update_maps(entry,trans);
     if (dev) dev->update_map(entry,trans);
@@ -177,9 +175,29 @@ void do_assignment(moltengamepad* mg, std::string header, std::string field, std
   
 }
 
+void do_chord(moltengamepad* mg, std::string header, std::string field1, std::string field2, std::vector<token> rhs) {
+  enum entry_type left_type = DEV_KEY; //The only sensible thing to chord?
+  
+  input_source* dev = mg->find_device(header.c_str());
+  if (!dev) return;
+  if (rhs.empty()) return;
+  
+  event_translator* trans = nullptr;
+  
+  if (rhs.front().value != "nothing") {
+    trans = parse_trans(left_type,rhs);
+  }
+  
+  dev->update_chord(field1.c_str(),field2.c_str(),trans);
+  if (trans) delete trans;
+  
+}
+
 void do_assignment_line(std::vector<token> &line, std::string &header, moltengamepad* mg) {
   std::string effective_header = "";
   std::string effective_field;
+  std::string chord1 = "";
+  std::string chord2 = "";
   std::vector<token> leftside;
   std::vector<token> rightside;
   std::string* field = &effective_header;
@@ -214,6 +232,22 @@ void do_assignment_line(std::vector<token> &line, std::string &header, moltengam
       *field = (*it).value;
       seen_field = true;
       
+    } else if ((*it).type == TK_LPAREN) {
+      it++;
+      if (it == line.end()) return;
+      chord1 = it->value;
+      it++;
+      if (it == line.end() || it->type != TK_COMMA) return;
+      it++;
+      if (it == line.end()) return;
+      chord2 = it->value;
+      it++;
+      if (it == line.end() || it->type != TK_RPAREN) return;
+      it++;
+      if (it == line.end() || it->type != TK_EQUAL) return;
+      break;
+      
+      
     } else {
       return; //abort.
     }
@@ -236,6 +270,10 @@ void do_assignment_line(std::vector<token> &line, std::string &header, moltengam
     rightside.push_back(*it);
   }
   
+  if (!chord1.empty() && !chord2.empty()) {
+    do_chord(mg,effective_header,chord1,chord2,rightside);
+    return;
+  }
   
   if (effective_field.empty() || rightside.empty()) return;
   
@@ -262,7 +300,14 @@ void parse_line(std::vector<token> &line, std::string &header, moltengamepad* mg
   do_command(mg,line);
 }
 
-
+event_translator* parse_trans(enum entry_type left_type, std::vector<token> &rhs) {
+  event_translator* trans = parse_special_trans(left_type, rhs);
+  if (!trans) trans = parse_simple_trans(left_type, rhs.front().value.c_str());
+  if (!trans) trans = parse_complex_trans(left_type, rhs);
+  
+  return trans;
+}
+  
 event_translator* parse_simple_trans(enum entry_type intype, const char* outname) {
   if (outname == nullptr || outname[0] == '\0') return nullptr;
   
@@ -439,8 +484,7 @@ event_translator* parse_complex_trans(enum entry_type intype, std::vector<token>
   
   int depth = 0;
   complex_expr* current = expr;
-  std::cout << "PARSED COMPLEX" << std::endl;
-  print_expr(expr,0);
+  
   
   if (!expr) return nullptr;
   

@@ -2,7 +2,7 @@
 #define VIRTUAL_DEVICE_H
 
 #include "uinput.h"
-#include <linux/input.h>
+#include "eventlists/eventlist.h"
 #include <iostream>
 
 #define MG_MAX_NAME_SIZE 64
@@ -18,13 +18,11 @@ public:
    
    int pad_count = 0;
 protected:
-   int uinput_fd;
+   int uinput_fd = -1;
 };
 
 class virtual_gamepad : public virtual_device {
 public:
-  int key_cache[KEY_MAX];
-  int abs_cache[ABS_MAX];
    
   virtual_gamepad(uinput* ui);
   virtual void take_event(struct input_event in) {
@@ -33,9 +31,19 @@ public:
   };
 };
 
+class virtual_gamepad_dpad_as_hat : public virtual_gamepad {
+public:
+  //up, down, left, right
+  
+   
+  virtual_gamepad_dpad_as_hat(uinput* ui);
+  void take_event(struct input_event in);
+};
+
+
 class virtual_keyboard : public virtual_device {
 public:
-   int keys[KEY_MAX];
+   
 
    virtual_keyboard(uinput* ui);
 };

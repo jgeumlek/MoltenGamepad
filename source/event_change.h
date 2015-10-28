@@ -46,11 +46,14 @@ public:
     out_ev.value = ev.value;
     write_out(out_ev,out);
   }
-  virtual std::string to_string() {
+  virtual std::string to_string_long() {
     std::string text = "btn2btn(";
     text += std::string(get_key_name(out_button));
     text += ")";
     return text;
+  }
+  virtual std::string to_string() {
+    return std::string(get_key_name(out_button));
   }
   
   virtual btn2btn* clone() {return new btn2btn(*this);}
@@ -73,13 +76,19 @@ public:
     write_out(out_ev,out);
   }
   
-  virtual std::string to_string() {
+  virtual std::string to_string_long() {
     std::string text = "btn2axis(";
     text += std::string(get_axis_name(out_axis));
     text += ",";
     text += std::to_string(direction);
     text += ")";
     return text;
+  }
+  
+  virtual std::string to_string() {
+    if (direction != -1 && direction != +1) return to_string_long();
+    std::string prefix = direction > 0 ? "+" : "-";
+    return prefix + std::string(get_axis_name(out_axis));
   }
   
   virtual btn2axis* clone() {return new btn2axis(*this);}
@@ -102,13 +111,18 @@ public:
     out_ev.value = value;
     write_out(out_ev,out);
   }
-  virtual std::string to_string() {
+  virtual std::string to_string_long() {
     std::string text = "axis2axis(";
     text += std::string(get_axis_name(out_axis));
     text += ",";
     text += std::to_string(direction);
     text += ")";
     return text;
+  }
+  virtual std::string to_string() {
+    if (direction != -1 && direction != +1) return to_string_long();
+    std::string prefix = direction > 0 ? "+" : "-";
+    return prefix + std::string(get_axis_name(out_axis));
   }
   virtual axis2axis* clone() {return new axis2axis(*this);}
 };
@@ -135,7 +149,7 @@ public:
     
   }
   
-  virtual std::string to_string() {
+  virtual std::string to_string_long() {
     std::string text = "axis2btns(";
     text += std::string(get_key_name(neg_btn));
     text += ",";
@@ -143,10 +157,17 @@ public:
     text += ")";
     return text;
   }
+  virtual std::string to_string() {
+    return std::string(get_key_name(neg_btn)) + "," + std::string(get_key_name(pos_btn));
+  }
   
   virtual axis2btns* clone() {return new axis2btns(*this);}
 
 };
+
+
+  
+  
 
 
 

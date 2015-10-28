@@ -15,7 +15,7 @@ class uinput {
 public:
   uinput();
   ~uinput();
-  int make_gamepad();
+  int make_gamepad(bool dpad_as_hat);
   int make_keyboard();
   int make_mouse();
   int make_pointer();

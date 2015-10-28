@@ -2,12 +2,15 @@
 #define SLOT_MANAGER_H
 
 #include <mutex>
+#include <vector>
 
 #include "uinput.h"
 #include "virtual_device.h"
 #include "devices/device.h"
 
 class input_source;
+
+enum virtpad_type { LINUX_PAD, DPAD_AS_HAT_PAD };
 
 class slot_manager {
 public:
@@ -22,8 +25,12 @@ public:
    void remove_from(virtual_device* slot);
 
 private:
+   virtpad_type padtype;
+   virtual_device dummyslot;
+   bool slots_on_demand = false;
+   
    uinput* ui;
-   virtual_device* devs[2];
+   std::vector<virtual_device*> slots;
    std::mutex lock;
    int num_slots = 2;
 };

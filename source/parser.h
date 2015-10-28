@@ -16,6 +16,8 @@ std::vector<token> tokenize(std::string line);
 
 void parse_line(std::vector<token> &line, std::string &header, moltengamepad* mg);
 
+event_translator* parse_trans(enum entry_type intype, std::vector<token> &rhs);
+
 struct complex_expr {
   std::string ident;
   std::vector<complex_expr*> params;

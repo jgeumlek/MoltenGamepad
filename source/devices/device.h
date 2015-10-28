@@ -5,6 +5,7 @@
 #include <vector>
 #include <iostream>
 #include <thread>
+#include <map>
 #include "../event_change.h"
 #include "../slot_manager.h"
 #include "../profile.h"
@@ -56,6 +57,7 @@ public:
   }
   
   void update_map(const char* evname, event_translator* trans);
+  void update_chord(const char* key1, const char* key2, event_translator* trans);
   virtual void update_option(const char* opname, const char* value) {
   }
   
@@ -74,6 +76,7 @@ protected:
   int priv_pipe = 0;
   int internalpipe = 0;
   std::vector<source_event> events;
+  std::map<std::pair<int,int>,event_translator*> chords;
   std::thread* thread = nullptr;
   volatile bool keep_looping = true;
   virtual_device* out_dev = nullptr;
@@ -83,6 +86,7 @@ protected:
   void watch_file(int fd, void* tag);
   void set_trans(int id, event_translator* trans);
   void send_value(int id, long long value);
+  void process_chords();
   
   void thread_loop();
   

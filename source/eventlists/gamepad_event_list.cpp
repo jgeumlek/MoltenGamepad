@@ -15,7 +15,7 @@ const event_listing gamepad_btn_list[] = {
   {BTN_TR2, "tr2", "Lower left trigger"},
   {BTN_THUMBL, "thumbl", "Left thumb stick click"},
   {BTN_THUMBR, "thumbr", "Right thumb sitck click"},
-#ifdef BTN_DPAD_UP
+#ifndef DPAD_AS_HAT
   {BTN_DPAD_UP,"up", "Up on the dpad"},
   {BTN_DPAD_DOWN, "down", "Down on the dpad"},
   {BTN_DPAD_LEFT,"left", "Left on the dpad"},
@@ -38,7 +38,7 @@ const event_listing gamepad_axis_list[] = {
   {ABS_RY, "right_y", "Right stick Y-axis"},
   {ABS_HAT2Y, "tl2_axis", "Analog lower left trigger"},
   {ABS_HAT2X, "tr2_axis", "Analog lower right trigger"},
-#ifndef BTN_DPAD_UP
+#ifndef DPAD_AS_HAT
   {ABS_HAT0X,"leftright", "left/right on the dpad"},
   {ABS_HAT0Y, "updown", "up/own on the dpad"},
 #endif
