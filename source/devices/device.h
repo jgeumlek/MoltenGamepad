@@ -72,7 +72,7 @@ public:
   void load_profile(profile* profile);
   void export_profile(profile* profile);
   
-  
+  virtual_device* out_dev = nullptr;
 protected:
   slot_manager* slot_man;
   int epfd = 0;
@@ -82,7 +82,7 @@ protected:
   std::map<std::pair<int,int>,event_translator*> chords;
   std::thread* thread = nullptr;
   volatile bool keep_looping = true;
-  virtual_device* out_dev = nullptr;
+  
 
   
   void register_event(source_event ev);

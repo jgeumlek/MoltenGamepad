@@ -11,6 +11,7 @@
 class virtual_device {
 public:
    std::string name;
+   std::string descr;
    virtual_device(std::string name) {
      this->name = name;
    }

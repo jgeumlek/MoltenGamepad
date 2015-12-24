@@ -21,17 +21,21 @@ public:
    ~slot_manager();
    
    void request_slot(input_source* dev);
+   void move_to_slot(input_source* dev, virtual_device* target);
+   void remove(input_source* dev);
    
-   void remove_from(virtual_device* slot);
+   
+   virtual_device* find_slot(std::string name);
    virtual_device* keyboard;
+   virtual_device* dummyslot;
+   std::vector<virtual_device*> slots;
 private:
    virtpad_type padtype;
-   virtual_device* dummyslot;
+   void remove_from(virtual_device* slot);
    
    bool slots_on_demand = false;
    
    uinput* ui;
-   std::vector<virtual_device*> slots;
    std::mutex lock;
    int num_slots = 2;
 };

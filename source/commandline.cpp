@@ -9,18 +9,36 @@
 int do_save(moltengamepad* mg, std::vector<token> &command);
 int do_print(moltengamepad* mg, std::vector<token> &command);
 int do_load(moltengamepad* mg, std::vector<token> &command);
+int do_move(moltengamepad* mg, std::vector<token> &command);
   
-
+#define HELP_TEXT "available commands:\n"\
+"\tprint:\tprint out lists and information\n"\
+"\tmove:\tmove a device to a different slot\n"\
+"\tsave:\tsave all profiles to a file\n"\
+"\tload:\tload profiles from a file\n"\
+"\tquit:\tquit this application\n"\
+"\t<profile>.<event> = <outevent>\n"\
+"\t\tchange the event mapping for <event> to <outevent> in the profile <profile>"
 int do_command(moltengamepad* mg, std::vector<token> &command) {
   if (command.empty()) return -1;
   if (command.front().value == "print") {
     device_delete_lock.lock();
     do_print(mg,command);
     device_delete_lock.unlock();
+    return 0;
+  }
+   if (command.front().value == "move") {
+    device_delete_lock.lock();
+    do_move(mg,command);
+    device_delete_lock.unlock();
+    return 0;
   }
     
   if (command.front().value == "save") return do_save(mg,command);
   if (command.front().value == "load") return do_load(mg,command);
+  if (command.front().value == "help") {std::cout<<HELP_TEXT<<std::endl; return 0;};
+  if (command.front().value == "quit") {return 0;};
+  std::cout << "Command not recognized. \"help\" for available commands" << std::endl;
   return 0;
 }
 

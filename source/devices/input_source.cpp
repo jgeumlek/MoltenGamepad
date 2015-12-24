@@ -32,7 +32,7 @@ input_source::~input_source() {
     if (it.second) delete it.second;
   }
   
-  if (out_dev) { slot_man->remove_from(out_dev); };
+  if (out_dev) { slot_man->remove(this); };
 }
 
 

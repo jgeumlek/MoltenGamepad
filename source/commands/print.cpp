@@ -12,9 +12,21 @@ void print_profile(profile &profile, std::ostream &out) {
   for (auto chord : profile.chords) {
     out << profile.name << ".(" << chord.first.first << ","<< chord.first.second <<") = " << chord.second->to_string() << std::endl;
   }
+  if (profile.mapping.empty() && profile.chords.empty())
+    out << "(empty profile)"<<std::endl;
 }
 
 int do_print_profile(moltengamepad* mg, std::string name, std::ostream &out) {
+  if (name.empty()) {
+    for (auto man : mg->devs) {
+      out << man->name << std::endl;
+      name_list names;
+      man->list_devs(names);
+      for (auto e : names)
+        out << e.name << std::endl;
+    }
+  }
+  
   device_manager* man = mg->find_manager(name.c_str());
   if (man) {
     profile* profile = &(man->mapprofile);
@@ -34,7 +46,7 @@ int do_print_profile(moltengamepad* mg, std::string name, std::ostream &out) {
     
 }
 
-void print_devs(device_manager* man, std::ostream &out) {
+void print_driver_dev_list(device_manager* man, std::ostream &out) {
   name_list list;
   man->list_devs(list);
   out << "(" << man->name << ")\n";
@@ -44,18 +56,27 @@ void print_devs(device_manager* man, std::ostream &out) {
   }
 }
 
-int do_print_devs(moltengamepad* mg, std::string driver, std::ostream &out) {
-  if (!driver.empty()) {
-    device_manager* man = mg->find_manager(driver.c_str());
-    if (man) {
-      print_devs(man,out);
+int do_print_devs(moltengamepad* mg, std::string name, std::ostream &out) {
+  if (!name.empty()) {
+    input_source* dev =mg->find_device(name.c_str());
+    if (dev) {
+      out << dev->name << " events:"<<std::endl;
+      cat_list cats;
+      dev->list_events(cats);
+      for (auto v : cats) {
+        out << "[" << v.name << "]" << std::endl;
+        for (auto e : v.entries) {
+          out << e.name << ":\t" << e.descr << std::endl;
+        }
+      }
       return 0;
     }
+    
     return -1;
   }
   
   for (auto driver : mg->devs) {
-    print_devs(driver,out);
+    print_driver_dev_list(driver,out);
   }
   
   return 0;
@@ -70,39 +91,46 @@ int do_print_drivers(moltengamepad* mg, std::string name, std::ostream &out) {
   }
   device_manager* man = mg->find_manager(name.c_str());
   if (man) {
-    name_list list;
-    man->list_devs(list);
-    for (auto e : list) {
-        out << e.name << ":\t" << e.descr << std::endl;
-    }
-    
-    
+    print_driver_dev_list(man,out);
   }
-  input_source* dev =mg->find_device(name.c_str());
-  if (dev) {
-    cat_list cats;
-    dev->list_events(cats);
-    for (auto v : cats) {
-      out << "[" << v.name << "]" << std::endl;
-      for (auto e : v.entries) {
-        out << e.name << ":\t" << e.descr << std::endl;
-      }
-    }
-    
-  }
+  
   return 0;
   
 }
 
+int do_print_slots(moltengamepad* mg, std::string name, std::ostream &out) {
+  if (name.empty()) {
+    for (auto slot : mg->slots->slots) {
+      out << slot->name <<  std::endl;
+    }
+    out << mg->slots->keyboard->name <<std::endl;
+    out << mg->slots->dummyslot->name<<std::endl;
+    return 0;
+  }
+  virtual_device* slot = mg->slots->find_slot(name);
+  if (slot) {
+    out << slot->name << ":\t" << slot->descr << std::endl;
+  }
+  
+  return 0;
+  
+}
+
+#define PRINT_USAGE ""\
+"USAGE:\n\tprint <type> [element]\n"\
+"\ttypes recognized: drivers, devices, profiles, slots\n"\
+"\tprint <type> will list all elements of that type\n"\
+"\tprint <type> [element] will show detailed info on that element\n"
 int do_print(moltengamepad* mg, std::vector<token> &command) {
-  if (command.size() < 2) return -1;
+  if (command.size() < 2) {std::cout<<PRINT_USAGE<<std::endl; return -1;}
   std::string arg = (command.size() >= 3 && command.at(2).type == TK_IDENT) ? command.at(2).value : "";
   if (command.at(1).value == "drivers") return do_print_drivers(mg,arg,std::cout);
   if (command.at(1).value == "devices") return do_print_devs(mg,arg,std::cout);
   
-  if (command.at(1).value == "profile") return do_print_profile(mg,arg,std::cout);
+  if (command.at(1).value == "profiles") return do_print_profile(mg,arg,std::cout);
+  if (command.at(1).value == "slots") return do_print_slots(mg,arg,std::cout);
   
-  
+  std::cout<<PRINT_USAGE<<std::endl;
   return 0;
 }
 
