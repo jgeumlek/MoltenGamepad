@@ -6,6 +6,7 @@
 #include <iostream>
 #include <thread>
 #include <map>
+#include <mutex>
 #include "../event_change.h"
 #include "../slot_manager.h"
 #include "../profile.h"
@@ -14,6 +15,7 @@
 
 
 class slot_manager;
+extern std::mutex device_delete_lock;
 
 
 typedef std::vector<struct name_descr> name_list;
@@ -68,6 +70,7 @@ public:
   void end_thread();
   
   void load_profile(profile* profile);
+  void export_profile(profile* profile);
   
   
 protected:
@@ -113,6 +116,8 @@ public:
   
   
   virtual void update_maps(const char* evname, event_translator* trans) {
+  }
+  virtual void update_chords(const char* ev1,const char* ev2, event_translator* trans) {
   }
   
   virtual void update_option(const char* opname, const char* value) {

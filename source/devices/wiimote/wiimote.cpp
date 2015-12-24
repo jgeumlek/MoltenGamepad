@@ -52,8 +52,10 @@ int destroy_wii_dev_by_path(std::vector<wii_dev*>* devs, const char* syspath) {
     if (!devpath) continue;
     
     if (!strcmp(devpath,syspath)) {
+      device_delete_lock.lock();
       delete *it;
       devs->erase(it);
+      device_delete_lock.unlock();
       return 0;
     }
   }
@@ -304,6 +306,11 @@ void wiimotes::update_maps(const char* evname, event_translator* trans) {
   mapprofile.set_mapping(evname, trans->clone());
   for (auto it = wii_devs.begin(); it != wii_devs.end(); it++)
     (*it)->update_map(evname,trans);
+}
+void wiimotes::update_chords(const char* ev1, const char* ev2, event_translator* trans) {
+  mapprofile.set_chord(ev1, ev2, trans->clone());
+  for (auto it = wii_devs.begin(); it != wii_devs.end(); it++)
+    (*it)->update_chord(ev1,ev2,trans);
 }
 
 input_source* wiimotes::find_device(const char* name) {

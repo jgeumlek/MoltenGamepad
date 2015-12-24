@@ -1,15 +1,25 @@
 #include "slot_manager.h"
 
-slot_manager::slot_manager() {
+slot_manager::slot_manager(int num_pads, bool keys, bool dpad_as_hat) {
      ui = new uinput();
-     slots.push_back(new virtual_gamepad(ui));
-     slots.push_back(new virtual_gamepad(ui));
+     dummyslot = new virtual_device("blank");
+     if (keys) {
+       keyboard = new virtual_keyboard("keyboard",ui);
+     } else {
+       keyboard = new virtual_device("keyboard(disabled)");
+     }
+     
+     for (int i = 0; i < num_pads; i++) {
+      slots.push_back(new virtual_gamepad("virtpad" + std::to_string(i+1),dpad_as_hat,true,ui));
+     }
 }
 
 slot_manager::~slot_manager() {
       for (auto slot : slots)
         delete slot;
       delete ui;
+      delete dummyslot;
+      delete keyboard;
 }
 
 void slot_manager::request_slot(input_source* dev) {
@@ -22,7 +32,7 @@ void slot_manager::request_slot(input_source* dev) {
       return;
     }
   }
-  dev->set_slot(&dummyslot);
+  dev->set_slot(dummyslot);
   
   lock.unlock();
 }

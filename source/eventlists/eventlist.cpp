@@ -69,3 +69,8 @@ event_info lookup_event(const char* eventname) {
   out.type = OUT_NONE;
   return out;
 }
+
+bool is_keyboard_key(int key_id) {
+  const char* name = get_key_name(key_id);
+  return (name[0] == 'k');
+}

@@ -16,7 +16,7 @@ std::vector<token> tokenize(std::string line);
 
 void parse_line(std::vector<token> &line, std::string &header, moltengamepad* mg);
 
-event_translator* parse_trans(enum entry_type intype, std::vector<token> &rhs);
+event_translator* parse_trans(enum entry_type intype, std::vector<token> &rhs,slot_manager* slots);
 
 struct complex_expr {
   std::string ident;
@@ -24,6 +24,7 @@ struct complex_expr {
 };
 
 struct complex_expr* read_expr(std::vector<token> &tokens, std::vector<token>::iterator &it);
+void free_complex_expr(complex_expr* expr);
 
 event_translator* parse_complex_trans(enum entry_type intype, std::vector<token> &rhs);
 

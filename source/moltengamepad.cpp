@@ -6,7 +6,6 @@
 #include <glob.h>
 
 moltengamepad::moltengamepad() {
-  slots = new slot_manager();
 }
 
 moltengamepad::~moltengamepad() {
@@ -41,13 +40,12 @@ moltengamepad::~moltengamepad() {
 std::string find_config_folder() {
   const char *config_home = getenv("XDG_CONFIG_HOME");
   if (!config_home || config_home[0] == '\0') {
-    return (std::string(getenv("HOME")) + std::string("/.config/"));
+    return (std::string(getenv("HOME")) + std::string("/.config/moltengamepad"));
   }
+  return std::string(config_home) + "/moltengamepad";
 };
 
-std::string find_profile_folder() {
-  return "";
-};
+
 
 int fifo_loop(moltengamepad* mg) {
   bool keep_looping = true;
@@ -61,25 +59,23 @@ int fifo_loop(moltengamepad* mg) {
 }
 
 int moltengamepad::init() {
-  
-
-  
+  slots = new slot_manager(options.num_gamepads, options.make_keyboard, options.dpad_as_hat);
   
   devs.push_back( new wiimotes(slots));
   
   if (options.config_dir.empty()) options.config_dir = find_config_folder();
   
-  std::cout<< options.config_dir+"/moltengamepad"<< std::endl;
-  mkdir((options.config_dir + "/moltengamepad").c_str(),0770);
+  mkdir(options.config_dir.c_str(),0770);
   
-  options.config_dir = options.config_dir + "/moltengamepad/";
-  options.profile_dir = options.config_dir + "/profiles/";
+  if (options.profile_dir.empty()) options.profile_dir = options.config_dir + "/profiles/";
   mkdir((options.profile_dir).c_str(),0770);
   
-  mkdir((options.config_dir + "/generics").c_str(),0770);
+  if (options.gendev_dir.empty()) options.gendev_dir = options.config_dir + "/gendevices/";
+  mkdir((options.gendev_dir).c_str(),0770);
   
   glob_t globbuffer;
-  glob((options.config_dir + "/gendevices/*.cfg").c_str(), 0, nullptr, &globbuffer);
+  std::string fileglob = options.config_dir +  "/gendevices/*.cfg";
+  glob(fileglob.c_str(), 0, nullptr, &globbuffer);
   
   for (int i = 0; i < globbuffer.gl_pathc; i++) {
     std::ifstream file;
@@ -96,22 +92,23 @@ int moltengamepad::init() {
    
 
   udev.set_managers(&devs);
-  udev.start_monitor();
-  udev.enumerate();
+  if (options.listen_for_devices) udev.start_monitor();
+  if (options.look_for_devices)   udev.enumerate();
   
   const char *run_dir = getenv("XDG_RUNTIME_DIR");
-  if (!run_dir || run_dir) {
+  if (options.fifo_path.empty() && (!run_dir || run_dir)) {
     options.fifo_path = std::string(run_dir) + "/moltengamepad";
-    int ret = mkfifo(options.fifo_path.c_str(),0666);
-    if (ret < 0)  {
-      perror("making fifo:");
-      options.fifo_path = "";
-      
-    } else {
-      remote_handler = new std::thread(fifo_loop,this);
-      
-    }
   }
+  int ret = mkfifo(options.fifo_path.c_str(),0666);
+  if (ret < 0)  {
+    perror("making fifo:");
+    options.fifo_path = "";
+    
+  } else {
+    remote_handler = new std::thread(fifo_loop,this);
+    
+  }
+  
   
 }
 

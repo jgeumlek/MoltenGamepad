@@ -52,6 +52,8 @@ int get_key_id(const char* keyname);
 int get_axis_id(const char* axisname);
 int get_rel_id(const char* relname);
 
+bool is_keyboard_key(int key_id);
+
 
 event_info lookup_event(const char* eventname);
 

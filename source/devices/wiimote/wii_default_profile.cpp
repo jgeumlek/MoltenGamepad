@@ -1,5 +1,5 @@
 #include "wiimote.h"
-#include "../profile.h"
+#include "../../profile.h"
 
 void wiimotes::init_profile() {
   auto map= &mapprofile.mapping;

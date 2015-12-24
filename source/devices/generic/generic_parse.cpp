@@ -147,6 +147,7 @@ int generic_config_loop(moltengamepad* mg, std::istream &in) {
   bool keep_looping = true;
   std::string header = "";
   char* buff = new char [1024];
+  bool failed = false;
   struct generic_driver_info* info = new generic_driver_info;
   while(keep_looping) {
     in.getline(buff,1024);
@@ -169,8 +170,10 @@ int generic_config_loop(moltengamepad* mg, std::istream &in) {
         mg->devs.push_back(new generic_manager(mg->slots,*info));
   } else {
     delete info;
+    failed = true;
   }
   
     delete[] buff;
+    return -failed;
 }
 

@@ -5,7 +5,7 @@
 #include <iostream>
 #include <thread>
 #include <sys/epoll.h>
-#include "device.h"
+#include "../device.h"
 #include "wii_events.h"
 
 #define WIIMOTE_NAME "Nintendo Wii Remote"
@@ -144,6 +144,7 @@ public:
   }
   
   virtual void update_maps(const char* evname, event_translator* trans);
+  virtual void update_chords(const char* ev1,const char* ev2, event_translator* trans);
   
   virtual input_source* find_device(const char* name);
   virtual enum entry_type entry_type(const char* name);

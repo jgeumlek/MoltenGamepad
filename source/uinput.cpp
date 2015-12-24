@@ -31,7 +31,7 @@ uinput::uinput() {
   keyboard_name = "Virtual Keyboard (MoltenGamepad)";
 }
 
-int uinput::make_gamepad(bool dpad_as_hat) {
+int uinput::make_gamepad(bool dpad_as_hat, bool analog_triggers) {
   static int abs[] = { ABS_X, ABS_Y, ABS_RX, ABS_RY};
   static int key[] = { BTN_SOUTH, BTN_EAST, BTN_NORTH, BTN_WEST, BTN_SELECT, BTN_MODE, BTN_START, BTN_TL, BTN_TL2, BTN_TR, BTN_TR2, BTN_THUMBL, BTN_THUMBR};
   struct uinput_user_dev uidev;
@@ -58,8 +58,16 @@ int uinput::make_gamepad(bool dpad_as_hat) {
     uidev.absflat[abs[i]] = 1024;
   }
   
-  
-    
+  if (analog_triggers) {
+    ioctl(fd,UI_SET_ABSBIT, ABS_Z);
+    uidev.absmin[ABS_Z] = 0;
+    uidev.absmax[ABS_Z] = 255;
+    uidev.absflat[ABS_Z] = 0;
+    ioctl(fd,UI_SET_ABSBIT, ABS_RZ);
+    uidev.absmin[ABS_RZ] = 0;
+    uidev.absmax[ABS_RZ] = 255;
+    uidev.absflat[ABS_RZ] = 0;
+  }
 
   ioctl(fd, UI_SET_EVBIT, EV_KEY);
   for (i = 0; i < 17; i++) {

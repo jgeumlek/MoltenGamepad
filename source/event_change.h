@@ -30,6 +30,8 @@ public:
   
   virtual event_translator* clone() {return new event_translator(*this);}
   
+  virtual ~event_translator() {};
+  
 };
 
 class btn2btn : public event_translator {
@@ -53,7 +55,10 @@ public:
     return text;
   }
   virtual std::string to_string() {
-    return std::string(get_key_name(out_button));
+    const char* btn_name = get_key_name(out_button);
+    if (!btn_name) return to_string_long();
+    if (btn_name[0] == 'k') return to_string_long();
+    return std::string(btn_name);
   }
   
   virtual btn2btn* clone() {return new btn2btn(*this);}
@@ -165,7 +170,50 @@ public:
 
 };
 
+class redirect_trans : public event_translator {
+public:
+  event_translator* trans = nullptr;
+  virtual_device* redirected;
+  
+  redirect_trans(event_translator* trans, virtual_device* redirected) :  redirected(redirected) {
+    this->trans = trans;
+  }
+  
+  ~redirect_trans() {
+    if (trans) delete trans;
+  }
+  
+  virtual void process(struct mg_ev ev, virtual_device* out) {
+    trans->process(ev,redirected);
+    struct input_event out_ev;
+    memset(&out_ev,0,sizeof(out_ev));
+    out_ev.type = EV_SYN;
+    out_ev.code = SYN_REPORT;
+    out_ev.value = 0;
+    write_out(out_ev,redirected);
+    
+  }
+  virtual std::string to_string() {
+    return "redirect(" + trans->to_string() + "," + redirected->name + ")";
+  }
+  
+  virtual redirect_trans* clone() {return new redirect_trans(trans->clone(),redirected);}
+  
+};
 
+class keyboard_redirect : public redirect_trans {
+public:
+  int key_code;
+  keyboard_redirect(int key_code, event_translator* trans, virtual_device* redirected ) : redirect_trans(trans,redirected) {
+    this->key_code = key_code;
+  }
+  
+  virtual std::string to_string() {
+    return "key(" + std::string(get_key_name(key_code))+")";
+  }
+  
+  virtual keyboard_redirect* clone() {return new keyboard_redirect(key_code,this->trans->clone(),redirected);}
+};
   
   
 

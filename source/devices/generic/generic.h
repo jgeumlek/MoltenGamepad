@@ -100,9 +100,11 @@ public:
       if (node) udev_device_unref(node);
       node = nullptr;
     }
+    device_delete_lock.lock();
     for (auto dev : devices) {
       delete dev;
     }
+    device_delete_lock.unlock();
     if(thread) {thread->join(); delete thread;}
     for (int fd : fds) close(fd);
   }
@@ -136,7 +138,8 @@ public:
     memset(&event,0,sizeof(event));
     while ((keep_looping)) {
       int n = epoll_wait(epfd, events, 1, 5);
-      if (n < 0) {perror("epoll wait:");break;}
+      if (n < 0 && errno == EINTR) { continue;}
+      if (n < 0 && errno != EINTR) {perror("epoll wait:");break;}
       if (n == 0) continue;
       struct input_event ev;
       int file = events[0].data.u32;
@@ -147,10 +150,7 @@ public:
         }
       } else if (errno == ENODEV) {
         close(file);
-        /*for (auto dev : devices) {
-          delete dev;
-        }
-        keep_looping = false;*/
+        
       }
       
     }
@@ -172,6 +172,7 @@ public:
   virtual int accept_device(struct udev* udev, struct udev_device* dev);
   
   virtual void update_maps(const char* evname, event_translator* trans);
+  virtual void update_chords(const char* ev1,const char* ev2, event_translator* trans);
   
   virtual void update_option(const char* opname, const char* value);
   

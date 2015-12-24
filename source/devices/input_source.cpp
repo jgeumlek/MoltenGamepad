@@ -6,6 +6,9 @@
 #include <thread>
 #include <iostream>
 
+std::mutex device_delete_lock;
+
+
 input_source::input_source(slot_manager* slot_man) : slot_man(slot_man){
     epfd = epoll_create(1);
     if (epfd < 1) perror("epoll create");
@@ -67,7 +70,6 @@ struct pass_trans {
 };
 
 void input_source::update_chord(const char* evname1,const char* evname2, event_translator* trans) {
-  std::cout << name << " doing chord " << evname1 << "+" << evname2 << "->" << trans->to_string() << std::endl;
   int id1 = -1;
   int id2 = -1;
   for (int i = 0; i < events.size(); i++) {
@@ -84,11 +86,17 @@ void input_source::update_chord(const char* evname1,const char* evname2, event_t
   }
   
   if (id1 != -1 && id2 != -1 && id1 != id2) {
+    if (trans) {
+      std::cout << name << " doing chord " << evname1 << "+" << evname2 << "->" << trans->to_string() << std::endl;
+    } else {
+      std::cout << name << " clearing chord " << evname1 << "+" << evname2 << std::endl;
+    }
     struct pass_trans msg;
     memset(&msg,0,sizeof(msg));
     msg.id = id1;
     msg.id2 = id2;
-    msg.trans = trans->clone();
+    msg.trans = nullptr;
+    if (trans) msg.trans = trans->clone();
     write(priv_pipe,&msg,sizeof(msg));
   }
     
@@ -125,7 +133,25 @@ void input_source::load_profile(profile* profile) {
       set_trans(id,trans);
     }
   }
+  for (auto str_pair : profile->chords) {
+    std::string first = str_pair.first.first;
+    std::string second = str_pair.first.second;
+  }
 }
+
+void input_source::export_profile(profile* profile) {
+  for (auto ev : events) {
+    event_translator* trans = ev.trans->clone();
+    profile->set_mapping(ev.name,trans);
+  }
+  for (auto chord : chords) {
+    int id1 = chord.first.first;
+    int id2 = chord.first.second;
+    event_translator* trans = chord.second->clone();
+    profile->set_chord(events[id1].name,events[id2].name,trans);
+  }
+}
+
   
 void input_source::thread_loop() {
   struct epoll_event event;
@@ -134,7 +160,8 @@ void input_source::thread_loop() {
 
   while ((keep_looping)) {
     int n = epoll_wait(epfd, events, 1, -1);
-    if (n < 0) {perror("epoll wait:");break;}
+    if (n < 0 && errno == EINTR) { continue;}
+    if (n < 0 && errno != EINTR) {perror("epoll wait:");break;}
     if (events[0].data.ptr == this) {
       struct pass_trans msg;
       int ret = 1;

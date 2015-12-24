@@ -5,7 +5,7 @@
 #include <thread>
 #include <string>
 #include <devices/device.h>
-#include <devices/wiimote.h>
+#include <devices/wiimote/wiimote.h>
 #include <devices/generic/generic.h>
 #include "slot_manager.h"
 #include "uinput.h"
@@ -19,10 +19,13 @@ public:
     bool make_keyboard = false;
     bool make_mouse = false;
     bool make_pointer = false;
+    bool dpad_as_hat = false;
     int  num_gamepads = 4;
     std::string config_dir;
     std::string profile_dir;
+    std::string gendev_dir;
     std::string fifo_path;
+    std::string uinput_path;
     
   } options;
 
@@ -31,6 +34,7 @@ public:
   udev_handler udev;
 
   moltengamepad();
+  moltengamepad(moltengamepad::mg_options options) : options(options) {};
   ~moltengamepad();
   int init();
   int stop();
@@ -43,7 +47,7 @@ private:
   
   void udev_run();
   std::thread* udev_thread;
-  std::thread* remote_handler;
+  std::thread* remote_handler = nullptr;
 
 
 };

@@ -23,7 +23,7 @@
 
 event_translator* parse_trans(enum entry_type intype, std::vector<token> &rhs);
 event_translator* parse_simple_trans(enum entry_type intype, const char* outname);
-event_translator* parse_special_trans(enum entry_type intype, std::vector<token> &rhs);
+event_translator* parse_special_trans(enum entry_type intype, std::vector<token> &rhs, slot_manager* slots);
 event_translator* parse_complex_trans(enum entry_type intype, std::vector<token> &rhs);
 
 void print_tokens(std::vector<token> &tokens) {
@@ -163,7 +163,7 @@ void do_assignment(moltengamepad* mg, std::string header, std::string field, std
   }
   
   if (left_type == DEV_KEY || left_type == DEV_AXIS) {
-    event_translator* trans = parse_trans(left_type, rhs);
+    event_translator* trans = parse_trans(left_type, rhs,mg->slots);
     
     if (!trans) return; //abort
     if (trans) { std::cout << "parse to " << trans->to_string() << std::endl;}
@@ -178,17 +178,19 @@ void do_assignment(moltengamepad* mg, std::string header, std::string field, std
 void do_chord(moltengamepad* mg, std::string header, std::string field1, std::string field2, std::vector<token> rhs) {
   enum entry_type left_type = DEV_KEY; //The only sensible thing to chord?
   
-  input_source* dev = mg->find_device(header.c_str());
-  if (!dev) return;
+  device_manager* man = mg->find_manager(header.c_str());
+  input_source* dev = (!man)? mg->find_device(header.c_str()) : nullptr;
+  if (!man && !dev) return;
   if (rhs.empty()) return;
   
   event_translator* trans = nullptr;
   
   if (rhs.front().value != "nothing") {
-    trans = parse_trans(left_type,rhs);
+    trans = parse_trans(left_type,rhs,mg->slots);
   }
-  
-  dev->update_chord(field1.c_str(),field2.c_str(),trans);
+  if (man) man->update_chords(field1.c_str(),field2.c_str(),trans);
+  if (dev) dev->update_chord(field1.c_str(),field2.c_str(),trans);
+  if (trans) { std::cout << "parse to " << trans->to_string() << std::endl;}
   if (trans) delete trans;
   
 }
@@ -291,17 +293,19 @@ void parse_line(std::vector<token> &line, std::string &header, moltengamepad* mg
     std::cout << "header is " << header << std::endl;
     return;
   }
-  
+  /*process the command, prevent input_sources from being deleted under our nose.*/
   if (find_token_type(TK_EQUAL, line)) {
+    device_delete_lock.lock();
     do_assignment_line(line, header, mg);
-    return;
+    device_delete_lock.unlock();
+  } else {
+    do_command(mg,line);
   }
   
-  do_command(mg,line);
 }
 
-event_translator* parse_trans(enum entry_type left_type, std::vector<token> &rhs) {
-  event_translator* trans = parse_special_trans(left_type, rhs);
+event_translator* parse_trans(enum entry_type left_type, std::vector<token> &rhs,slot_manager* slots) {
+  event_translator* trans = parse_special_trans(left_type, rhs,slots);
   if (!trans) trans = parse_simple_trans(left_type, rhs.front().value.c_str());
   if (!trans) trans = parse_complex_trans(left_type, rhs);
   
@@ -340,7 +344,7 @@ event_translator* parse_simple_trans(enum entry_type intype, const char* outname
   return nullptr;
 }
 
-event_translator* parse_special_trans(enum entry_type intype, std::vector<token> &rhs) {
+event_translator* parse_special_trans(enum entry_type intype, std::vector<token> &rhs, slot_manager* slots) {
   
   if (intype == DEV_AXIS) {
     //Check for two buttons "neg,pos" for mapping the axis.
@@ -351,6 +355,25 @@ event_translator* parse_special_trans(enum entry_type intype, std::vector<token>
       if (neg.type == OUT_KEY && pos.type == OUT_KEY)
         return new axis2btns(neg.value,pos.value);
     }
+  }
+  
+  
+  //Check for key(keyname), since we need the slot_manager to build this.
+  if (intype == DEV_KEY) {
+    complex_expr* expr = read_expr(rhs,rhs.begin());
+    if (!expr || expr->ident != "key" || expr->params.empty()) return nullptr;
+    struct event_info out_info = lookup_event(expr->params.front()->ident.c_str());
+    if (out_info.type == OUT_KEY) {
+      event_translator* trans = parse_simple_trans(intype, expr->params.front()->ident.c_str().c_str());
+      
+      if (trans) {
+        free_complex_expr(expr);
+        return new keyboard_redirect(out_info.value,trans,slots->keyboard);
+      }
+      
+      delete trans;
+    }
+    free_complex_expr(expr);
   }
   
   return nullptr;
