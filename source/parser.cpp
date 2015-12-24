@@ -360,11 +360,12 @@ event_translator* parse_special_trans(enum entry_type intype, std::vector<token>
   
   //Check for key(keyname), since we need the slot_manager to build this.
   if (intype == DEV_KEY) {
-    complex_expr* expr = read_expr(rhs,rhs.begin());
+    auto it = rhs.begin();
+    complex_expr* expr = read_expr(rhs,it);
     if (!expr || expr->ident != "key" || expr->params.empty()) return nullptr;
     struct event_info out_info = lookup_event(expr->params.front()->ident.c_str());
     if (out_info.type == OUT_KEY) {
-      event_translator* trans = parse_simple_trans(intype, expr->params.front()->ident.c_str().c_str());
+      event_translator* trans = parse_simple_trans(intype, expr->params.front()->ident.c_str());
       
       if (trans) {
         free_complex_expr(expr);

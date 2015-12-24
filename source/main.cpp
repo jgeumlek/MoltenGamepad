@@ -10,7 +10,7 @@ int main(int argc, char* argv[]) {
   moltengamepad::mg_options options;
   options.look_for_devices = true;
   options.listen_for_devices = true;
-  options.make_keyboard = false;
+  options.make_keyboard = true;
   options.make_mouse = false;
   options.make_pointer = false;
   options.dpad_as_hat = false;
@@ -42,14 +42,42 @@ int main(int argc, char* argv[]) {
 
 int print_usage(char* execname) {
   std::cout << "USAGE:\n";
-  std::cout << "\t" << execname << "[OPTIONS]\n";
+  std::cout << "\t" << execname << " [OPTIONS]\n";
   std::cout << "\n";
   std::string help_text = ""\
 "--help -h\n"\
 "\tShow this message\n"\
 "\n"\
 "--uinput-path -u\n"\
-"\tSet where the uinput node is found on the system\n";
+"\tSet where the uinput node is found on the system\n"\
+"\n"\
+"--fifo-path -f\n"\
+"\tSet where the fifo command channel should be placed.\n"\
+"\n"\
+"--profiles-path -p\n"\
+"\tSet where the profiles are located\n"\
+"\n"\
+"--gendev-path -g\n"\
+"\tSet where the generic device descriptions are located\n"\
+"\n"\
+"--config-path -c\n"\
+"\tSet where the general config files are located\n"\
+"\n"\
+"--num-gamepads -n\n"\
+"\tSet how many virtual gamepads will be created\n"\
+"\n"\
+"--no-make-keys\n"\
+"\tDisable the creation of a virtual keyboard\n"\
+"\n"\
+"--no-enumerate\n"\
+"\tDisable the search for already connected devices\n"\
+"\n"\
+"--no-monitor\n"\
+"\tDisable listening for future connected devices\n"\
+"\n"\
+"--dpad-as-hat\n"\
+"\tOutput dpad events as a hat rather than separate buttons\n"\
+;
 
   std::cout << help_text;
   return 0;
