@@ -11,6 +11,8 @@
 #include "uinput.h"
 #include "udev.h"
 
+#define VERSION_STRING "alpha"
+
 class moltengamepad {
 public:
   struct mg_options {

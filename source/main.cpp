@@ -40,13 +40,22 @@ int main(int argc, char* argv[]) {
   return 0;
 }
 
+int print_version() {
+  std::cout <<  "MoltenGamepad version " << VERSION_STRING << "\n";
+  return 0;
+}
+
 int print_usage(char* execname) {
+  print_version();
   std::cout << "USAGE:\n";
   std::cout << "\t" << execname << " [OPTIONS]\n";
   std::cout << "\n";
   std::string help_text = ""\
 "--help -h\n"\
 "\tShow this message\n"\
+"\n"\
+"--version -v\n"\
+"\tDisplay the version string\n"\
 "\n"\
 "--uinput-path -u\n"\
 "\tSet where the uinput node is found on the system\n"\
@@ -91,6 +100,7 @@ int parse_opts(moltengamepad::mg_options &options, int argc, char* argv[]) {
   
   static struct option long_options[] = {
     {"help",          0,    0,  'h'},
+    {"version",       0,    0,  'v'},
     {"uinput-path",   1,    0,  'u'},
     {"fifo-path",     1,    0,  'f'},
     {"profiles-path", 1,    0,  'p'},
@@ -106,7 +116,7 @@ int parse_opts(moltengamepad::mg_options &options, int argc, char* argv[]) {
   int long_index;
   
   while (c != -1) {
-    c = getopt_long(argc,argv,"u:p:g:n:c:f:h", long_options, &long_index);
+    c = getopt_long(argc,argv,"u:p:g:n:c:f:hv", long_options, &long_index);
     switch (c) {
       case 0:
         if (long_index == 6) {options.make_keyboard = false;};
@@ -131,6 +141,10 @@ int parse_opts(moltengamepad::mg_options &options, int argc, char* argv[]) {
         break;
       case 'h':
         print_usage(argv[0]);
+        return 10;
+        break;
+      case 'v':
+        print_version();
         return 10;
         break;
       case 'n':
