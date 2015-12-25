@@ -1,4 +1,4 @@
-#MoltenGamepad Wiimote Driver Documentation
+#MoltenGamepad Generic Device Driver Documentation
 
 A generic driver can be specified by creating a `<filename>.cfg` file in the `gendevices` config directory.
 
