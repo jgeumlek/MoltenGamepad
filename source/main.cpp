@@ -119,10 +119,10 @@ int parse_opts(moltengamepad::mg_options &options, int argc, char* argv[]) {
     c = getopt_long(argc,argv,"u:p:g:n:c:f:hv", long_options, &long_index);
     switch (c) {
       case 0:
-        if (long_index == 6) {options.make_keyboard = false;};
-        if (long_index == 7) {options.look_for_devices = false;};
-        if (long_index == 8) {options.listen_for_devices = false;};
-        if (long_index == 9) {options.dpad_as_hat = true;};
+        if (long_index == 8) {options.make_keyboard = false;};
+        if (long_index == 9) {options.look_for_devices = false;};
+        if (long_index == 10) {options.listen_for_devices = false;};
+        if (long_index == 11) {options.dpad_as_hat = true;};
         break;
       case 'u':
         options.uinput_path = std::string(optarg);

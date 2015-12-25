@@ -21,8 +21,8 @@ wiimote::~wiimote() {
    
    
    
-   void *ptr = name;
-   free (ptr);
+   
+   free (nameptr);
 }
 
 void wiimote::clear_node(struct dev_node* node) {
@@ -287,6 +287,7 @@ int wiimotes::accept_device(struct udev* udev, struct udev_device* dev) {
     char* devname;
     asprintf(&devname, "wm%d",++dev_counter);
     wm->name = devname;
+    wm->nameptr = devname;
     wm->base.dev = udev_device_ref(parent);
     wm->handle_event(dev);
     wii_devs.push_back(wm);

@@ -47,7 +47,7 @@ class input_source {
 public:
   input_source(slot_manager* slot_man);
   ~input_source();
-  const char* name = nullptr;
+  const char* name = "unnamed";
   virtual int set_player(int player_num) {
   }
   virtual void list_events(cat_list &list) {

@@ -29,7 +29,7 @@ class wii_dev : public input_source {
 public:
   struct dev_node base;
 
-  const char* name = "unnamed";
+  
   const char* descr = "unidentified Wii device";
   
   wii_dev(slot_manager* slot_man) : input_source(slot_man) {};
@@ -74,7 +74,7 @@ public:
 
   modes mode = NO_EXT;
 
-  char* name;
+  char* nameptr;
   
   wiimote(slot_manager* slot_man);
 

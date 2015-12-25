@@ -103,9 +103,9 @@ That's it.
 
 #Mapping an axis to an axis
 
-    wiimote.cc_l_x = left_x
-    wiimote.cc_l_x = +left_x
-    wiimote.cc_l_x = -left_x
+    wiimote.cc_left_x = left_x
+    wiimote.cc_left_x = +left_x
+    wiimote.cc_left_x = -left_x
 
 The first two are equivalent. The last one inverts the axis direction.
 
@@ -118,7 +118,7 @@ The +/- represents whether the button should output in the positive or negative 
 
 #Mapping an axis to buttons
 
-    wiimote.cc_l_x = left,right
+    wiimote.cc_left_x = left,right
 
 The first output button is pressed when the axis gets sufficiently negative. The second output button is pressed when the axis gets sufficently positive. When the axis is not at either extreme, both buttons are released.
 
@@ -145,6 +145,8 @@ The following are available:
     save profiles to <filename>
     
 Will save all currently used driver profiles (not device profiles!) to the specified file, placed in the `profiles` config directory.
+
+You'll likely want to put your filename in quotes.
 
 ##Loading
 
