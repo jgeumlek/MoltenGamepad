@@ -13,7 +13,7 @@ void print_profile(profile &profile, std::ostream &out) {
     out << profile.name << ".(" << chord.first.first << ","<< chord.first.second <<") = " << chord.second->to_string() << std::endl;
   }
   if (profile.mapping.empty() && profile.chords.empty())
-    out << "(empty profile)"<<std::endl;
+    out << "#(empty profile)"<<std::endl;
 }
 
 int do_print_profile(moltengamepad* mg, std::string name, std::ostream &out) {

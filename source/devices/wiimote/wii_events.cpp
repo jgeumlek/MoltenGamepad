@@ -63,8 +63,8 @@ const source_event wiimote_events[] = {
 {EVNAME(nk_accel_x),"[NOT WORKING]Nunchuk X acceleration",ABS},
 {EVNAME(nk_accel_y),"[NOT WORKING]Nunchuk Y acceleration",ABS},
 {EVNAME(nk_accel_z),"[NOT WORKING]Nunchuk Z acceleration",ABS},
-{EVNAME(nk_stick_x),"[NOT WORKING]Nunchuk stick X",ABS},
-{EVNAME(nk_stick_y),"[NOT WORKING]Nunchuk stick Y",ABS},
+{EVNAME(nk_stick_x),"Nunchuk stick X",ABS},
+{EVNAME(nk_stick_y),"Nunchuk stick Y",ABS},
 
 {EVNAME(cc_left_x),"Classic Controller Left Stick X",ABS},
 {EVNAME(cc_left_y),"Classic Controller Left Stick Y",ABS},

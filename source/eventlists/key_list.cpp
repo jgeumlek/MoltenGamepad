@@ -549,6 +549,5 @@ const event_listing key_list[] = {
   {BTN_TRIGGER_HAPPY39, "btn_trigger_happy39",""},
   {BTN_TRIGGER_HAPPY40, "btn_trigger_happy40",""},
   {KEY_MIN_INTERESTING, "key_min_interesting",""},
-  {KEY_MUTE, "key_mute",""},
 {-1,nullptr,nullptr},
 };
