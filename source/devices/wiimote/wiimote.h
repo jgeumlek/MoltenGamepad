@@ -85,7 +85,7 @@ public:
   virtual struct name_descr get_info() {
     struct name_descr desc;
     desc.name = name;
-    desc.descr = "TBD";
+    desc.descr = "Wiimote";
     return desc;
   }
   void enable_ir(bool enable);
@@ -110,11 +110,17 @@ public:
   void read_wiimote();
 protected:
   void process(void*);
+  virtual int process_option(const char* opname, const char* value);
+
 private:
-  bool toggle_ir;
-  bool toggle_accel;
+  bool wm_accel_active = false;
+  bool nk_accel_active = false;
+  bool wm_ir_active = false;
+  bool nk_ir_active = false;
+  
+  bool active_ir = false;
+  bool active_accel = false;
   bool toggle_motionplus;
-  bool toggle_nunchuk_accel;
   void listen_node(int type,int fd);
   void open_node(struct dev_node* node);
   void process_core();

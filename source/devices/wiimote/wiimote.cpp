@@ -8,6 +8,9 @@ wiimote::wiimote(slot_manager* slot_man) : wii_dev(slot_man) {
     for (int i = 0; i < wii_event_max; i++) {
       register_event(wiimote_events[i]);
     }
+    for (int i = 0; !wiimote_options[i].name.empty(); i++) {
+      register_option(wiimote_options[i]);
+    }
     
 }
 
@@ -23,6 +26,31 @@ wiimote::~wiimote() {
    
    
    free (nameptr);
+}
+
+int wiimote::process_option(const char* name, const char* value) {
+  if (!strcmp(name,"wm_accel_active")) {
+    if (!strcmp(name,"true")) { wm_accel_active = true; return 0;};
+    if (!strcmp(name,"false")) { wm_accel_active = false; return 0;};
+    return -1;
+  }
+  if (!strcmp(name,"nk_accel_active")) {
+    if (!strcmp(name,"true")) { nk_accel_active = true; return 0;};
+    if (!strcmp(name,"false")) { nk_accel_active = false; return 0;};
+    return -1;
+  }
+  if (!strcmp(name,"wm_ir_active")) {
+    if (!strcmp(name,"true")) { wm_ir_active = true; return 0;};
+    if (!strcmp(name,"false")) { wm_ir_active = false; return 0;};
+    return -1;
+  }
+  if (!strcmp(name,"nk_ir_active")) {
+    if (!strcmp(name,"true")) { nk_ir_active = true; return 0;};
+    if (!strcmp(name,"false")) { nk_ir_active = false; return 0;};
+    return -1;
+  }
+  
+  return -1;
 }
 
 void wiimote::clear_node(struct dev_node* node) {
@@ -168,7 +196,7 @@ void wiimote::list_events(cat_list &list) {
   struct name_descr info;
   
   cat.name = "Wiimote";
-  for (int i = 0; i <= events.size(); i++) {
+  for (int i = 0; i < events.size(); i++) {
     info.name = wiimote_events[i].name;
     info.descr = wiimote_events[i].descr;
     info.data = wiimote_events[i].type;

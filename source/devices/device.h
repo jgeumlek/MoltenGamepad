@@ -42,6 +42,12 @@ struct source_event {
   event_translator* trans;
 };
 
+struct source_option {
+  std::string name;
+  std::string descr;
+  std::string value;
+};
+
 
 class input_source {
 public:
@@ -52,16 +58,14 @@ public:
   }
   virtual void list_events(cat_list &list) {
   }
-  virtual void list_options(name_list &list) {
-  }
+  void list_options(std::vector<source_option> &list);
   virtual void set_slot(virtual_device* outdev) {
     this->out_dev = outdev;
   }
   
   void update_map(const char* evname, event_translator* trans);
   void update_chord(const char* key1, const char* key2, event_translator* trans);
-  virtual void update_option(const char* opname, const char* value) {
-  }
+  void update_option(const char* opname, const char* value);
   
   virtual enum entry_type entry_type(const char* name) {
   }
@@ -80,12 +84,14 @@ protected:
   int internalpipe = 0;
   std::vector<source_event> events;
   std::map<std::pair<int,int>,event_translator*> chords;
+  std::map<std::string,source_option> options;
   std::thread* thread = nullptr;
   volatile bool keep_looping = true;
   
 
   
   void register_event(source_event ev);
+  void register_option(source_option ev);
   void watch_file(int fd, void* tag);
   void set_trans(int id, event_translator* trans);
   void send_value(int id, long long value);
@@ -94,6 +100,7 @@ protected:
   void thread_loop();
   
   virtual void process(void* tag) {};
+  virtual int process_option(const char* opname, const char* value) { return 0; };
   
 
 };

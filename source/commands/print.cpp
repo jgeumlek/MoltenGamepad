@@ -69,6 +69,15 @@ int do_print_devs(moltengamepad* mg, std::string name, std::ostream &out) {
           out << e.name << ":\t" << e.descr << std::endl;
         }
       }
+      
+      std::vector<source_option> list;
+      dev->list_options(list);
+      out << "\n"<<dev->name << " options:"<<std::endl;
+      for (auto v: list) {
+        out << "?" << v.name <<" = " << v.value <<"\n\t" << v.descr << std::endl;
+      }
+      if (list.empty()) { out <<"(no options)" << std::endl;}
+      
       return 0;
     }
     

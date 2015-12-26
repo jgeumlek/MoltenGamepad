@@ -41,6 +41,11 @@ void input_source::register_event(source_event ev) {
   events.push_back(ev);
 }
 
+void input_source::register_option(source_option opt) {
+  
+  options.insert(std::pair<std::string,source_option>(opt.name,opt));
+}
+
 
 void input_source::watch_file(int fd, void* tag) {
   if (fd <= 0) return;
@@ -60,6 +65,25 @@ void input_source::update_map(const char* evname, event_translator* trans) {
       set_trans(i,trans->clone());
       return;
     }
+  }
+}
+
+void input_source::update_option(const char* name, const char* value) {
+  std::string sname = std::string(name);
+  std::string svalue = std::string(value);
+  auto it = options.find(sname);
+  if (it != options.end()) {
+    if (!process_option(name,value)) {
+      it->second.value = svalue;
+    } else {
+      //Device rejected the option.
+    }
+  }
+}
+
+void input_source::list_options(std::vector<source_option> &list) {
+  for (auto e : options) {
+    list.push_back(e.second);
   }
 }
 

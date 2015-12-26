@@ -76,4 +76,9 @@ wii_event_max
 
 extern const source_event wiimote_events[];
 
+
+
+extern const source_option wiimote_options[];
+
+
 #endif

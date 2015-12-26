@@ -4,6 +4,7 @@
 #define EVNAME(X) X,#X
 #define BTN DEV_KEY,0,nullptr
 #define ABS DEV_AXIS,0,nullptr
+#define OPT DEV_OPTION
 
 const source_event wiimote_events[] = {
 {EVNAME(wm_a),"Wiimote A button",BTN},
@@ -71,8 +72,17 @@ const source_event wiimote_events[] = {
 {EVNAME(cc_right_x),"Classic Controller Right Stick X",ABS},
 {EVNAME(cc_right_y),"Classic Controller Right Stick Y",ABS},
 
-{-1,nullptr, nullptr}
+{-1,nullptr, nullptr,NO_ENTRY,0,nullptr}
 };
+
+const source_option wiimote_options[] = {
+{"wm_accel_active","Enable accelerometers when no extension","false"},
+{"nk_accel_active","Enable accelerometers when nunchuk is present","false"},
+{"wm_ir_active","Enable IR data when no extension","false"},
+{"nk_ir_active","Enable IR data when nunchuk is present","false"},
+{"","",""},
+};
+
 
 void wiimote::process(int type, int event_id, long long value) {
   if (!out_dev) return;
