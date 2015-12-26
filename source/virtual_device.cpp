@@ -19,6 +19,7 @@ virtual_gamepad::virtual_gamepad(std::string name, std::string descr, virtpad_se
    options["product_id"] = std::to_string(settings.u_ids.product_id);
    options["version_id"] = std::to_string(settings.u_ids.version_id);
    options["facemap_1234"] = get_face_map();
+   this->padstyle = settings;
 }
 
 virtual_keyboard::virtual_keyboard(std::string name, std::string descr, uinput_ids u_ids, uinput* ui) : virtual_device(name,descr) {
@@ -28,6 +29,7 @@ virtual_keyboard::virtual_keyboard(std::string name, std::string descr, uinput_i
    options["vendor_id"] = std::to_string(u_ids.vendor_id);
    options["product_id"] = std::to_string(u_ids.product_id);
    options["version_id"] = std::to_string(u_ids.version_id);
+   this->u_ids = u_ids;
 }
 
 
@@ -44,6 +46,7 @@ void virtual_gamepad::take_event(struct input_event in) {
       in.value *= dpad_hat_mult[index];
     }
     if (in.type == EV_KEY && (in.code >= BTN_SOUTH && in.code <= BTN_WEST)) {
+      if (in.code >= BTN_C) in.code--; //Skip BTN_C for computing the offset
       in.code = face_1234[in.code - BTN_SOUTH];
     }
     if (in.type == EV_ABS && (in.code == ABS_Z || in.code == ABS_RZ)) {

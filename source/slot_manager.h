@@ -16,7 +16,7 @@ class slot_manager {
 public:
    
 
-   slot_manager(int num_pads, bool keys, bool dpad_as_hat);
+   slot_manager(int num_pads, bool keys, const virtpad_settings &padstyle);
 
    ~slot_manager();
    

@@ -39,6 +39,7 @@ int main(int argc, char* argv[]) {
   options.make_mouse = false;
   options.make_pointer = false;
   options.dpad_as_hat = false;
+  options.mimic_xpad = false;
   options.num_gamepads = 4;
   options.config_dir = "";
   options.profile_dir = "";
@@ -113,6 +114,9 @@ int print_usage(char* execname) {
 "\n"\
 "--dpad-as-hat\n"\
 "\tOutput dpad events as a hat rather than separate buttons\n"\
+"\n"\
+"--mimic-xpad\n"\
+"\tMake the virtual output devices appear as xpad-style XBox 360 devices\n"\
 ;
 
   std::cout << help_text;
@@ -137,7 +141,8 @@ int parse_opts(moltengamepad::mg_options &options, int argc, char* argv[]) {
     {"no-make-keys",  0,    0,    0},
     {"no-enumerate",  0,    0,    0},
     {"no-monitor",    0,    0,    0},
-    {"dpad-as-hat",    0,    0,    0},
+    {"dpad-as-hat",   0,    0,    0},
+    {"mimic-xpad",    0,    0,    0},
     {0,               0,    0,    0},
   };
   int long_index;
@@ -150,6 +155,7 @@ int parse_opts(moltengamepad::mg_options &options, int argc, char* argv[]) {
         if (long_index == 9) {options.look_for_devices = false;};
         if (long_index == 10) {options.listen_for_devices = false;};
         if (long_index == 11) {options.dpad_as_hat = true;};
+        if (long_index == 12) {options.mimic_xpad = true;};
         break;
       case 'u':
         options.uinput_path = std::string(optarg);

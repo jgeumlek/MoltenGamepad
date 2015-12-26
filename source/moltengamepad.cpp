@@ -8,6 +8,21 @@
 moltengamepad::moltengamepad() {
 }
 
+//FUTURE WORK: Make it easier to specify additional virtpad styles.
+const virtpad_settings default_padstyle = {
+  {"Virtual Gamepad (MoltenGamepad)",1,1,1}, //u_ids
+  false, //dpad_as_hat
+  true, //analog_triggers
+  "SEWN", //facemap_1234
+};
+
+const virtpad_settings xpad_padstyle = {
+  {"Microsoft X-Box 360 pad",0x045e,0x028e,0x110}, //u_ids
+  true, //dpad_as_hat
+  true, //analog_triggers
+  "SENW", //facemap_1234
+};
+
 moltengamepad::~moltengamepad() {
   
   
@@ -59,7 +74,10 @@ int fifo_loop(moltengamepad* mg) {
 }
 
 int moltengamepad::init() {
-  slots = new slot_manager(options.num_gamepads, options.make_keyboard, options.dpad_as_hat);
+  virtpad_settings padstyle = default_padstyle;
+  padstyle.dpad_as_hat = options.dpad_as_hat;
+  if (options.mimic_xpad) padstyle = xpad_padstyle;
+  slots = new slot_manager(options.num_gamepads, options.make_keyboard, padstyle);
   
   devs.push_back( new wiimotes(slots));
   

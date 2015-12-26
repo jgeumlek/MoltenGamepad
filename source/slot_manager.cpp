@@ -1,6 +1,6 @@
 #include "slot_manager.h"
 
-slot_manager::slot_manager(int num_pads, bool keys, bool dpad_as_hat) {
+slot_manager::slot_manager(int num_pads, bool keys, const virtpad_settings &padstyle) {
      ui = new uinput();
      dummyslot = new virtual_device("blank","Dummy slot (ignores all events)");
      debugslot = new debug_device("debugslot","Prints out all received events");
@@ -10,11 +10,6 @@ slot_manager::slot_manager(int num_pads, bool keys, bool dpad_as_hat) {
        keyboard = new virtual_device("keyboard(disabled)", "Disabled virtual keyboard slot");
      }
      
-     virtpad_settings padstyle;
-     padstyle.u_ids = {"Virtual Gamepad (MoltenGamepad)",1,1,1};
-     padstyle.dpad_as_hat = dpad_as_hat;
-     padstyle.analog_triggers = true;
-     padstyle.facemap_1234 = "SEWN";
      for (int i = 0; i < num_pads; i++) {
       slots.push_back(new virtual_gamepad("virtpad" + std::to_string(i+1),"A virtual gamepad",padstyle,ui));
      }

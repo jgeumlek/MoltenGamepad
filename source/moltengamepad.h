@@ -23,6 +23,7 @@ public:
     bool make_mouse = false;
     bool make_pointer = false;
     bool dpad_as_hat = false;
+    bool mimic_xpad = false;
     int  num_gamepads = 4;
     std::string config_dir;
     std::string profile_dir;

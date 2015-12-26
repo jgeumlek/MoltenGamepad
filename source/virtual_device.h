@@ -52,6 +52,8 @@ public:
 protected:
   virtual int process_option(std::string name, std::string value);
   
+  virtpad_settings padstyle;
+  
   int face_1234[4] = {BTN_SOUTH,BTN_EAST,BTN_WEST,BTN_NORTH};
   void set_face_map(std::string map);
   std::string get_face_map();
@@ -64,6 +66,8 @@ public:
     write(uinput_fd,&in,sizeof(in));
    };
 protected:
+  
+  uinput_ids u_ids;
   virtual int process_option(std::string name, std::string value);
 };
 
