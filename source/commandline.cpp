@@ -10,10 +10,12 @@ int do_save(moltengamepad* mg, std::vector<token> &command);
 int do_print(moltengamepad* mg, std::vector<token> &command);
 int do_load(moltengamepad* mg, std::vector<token> &command);
 int do_move(moltengamepad* mg, std::vector<token> &command);
+int do_alterslot(moltengamepad* mg, std::vector<token> &command);
   
 #define HELP_TEXT "available commands:\n"\
 "\tprint:\tprint out lists and information\n"\
 "\tmove:\tmove a device to a different slot\n"\
+"\talterslot:\tchange a slot setting\n"\
 "\tsave:\tsave all profiles to a file\n"\
 "\tload:\tload profiles from a file\n"\
 "\tquit:\tquit this application\n"\
@@ -36,6 +38,7 @@ int do_command(moltengamepad* mg, std::vector<token> &command) {
     
   if (command.front().value == "save") return do_save(mg,command);
   if (command.front().value == "load") return do_load(mg,command);
+  if (command.front().value == "alterslot") return do_alterslot(mg,command);
   if (command.front().value == "help") {std::cout<<HELP_TEXT<<std::endl; return 0;};
   if (command.front().value == "quit") {return 0;};
   std::cout << "Command not recognized. \"help\" for available commands" << std::endl;

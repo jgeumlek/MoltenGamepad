@@ -7,25 +7,29 @@
 #include <errno.h>
 #include <unistd.h>
 #include <string.h>
+#include <string>
 #include <stdio.h>
 
 void uinput_destroy(int fd);
+
+struct uinput_ids {
+  std::string device_string;
+  int vendor_id;
+  int product_id;
+  int version_id;
+};
 
 class uinput {
 public:
   uinput();
   ~uinput();
-  int make_gamepad(bool dpad_as_hat,bool analog_triggers);
-  int make_keyboard();
-  int make_mouse();
-  int make_pointer();
+  int make_gamepad(const uinput_ids &ids, bool dpad_as_hat,bool analog_triggers);
+  int make_keyboard(const uinput_ids &ids);
+  int make_mouse(const uinput_ids &ids);
+  int make_pointer(const uinput_ids &ids);
 
 private:
   const char* filename;
-  const char* gamepad_name;
-  const char* keyboard_name;
-  const char* mouse_name;
-  const char* pointer_name;
 };
 
 #endif

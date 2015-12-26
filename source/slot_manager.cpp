@@ -2,18 +2,21 @@
 
 slot_manager::slot_manager(int num_pads, bool keys, bool dpad_as_hat) {
      ui = new uinput();
-     dummyslot = new virtual_device("blank");
-     dummyslot->descr = "Dummy slot (ignores all events)";
+     dummyslot = new virtual_device("blank","Dummy slot (ignores all events)");
      debugslot = new debug_device("debugslot","Prints out all received events");
      if (keys) {
-       keyboard = new virtual_keyboard("keyboard",ui);
+       keyboard = new virtual_keyboard("keyboard","A virtual keyboard",{"Virtual Keyboard (MoltenGamepad)",1,1,1},ui);
      } else {
-       keyboard = new virtual_device("keyboard(disabled)");
-       keyboard->descr = "Disabled Keyboard slot";
+       keyboard = new virtual_device("keyboard(disabled)", "Disabled virtual keyboard slot");
      }
      
+     virtpad_settings padstyle;
+     padstyle.u_ids = {"Virtual Gamepad (MoltenGamepad)",1,1,1};
+     padstyle.dpad_as_hat = dpad_as_hat;
+     padstyle.analog_triggers = true;
+     padstyle.facemap_1234 = "SEWN";
      for (int i = 0; i < num_pads; i++) {
-      slots.push_back(new virtual_gamepad("virtpad" + std::to_string(i+1),dpad_as_hat,true,ui));
+      slots.push_back(new virtual_gamepad("virtpad" + std::to_string(i+1),"A virtual gamepad",padstyle,ui));
      }
 }
 

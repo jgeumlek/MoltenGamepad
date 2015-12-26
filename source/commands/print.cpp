@@ -113,16 +113,19 @@ int do_print_drivers(moltengamepad* mg, std::string name, std::ostream &out) {
 int do_print_slots(moltengamepad* mg, std::string name, std::ostream &out) {
   if (name.empty()) {
     for (auto slot : mg->slots->slots) {
-      out << slot->name <<  std::endl;
+      out << slot->name << ":\t" << slot->descr <<  std::endl;
     }
-    out << mg->slots->keyboard->name <<std::endl;
-    out << mg->slots->dummyslot->name<<std::endl;
-    if (mg->slots->debugslot) out << mg->slots->debugslot->name<<std::endl;
+    out << mg->slots->keyboard->name << ":\t" << mg->slots->keyboard->descr <<std::endl;
+    out << mg->slots->dummyslot->name<< ":\t" << mg->slots->dummyslot->descr <<std::endl;
+    if (mg->slots->debugslot) out << mg->slots->debugslot->name<< ":\t" << mg->slots->debugslot->descr <<std::endl;
     return 0;
   }
   virtual_device* slot = mg->slots->find_slot(name);
   if (slot) {
     out << slot->name << ":\t" << slot->descr << std::endl;
+    for (auto e : slot->options) {
+      out << "\t"<< e.first << " = " << e.second << std::endl;
+    }
   }
   
   return 0;

@@ -27,13 +27,12 @@ uinput::uinput() {
   filename = try_to_find_uinput();
   if (filename == nullptr) throw -1;
 
-  gamepad_name = "Virtual Gamepad (MoltenGamepad)";
-  keyboard_name = "Virtual Keyboard (MoltenGamepad)";
+  
 }
 
-int uinput::make_gamepad(bool dpad_as_hat, bool analog_triggers) {
+int uinput::make_gamepad(const uinput_ids &ids, bool dpad_as_hat, bool analog_triggers) {
   static int abs[] = { ABS_X, ABS_Y, ABS_RX, ABS_RY};
-  static int key[] = { BTN_SOUTH, BTN_EAST, BTN_NORTH, BTN_WEST, BTN_SELECT, BTN_MODE, BTN_START, BTN_TL, BTN_TL2, BTN_TR, BTN_TR2, BTN_THUMBL, BTN_THUMBR};
+  static int key[] = { BTN_SOUTH, BTN_EAST, BTN_NORTH, BTN_WEST, BTN_SELECT, BTN_MODE, BTN_START, BTN_TL, BTN_TR, BTN_THUMBL, BTN_THUMBR, -1};
   struct uinput_user_dev uidev;
   int fd;
   int i;
@@ -44,11 +43,11 @@ int uinput::make_gamepad(bool dpad_as_hat, bool analog_triggers) {
     return -1;
   }
   memset(&uidev, 0, sizeof(uidev));
-  snprintf(uidev.name, UINPUT_MAX_NAME_SIZE, gamepad_name);
+  snprintf(uidev.name, UINPUT_MAX_NAME_SIZE, ids.device_string.c_str());
   uidev.id.bustype = BUS_USB;
-  uidev.id.vendor = 0x1;
-  uidev.id.product = 0x1;
-  uidev.id.version = 1;
+  uidev.id.vendor = ids.vendor_id;
+  uidev.id.product = ids.product_id;
+  uidev.id.version = ids.version_id;
 
   ioctl(fd, UI_SET_EVBIT, EV_ABS);
   for (i = 0; i < 4; i++) {
@@ -70,7 +69,7 @@ int uinput::make_gamepad(bool dpad_as_hat, bool analog_triggers) {
   }
 
   ioctl(fd, UI_SET_EVBIT, EV_KEY);
-  for (i = 0; i < 17; i++) {
+  for (i = 0; key[i] >= 0; i++) {
     ioctl(fd, UI_SET_KEYBIT, key[i]);
   }
   
@@ -89,6 +88,11 @@ int uinput::make_gamepad(bool dpad_as_hat, bool analog_triggers) {
     ioctl(fd, UI_SET_KEYBIT, BTN_DPAD_LEFT);
     ioctl(fd, UI_SET_KEYBIT, BTN_DPAD_RIGHT);
   }
+  if (!analog_triggers) {
+    ioctl(fd,UI_SET_KEYBIT, BTN_TL2);
+    ioctl(fd,UI_SET_KEYBIT, BTN_TR2);
+  }
+    
 
   write(fd, &uidev, sizeof(uidev));
   if (ioctl(fd, UI_DEV_CREATE) < 0)
@@ -97,7 +101,7 @@ int uinput::make_gamepad(bool dpad_as_hat, bool analog_triggers) {
 }
 
 
-int uinput::make_keyboard() {
+int uinput::make_keyboard(const uinput_ids &ids) {
   struct uinput_user_dev uidev;
   int fd;
   int i;
@@ -109,11 +113,11 @@ int uinput::make_keyboard() {
     return -1;
   }
   memset(&uidev, 0, sizeof(uidev));
-  snprintf(uidev.name, UINPUT_MAX_NAME_SIZE, keyboard_name);
+  snprintf(uidev.name, UINPUT_MAX_NAME_SIZE, ids.device_string.c_str());
   uidev.id.bustype = BUS_USB;
-  uidev.id.vendor = 0x1;
-  uidev.id.product = 0x1;
-  uidev.id.version = 1;
+  uidev.id.vendor = ids.vendor_id;
+  uidev.id.product = ids.product_id;
+  uidev.id.version = ids.version_id;
 
   
 
