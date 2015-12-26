@@ -38,6 +38,5 @@ void virtual_gamepad::take_event(struct input_event in) {
       value /= 2*32768l;
       in.value = value;
     }
-    if(in.type != EV_SYN) std::cout << name<<": " << in.type << " " << in.code << " " << in.value << std::endl;
     write(uinput_fd,&in,sizeof(in));
 };

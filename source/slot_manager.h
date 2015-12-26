@@ -26,8 +26,9 @@ public:
    
    
    virtual_device* find_slot(std::string name);
-   virtual_device* keyboard;
-   virtual_device* dummyslot;
+   virtual_device* keyboard = nullptr;
+   virtual_device* dummyslot = nullptr;
+   virtual_device* debugslot = nullptr;
    std::vector<virtual_device*> slots;
 private:
    virtpad_type padtype;

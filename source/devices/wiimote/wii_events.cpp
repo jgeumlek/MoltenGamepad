@@ -50,7 +50,7 @@ const source_event wiimote_events[] = {
 {EVNAME(cc_zr),"Classic Controller ZR button",BTN},
 
 {EVNAME(wm_accel_x),"[NOT WORKING]Wiimote X acceleration ((-) <--> (+) axis)",ABS},
-{EVNAME(wm_accel_y),"[NOT WORKING]Wiimote Y acceleration (plug <--> pointer axis)"",ABS},
+{EVNAME(wm_accel_y),"[NOT WORKING]Wiimote Y acceleration (plug <--> pointer axis)",ABS},
 {EVNAME(wm_accel_z),"[NOT WORKING]Wiimote Z acceleration (top <--> bottom axis)",ABS},
 {EVNAME(wm_ir_x),"[NOT WORKING]Wiimote IR pointer X",ABS},
 {EVNAME(wm_ir_y),"[NOT WORKING]Wiimote IR pointer Y",ABS},

@@ -4,6 +4,7 @@ slot_manager::slot_manager(int num_pads, bool keys, bool dpad_as_hat) {
      ui = new uinput();
      dummyslot = new virtual_device("blank");
      dummyslot->descr = "Dummy slot (ignores all events)";
+     debugslot = new debug_device("debugslot","Prints out all received events");
      if (keys) {
        keyboard = new virtual_keyboard("keyboard",ui);
      } else {
@@ -22,6 +23,7 @@ slot_manager::~slot_manager() {
       delete ui;
       delete dummyslot;
       delete keyboard;
+      delete debugslot;
 }
 
 void slot_manager::request_slot(input_source* dev) {
@@ -75,5 +77,6 @@ virtual_device* slot_manager::find_slot(std::string slotname) {
     return keyboard;
   }
   if (slotname == dummyslot->name) return dummyslot;
+  if (slotname == debugslot->name) return debugslot;
   return nullptr;
 }

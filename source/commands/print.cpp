@@ -117,6 +117,7 @@ int do_print_slots(moltengamepad* mg, std::string name, std::ostream &out) {
     }
     out << mg->slots->keyboard->name <<std::endl;
     out << mg->slots->dummyslot->name<<std::endl;
+    if (mg->slots->debugslot) out << mg->slots->debugslot->name<<std::endl;
     return 0;
   }
   virtual_device* slot = mg->slots->find_slot(name);
