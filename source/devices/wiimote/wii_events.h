@@ -2,7 +2,7 @@
 #define WII_EVENTS_H
 
 
-
+//NOTE: Code abuses the fact wiimote buttons in nk_* follow/align with the orignal wm_* events
 enum wii_keys {
 wm_a,
 wm_b,
@@ -54,11 +54,10 @@ wm_ir_y,
 
 nk_wm_accel_x,
 nk_wm_accel_y,
-  
-  
 nk_wm_accel_z,
 nk_ir_x,
 nk_ir_y,
+
 nk_accel_x,
 nk_accel_y,
 nk_accel_z,

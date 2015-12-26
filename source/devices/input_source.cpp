@@ -161,6 +161,13 @@ void input_source::load_profile(profile* profile) {
     std::string first = str_pair.first.first;
     std::string second = str_pair.first.second;
   }
+  for (auto opt : options) {
+    std::string value = profile->get_option(opt.first);
+    if (!value.empty()) {
+      update_option(opt.first.c_str(),value.c_str());
+    }
+  }
+    
 }
 
 void input_source::export_profile(profile* profile) {
@@ -173,6 +180,9 @@ void input_source::export_profile(profile* profile) {
     int id2 = chord.first.second;
     event_translator* trans = chord.second->clone();
     profile->set_chord(events[id1].name,events[id2].name,trans);
+  }
+  for (auto opt : options) {
+    profile->set_option(opt.first,opt.second.value);
   }
 }
 

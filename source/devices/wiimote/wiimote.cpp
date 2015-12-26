@@ -30,23 +30,23 @@ wiimote::~wiimote() {
 
 int wiimote::process_option(const char* name, const char* value) {
   if (!strcmp(name,"wm_accel_active")) {
-    if (!strcmp(name,"true")) { wm_accel_active = true; return 0;};
-    if (!strcmp(name,"false")) { wm_accel_active = false; return 0;};
+    if (!strcmp(value,"true")) { wm_accel_active = true; update_mode(); return 0;};
+    if (!strcmp(value,"false")) { wm_accel_active = false; update_mode(); return 0;};
     return -1;
   }
   if (!strcmp(name,"nk_accel_active")) {
-    if (!strcmp(name,"true")) { nk_accel_active = true; return 0;};
-    if (!strcmp(name,"false")) { nk_accel_active = false; return 0;};
+    if (!strcmp(value,"true")) { nk_accel_active = true; update_mode(); return 0;};
+    if (!strcmp(value,"false")) { nk_accel_active = false; update_mode(); return 0;};
     return -1;
   }
   if (!strcmp(name,"wm_ir_active")) {
-    if (!strcmp(name,"true")) { wm_ir_active = true; return 0;};
-    if (!strcmp(name,"false")) { wm_ir_active = false; return 0;};
+    if (!strcmp(value,"true")) { wm_ir_active = true; update_mode(); return 0;};
+    if (!strcmp(value,"false")) { wm_ir_active = false; update_mode(); return 0;};
     return -1;
   }
   if (!strcmp(name,"nk_ir_active")) {
-    if (!strcmp(name,"true")) { nk_ir_active = true; return 0;};
-    if (!strcmp(name,"false")) { nk_ir_active = false; return 0;};
+    if (!strcmp(value,"true")) { nk_ir_active = true; update_mode(); return 0;};
+    if (!strcmp(value,"false")) { nk_ir_active = false; update_mode(); return 0;};
     return -1;
   }
   
@@ -125,6 +125,8 @@ void wiimote::handle_event(struct udev_device* dev) {
       store_node(dev,name);
 
     }
+    
+    update_mode();
 
   
   }
@@ -154,10 +156,14 @@ void wiimote::store_node(struct udev_device* dev, const char* name) {
   case IR:
     std::cout<< this->name << " IR found." << std::endl;
     ir.dev = udev_device_ref(dev);
+    if ((mode == NO_EXT && wm_ir_active) || (mode == NUNCHUK_EXT && nk_ir_active))
+      open_node(&ir);
     break;
   case ACCEL:
     std::cout<< this->name << " accelerometers found." << std::endl;
     accel.dev = udev_device_ref(dev);
+    if ((mode == NO_EXT && wm_accel_active) || (mode == NUNCHUK_EXT && nk_accel_active))
+      open_node(&ir);
     break;
   case MP:
     std::cout<< this->name << " motion+ found." << std::endl;
@@ -167,12 +173,14 @@ void wiimote::store_node(struct udev_device* dev, const char* name) {
     mode = NUNCHUK_EXT;
     nunchuk.dev = udev_device_ref(dev);
     open_node(&nunchuk);
+    update_mode();
     std::cout<< this->name << " gained a nunchuk." << std::endl;
     break;
   case E_CC:
     mode = CLASSIC_EXT;
     classic.dev = udev_device_ref(dev);
     open_node(&classic);
+    update_mode();
     std::cout<< this->name << " gained a classic controller." << std::endl;
     break;
   }
@@ -180,11 +188,32 @@ void wiimote::store_node(struct udev_device* dev, const char* name) {
 
 }
 
+void wiimote::update_mode() {
+  if ((mode == NO_EXT && wm_ir_active) || (mode == NUNCHUK_EXT && nk_ir_active)) {
+    if (ir.dev != nullptr && ir.fd < 0)
+      open_node(&ir);
+  } else {
+    if (ir.fd > 0) {
+      close(ir.fd);
+      ir.fd = -1;
+    }
+  }
+  if ((mode == NO_EXT && wm_accel_active) || (mode == NUNCHUK_EXT && nk_accel_active)) {
+    if (accel.dev != nullptr && accel.fd < 0)
+      open_node(&accel);
+  } else {
+    if (accel.fd > 0) {
+      close(accel.fd);
+      accel.fd = -1;
+    }
+  }
+}
+
 void wiimote::remove_node(const char* name) {
   if (!name) return;
   int node = name_to_node(name);
-  if (node == E_NK) clear_node(&nunchuk);
-  if (node == E_CC) clear_node(&classic);
+  if (node == E_NK) {clear_node(&nunchuk); remove_extension();};
+  if (node == E_CC) {clear_node(&classic); remove_extension();};
   if (node == MP) {
     std::cout << this->name << " motion+ removed.";
     clear_node(&motionplus);
@@ -253,6 +282,8 @@ void wiimote::process(void* tag) {
   int type = CORE;
   if (tag == &classic) type = E_CC;
   if (tag == &nunchuk) type = E_NK;
+  if (tag == &ir) type = IR;
+  if (tag == &accel) type = ACCEL;
   switch(type) {
     case CORE:
       process_core();
@@ -262,6 +293,12 @@ void wiimote::process(void* tag) {
       break;
     case E_NK:
       process_nunchuk(nunchuk.fd);
+      break;
+    case IR:
+      process_ir(ir.fd);
+      break;
+    case ACCEL:
+      process_accel(accel.fd);
       break;
   }
 }
@@ -340,6 +377,11 @@ void wiimotes::update_chords(const char* ev1, const char* ev2, event_translator*
   mapprofile.set_chord(ev1, ev2, trans->clone());
   for (auto it = wii_devs.begin(); it != wii_devs.end(); it++)
     (*it)->update_chord(ev1,ev2,trans);
+}
+void wiimotes::update_options(const char* opname, const char* value) {
+  mapprofile.set_option(opname, value);
+  for (auto it = wii_devs.begin(); it != wii_devs.end(); it++)
+    (*it)->update_option(opname,value);
 }
 
 input_source* wiimotes::find_device(const char* name) {

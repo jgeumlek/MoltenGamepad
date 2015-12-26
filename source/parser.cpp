@@ -34,7 +34,7 @@ void print_tokens(std::vector<token> &tokens) {
 }
 
 bool isIdent(char c) {
-  return isalnum(c) || c == '_' || c == '-' || c == '+';
+  return isalnum(c) || c == '_' || c == '-' || c == '+' || c == '?' ;
 }
 
 std::vector<token> tokenize(std::string line) {
@@ -171,6 +171,14 @@ void do_assignment(moltengamepad* mg, std::string header, std::string field, std
     if (dev) dev->update_map(entry,trans);
     
     if (trans) delete trans;
+  }
+  
+  if (rhs.empty()) return;
+  
+  if (field.front() == '?') {
+    field.erase(field.begin());
+    if (man) man->update_options(field.c_str(),rhs.front().value.c_str());
+    if (dev) dev->update_option(field.c_str(),rhs.front().value.c_str());
   }
   
 }

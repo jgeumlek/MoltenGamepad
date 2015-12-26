@@ -127,7 +127,7 @@ public:
   virtual void update_chords(const char* ev1,const char* ev2, event_translator* trans) {
   }
   
-  virtual void update_option(const char* opname, const char* value) {
+  virtual void update_options(const char* opname, const char* value) {
   }
   
   virtual input_source* find_device(const char* name) {

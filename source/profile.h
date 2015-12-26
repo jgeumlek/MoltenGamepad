@@ -11,6 +11,7 @@ class profile {
 public:
   const char* name;
   std::unordered_map<std::string, event_translator*> mapping;
+  std::unordered_map<std::string, std::string> options;
   std::map<str_pair, event_translator*> chords;
   
   event_translator* get_mapping(std::string in_event_name) {
@@ -41,6 +42,18 @@ public:
     }
     chords[key] = mapper;
   }
+  
+  void set_option(std::string opname, std::string value) {
+    options.erase(opname);
+    options[opname] = value;
+  }
+  
+  std::string get_option(std::string opname) {
+    auto it = options.find(opname);
+    if (it == options.end()) return "";
+    return it->second;
+  }
+    
   
   ~profile() {
     for (auto it = mapping.begin(); it != mapping.end(); it++) {

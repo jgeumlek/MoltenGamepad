@@ -58,6 +58,10 @@ public:
 struct wii_leds {
   int led_fd[4];
 };
+struct irdata {
+  int x = 1023;
+  int y = 1023;
+};
 
 enum modes {NO_EXT, NUNCHUK_EXT, CLASSIC_EXT};
 
@@ -92,9 +96,11 @@ public:
   void enable_accel(bool enable);
   void enable_motionplus(bool enable);
 
+  void update_mode();
   void remove_extension() {
     if (mode != NO_EXT) std::cout<< name << " lost its extension." << std::endl;
     mode = NO_EXT;
+    update_mode();
   }
   
   virtual void set_slot(virtual_device* out_dev) {
@@ -113,6 +119,7 @@ protected:
   virtual int process_option(const char* opname, const char* value);
 
 private:
+  irdata ircache[4];
   bool wm_accel_active = false;
   bool nk_accel_active = false;
   bool wm_ir_active = false;
@@ -126,6 +133,9 @@ private:
   void process_core();
   void process_classic(int fd);
   void process_nunchuk(int fd);
+  void process_accel(int fd);
+  void process_ir(int fd);
+  void compute_ir();
   void process(int type, int event_id, long long value);
   
   void clear_node(struct dev_node* node);
@@ -150,6 +160,7 @@ public:
   }
   
   virtual void update_maps(const char* evname, event_translator* trans);
+  virtual void update_options(const char* evname, const char* value);
   virtual void update_chords(const char* ev1,const char* ev2, event_translator* trans);
   
   virtual input_source* find_device(const char* name);

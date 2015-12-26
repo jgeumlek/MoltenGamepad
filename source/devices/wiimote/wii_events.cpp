@@ -49,8 +49,8 @@ const source_event wiimote_events[] = {
 {EVNAME(cc_r),"Classic Controller R button",BTN},
 {EVNAME(cc_zr),"Classic Controller ZR button",BTN},
 
-{EVNAME(wm_accel_x),"[NOT WORKING]Wiimote X acceleration (long axis)",ABS},
-{EVNAME(wm_accel_y),"[NOT WORKING]Wiimote Y acceleration ((+) <--> (-) axis)",ABS},
+{EVNAME(wm_accel_x),"[NOT WORKING]Wiimote X acceleration ((-) <--> (+) axis)",ABS},
+{EVNAME(wm_accel_y),"[NOT WORKING]Wiimote Y acceleration (plug <--> pointer axis)"",ABS},
 {EVNAME(wm_accel_z),"[NOT WORKING]Wiimote Z acceleration (top <--> bottom axis)",ABS},
 {EVNAME(wm_ir_x),"[NOT WORKING]Wiimote IR pointer X",ABS},
 {EVNAME(wm_ir_y),"[NOT WORKING]Wiimote IR pointer Y",ABS},
@@ -89,7 +89,6 @@ void wiimote::process(int type, int event_id, long long value) {
   
   send_value(event_id,value);
   
-  std::cout << name <<"."<< wiimote_events[event_id].name << " " <<  value << std::endl;
   
 }
   
@@ -180,4 +179,79 @@ void wiimote::process_nunchuk(int fd) {
       out_dev->take_event(ev);
     }
   }
+}
+
+#define WIIMOTE_ACCEL_SCALE ABS_RANGE/90
+void wiimote::process_accel(int fd) {
+  struct input_event ev;
+  int ret;
+  while(ret = read(fd,&ev,sizeof(ev)) > 0) {
+  int offset = 0;
+
+  if (mode == NUNCHUK_EXT) {
+    offset = nk_wm_accel_x;
+  } else {
+    offset = wm_accel_x;
+  }
+  if (ret > 0) {
+    switch (ev.code) {
+      case ABS_RX: process(EVENT_AXIS, offset+0,ev.value*WIIMOTE_ACCEL_SCALE); break;
+      case ABS_RY: process(EVENT_AXIS, offset+1,ev.value*WIIMOTE_ACCEL_SCALE); break;
+      case ABS_RZ: process(EVENT_AXIS, offset+2,ev.value*WIIMOTE_ACCEL_SCALE); break;
+      case SYN_REPORT: out_dev->take_event(ev);
+    }
+  }
+  }
+  if (ret < 0) perror("read accel");
+}
+
+#define IR_X_SCALE ABS_RANGE/500
+#define IR_Y_SCALE ABS_RANGE/350
+#define NO_IR_DATA 1023
+void wiimote::process_ir(int fd) {
+  struct input_event ev;
+  int ret;
+  while(ret = read(fd,&ev,sizeof(ev)) > 0) {
+    switch (ev.code) {
+      case ABS_HAT0X: ircache[0].x = ev.value; break;
+      case ABS_HAT0Y: ircache[0].y = ev.value; break;
+      case ABS_HAT1X: ircache[1].x = ev.value; break;
+      case ABS_HAT1Y: ircache[1].y = ev.value; break;
+      case ABS_HAT2X: ircache[2].x = ev.value; break;
+      case ABS_HAT2Y: ircache[2].y = ev.value; break;
+      case ABS_HAT3X: ircache[3].x = ev.value; break;
+      case ABS_HAT3Y: ircache[3].y = ev.value; break;
+      case SYN_REPORT: compute_ir(); out_dev->take_event(ev); break;
+    }
+  }
+  if (ret < 0) perror("read IR");
+}
+
+void wiimote::compute_ir() {
+  int num = 0;
+  int x = NO_IR_DATA;
+  int y = NO_IR_DATA;
+  int offset = 0;
+  //Current logic: Take the leftmost visible IR source.
+  //Not great, but better than nothing?
+  if (mode == NUNCHUK_EXT) {
+    offset = nk_ir_x;
+  } else {
+    offset = wm_ir_x;
+  }
+  
+  for (int i = 0; i < 4; i++) {
+    int ir_x = ircache[i].x;
+    int ir_y = ircache[i].y;
+    if (ir_x < x && ir_x != NO_IR_DATA && ir_x > 1) {
+      x = ir_x;
+      y = ir_y;
+      num++;
+    }
+  }
+  if (num != 0) {
+    process(EVENT_AXIS, offset+0, x*IR_X_SCALE);
+    process(EVENT_AXIS, offset+1, y*IR_Y_SCALE);
+  }
+  
 }
