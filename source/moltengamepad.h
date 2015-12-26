@@ -10,6 +10,7 @@
 #include "slot_manager.h"
 #include "uinput.h"
 #include "udev.h"
+#include "signalflags.h"
 
 #define VERSION_STRING "alpha"
 

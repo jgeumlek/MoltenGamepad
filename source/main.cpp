@@ -1,11 +1,36 @@
 #include <iostream>
 #include "moltengamepad.h"
 #include <getopt.h>
+#include <signal.h>
+#include <stdio.h>
+#include <csignal>
 
 
 int parse_opts(moltengamepad::mg_options &options,int argc, char* argv[]);
+volatile bool STOP_WORKING = true;
+volatile bool QUIT_APPLICATION = false;
+moltengamepad* app;
+void signal_handler(int signum) {
+  if (!STOP_WORKING) {
+    //A long running action is to be interrupted.
+    STOP_WORKING = true;
+    return;
+  }
+  //Otherwise, we want to interrupt everything! (And let them shut down appropriately)
+  QUIT_APPLICATION = true;
+  delete app;
+  exit(0);
+  
+  return;
+}
+
 
 int main(int argc, char* argv[]) {
+  STOP_WORKING = true;
+  QUIT_APPLICATION = false;
+  signal(SIGINT, signal_handler);
+  signal(SIGTERM, signal_handler);
+  //signal(SIGHUP, signal_handler);
   
   moltengamepad::mg_options options;
   options.look_for_devices = true;
@@ -27,11 +52,13 @@ int main(int argc, char* argv[]) {
   
   try {
 
-   moltengamepad mg(options);
+   moltengamepad* mg = new moltengamepad(options);
+   app = mg;
 
-   mg.init();
+   mg->init();
    
-   shell_loop(&mg, std::cin);
+   shell_loop(mg, std::cin);
+   delete mg;
 
   } catch (int e) {
     return e;

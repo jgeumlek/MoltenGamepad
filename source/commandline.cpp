@@ -48,7 +48,7 @@ int shell_loop(moltengamepad* mg, std::istream &in) {
   bool keep_looping = true;
   std::string header = "";
   char* buff = new char [1024];
-  while(keep_looping) {
+  while(!QUIT_APPLICATION && keep_looping) {
     in.getline(buff,1024);
     
     auto tokens = tokenize(std::string(buff));
