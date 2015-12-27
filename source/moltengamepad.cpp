@@ -20,7 +20,7 @@ const virtpad_settings xpad_padstyle = {
   {"Microsoft X-Box 360 pad",0x045e,0x028e,0x110}, //u_ids
   true, //dpad_as_hat
   true, //analog_triggers
-  "SENW", //facemap_1234
+  "SEWN", //facemap_1234
 };
 
 moltengamepad::~moltengamepad() {
