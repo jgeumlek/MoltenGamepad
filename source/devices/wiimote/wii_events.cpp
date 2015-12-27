@@ -85,10 +85,8 @@ const source_option wiimote_options[] = {
 
 
 void wiimote::process(int type, int event_id, long long value) {
-  if (!out_dev) return;
   
   send_value(event_id,value);
-  
   
 }
   
@@ -113,7 +111,7 @@ void wiimote::process_core() {
       case KEY_PREVIOUS: process(EVENT_KEY, offset+wm_minus,ev.value); break;
       case KEY_NEXT: process(EVENT_KEY, offset+wm_plus,ev.value); break;
       case BTN_MODE: process(EVENT_KEY, offset+wm_home,ev.value); break;
-      case SYN_REPORT: out_dev->take_event(ev);
+      case SYN_REPORT: if (out_dev) out_dev->take_event(ev);
     }
   }
   }
@@ -151,7 +149,7 @@ void wiimote::process_classic(int fd) {
       case ABS_HAT2Y:  process(EVENT_AXIS, cc_right_y,-ev.value*CLASSIC_STICK_SCALE); break;
     } else {
     
-      out_dev->take_event(ev);
+      if (out_dev) out_dev->take_event(ev);
 
     }
       
@@ -176,7 +174,7 @@ void wiimote::process_nunchuk(int fd) {
       case ABS_RZ:     process(EVENT_AXIS, nk_accel_z,ev.value*NUNCHUK_ACCEL_SCALE); break;
     } else {
       
-      out_dev->take_event(ev);
+      if (out_dev) out_dev->take_event(ev);
     }
   }
 }
@@ -198,7 +196,7 @@ void wiimote::process_accel(int fd) {
       case ABS_RX: process(EVENT_AXIS, offset+0,ev.value*WIIMOTE_ACCEL_SCALE); break;
       case ABS_RY: process(EVENT_AXIS, offset+1,ev.value*WIIMOTE_ACCEL_SCALE); break;
       case ABS_RZ: process(EVENT_AXIS, offset+2,ev.value*WIIMOTE_ACCEL_SCALE); break;
-      case SYN_REPORT: out_dev->take_event(ev);
+      case SYN_REPORT: if (out_dev) out_dev->take_event(ev);
     }
   }
   }
@@ -221,7 +219,7 @@ void wiimote::process_ir(int fd) {
       case ABS_HAT2Y: ircache[2].y = ev.value; break;
       case ABS_HAT3X: ircache[3].x = ev.value; break;
       case ABS_HAT3Y: ircache[3].y = ev.value; break;
-      case SYN_REPORT: compute_ir(); out_dev->take_event(ev); break;
+      case SYN_REPORT: compute_ir(); if (out_dev) out_dev->take_event(ev); break;
     }
   }
   if (ret < 0) perror("read IR");

@@ -356,7 +356,6 @@ int wiimotes::accept_device(struct udev* udev, struct udev_device* dev) {
     wm->base.dev = udev_device_ref(parent);
     wm->handle_event(dev);
     wii_devs.push_back(wm);
-    slot_man->request_slot(wm);
     wm->start_thread();
     wm->load_profile(&mapprofile);
   } else {

@@ -145,6 +145,8 @@ void input_source::send_value(int id, long long value) {
   
   if (events.at(id).trans && out_dev) events.at(id).trans->process({value},out_dev);
   
+  //On a key press, try to claim a slot if we don't have one. 
+  if (!out_dev && events.at(id).type == DEV_KEY) { slot_man->request_slot(this); };
   process_chords();
   
 }

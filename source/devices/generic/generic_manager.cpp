@@ -122,7 +122,6 @@ void generic_manager::create_inputs(generic_file* opened_file,int fd, bool watch
       gendev->nameptr = newdevname;
       gendev->name = newdevname;
       opened_file->add_dev(gendev);
-      slot_man->request_slot(gendev);
       gendev->start_thread();
       gendev->load_profile(&mapprofile);
     }

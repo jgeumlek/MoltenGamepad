@@ -61,6 +61,11 @@ public:
   void list_options(std::vector<source_option> &list);
   virtual void set_slot(virtual_device* outdev) {
     this->out_dev = outdev;
+    if (outdev)  {
+      std::cout << name << " assigned to slot " << outdev->name << std::endl;
+    } else {
+      std::cout << name << " not assigned to a slot" << std::endl;
+    }
   }
   
   void update_map(const char* evname, event_translator* trans);

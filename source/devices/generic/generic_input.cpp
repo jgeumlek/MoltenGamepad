@@ -73,7 +73,7 @@ void generic_device::process(void* tag) {
   if (pipe_read >= 0 && tag == &pipe_read) {file = pipe_read;};
   int ret = read(file,&ev,sizeof(ev));
   if (ret > 0) {
-    if (ev.type == EV_SYN) {
+    if (ev.type == EV_SYN && out_dev) {
       out_dev->take_event(ev);
       return;
     }
