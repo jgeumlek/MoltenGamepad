@@ -103,9 +103,7 @@ public:
     update_mode();
   }
   
-  virtual void set_slot(virtual_device* out_dev) {
-    this->out_dev = out_dev;
-  }
+ 
   
   void store_node(struct udev_device* dev, const char* name);
   void remove_node(const char* name);
