@@ -22,7 +22,8 @@ int do_alterslot(moltengamepad* mg, std::vector<token> &command);
 "\t<profile>.<event> = <outevent>\n"\
 "\t\tchange the event mapping for <event> to <outevent> in the profile <profile>"
 int do_command(moltengamepad* mg, std::vector<token> &command) {
-  if (command.empty()) return -1;
+  if (command.empty()) return 0;
+  if (command.front().type == TK_ENDL) return 0;
   if (command.front().value == "print") {
     device_delete_lock.lock();
     do_print(mg,command);

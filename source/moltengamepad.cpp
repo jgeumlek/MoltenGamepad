@@ -112,19 +112,23 @@ int moltengamepad::init() {
   udev.set_managers(&devs);
   if (options.listen_for_devices) udev.start_monitor();
   if (options.look_for_devices)   udev.enumerate();
-  
-  const char *run_dir = getenv("XDG_RUNTIME_DIR");
-  if (options.fifo_path.empty() && (!run_dir || run_dir)) {
-    options.fifo_path = std::string(run_dir) + "/moltengamepad";
-  }
-  int ret = mkfifo(options.fifo_path.c_str(),0666);
-  if (ret < 0)  {
-    perror("making fifo:");
-    options.fifo_path = "";
-    
-  } else {
-    remote_handler = new std::thread(fifo_loop,this);
-    
+  if (options.make_fifo) {
+    const char *run_dir = getenv("XDG_RUNTIME_DIR");
+    if (options.fifo_path.empty() && run_dir) {
+      options.fifo_path = std::string(run_dir) + "/moltengamepad";
+    }
+    if (options.fifo_path.empty()) {
+      std::cerr << "Could not locate fifo path. Use the --fifo-path command line argument." << std::endl;
+      throw -1;
+    }
+    int ret = mkfifo(options.fifo_path.c_str(),0666);
+    if (ret < 0)  {
+      perror("making fifo:");
+      options.fifo_path = "";
+      throw -1;
+    } else {
+      remote_handler = new std::thread(fifo_loop,this);
+    }
   }
   
   

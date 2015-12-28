@@ -19,6 +19,7 @@ public:
   struct mg_options {
     bool look_for_devices = true;
     bool listen_for_devices = true;
+    bool make_fifo = false;
     bool make_keyboard = true;
     bool make_mouse = false;
     bool make_pointer = false;

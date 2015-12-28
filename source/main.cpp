@@ -133,11 +133,12 @@ int parse_opts(moltengamepad::mg_options &options, int argc, char* argv[]) {
     {"help",          0,    0,  'h'},
     {"version",       0,    0,  'v'},
     {"uinput-path",   1,    0,  'u'},
-    {"fifo-path",     1,    0,  'f'},
     {"profiles-path", 1,    0,  'p'},
     {"gendev-path",   1,    0,  'g'},
     {"config-path",   1,    0,  'c'},
     {"num-gamepads",  1,    0,  'n'},
+    {"make-fifo",     1,    0,  'm'},
+    {"fifo-path",     1,    0,  'f'},
     {"no-make-keys",  0,    0,    0},
     {"no-enumerate",  0,    0,    0},
     {"no-monitor",    0,    0,    0},
@@ -148,18 +149,20 @@ int parse_opts(moltengamepad::mg_options &options, int argc, char* argv[]) {
   int long_index;
   
   while (c != -1) {
-    c = getopt_long(argc,argv,"u:p:g:n:c:f:hv", long_options, &long_index);
+    c = getopt_long(argc,argv,"u:p:g:n:c:f:mhv", long_options, &long_index);
     switch (c) {
       case 0:
-        if (long_index == 8) {options.make_keyboard = false;};
-        if (long_index == 9) {options.look_for_devices = false;};
-        if (long_index == 10) {options.listen_for_devices = false;};
-        if (long_index == 11) {options.dpad_as_hat = true;};
-        if (long_index == 12) {options.mimic_xpad = true;};
+        if (long_index == 9) {options.make_keyboard = false;};
+        if (long_index == 10) {options.look_for_devices = false;};
+        if (long_index == 11) {options.listen_for_devices = false;};
+        if (long_index == 12) {options.dpad_as_hat = true;};
+        if (long_index == 13) {options.mimic_xpad = true;};
         break;
       case 'u':
         options.uinput_path = std::string(optarg);
         break;
+      case 'm':
+        options.make_fifo = true;
       case 'f':
         options.fifo_path = std::string(optarg);
         break;
