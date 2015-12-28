@@ -54,6 +54,8 @@ void virtual_gamepad::take_event(struct input_event in) {
       value /= 2*32768l;
       in.value = value;
     }
+    if (analog_triggers && in.type == EV_KEY && in.code == BTN_TR2) { in.type = EV_ABS; in.code = ABS_RZ, in.value *= 255;}
+    if (analog_triggers && in.type == EV_KEY && in.code == BTN_TL2) { in.type = EV_ABS; in.code = ABS_Z,  in.value *= 255;}
     write(uinput_fd,&in,sizeof(in));
 };
 
