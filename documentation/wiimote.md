@@ -5,9 +5,9 @@ The MoltenGamepad wiimote driver is based off of the ideas of the WiimoteGlue pr
 * Combine the multiple kernel event devices into one.
 * Support changing the mapping when extensions are swapped.
 
-Notably MoltenGamepad DOES NOT yet support the accelerometers, LEDs, IR, the Wii balance board, or the Wii U Pro controller. Like WiimoteGlue, it will never support the Wii U Gamepad, and does not yet support the drums or guitar controllers.
+Notably MoltenGamepad DOES NOT yet support the LEDs, the Wii balance board, or the Wii U Pro controller. Like WiimoteGlue, it will never support the Wii U Gamepad, and does not yet support the drums or guitar controllers.
 
-(Accel and IR support should come once MoltenGamepad supports setting device options, since enabling them by default would drain batteries. Due to their planned inclusion, they appear in the event list, but are not functional)
+Accel and IR values are reported very simply, with a fair bit of noise and jitter as a result.
 
 A wiimote provides the following events, though only a subset will be reachable at any one time:
 
@@ -22,7 +22,6 @@ A wiimote provides the following events, though only a subset will be reachable 
 * wm_right (Wiimote Dpad right)
 * wm_up (Wiimote Dpad up)
 * wm_down (Wiimote Dpad down)
-
 * nk_a (Wiimote A button with Nunchuk)
 * nk_b (Wiimote B button with Nunchuk)
 * nk_plus (Wiimote + button with Nunchuk)
@@ -36,7 +35,6 @@ A wiimote provides the following events, though only a subset will be reachable 
 * nk_down (Wiimote Dpad down with Nunchuk)
 * nk_c (Nunchuk C button)
 * nk_z (Nunchuk Z button)
-
 * cc_a (Classic Controller A button)
 * cc_b (Classic Controller B button)
 * cc_x (Classic Controller X button)
@@ -52,14 +50,11 @@ A wiimote provides the following events, though only a subset will be reachable 
 * cc_zl (Classic Controller ZL button)
 * cc_r (Classic Controller R button)
 * cc_zr (Classic Controller ZR button)
-
 * wm_accel_x (Wiimote X acceleration (long axis))
 * wm_accel_y (Wiimote Y acceleration ((+) <--> (-) axis))
 * wm_accel_z (Wiimote Z acceleration (top <--> bottom axis))
 * wm_ir_x (Wiimote IR pointer X)
 * wm_ir_y (Wiimote IR pointer Y)
-
-
 * nk_wm_accel_x (Wiimote X acceleration with Nunchuk)
 * nk_wm_accel_y (Wiimote Y acceleration with Nunchuk)
 * nk_wm_accel_z (Wiimote Z acceleration with Nunchuk)
@@ -70,7 +65,6 @@ A wiimote provides the following events, though only a subset will be reachable 
 * nk_accel_z (Nunchuk Z acceleration)
 * nk_stick_x (Nunchuk stick X)
 * nk_stick_y (Nunchuk stick Y)
-
 * cc_left_x (Classic Controller Left Stick X)
 * cc_left_y (Classic Controller Left Stick Y)
 * cc_right_x (Classic Controller Right Stick X)
