@@ -159,9 +159,10 @@ void input_source::load_profile(profile* profile) {
       set_trans(id,trans);
     }
   }
-  for (auto str_pair : profile->chords) {
-    std::string first = str_pair.first.first;
-    std::string second = str_pair.first.second;
+  for (auto chord : profile->chords) {
+    std::string first = chord.first.first;
+    std::string second = chord.first.second;
+    update_chord(first.c_str(),second.c_str(),chord.second->clone());
   }
   for (auto opt : options) {
     std::string value = profile->get_option(opt.first);
