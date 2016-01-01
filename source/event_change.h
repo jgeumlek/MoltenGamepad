@@ -1,6 +1,7 @@
 #ifndef EVENT_CHANGE_H
 #define EVENT_CHANGE_H
 #include "virtual_device.h"
+#include "devices/device.h"
 #include <linux/input.h>
 #include <string>
 #include "eventlists/eventlist.h"
@@ -15,6 +16,9 @@ struct mg_ev {
   long long value;
 };
 
+class input_source;
+
+//A simple event translator. Takes one input event, and translates it. Essentially just a "pipe".
 class event_translator {
 public:
   virtual void process(struct mg_ev ev, virtual_device* out) {
@@ -23,15 +27,32 @@ public:
   void write_out(struct input_event ev, virtual_device* out) {
     out->take_event(ev);
   }
-  
+
+  //Should return the syntax used to make it.
+  //TODO: just go ahead and cache the string used to make it!
   virtual std::string to_string() {
     return "nothing";
   }
   
+  //event translators are passed around via cloning.
+  //This isn't just for memory management, but also
+  //lets the profile store a translator as a "prototype"
   virtual event_translator* clone() {return new event_translator(*this);}
   
   virtual ~event_translator() {};
   
+};
+
+//A more complicated event translator. It can request to listen to multiple events.
+class advanced_event_translator {
+public:
+  //Attach to an input source. Acts as an initializer.
+  virtual void attach(input_source* source) {};
+  //Return true to block the input source's native handling of this event.
+  virtual bool claim_event(int id, mg_ev event) { return false; };
+  //Similar to the above, acts as a prototype method.
+  virtual advanced_event_translator* clone() {return new advanced_event_translator(*this);}
+  virtual ~advanced_event_translator() {};
 };
 
 class btn2btn : public event_translator {

@@ -100,7 +100,8 @@ int moltengamepad::init() {
     file.open(globbuffer.gl_pathv[i], std::istream::in);
     
     if (!file.fail()) {
-      generic_config_loop(this, file);
+      int ret = generic_config_loop(this, file);
+      if (ret) std::cerr << "Generic device config "<< globbuffer.gl_pathv[i] << " failed.";
     }
   }
   

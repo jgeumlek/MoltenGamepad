@@ -40,6 +40,7 @@ struct source_event {
   enum entry_type type;
   long long value;
   event_translator* trans;
+  std::vector<advanced_event_translator*> attached;
 };
 
 struct source_option {

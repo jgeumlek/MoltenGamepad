@@ -141,6 +141,8 @@ void input_source::set_trans(int id, event_translator* trans) {
 
 
 void input_source::send_value(int id, long long value) {
+  for (auto adv_trans : events.at(id).attached)
+    if (adv_trans->claim_event(id,{value})) return;
   events.at(id).value = value;
   
   if (events.at(id).trans && out_dev) events.at(id).trans->process({value},out_dev);
