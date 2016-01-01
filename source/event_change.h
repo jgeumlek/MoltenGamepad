@@ -157,21 +157,30 @@ class axis2btns : public event_translator {
 public:
   int neg_btn;
   int pos_btn;
+  
+  int neg_cache = 0;
+  int pos_cache = 0;
   axis2btns(int neg_btn, int pos_btn) : neg_btn(neg_btn), pos_btn(pos_btn) {
   }
-  
+
   virtual void process(struct mg_ev ev, virtual_device* out) {
     struct input_event out_ev;
     memset(&out_ev,0,sizeof(out_ev));
     out_ev.type = EV_KEY;
     out_ev.code = neg_btn;
     out_ev.value = ev.value < -.8*RANGE;
-    write_out(out_ev,out);
+    if (out_ev.value != neg_cache) {
+      write_out(out_ev,out);
+      neg_cache = out_ev.value;
+    }
     
     out_ev.type = EV_KEY;
     out_ev.code = pos_btn;
     out_ev.value = ev.value > .8*RANGE;
-    write_out(out_ev,out);
+    if (out_ev.value != pos_cache) {
+      write_out(out_ev,out);
+      pos_cache = out_ev.value;
+    }
     
   }
   
