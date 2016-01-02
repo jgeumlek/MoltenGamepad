@@ -53,7 +53,7 @@ int uinput::make_gamepad(const uinput_ids &ids, bool dpad_as_hat, bool analog_tr
   for (i = 0; i < 4; i++) {
     ioctl(fd, UI_SET_ABSBIT, abs[i]);
     uidev.absmin[abs[i]] = -32768;
-    uidev.absmax[abs[i]] = 32768;
+    uidev.absmax[abs[i]] = 32767;
     uidev.absflat[abs[i]] = 1024;
   }
   
