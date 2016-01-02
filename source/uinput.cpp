@@ -53,7 +53,7 @@ int uinput::make_gamepad(const uinput_ids &ids, bool dpad_as_hat, bool analog_tr
   for (i = 0; i < 4; i++) {
     ioctl(fd, UI_SET_ABSBIT, abs[i]);
     uidev.absmin[abs[i]] = -32768;
-    uidev.absmax[abs[i]] = 32768;
+    uidev.absmax[abs[i]] = 32767;
     uidev.absflat[abs[i]] = 1024;
   }
   
@@ -125,7 +125,7 @@ int uinput::make_keyboard(const uinput_ids &ids) {
   /*Just set all possible keys that come before BTN_MISC
    * This should cover all reasonable keyboard keys.*/
   ioctl(fd, UI_SET_EVBIT, EV_KEY);
-  for (i = 2; i < BTN_MISC; i++) {
+  for (i = KEY_ESC; i < BTN_MISC; i++) {
     ioctl(fd, UI_SET_KEYBIT, i);
   }
   for (i = KEY_OK; i < KEY_MAX; i++) {
