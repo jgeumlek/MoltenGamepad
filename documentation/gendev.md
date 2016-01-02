@@ -17,6 +17,11 @@ Such a file has the following form, where `#` starts comments. All `<values>` MU
     ##Should we grab the device exclusively, preventing events from being seen by others?
     #exclusive="false" 
     
+    ##Should we block all permissions after opening, preventing others from even opening the device?
+    ##Note: requires active user to be the device node owner.
+    ##(This feature is still experimental)
+    #change_permissions="false" 
+    
     ##Should we coalesce all identified devices into one virtual input source?
     ##(Helpful for annoying devices that create a dead duplicate node,
     ## or if you know you want to combine all devices of this type)

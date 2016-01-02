@@ -46,20 +46,12 @@ int generic_manager::accept_device(struct udev* udev, struct udev_device* dev) {
   if (!strcmp(action,"remove")) {
     if (!path) return -1;
     for (auto it = openfiles.begin(); it != openfiles.end(); it++) {
-      auto nodes = &((*it)->nodes);
-      for (auto nodeit = nodes->begin(); nodeit != nodes->end(); nodeit++) {
-        const char* searchpath = udev_device_get_syspath(*nodeit);
-        if (!searchpath) { std::cout << ":(" << std::endl; return -1;};
-        if (!strcmp(path,searchpath)) {
-          std::cout << "GEN DEVICE DESTROYED." << std::endl;
-          udev_device_unref(*nodeit);
-          (*it)->nodes.erase(nodeit);
-          if ((*it)->nodes.empty()) {
-            delete (*it);
-            openfiles.erase(it);
-          }
-          return 0;
-        }
+      (*it)->close_node(dev);
+      if ((*it)->nodes.empty()) {
+        std::cout << "Generic driver " << name << " lost a device." << std::endl;
+        delete (*it);
+        openfiles.erase(it);
+        return 0;
       }
     }
   }
@@ -76,7 +68,7 @@ int generic_manager::accept_device(struct udev* udev, struct udev_device* dev) {
         for (auto it = descr->matches.begin(); it != descr->matches.end(); it++) {
           if (!strcmp((*it).name.c_str(),name)) {
             open_device(udev,dev);
-            
+            return 0;
           }
         }
       }
@@ -91,13 +83,13 @@ int generic_manager::accept_device(struct udev* udev, struct udev_device* dev) {
 int generic_manager::open_device(struct udev* udev, struct udev_device* dev) {
   if (flatten) {
     if (openfiles.size() < 1) {
-      openfiles.push_back(new generic_file(dev,descr->grab_exclusive));
+      openfiles.push_back(new generic_file(dev,descr->grab_ioctl, descr->grab_chmod));
       create_inputs(openfiles.front(),openfiles.front()->fds.front(),false);
     } else {
       openfiles.front()->open_node(dev);
     }
   } else { 
-     openfiles.push_back(new generic_file(dev,descr->grab_exclusive));
+     openfiles.push_back(new generic_file(dev,descr->grab_ioctl, descr->grab_chmod));
      create_inputs(openfiles.back(),openfiles.back()->fds.front(),false);
   }
   return 0;

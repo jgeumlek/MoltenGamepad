@@ -7,6 +7,7 @@
 #include <fstream>
 #include "../device.h"
 #include <sys/epoll.h>
+#include <sys/stat.h>
 
 class moltengamepad;
 
@@ -30,7 +31,8 @@ struct generic_driver_info {
   
   std::string name;
   std::string devname;
-  bool grab_exclusive = false;
+  bool grab_ioctl = false; //use ioctl EVIOCGRAB.
+  bool grab_chmod = false; //Remove all permissions after we open device. Restore them on close.
   bool flatten = false;
   int split = 1;
 };
@@ -70,6 +72,12 @@ public:
   
 };
 
+struct generic_node {
+  std::string path;
+  udev_device* node;
+  int fd;
+  mode_t orig_mode;
+};
 
 class generic_file {
 public:
@@ -77,14 +85,16 @@ public:
   std::thread* thread = nullptr;
   std::vector<generic_device*> devices;
   std::vector<int> fds;
-  std::vector<struct udev_device*> nodes;
-  bool grab = false;
+  std::map<std::string, generic_node> nodes;
+  bool grab_ioctl = false;
+  bool grab_chmod = false;
   bool keep_looping = true;
   
-  generic_file(struct udev_device* node, bool grab) {
+  generic_file(struct udev_device* node, bool grab_ioctl, bool grab_chmod) {
     epfd = epoll_create(1);
     if (epfd < 1) perror("epoll create");
-    this->grab = grab;
+    this->grab_ioctl = grab_ioctl;
+    this->grab_chmod = grab_chmod;
     open_node(node);
     
     thread = new std::thread(&generic_file::thread_loop,this);
@@ -96,9 +106,8 @@ public:
   
   ~generic_file() {
     keep_looping = false;
-    for (auto node : nodes) {
-      if (node) udev_device_unref(node);
-      node = nullptr;
+    for (auto node_it : nodes) {
+      close_node(node_it.first); //TODO: Fix this repeated map look up...
     }
     device_delete_lock.lock();
     for (auto dev : devices) {
@@ -106,26 +115,59 @@ public:
     }
     device_delete_lock.unlock();
     if(thread) {thread->join(); delete thread;}
-    for (int fd : fds) close(fd);
   }
     
   
   void open_node(struct udev_device* node) {
-    int fd = open(udev_device_get_devnode(node), O_RDONLY | O_NONBLOCK | O_CLOEXEC);
-    if (fd < 0)
-      perror("open subdevice:");
-    if (grab) ioctl(fd, EVIOCGRAB, this);
-  
-    struct epoll_event event;
-    memset(&event,0,sizeof(event));
+    std::string path(udev_device_get_devnode(node));
+    if (nodes.find(path) == nodes.end()) {
+      int fd = open(udev_device_get_devnode(node), O_RDONLY | O_NONBLOCK | O_CLOEXEC);
+      if (fd < 0) {
+        perror("open subdevice:");
+        return;
+      }
+      struct stat filestat;
+      fstat(fd,&filestat);
 
-    event.events = EPOLLIN | EPOLLPRI | EPOLLERR | EPOLLHUP;
-    event.data.u32 = fd;
-    int ret = epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &event);
-    if (ret< 0) perror("epoll add");
+      if (grab_ioctl) {
+        ioctl(fd, EVIOCGRAB, 1);
+      }
+
+      if (grab_chmod) {
+        //Remove all permissions. Other software will really ignore it.
+        //Requires the device to be owned by the current user. (not merely have access)
+        chmod(udev_device_get_devnode(node),0);
+      }
+
+      struct epoll_event event;
+      memset(&event,0,sizeof(event));
+
+      event.events = EPOLLIN | EPOLLPRI | EPOLLERR | EPOLLHUP;
+      event.data.u32 = fd;
+      int ret = epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &event);
+      if (ret< 0) perror("epoll add");
+
+      fds.push_back(fd);
+      nodes[path] = {path, udev_device_ref(node), fd, filestat.st_mode};
+    }
+  }
+
+  void close_node(struct udev_device* node) {
+    const char* path = udev_device_get_devnode(node);
+    if (!path) return;
     
-    fds.push_back(fd);
-    nodes.push_back(udev_device_ref(node));
+    close_node(std::string(path));
+  }
+
+  void close_node(const std::string& path) {
+    auto it = nodes.find(path);
+
+    if (it == nodes.end()) return;
+
+    close(it->second.fd);
+    if (grab_chmod) chmod(path.c_str(),it->second.orig_mode);
+    udev_device_unref(it->second.node);
+    nodes.erase(it);
   }
   
   void add_dev(generic_device* dev) {
@@ -148,9 +190,10 @@ public:
         for (auto dev : devices) {
           write(dev->get_pipe(),&ev,sizeof(ev));
         }
-      } else if (errno == ENODEV) {
+      } else if (errno == ENODEV && keep_looping) {
         close(file);
-        
+        //TODO: possibly close out the stored node as well?
+        //For now, rely on the generic manager telling us via udev events.
       }
       
     }

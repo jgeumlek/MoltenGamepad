@@ -47,22 +47,27 @@ void generic_assignment_line(std::vector<token> &line, generic_driver_info* &inf
       descr = (*it).value;
     }
   }
-  
+
   if (field == "name") {
     info->name = value;
     return;
   }
-  
+
   if (field == "devname") {
     info->devname = value;
     return;
   }
-  
+
   if (field == "exclusive" && value == "true") {
-    info->grab_exclusive = true;
+    info->grab_ioctl = true;
     return;
   }
-  
+
+  if (field == "change_permissions" && value == "true") {
+    info->grab_chmod = true;
+    return;
+  }
+
   if (field == "flatten" && value == "true") {
     info->flatten = true;
     return;
