@@ -74,6 +74,8 @@ int fifo_loop(moltengamepad* mg) {
 }
 
 int moltengamepad::init() {
+  //This whole function is pretty bad in handling the config directories not being present.
+  //But at least we aren't just spilling into the user's top level home directory.
   virtpad_settings padstyle = default_padstyle;
   padstyle.dpad_as_hat = options.dpad_as_hat;
   if (options.mimic_xpad) padstyle = xpad_padstyle;
@@ -92,7 +94,7 @@ int moltengamepad::init() {
   mkdir((options.gendev_dir).c_str(),0770);
   
   glob_t globbuffer;
-  std::string fileglob = options.config_dir +  "/gendevices/*.cfg";
+  std::string fileglob = options.gendev_dir+"/*.cfg";
   glob(fileglob.c_str(), 0, nullptr, &globbuffer);
   
   for (int i = 0; i < globbuffer.gl_pathc; i++) {
