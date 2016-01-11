@@ -63,12 +63,10 @@ int generic_manager::accept_device(struct udev* udev, struct udev_device* dev) {
         struct udev_device* parent = udev_device_get_parent(dev);
         name = udev_device_get_sysattr_value(parent,"name");
         if (!name) return -2;
-         
-         
+
         for (auto it = descr->matches.begin(); it != descr->matches.end(); it++) {
           if (!strcmp((*it).name.c_str(),name)) {
-            open_device(udev,dev);
-            return 0;
+            return open_device(udev,dev);
           }
         }
       }
@@ -81,16 +79,20 @@ int generic_manager::accept_device(struct udev* udev, struct udev_device* dev) {
 }
 
 int generic_manager::open_device(struct udev* udev, struct udev_device* dev) {
-  if (flatten) {
-    if (openfiles.size() < 1) {
-      openfiles.push_back(new generic_file(dev,descr->grab_ioctl, descr->grab_chmod));
-      create_inputs(openfiles.front(),openfiles.front()->fds.front(),false);
+  try {
+    if (flatten) {
+      if (openfiles.size() < 1) {
+        openfiles.push_back(new generic_file(dev,descr->grab_ioctl, descr->grab_chmod));
+        create_inputs(openfiles.front(),openfiles.front()->fds.front(),false);
+      } else {
+        openfiles.front()->open_node(dev);
+      }
     } else {
-      openfiles.front()->open_node(dev);
+      openfiles.push_back(new generic_file(dev,descr->grab_ioctl, descr->grab_chmod));
+      create_inputs(openfiles.back(),openfiles.back()->fds.front(),false);
     }
-  } else { 
-     openfiles.push_back(new generic_file(dev,descr->grab_ioctl, descr->grab_chmod));
-     create_inputs(openfiles.back(),openfiles.back()->fds.front(),false);
+  } catch(...) {
+    return -1; //Something went wrong opening this device...
   }
   return 0;
 }
@@ -103,7 +105,6 @@ void generic_manager::create_inputs(generic_file* opened_file,int fd, bool watch
     gendev->nameptr = newdevname;
     gendev->name = newdevname;
     opened_file->add_dev(gendev);
-    slot_man->request_slot(gendev);
     gendev->start_thread();
     gendev->load_profile(&mapprofile);
   } else {
@@ -140,7 +141,21 @@ void generic_manager::update_chords(const char* ev1, const char* ev2, event_tran
 }
   
 void generic_manager::update_option(const char* opname, const char* value) {
+  //Generic devices currently have no options.
 };
+
+void generic_manager::update_advanceds(const std::vector<std::string>& names, advanced_event_translator* trans) {
+  if(trans) {
+    mapprofile.set_advanced(names, trans->clone());
+  } else {
+    mapprofile.set_advanced(names, nullptr);
+  }
+  for (auto file : openfiles) {
+    for (auto dev : file->devices ) {
+      dev->update_advanced(names, trans);
+    }
+  }
+}
   
 input_source* generic_manager::find_device(const char* name) {
   

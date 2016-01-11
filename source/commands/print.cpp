@@ -9,13 +9,13 @@ void print_profile(profile &profile, std::ostream &out) {
   for (auto it = profile.mapping.begin(); it != profile.mapping.end(); it++) {
     out << profile.name << "." << it->first << " = " << it->second->to_string() << std::endl;
   }
-  for (auto chord : profile.chords) {
-    out << profile.name << ".(" << chord.first.first << ","<< chord.first.second <<") = " << chord.second->to_string() << std::endl;
+  for (auto entry : profile.adv_trans) {
+    out << profile.name << ".(" << entry.first <<") = " << entry.second.trans->to_string() << std::endl;
   }
   for (auto it = profile.options.begin(); it != profile.options.end(); it++) {
     out << profile.name << ".?" << it->first << " = " << it->second << std::endl;
   }
-  if (profile.mapping.empty() && profile.chords.empty() && profile.options.empty())
+  if (profile.mapping.empty() && profile.adv_trans.empty() && profile.options.empty())
     out << "#(empty profile)"<<std::endl;
 }
 

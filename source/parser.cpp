@@ -187,7 +187,7 @@ void do_chord(moltengamepad* mg, std::string header, std::string field1, std::st
   enum entry_type left_type = DEV_KEY; //The only sensible thing to chord?
   
   device_manager* man = mg->find_manager(header.c_str());
-  input_source* dev = (!man)? mg->find_device(header.c_str()) : nullptr;
+  input_source* dev = (!man) ? mg->find_device(header.c_str()) : nullptr;
   if (!man && !dev) return;
   if (rhs.empty()) return;
   
@@ -203,11 +203,39 @@ void do_chord(moltengamepad* mg, std::string header, std::string field1, std::st
   
 }
 
+void do_adv_assignment(moltengamepad* mg, std::string header, const std::vector<std::string>& fields, std::vector<token> rhs) {
+  if (rhs.empty()) return;
+  device_manager* man = mg->find_manager(header.c_str());
+  input_source* dev = (!man) ? mg->find_device(header.c_str()) : nullptr;
+  
+  if (!dev && !man) return;
+  
+  if (true) {
+    if (rhs.front().value == "nothing") {
+      if (dev) dev->update_advanced(fields,nullptr);
+      if (man) man->update_advanceds(fields,nullptr);
+      return;
+    }
+    event_translator* trans = parse_trans(DEV_KEY,rhs,mg->slots);
+    if (!trans) return; //Abort
+    if (trans) { std::cout << "parse to simple_chord " << trans->to_string() << std::endl;}
+    simple_chord chord(fields,trans->clone());
+    if (dev) dev->update_advanced(fields, &chord);
+    if (man) man->update_advanceds(fields, &chord);
+    
+    if (trans) delete trans;
+  }
+  
+  if (rhs.empty()) return;
+  
+}
+
 void do_assignment_line(std::vector<token> &line, std::string &header, moltengamepad* mg) {
   std::string effective_header = "";
   std::string effective_field;
   std::string chord1 = "";
   std::string chord2 = "";
+  std::vector<std::string> multifield;
   std::vector<token> leftside;
   std::vector<token> rightside;
   std::string* field = &effective_header;
@@ -243,15 +271,13 @@ void do_assignment_line(std::vector<token> &line, std::string &header, moltengam
       seen_field = true;
       
     } else if ((*it).type == TK_LPAREN) {
-      it++;
-      if (it == line.end()) return;
-      chord1 = it->value;
-      it++;
-      if (it == line.end() || it->type != TK_COMMA) return;
-      it++;
-      if (it == line.end()) return;
-      chord2 = it->value;
-      it++;
+      do {
+        it++;
+        if (it == line.end()) return;
+        multifield.push_back(it->value);
+        it++;
+      } while (it != line.end() && it->type == TK_COMMA);
+      
       if (it == line.end() || it->type != TK_RPAREN) return;
       it++;
       if (it == line.end() || it->type != TK_EQUAL) return;
@@ -269,6 +295,11 @@ void do_assignment_line(std::vector<token> &line, std::string &header, moltengam
     effective_header = header;
   }
   
+  if (multifield.size() == 2) {
+    chord1 = multifield[0];
+    chord2 = multifield[1];
+  }
+  
   
   if (effective_header.empty()) effective_header = "moltengamepad";
   
@@ -281,7 +312,12 @@ void do_assignment_line(std::vector<token> &line, std::string &header, moltengam
   }
   
   if (!chord1.empty() && !chord2.empty()) {
-    do_chord(mg,effective_header,chord1,chord2,rightside);
+    //do_chord(mg,effective_header,chord1,chord2,rightside);
+    //return;
+  }
+  
+  if (multifield.size() > 0) {
+    do_adv_assignment(mg, effective_header, multifield, rightside);
     return;
   }
   

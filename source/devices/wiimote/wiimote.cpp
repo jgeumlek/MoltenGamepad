@@ -382,6 +382,11 @@ void wiimotes::update_options(const char* opname, const char* value) {
   for (auto it = wii_devs.begin(); it != wii_devs.end(); it++)
     (*it)->update_option(opname,value);
 }
+void wiimotes::update_advanceds(const std::vector<std::string>& names, advanced_event_translator* trans) {
+  mapprofile.set_advanced(names, trans->clone());
+  for (auto it = wii_devs.begin(); it != wii_devs.end(); it++)
+    (*it)->update_advanced(names,trans);
+}
 
 input_source* wiimotes::find_device(const char* name) {
   for (auto it = wii_devs.begin(); it != wii_devs.end(); it++) {

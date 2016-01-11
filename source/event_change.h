@@ -1,10 +1,11 @@
 #ifndef EVENT_CHANGE_H
 #define EVENT_CHANGE_H
 #include "virtual_device.h"
-#include "devices/device.h"
+//#include "devices/device.h"
 #include <linux/input.h>
 #include <string>
 #include "eventlists/eventlist.h"
+#include "devices/device.h"
 
 
 #define EVENT_KEY 0
@@ -17,6 +18,7 @@ struct mg_ev {
 };
 
 class input_source;
+
 
 //A simple event translator. Takes one input event, and translates it. Essentially just a "pipe".
 class event_translator {
@@ -46,13 +48,26 @@ public:
 //A more complicated event translator. It can request to listen to multiple events.
 class advanced_event_translator {
 public:
-  //Attach to an input source. Acts as an initializer.
+  //Initialize any values needed with this input source
+  virtual void init(input_source* source) {};
+  //Called when the device's thread is ready for attaching.
   virtual void attach(input_source* source) {};
   //Return true to block the input source's native handling of this event.
   virtual bool claim_event(int id, mg_ev event) { return false; };
   //Similar to the above, acts as a prototype method.
   virtual advanced_event_translator* clone() {return new advanced_event_translator(*this);}
   virtual ~advanced_event_translator() {};
+  
+  std::string get_syntax() {
+    if (!syntax_cache.empty()) return syntax_cache;
+    return to_string();
+  }
+  
+  virtual std::string to_string() {
+    return "nothing";
+  }
+  
+  std::string syntax_cache;
 };
 
 class btn2btn : public event_translator {
@@ -245,6 +260,51 @@ public:
   virtual keyboard_redirect* clone() {return new keyboard_redirect(key_code,this->trans->clone(),redirected);}
 };
   
+
+class simple_chord : public advanced_event_translator {
+public:
+  std::vector<std::string> event_names;
+  std::vector<int> event_ids;
+  std::vector<int> event_vals;
+  int output_cache = 0;
+  input_source* source = nullptr;
+  event_translator* out_trans = nullptr;
+  virtual_device** out_dev_ptr;
+  
+  simple_chord(std::vector<std::string> event_names, event_translator* trans) : event_names(event_names), out_trans(trans) {};
+  
+  virtual ~simple_chord();
+
+  virtual void init(input_source* source);
+  virtual void attach(input_source* source);
+
+  virtual bool claim_event(int id, mg_ev event);
+  virtual advanced_event_translator* clone() {return new simple_chord(event_names,out_trans->clone());}
+  
+  virtual std::string to_string() { return out_trans->to_string(); };
+};
+
+class exclusive_chord : public simple_chord {
+public:
+  
+  exclusive_chord(std::vector<std::string> event_names, event_translator* trans) : simple_chord(event_names,trans) {};
+  
+  std::thread* thread = nullptr;
+  std::vector<int> chord_hits;
+
+
+  
+  virtual void init(input_source* source);
+  virtual bool claim_event(int id, mg_ev event);
+  virtual advanced_event_translator* clone() {return new exclusive_chord(event_names,out_trans->clone());}
+  
+  virtual std::string to_string() { return "exclusive(" + out_trans->to_string() + ")"; };
+  
+  void thread_func();
+  volatile bool thread_active;
+};
+
+//TODO: Do an advanced_event_translator for taking circular x/y axes and making them square.
   
 
 

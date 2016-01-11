@@ -32,6 +32,11 @@ input_source::~input_source() {
     if (it.second) delete it.second;
   }
   
+  for (auto it : adv_trans) {
+    if (it.second.trans) delete it.second.trans;
+    if (it.second.fields) delete it.second.fields;
+  }
+  
   if (out_dev) { slot_man->remove(this); };
 }
 
@@ -91,6 +96,7 @@ struct pass_trans {
   int id;
   int id2; //for chords.
   event_translator* trans;
+  adv_entry adv;
 };
 
 void input_source::update_chord(const char* evname1,const char* evname2, event_translator* trans) {
@@ -126,6 +132,36 @@ void input_source::update_chord(const char* evname1,const char* evname2, event_t
     
 }
 
+void input_source::update_advanced(std::vector<std::string> evnames, advanced_event_translator* trans) {
+  struct pass_trans msg;
+  memset(&msg,0,sizeof(msg));
+  for (std::string name : evnames) {
+    bool found = false;
+    for (auto ev : events) {
+      if (!strcmp(name.c_str(),ev.name)) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) return; //Abort!
+  }
+
+  msg.adv.trans = nullptr;
+  if(trans) {
+    msg.adv.trans = trans->clone();
+    msg.adv.trans->init(this);
+  }
+  msg.adv.fields = new std::vector<std::string>();
+  *msg.adv.fields = evnames;
+  
+
+  msg.id = -1;
+
+  
+  write(priv_pipe,&msg,sizeof(msg));
+}
+
+
 
 
 void input_source::set_trans(int id, event_translator* trans) {
@@ -141,14 +177,32 @@ void input_source::set_trans(int id, event_translator* trans) {
 
 
 void input_source::send_value(int id, long long value) {
+  bool blocked = false;
   for (auto adv_trans : events.at(id).attached)
-    if (adv_trans->claim_event(id,{value})) return;
+    if (adv_trans->claim_event(id,{value})) blocked = true;
+  
+  if (blocked) return;
+  
   events.at(id).value = value;
   
   if (events.at(id).trans && out_dev) events.at(id).trans->process({value},out_dev);
   
   //On a key press, try to claim a slot if we don't have one. 
-  if (!out_dev && events.at(id).type == DEV_KEY) { slot_man->request_slot(this); };
+  if (!out_dev && events.at(id).type == DEV_KEY) 
+    slot_man->request_slot(this);
+  process_chords();
+  
+}
+
+void input_source::force_value(int id, long long value) {
+
+  events.at(id).value = value;
+  
+  if (events.at(id).trans && out_dev) events.at(id).trans->process({value},out_dev);
+  
+  //On a key press, try to claim a slot if we don't have one. 
+  if (!out_dev && events.at(id).type == DEV_KEY) 
+    slot_man->request_slot(this);
   process_chords();
   
 }
@@ -161,16 +215,15 @@ void input_source::load_profile(profile* profile) {
       set_trans(id,trans);
     }
   }
-  for (auto chord : profile->chords) {
-    std::string first = chord.first.first;
-    std::string second = chord.first.second;
-    update_chord(first.c_str(),second.c_str(),chord.second->clone());
-  }
+  
   for (auto opt : options) {
     std::string value = profile->get_option(opt.first);
     if (!value.empty()) {
       update_option(opt.first.c_str(),value.c_str());
     }
+  }
+  for (auto entry : profile->adv_trans) {
+    update_advanced(entry.second.fields,entry.second.trans);
   }
     
 }
@@ -189,6 +242,10 @@ void input_source::export_profile(profile* profile) {
   for (auto opt : options) {
     profile->set_option(opt.first,opt.second.value);
   }
+  
+  for (auto entry : adv_trans) {
+    profile->set_advanced(*entry.second.fields,entry.second.trans->clone());
+  }
 }
 
   
@@ -206,6 +263,28 @@ void input_source::thread_loop() {
       int ret = 1;
       ret = read(internalpipe,&msg,sizeof(msg));
       if (ret == sizeof(msg)) {
+        if (msg.adv.fields && !msg.adv.fields->empty()) {
+          auto its = msg.adv.fields->begin();
+          std::string adv_name = *its;
+          its++;
+          for (; its != msg.adv.fields->end(); its++) {
+            adv_name += "," + (*its);
+          }
+          
+
+          auto it = adv_trans.find(adv_name);
+          if (it != adv_trans.end()) {
+            delete it->second.fields;
+            delete it->second.trans;
+            adv_trans.erase(it);
+          }
+          if(msg.adv.trans) {
+            msg.adv.trans->attach(this);
+            adv_trans[adv_name] = {msg.adv.fields, msg.adv.trans};
+          }
+
+          continue;
+        }
         if (msg.id < 0 ) continue;
         if (msg.id2 < 0) {
           event_translator** trans = &(this->events.at(msg.id).trans);
@@ -253,5 +332,20 @@ void input_source::end_thread() {
     thread->join();
     delete thread;
     thread = nullptr;
+  }
+}
+
+void input_source::add_listener(int id, advanced_event_translator* trans) {
+  if (id < 0 || id >= events.size()) return;
+  events[id].attached.push_back(trans);
+}
+
+void input_source::remove_listener(int id, advanced_event_translator* trans) {
+  if (id < 0 || id >= events.size()) return;
+  for (auto it = events[id].attached.begin(); it != events[id].attached.end(); it++) {
+    if (*it == trans) {
+      events[id].attached.erase(it);
+      return;
+    }
   }
 }

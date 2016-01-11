@@ -3,9 +3,17 @@
 #include <string>
 #include <unordered_map>
 #include <map>
-#include "event_change.h"
+#include <vector>
 
 typedef std::pair<std::string,std::string> str_pair;
+
+class event_translator;
+class advanced_event_translator;
+
+struct adv_map {
+  std::vector<std::string> fields;
+  advanced_event_translator* trans;
+};
 
 class profile {
 public:
@@ -13,55 +21,24 @@ public:
   std::unordered_map<std::string, event_translator*> mapping;
   std::unordered_map<std::string, std::string> options;
   std::map<str_pair, event_translator*> chords;
+  std::map<std::string,adv_map> adv_trans;
   
-  event_translator* get_mapping(std::string in_event_name) {
-    auto it = mapping.find(in_event_name);
-    if (it == mapping.end()) return nullptr;
-    return (it->second);
-  }
+  event_translator* get_mapping(std::string in_event_name);
   
-  event_translator* copy_mapping(std::string in_event_name) {
-    auto it = mapping.find(in_event_name);
-    if (it == mapping.end()) return new event_translator();
-    return (it->second->clone());
-  }
+  event_translator* copy_mapping(std::string in_event_name);
   
-  void set_mapping(std::string in_event_name, event_translator* mapper) {
-    event_translator* oldmap = get_mapping(in_event_name);
-    if (oldmap) delete oldmap;
-    mapping.erase(in_event_name);
-    mapping[in_event_name] = mapper;
-  }
+  void set_mapping(std::string in_event_name, event_translator* mapper);
   
-  void set_chord(std::string ev1, std::string ev2, event_translator* mapper) {
-    str_pair key(ev1,ev2);
-    auto it = chords.find(key);
-    if (it != chords.end()) {
-      delete it->second;
-      chords.erase(it);
-    }
-    chords[key] = mapper;
-  }
+  void set_chord(std::string ev1, std::string ev2, event_translator* mapper);
   
-  void set_option(std::string opname, std::string value) {
-    options.erase(opname);
-    options[opname] = value;
-  }
+  void set_advanced(const std::vector<std::string>& names, advanced_event_translator* trans);
   
-  std::string get_option(std::string opname) {
-    auto it = options.find(opname);
-    if (it == options.end()) return "";
-    return it->second;
-  }
+  void set_option(std::string opname, std::string value);
+  
+  std::string get_option(std::string opname);
     
   
-  ~profile() {
-    for (auto it = mapping.begin(); it != mapping.end(); it++) {
-      if (it->second) delete it->second;
-    }
-    
-    mapping.clear();
-   }
+  ~profile();
     
 };
 
