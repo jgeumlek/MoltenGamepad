@@ -25,6 +25,7 @@ event_translator* parse_trans(enum entry_type intype, std::vector<token> &rhs);
 event_translator* parse_simple_trans(enum entry_type intype, const char* outname);
 event_translator* parse_special_trans(enum entry_type intype, std::vector<token> &rhs, slot_manager* slots);
 event_translator* parse_complex_trans(enum entry_type intype, std::vector<token> &rhs);
+advanced_event_translator* parse_adv_trans(const std::vector<std::string>& fields, std::vector<token> &rhs, slot_manager* slots);
 
 void print_tokens(std::vector<token> &tokens) {
   for (auto it = tokens.begin(); it != tokens.end(); it++) {
@@ -216,12 +217,12 @@ void do_adv_assignment(moltengamepad* mg, std::string header, const std::vector<
       if (man) man->update_advanceds(fields,nullptr);
       return;
     }
-    event_translator* trans = parse_trans(DEV_KEY,rhs,mg->slots);
+    advanced_event_translator* trans = parse_adv_trans(fields,rhs,mg->slots);
     if (!trans) return; //Abort
-    if (trans) { std::cout << "parse to simple_chord " << trans->to_string() << std::endl;}
-    simple_chord chord(fields,trans->clone());
-    if (dev) dev->update_advanced(fields, &chord);
-    if (man) man->update_advanceds(fields, &chord);
+    if (trans) { std::cout << "parse to " << trans->to_string() << std::endl;}
+    
+    if (dev) dev->update_advanced(fields, trans);
+    if (man) man->update_advanceds(fields, trans);
     
     if (trans) delete trans;
   }
@@ -563,5 +564,29 @@ event_translator* parse_complex_trans(enum entry_type intype, std::vector<token>
   return trans; 
 }
 
+advanced_event_translator* parse_adv_trans(const std::vector<std::string>& fields, std::vector<token> &rhs, slot_manager* slots) {
+  event_translator* trans = parse_trans(DEV_KEY, rhs, slots);
+  if (trans) return new simple_chord(fields,trans);
+  
+  auto it = rhs.begin();
+  complex_expr* expr = read_expr(rhs,it);
+  
+  if (!expr) return nullptr;
+  
+  if (expr->params.empty()) return nullptr;
+  
+  advanced_event_translator* adv_trans = nullptr;
+  
+  if (expr->ident == "chord") {
+    event_translator* trans = expr_to_trans(expr->params.front());
+    if (trans) adv_trans = new simple_chord(fields,trans);
+  }
+  if (expr->ident == "exclusive") {
+    event_translator* trans = expr_to_trans(expr->params.front());
+    if (trans) adv_trans = new exclusive_chord(fields,trans);
+  }
+  
+  free_complex_expr(expr);
 
-
+  return adv_trans;
+}
