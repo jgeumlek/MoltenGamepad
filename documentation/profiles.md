@@ -183,4 +183,10 @@ This maps the wiimote a button to `key_a` on the keyboard slot, regardless of wh
 
 This makes it so that a `thumbl` event is generated everytime both `wm_a` and `wm_b` are pressed, and the appropriate release event is fired whenever they are not both pressed. 
 
-Chords only support two events, not three or more. Chords must use events both located on the same input source. Chords DO NOT prevent the original events from firing. (ex. pressing both `wm_a` and `wm_b` would lead to 3 presses, each individually plus the chord event)
+Chords must use events located on the same input source. Chords DO NOT prevent the original events from firing. (ex. pressing both `wm_a` and `wm_b` would lead to 3 presses, each individually plus the chord event).
+
+If you want a chord that prevents the original events, a very experimental implementation is offered via specifying a full `exclusive` advanced translator. Note that currently this prevents automagic button/axis detection on output, so everything must be spelled out.
+
+    wiimote.(wm_a,wm_b) = exclusive(btn2btn(thumbl))
+
+This also means they are not saved properly, requiring manual intervention to edit saved profiles. (Hence all these experimental warnings.) Exclusive chords DO NOT support creating a complicated hierarchy of chords, as two exclusive chords sharing a button or overlapping will not be able to prevent each other's events. Exclusive chords inherhently add some input latency, as to do otherwise would require being able to see the future. Further, making many chords rely on the same button is not recommended.
