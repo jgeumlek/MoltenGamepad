@@ -184,25 +184,7 @@ void do_assignment(moltengamepad* mg, std::string header, std::string field, std
   
 }
 
-void do_chord(moltengamepad* mg, std::string header, std::string field1, std::string field2, std::vector<token> rhs) {
-  enum entry_type left_type = DEV_KEY; //The only sensible thing to chord?
-  
-  device_manager* man = mg->find_manager(header.c_str());
-  input_source* dev = (!man) ? mg->find_device(header.c_str()) : nullptr;
-  if (!man && !dev) return;
-  if (rhs.empty()) return;
-  
-  event_translator* trans = nullptr;
-  
-  if (rhs.front().value != "nothing") {
-    trans = parse_trans(left_type,rhs,mg->slots);
-  }
-  if (man) man->update_chords(field1.c_str(),field2.c_str(),trans);
-  if (dev) dev->update_chord(field1.c_str(),field2.c_str(),trans);
-  if (trans) { std::cout << "parse to " << trans->to_string() << std::endl;}
-  if (trans) delete trans;
-  
-}
+
 
 void do_adv_assignment(moltengamepad* mg, std::string header, const std::vector<std::string>& fields, std::vector<token> rhs) {
   if (rhs.empty()) return;
@@ -296,12 +278,6 @@ void do_assignment_line(std::vector<token> &line, std::string &header, moltengam
     effective_header = header;
   }
   
-  if (multifield.size() == 2) {
-    chord1 = multifield[0];
-    chord2 = multifield[1];
-  }
-  
-  
   if (effective_header.empty()) effective_header = "moltengamepad";
   
   if (it == line.end()) return; //Shouldn't happen.
@@ -310,11 +286,6 @@ void do_assignment_line(std::vector<token> &line, std::string &header, moltengam
   
   for (; it != line.end() && (*it).type != TK_ENDL; it++) {
     rightside.push_back(*it);
-  }
-  
-  if (!chord1.empty() && !chord2.empty()) {
-    //do_chord(mg,effective_header,chord1,chord2,rightside);
-    //return;
   }
   
   if (multifield.size() > 0) {

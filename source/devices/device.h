@@ -105,7 +105,6 @@ protected:
   int priv_pipe = 0;
   int internalpipe = 0;
   std::vector<source_event> events;
-  std::map<std::pair<int,int>,event_translator*> chords;
   std::map<std::string,source_option> options;
   std::map<std::string,adv_entry> adv_trans;
   std::thread* thread = nullptr;
@@ -117,7 +116,7 @@ protected:
   void register_option(source_option ev);
   void watch_file(int fd, void* tag);
   void set_trans(int id, event_translator* trans);
-  void process_chords();
+  
   
   void thread_loop();
   
@@ -146,8 +145,7 @@ public:
   
   virtual void update_maps(const char* evname, event_translator* trans) {
   }
-  virtual void update_chords(const char* ev1,const char* ev2, event_translator* trans) {
-  }
+  
   
   virtual void update_options(const char* opname, const char* value) {
   }

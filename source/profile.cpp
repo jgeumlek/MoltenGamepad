@@ -21,15 +21,7 @@ void profile::set_mapping(std::string in_event_name, event_translator* mapper) {
   mapping[in_event_name] = mapper;
 }
 
-void profile::set_chord(std::string ev1, std::string ev2, event_translator* mapper) {
-  str_pair key(ev1,ev2);
-  auto it = chords.find(key);
-  if (it != chords.end()) {
-    delete it->second;
-    chords.erase(it);
-  }
-  chords[key] = mapper;
-}
+
 
 void profile::set_option(std::string opname, std::string value) {
   options.erase(opname);

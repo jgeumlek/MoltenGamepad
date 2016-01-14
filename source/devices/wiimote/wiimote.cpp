@@ -372,11 +372,7 @@ void wiimotes::update_maps(const char* evname, event_translator* trans) {
   for (auto it = wii_devs.begin(); it != wii_devs.end(); it++)
     (*it)->update_map(evname,trans);
 }
-void wiimotes::update_chords(const char* ev1, const char* ev2, event_translator* trans) {
-  mapprofile.set_chord(ev1, ev2, trans->clone());
-  for (auto it = wii_devs.begin(); it != wii_devs.end(); it++)
-    (*it)->update_chord(ev1,ev2,trans);
-}
+
 void wiimotes::update_options(const char* opname, const char* value) {
   mapprofile.set_option(opname, value);
   for (auto it = wii_devs.begin(); it != wii_devs.end(); it++)

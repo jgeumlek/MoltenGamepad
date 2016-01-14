@@ -28,9 +28,7 @@ input_source::~input_source() {
      if (events[i].trans) delete events[i].trans;
   }
   
-  for (auto it : chords) {
-    if (it.second) delete it.second;
-  }
+  
   
   for (auto it : adv_trans) {
     if (it.second.trans) delete it.second.trans;
@@ -94,43 +92,11 @@ void input_source::list_options(std::vector<source_option> &list) {
 
 struct pass_trans {
   int id;
-  int id2; //for chords.
   event_translator* trans;
   adv_entry adv;
 };
 
-void input_source::update_chord(const char* evname1,const char* evname2, event_translator* trans) {
-  int id1 = -1;
-  int id2 = -1;
-  for (int i = 0; i < events.size(); i++) {
-    if (!strcmp(evname1,events[i].name)) {
-      id1 = i;
-      break;
-    }
-  }
-  for (int i = 0; i < events.size(); i++) {
-    if (!strcmp(evname2,events[i].name)) {
-      id2 = i;
-      break;
-    }
-  }
-  
-  if (id1 != -1 && id2 != -1 && id1 != id2) {
-    if (trans) {
-      std::cout << name << " doing chord " << evname1 << "+" << evname2 << "->" << trans->to_string() << std::endl;
-    } else {
-      std::cout << name << " clearing chord " << evname1 << "+" << evname2 << std::endl;
-    }
-    struct pass_trans msg;
-    memset(&msg,0,sizeof(msg));
-    msg.id = id1;
-    msg.id2 = id2;
-    msg.trans = nullptr;
-    if (trans) msg.trans = trans->clone();
-    write(priv_pipe,&msg,sizeof(msg));
-  }
-    
-}
+
 
 void input_source::update_advanced(std::vector<std::string> evnames, advanced_event_translator* trans) {
   struct pass_trans msg;
@@ -170,7 +136,6 @@ void input_source::set_trans(int id, event_translator* trans) {
   struct pass_trans msg;
   memset(&msg,0,sizeof(msg));
   msg.id = id;
-  msg.id2 = -1;
   msg.trans = trans;
   write(priv_pipe,&msg,sizeof(msg));
 };
@@ -190,7 +155,6 @@ void input_source::send_value(int id, long long value) {
   //On a key press, try to claim a slot if we don't have one. 
   if (!out_dev && events.at(id).type == DEV_KEY) 
     slot_man->request_slot(this);
-  process_chords();
   
 }
 
@@ -203,7 +167,6 @@ void input_source::force_value(int id, long long value) {
   //On a key press, try to claim a slot if we don't have one. 
   if (!out_dev && events.at(id).type == DEV_KEY) 
     slot_man->request_slot(this);
-  process_chords();
   
 }
 
@@ -233,12 +196,7 @@ void input_source::export_profile(profile* profile) {
     event_translator* trans = ev.trans->clone();
     profile->set_mapping(ev.name,trans);
   }
-  for (auto chord : chords) {
-    int id1 = chord.first.first;
-    int id2 = chord.first.second;
-    event_translator* trans = chord.second->clone();
-    profile->set_chord(events[id1].name,events[id2].name,trans);
-  }
+  
   for (auto opt : options) {
     profile->set_option(opt.first,opt.second.value);
   }
@@ -286,20 +244,10 @@ void input_source::thread_loop() {
           continue;
         }
         if (msg.id < 0 ) continue;
-        if (msg.id2 < 0) {
-          event_translator** trans = &(this->events.at(msg.id).trans);
-          delete *trans;
-          *(trans) = msg.trans;
-        } else {
-          std::pair<int,int> keypair(msg.id,msg.id2);
-          auto it = chords.find(std::pair<int,int>(msg.id,msg.id2));
-          if (it != chords.end()) {
-            delete (*it).second;
-            chords.erase(it);
-          }
-          if (msg.trans)
-            chords.insert(std::pair<std::pair<int,int>,event_translator*>(keypair,msg.trans));
-        }
+        
+        event_translator** trans = &(this->events.at(msg.id).trans);
+        delete *trans;
+        *(trans) = msg.trans;
         
       }
     } else {
@@ -308,15 +256,7 @@ void input_source::thread_loop() {
   }
 }
 
-void input_source::process_chords() {
-  for (auto chord : chords) {
-    int id1 = chord.first.first;
-    int id2 = chord.first.second;
-    event_translator* trans = chord.second;
-    bool chordvalue = (events.at(id1).value && events.at(id2).value);
-    trans->process({chordvalue},out_dev);
-  }
-}
+
   
 void input_source::start_thread() {
   keep_looping = true;

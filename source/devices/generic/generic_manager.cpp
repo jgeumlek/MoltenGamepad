@@ -130,15 +130,7 @@ void generic_manager::update_maps(const char* evname, event_translator* trans) {
     }
   }
 }
-void generic_manager::update_chords(const char* ev1, const char* ev2, event_translator* trans) {
-  mapprofile.set_chord(ev1,ev2, trans->clone());
-  
-  for (auto file : openfiles) {
-    for (auto dev : file->devices ) {
-      dev->update_chord(ev1,ev2, trans);
-    }
-  }
-}
+
   
 void generic_manager::update_option(const char* opname, const char* value) {
   //Generic devices currently have no options.

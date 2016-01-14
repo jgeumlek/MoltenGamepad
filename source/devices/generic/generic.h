@@ -217,7 +217,6 @@ public:
   virtual int accept_device(struct udev* udev, struct udev_device* dev);
   
   virtual void update_maps(const char* evname, event_translator* trans);
-  virtual void update_chords(const char* ev1,const char* ev2, event_translator* trans);
   
   virtual void update_option(const char* opname, const char* value);
   
