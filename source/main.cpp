@@ -88,7 +88,7 @@ int print_usage(char* execname) {
 "--uinput-path -u\n"\
 "\tSet where the uinput node is found on the system\n"\
 "\n"\
-"--make-fifo -f\n"\
+"--make-fifo -m\n"\
 "\tCreate a fifo command channel, and exit if it can't be made.\n"\
 "\n"\
 "--fifo-path -f\n"\
