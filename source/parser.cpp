@@ -21,12 +21,6 @@
  * grow complicated and nested, like redirect(mouse_slot, btn2btn(BTN_1))
  */
 
-event_translator* parse_trans(enum entry_type intype, std::vector<token> &rhs);
-event_translator* parse_simple_trans(enum entry_type intype, const char* outname);
-event_translator* parse_special_trans(enum entry_type intype, std::vector<token> &rhs, slot_manager* slots);
-event_translator* parse_complex_trans(enum entry_type intype, std::vector<token> &rhs);
-advanced_event_translator* parse_adv_trans(const std::vector<std::string>& fields, std::vector<token> &rhs, slot_manager* slots);
-
 void print_tokens(std::vector<token> &tokens) {
   for (auto it = tokens.begin(); it != tokens.end(); it++) {
     std::cout << (*it).type << (*it).value << " ";
@@ -339,14 +333,6 @@ void MGparser::parse_line(std::vector<token> &line, std::string &header) {
   
 }
 
-event_translator* parse_trans(enum entry_type left_type, std::vector<token> &rhs,slot_manager* slots) {
-  event_translator* trans = parse_special_trans(left_type, rhs,slots);
-  if (!trans) trans = parse_simple_trans(left_type, rhs.front().value.c_str());
-  if (!trans) trans = parse_complex_trans(left_type, rhs);
-  
-  return trans;
-}
-
 void MGparser::exec_line(std::vector<token> &line, std::string &header) {
   parse_line(line,header);
 }
@@ -588,76 +574,6 @@ void MGparser::print_def(entry_type intype, MGTransDef& def, std::ostream& outpu
   if (def.fields.size() > 0) output << ")";
 }
   
-  
-    
-  
-event_translator* parse_simple_trans(enum entry_type intype, const char* outname) {
-  if (outname == nullptr || outname[0] == '\0') return nullptr;
-  
-  if (!strcmp(outname,"nothing")) return new event_translator();
-  
-  int direction = 1;
-  if (outname[0] == '-')  {
-    direction = -1;
-    outname++;
-  } else if (outname[0] == '+') {
-    outname++;
-  }
-  struct event_info out_info = lookup_event(outname);
-  
-  enum out_type outtype = out_info.type;
-  
-  
-  if (intype == DEV_KEY) {
-    if (outtype == OUT_KEY)
-      return new btn2btn(out_info.value);
-    if (outtype == OUT_ABS)
-      return new btn2axis(out_info.value, direction);
-  }
-  
-  if (intype == DEV_AXIS) {
-    if (outtype == OUT_ABS)
-      return new axis2axis(out_info.value,direction);
-  }
-  
-  return nullptr;
-}
-
-event_translator* parse_special_trans(enum entry_type intype, std::vector<token> &rhs, slot_manager* slots) {
-  
-  if (intype == DEV_AXIS) {
-    //Check for two buttons "neg,pos" for mapping the axis.
-    //We want exactly three tokens: TK_IDENT TK_COMMA TK_IDENT
-    if (rhs.size() == 3 && rhs.at(1).type == TK_COMMA) {
-      struct event_info neg = lookup_event(rhs.at(0).value.c_str());
-      struct event_info pos = lookup_event(rhs.at(2).value.c_str());
-      if (neg.type == OUT_KEY && pos.type == OUT_KEY)
-        return new axis2btns(neg.value,pos.value);
-    }
-  }
-  
-  
-  //Check for key(keyname), since we need the slot_manager to build this.
-  if (intype == DEV_KEY) {
-    auto it = rhs.begin();
-    complex_expr* expr = read_expr(rhs,it);
-    if (!expr || expr->ident != "key" || expr->params.empty()) return nullptr;
-    struct event_info out_info = lookup_event(expr->params.front()->ident.c_str());
-    if (out_info.type == OUT_KEY) {
-      event_translator* trans = parse_simple_trans(intype, expr->params.front()->ident.c_str());
-      
-      if (trans) {
-        free_complex_expr(expr);
-        return new keyboard_redirect(out_info.value,trans,slots->keyboard);
-      }
-      
-      delete trans;
-    }
-    free_complex_expr(expr);
-  }
-  
-  return nullptr;
-}
 
 
 void free_complex_expr(complex_expr* expr) {
@@ -724,72 +640,6 @@ struct complex_expr* read_expr(std::vector<token> &tokens, std::vector<token>::i
  
     
   return nullptr;
-}
-
-
-  
-event_translator* expr_btn2btn(complex_expr* expr) {
- if (!expr) return nullptr;
- if (expr->params.size() != 1) return nullptr;
- int i = read_ev_code(expr->params.at(0)->ident,OUT_KEY);
- if (i >= 0) return new btn2btn(i);
- return nullptr;
-}
-
-event_translator* expr_btn2axis(complex_expr* expr) {
- if (!expr) return nullptr;
- if (expr->params.size() != 2) return nullptr;
- int i = read_ev_code(expr->params.at(0)->ident,OUT_ABS);
- int dir = read_ev_code(expr->params.at(1)->ident,OUT_NONE);
- if (i >= 0) return new btn2axis(i, dir);
- return nullptr;
-}
-
-event_translator* expr_axis2axis(complex_expr* expr) {
- if (!expr) return nullptr;
- if (expr->params.size() != 2) return nullptr;
- int i = read_ev_code(expr->params.at(0)->ident,OUT_ABS);
- int dir = read_ev_code(expr->params.at(1)->ident,OUT_NONE);
- if (i >= 0) return new axis2axis(i, dir);
- return nullptr;
-}
-
-event_translator* expr_axis2btns(complex_expr* expr) {
- if (!expr) return nullptr;
- if (expr->params.size() != 2) return nullptr;
- int i = read_ev_code(expr->params.at(0)->ident,OUT_KEY);
- int j = read_ev_code(expr->params.at(1)->ident,OUT_KEY);
- if (i >= 0 && j >= 0) return new axis2btns(i, j);
- return nullptr;
-}
-
-event_translator* expr_to_trans(complex_expr* expr) {
-  if (expr->ident == "btn2btn") return expr_btn2btn(expr);
-  if (expr->ident == "btn2axis") return expr_btn2axis(expr);
-  if (expr->ident == "axis2axis") return expr_axis2axis(expr);
-  if (expr->ident == "axis2btns") return expr_axis2btns(expr);
-  
-  return nullptr;
-}
-
-event_translator* parse_complex_trans(enum entry_type intype, std::vector<token> &rhs) {
-  
-  auto it = rhs.begin();
-  complex_expr* expr = read_expr(rhs,it);
-  
-  
-  
-  int depth = 0;
-  complex_expr* current = expr;
-  
-  
-  if (!expr) return nullptr;
-  
-  event_translator* trans = expr_to_trans(expr);
-  
-  free_complex_expr(expr);
-  
-  return trans; 
 }
 
 advanced_event_translator* build_adv_from_def(const std::vector<std::string>& event_names, MGTransDef& def) {
