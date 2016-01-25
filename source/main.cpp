@@ -88,6 +88,9 @@ int print_usage(char* execname) {
 "--uinput-path -u\n"\
 "\tSet where the uinput node is found on the system\n"\
 "\n"\
+"--make-fifo -f\n"\
+"\tCreate a fifo command channel, and exit if it can't be made.\n"\
+"\n"\
 "--fifo-path -f\n"\
 "\tSet where the fifo command channel should be placed.\n"\
 "\n"\
@@ -137,7 +140,7 @@ int parse_opts(moltengamepad::mg_options &options, int argc, char* argv[]) {
     {"gendev-path",   1,    0,  'g'},
     {"config-path",   1,    0,  'c'},
     {"num-gamepads",  1,    0,  'n'},
-    {"make-fifo",     1,    0,  'm'},
+    {"make-fifo",     0,    0,  'm'},
     {"fifo-path",     1,    0,  'f'},
     {"no-make-keys",  0,    0,    0},
     {"no-enumerate",  0,    0,    0},
@@ -163,6 +166,7 @@ int parse_opts(moltengamepad::mg_options &options, int argc, char* argv[]) {
         break;
       case 'm':
         options.make_fifo = true;
+        break;
       case 'f':
         options.fifo_path = std::string(optarg);
         break;
