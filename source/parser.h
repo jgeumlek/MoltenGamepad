@@ -29,7 +29,7 @@ public:
   advanced_event_translator* parse_adv_trans(const std::vector<std::string>& fields, std::vector<token> &rhs);
   bool parse_def(enum entry_type intype, MGTransDef& def, complex_expr* expr);
   static void print_def(enum entry_type intype, MGTransDef& def, std::ostream& output);
-  
+  static bool print_special_def(entry_type intype, MGTransDef& def, std::ostream& output);
   moltengamepad* mg;
 private:
   event_translator* parse_complex_trans(enum entry_type intype, std::vector<token> &tokens, std::vector<token>::iterator &it);
@@ -39,6 +39,7 @@ private:
   void do_assignment_line(std::vector<token> &line, std::string &header);
   void parse_line(std::vector<token> &line, std::string &header);
   event_translator* parse_trans_toplevel_quirks(enum entry_type intype, std::vector<token> &tokens, std::vector<token>::iterator &it);
+  
 };
 
 

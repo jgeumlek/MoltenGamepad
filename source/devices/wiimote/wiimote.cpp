@@ -368,7 +368,8 @@ int wiimotes::accept_device(struct udev* udev, struct udev_device* dev) {
 }
 
 void wiimotes::update_maps(const char* evname, event_translator* trans) {
-  mapprofile.set_mapping(evname, trans->clone());
+  auto intype = entry_type(evname);
+  mapprofile.set_mapping(evname, trans->clone(),intype);
   for (auto it = wii_devs.begin(); it != wii_devs.end(); it++)
     (*it)->update_map(evname,trans);
 }

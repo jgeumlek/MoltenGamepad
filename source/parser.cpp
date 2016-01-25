@@ -526,6 +526,9 @@ bool MGparser::parse_def(enum entry_type intype, MGTransDef& def, complex_expr* 
 }
 
 void MGparser::print_def(entry_type intype, MGTransDef& def, std::ostream& output) {
+  //Check for the possibility of some automagic.
+  if (print_special_def(intype, def, output)) return;
+  
   output << def.identifier;
   if (def.fields.size() > 0) output << "(";
   bool needcomma = false;
@@ -572,6 +575,51 @@ void MGparser::print_def(entry_type intype, MGTransDef& def, std::ostream& outpu
     needcomma = true;
   }
   if (def.fields.size() > 0) output << ")";
+}
+
+bool MGparser::print_special_def(entry_type intype, MGTransDef& def, std::ostream& output) {
+  //Check if we are in a setting where some magic can be applied.
+  if (intype == DEV_KEY) {
+    if (def.identifier == "btn2btn" && def.fields.size() > 0 && def.fields[0].type == MG_KEY) {
+      const char* name = get_key_name(def.fields[0].key);
+      if (name) {
+        output << name;
+      } else {
+        output << def.fields[0].key;
+      }
+      return true;
+    }
+  }
+  if ((intype == DEV_KEY && def.identifier == "btn2axis") || (intype == DEV_AXIS && def.identifier == "axis2axis")) {
+    if (def.fields.size() >= 2 && def.fields[0].type == MG_AXIS && def.fields[1].type == MG_INT) {
+      const char* name = get_axis_name(def.fields[0].axis);
+      const char* prefix = "";
+      if (def.fields[1].integer == -1) {
+        prefix = "-";
+      }
+      if (def.fields[1].integer == +1) {
+        prefix = "+";
+      }
+      if (!prefix) return false;
+      if (!name) return false;
+      output << prefix << name;
+      return true;
+    }
+  }
+  if (intype == DEV_AXIS && def.identifier == "axis2btns" && def.fields.size() >= 2 && def.fields[0].type == MG_KEY && def.fields[1].type == MG_KEY) {
+    const char* nameneg = get_key_name(def.fields[0].key);
+    const char* namepos = get_key_name(def.fields[1].key);
+    output << "(";
+    if (nameneg) output << nameneg;
+    if (!nameneg) output << def.fields[0].key;
+    output << ",";
+    if (namepos) output << namepos;
+    if (!namepos) output << def.fields[1].key;
+    output << ")";
+    return true;
+  }
+  
+  return false;
 }
   
 

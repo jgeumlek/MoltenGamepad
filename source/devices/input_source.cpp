@@ -194,7 +194,7 @@ void input_source::load_profile(profile* profile) {
 void input_source::export_profile(profile* profile) {
   for (auto ev : events) {
     event_translator* trans = ev.trans->clone();
-    profile->set_mapping(ev.name,trans);
+    profile->set_mapping(ev.name,trans,ev.type);
   }
   
   for (auto opt : options) {

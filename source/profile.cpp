@@ -2,23 +2,23 @@
 #include "event_change.h"
 
   
-event_translator* profile::get_mapping(std::string in_event_name) {
+trans_map profile::get_mapping(std::string in_event_name) {
   auto it = mapping.find(in_event_name);
-  if (it == mapping.end()) return nullptr;
+  if (it == mapping.end()) return {nullptr,NO_ENTRY};
   return (it->second);
 }
 
 event_translator* profile::copy_mapping(std::string in_event_name) {
   auto it = mapping.find(in_event_name);
   if (it == mapping.end()) return new event_translator();
-  return (it->second->clone());
+  return (it->second.trans->clone());
 }
 
-void profile::set_mapping(std::string in_event_name, event_translator* mapper) {
-  event_translator* oldmap = get_mapping(in_event_name);
-  if (oldmap) delete oldmap;
+void profile::set_mapping(std::string in_event_name, event_translator* mapper, entry_type type) {
+  trans_map oldmap = get_mapping(in_event_name);
+  if (oldmap.trans) delete oldmap.trans;
   mapping.erase(in_event_name);
-  mapping[in_event_name] = mapper;
+  mapping[in_event_name] = {mapper,type};
 }
 
 
@@ -62,7 +62,7 @@ std::string profile::get_option(std::string opname) {
 
 profile::~profile() {
   for (auto it = mapping.begin(); it != mapping.end(); it++) {
-    if (it->second) delete it->second;
+    if (it->second.trans) delete it->second.trans;
   }
   
   for (auto e : adv_trans) {

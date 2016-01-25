@@ -122,7 +122,8 @@ void generic_manager::create_inputs(generic_file* opened_file,int fd, bool watch
 }
   
 void generic_manager::update_maps(const char* evname, event_translator* trans) {
-  mapprofile.set_mapping(evname, trans->clone());
+  auto type = entry_type(evname);
+  mapprofile.set_mapping(evname, trans->clone(),type);
   
   for (auto file : openfiles) {
     for (auto dev : file->devices ) {

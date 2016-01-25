@@ -34,8 +34,6 @@ struct name_descr {
   int data;
 };
 
-enum entry_type {DEV_OPTION, DEV_KEY, DEV_AXIS, DEV_REL, NO_ENTRY} ;
-
 struct source_event {
   int id;
   const char* name;

@@ -9,8 +9,8 @@ void print_profile(profile &profile, std::ostream &out) {
   for (auto it = profile.mapping.begin(); it != profile.mapping.end(); it++) {
     out << profile.name << "." << it->first << " = ";
     MGTransDef def;
-    it->second->fill_def(def);
-    MGparser::print_def(NO_ENTRY,def,out);
+    it->second.trans->fill_def(def);
+    MGparser::print_def(it->second.type,def,out);
     out << std::endl;
   }
   for (auto entry : profile.adv_trans) {
