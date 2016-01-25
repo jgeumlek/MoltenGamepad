@@ -46,7 +46,7 @@ int generic_manager::accept_device(struct udev* udev, struct udev_device* dev) {
   if (!strcmp(action,"remove")) {
     if (!path) return -1;
     for (auto it = openfiles.begin(); it != openfiles.end(); it++) {
-      (*it)->close_node(dev);
+      (*it)->close_node(dev,true);
       if ((*it)->nodes.empty()) {
         std::cout << "Generic driver " << name << " lost a device." << std::endl;
         delete (*it);

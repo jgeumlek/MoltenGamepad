@@ -109,7 +109,7 @@ public:
   ~generic_file() {
     keep_looping = false;
     for (auto node_it : nodes) {
-      close_node(node_it.first); //TODO: Fix this repeated map look up...
+      close_node(node_it.first,false); //TODO: Fix this repeated map look up...
     }
     device_delete_lock.lock();
     for (auto dev : devices) {
@@ -154,14 +154,14 @@ public:
     }
   }
 
-  void close_node(struct udev_device* node) {
+  void close_node(struct udev_device* node, bool erase) {
     const char* path = udev_device_get_devnode(node);
     if (!path) return;
     
-    close_node(std::string(path));
+    close_node(std::string(path),erase);
   }
 
-  void close_node(const std::string& path) {
+  void close_node(const std::string& path, bool erase) {
     auto it = nodes.find(path);
 
     if (it == nodes.end()) return;
@@ -169,7 +169,7 @@ public:
     close(it->second.fd);
     if (grab_chmod) chmod(path.c_str(),it->second.orig_mode);
     udev_device_unref(it->second.node);
-    nodes.erase(it);
+    if (erase) nodes.erase(it);
   }
   
   void add_dev(generic_device* dev) {
