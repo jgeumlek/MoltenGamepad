@@ -239,6 +239,8 @@ void input_source::thread_loop() {
           if(msg.adv.trans) {
             msg.adv.trans->attach(this);
             adv_trans[adv_name] = {msg.adv.fields, msg.adv.trans};
+          } else {
+            delete msg.adv.fields;
           }
 
           continue;

@@ -197,7 +197,7 @@ void MGparser::do_assignment(std::string header, std::string field, std::vector<
 
 
 
-void do_adv_assignment(moltengamepad* mg, std::string header, const std::vector<std::string>& fields, std::vector<token> rhs) {
+void MGparser::do_adv_assignment(std::string header, const std::vector<std::string>& fields, std::vector<token> rhs) {
   if (rhs.empty()) return;
   device_manager* man = mg->find_manager(header.c_str());
   input_source* dev = (!man) ? mg->find_device(header.c_str()) : nullptr;
@@ -210,9 +210,15 @@ void do_adv_assignment(moltengamepad* mg, std::string header, const std::vector<
       if (man) man->update_advanceds(fields,nullptr);
       return;
     }
-    advanced_event_translator* trans = parse_adv_trans(fields,rhs,mg->slots);
+    advanced_event_translator* trans = parse_adv_trans(fields,rhs);
     if (!trans) return; //Abort
-    if (trans) { std::cout << "parse to " << trans->to_string() << std::endl;}
+    if (trans) { 
+      std::stringstream ss;
+      MGTransDef def;
+      trans->fill_def(def);
+      print_def(DEV_KEY,def,ss);
+      std::cout << "parse to " << ss.str() << std::endl;
+    }
     
     if (dev) dev->update_advanced(fields, trans);
     if (man) man->update_advanceds(fields, trans);
@@ -302,7 +308,7 @@ void MGparser::do_assignment_line(std::vector<token> &line, std::string &header)
   }
   
   if (multifield.size() > 0) {
-    do_adv_assignment(mg, effective_header, multifield, rightside);
+    do_adv_assignment(effective_header, multifield, rightside);
     return;
   }
   
@@ -786,11 +792,18 @@ event_translator* parse_complex_trans(enum entry_type intype, std::vector<token>
   return trans; 
 }
 
-advanced_event_translator* parse_adv_trans(const std::vector<std::string>& fields, std::vector<token> &rhs, slot_manager* slots) {
-  event_translator* trans = parse_trans(DEV_KEY, rhs, slots);
-  if (trans) return new simple_chord(fields,trans);
-  
+advanced_event_translator* build_adv_from_def(const std::vector<std::string>& event_names, MGTransDef& def) {
+  if (def.identifier == "simple") return new simple_chord(event_names,def.fields);
+  if (def.identifier == "exclusive") return new exclusive_chord(event_names,def.fields);
+  return nullptr;
+}
+
+advanced_event_translator* MGparser::parse_adv_trans(const std::vector<std::string>& event_names, std::vector<token> &rhs) {
   auto it = rhs.begin();
+  event_translator* trans = parse_trans(DEV_KEY, rhs, it);
+  if (trans) return new simple_chord(event_names,trans);
+  
+  it = rhs.begin();
   complex_expr* expr = read_expr(rhs,it);
   
   if (!expr) return nullptr;
@@ -799,14 +812,26 @@ advanced_event_translator* parse_adv_trans(const std::vector<std::string>& field
   
   advanced_event_translator* adv_trans = nullptr;
   
-  if (expr->ident == "chord") {
-    event_translator* trans = expr_to_trans(expr->params.front());
-    if (trans) adv_trans = new simple_chord(fields,trans);
+  const MGType (*fields) = nullptr;
+  
+  if (expr->ident == "simple") fields = simple_chord::fields;
+  if (expr->ident == "exclusive") fields = exclusive_chord::fields;
+  
+  if (!fields) return nullptr;
+  
+  MGTransDef def;
+  def.identifier = expr->ident;
+  
+  for (int i = 0; (fields)[i] != MG_NULL; i++) {
+    def.fields.push_back({(fields)[i],0});
   }
-  if (expr->ident == "exclusive") {
-    event_translator* trans = expr_to_trans(expr->params.front());
-    if (trans) adv_trans = new exclusive_chord(fields,trans);
-  }
+  
+  if (!parse_def(DEV_KEY, def,expr)) return nullptr;
+
+  
+  //still need to build it!
+  adv_trans = build_adv_from_def(event_names,def);
+  release_def(def);
   
   free_complex_expr(expr);
 

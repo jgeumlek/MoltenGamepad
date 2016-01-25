@@ -107,6 +107,22 @@ void keyboard_redirect::fill_def(MGTransDef& def) {
   def.fields.push_back(field);
 }
 
+
+const MGType simple_chord::fields[] = { MG_KEY_TRANS, MG_NULL };
+simple_chord::simple_chord(std::vector<std::string> event_names, std::vector<MGField>& fields) {
+  if (fields.size() > 0 && fields.front().type == MG_KEY_TRANS)
+    this->out_trans = fields.front().trans->clone();
+  
+  this->event_names = event_names;
+}
+void simple_chord::fill_def(MGTransDef& def) {
+  def.identifier = "simple";
+  MGField field;
+  field.type = MG_KEY_TRANS;
+  field.trans = out_trans;
+  def.fields.push_back(field);
+}
+
 void simple_chord::init(input_source* source) {
   //Stash the actual event ids this device has for the names we are interested in.
   auto events = source->get_events();
@@ -159,6 +175,21 @@ bool simple_chord::claim_event(int id, mg_ev event) {
   return false;
 };
 
+
+const MGType exclusive_chord::fields[] = { MG_KEY_TRANS, MG_NULL };
+exclusive_chord::exclusive_chord(std::vector<std::string> event_names,std::vector<MGField>& fields) {
+  if (fields.size() > 0 && fields.front().type == MG_KEY_TRANS)
+    this->out_trans = fields.front().trans->clone();
+  this->event_names = event_names;
+}
+void exclusive_chord::fill_def(MGTransDef& def) {
+  def.identifier = "exclusive";
+  MGField field;
+  field.type = MG_KEY_TRANS;
+  field.trans = out_trans;
+  def.fields.push_back(field);
+}
+
 bool exclusive_chord::claim_event(int id, mg_ev event) {
   bool output = true;
   int index;
@@ -174,7 +205,6 @@ bool exclusive_chord::claim_event(int id, mg_ev event) {
     }
     output = output && (chord_hits[i]);
   }
-  //TODO: Fix success->one off-> false success. (rename: chord_hits...)
   
    //if not thread, start thread.
   if (!thread && event.value && !old_val) {

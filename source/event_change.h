@@ -70,7 +70,6 @@ public:
   }
 
   //Should return the syntax used to make it.
-  //TODO: just go ahead and cache the string used to make it!
   virtual std::string to_string() {
     return "nothing";
   }
@@ -87,9 +86,6 @@ public:
     def.identifier = "nothing";
   }
   event_translator() {};
-  
-  static constexpr const MGType fields[] = { MG_NULL };
-  
 };
 
 //A more complicated event translator. It can request to listen to multiple events.
@@ -112,8 +108,9 @@ public:
   
   advanced_event_translator(std::vector<MGField>& fields) {};
   advanced_event_translator() {};
-  
-  static constexpr const MGType fields[] = { MG_NULL };
+  virtual void fill_def(MGTransDef& def) {
+    def.identifier = "nothing";
+  }
 };
 
 
@@ -357,7 +354,11 @@ public:
   
   virtual std::string to_string() { return out_trans->to_string(); };
   
-  static constexpr const MGType fields[] = { MG_KEY_TRANS, MG_NULL};
+  static const MGType fields[];
+  simple_chord(std::vector<std::string> event_names, std::vector<MGField>& fields);
+  virtual void fill_def(MGTransDef& def);
+protected:
+  simple_chord() {};
 };
 
 class exclusive_chord : public simple_chord {
@@ -379,7 +380,9 @@ public:
   void thread_func();
   volatile bool thread_active;
   
-  static constexpr const MGType fields[] = { MG_KEY_TRANS, MG_NULL};
+  static const MGType fields[];
+  exclusive_chord(std::vector<std::string> event_names, std::vector<MGField>& fields);
+  virtual void fill_def(MGTransDef& def);
 };
 
 //TODO: Do an advanced_event_translator for taking circular x/y axes and making them square.
