@@ -7,10 +7,18 @@
 
 void print_profile(profile &profile, std::ostream &out) {
   for (auto it = profile.mapping.begin(); it != profile.mapping.end(); it++) {
-    out << profile.name << "." << it->first << " = " << it->second->to_string() << std::endl;
+    out << profile.name << "." << it->first << " = ";
+    MGTransDef def;
+    it->second->fill_def(def);
+    MGparser::print_def(NO_ENTRY,def,out);
+    out << std::endl;
   }
   for (auto entry : profile.adv_trans) {
-    out << profile.name << ".(" << entry.first <<") = " << entry.second.trans->to_string() << std::endl;
+    out << profile.name << ".(" << entry.first << ") = ";
+    MGTransDef def;
+    entry.second.trans->fill_def(def);
+    MGparser::print_def(NO_ENTRY,def,out);
+    out << std::endl;
   }
   for (auto it = profile.options.begin(); it != profile.options.end(); it++) {
     out << profile.name << ".?" << it->first << " = " << it->second << std::endl;

@@ -30,7 +30,7 @@ public:
   event_translator* parse_special_trans(enum entry_type intype, complex_expr* expr);
   advanced_event_translator* parse_adv_trans(const std::vector<std::string>& fields, std::vector<token> &rhs);
   bool parse_def(enum entry_type intype, MGTransDef& def, complex_expr* expr);
-  void print_def(enum entry_type intype, MGTransDef& def, std::ostream& output);
+  static void print_def(enum entry_type intype, MGTransDef& def, std::ostream& output);
   
   moltengamepad* mg;
 private:

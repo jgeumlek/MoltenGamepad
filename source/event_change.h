@@ -69,11 +69,6 @@ public:
     out->take_event(ev);
   }
 
-  //Should return the syntax used to make it.
-  virtual std::string to_string() {
-    return "nothing";
-  }
-  
   //event translators are passed around via cloning.
   //This isn't just for memory management, but also
   //lets the profile store a translator as a "prototype"
@@ -101,11 +96,6 @@ public:
   virtual advanced_event_translator* clone() {return new advanced_event_translator(*this);}
   virtual ~advanced_event_translator() {};
   
-  virtual std::string to_string() {
-    return "nothing";
-  }
-  
-  
   advanced_event_translator(std::vector<MGField>& fields) {};
   advanced_event_translator() {};
   virtual void fill_def(MGTransDef& def) {
@@ -127,18 +117,6 @@ public:
     out_ev.code = out_button;
     out_ev.value = ev.value;
     write_out(out_ev,out);
-  }
-  virtual std::string to_string_long() {
-    std::string text = "btn2btn(";
-    text += std::string(get_key_name(out_button));
-    text += ")";
-    return text;
-  }
-  virtual std::string to_string() {
-    const char* btn_name = get_key_name(out_button);
-    if (!btn_name) return to_string_long();
-    if (btn_name[0] == 'k') return to_string_long();
-    return std::string(btn_name);
   }
   
   virtual btn2btn* clone() {return new btn2btn(*this);}
@@ -165,21 +143,6 @@ public:
     write_out(out_ev,out);
   }
   
-  virtual std::string to_string_long() {
-    std::string text = "btn2axis(";
-    text += std::string(get_axis_name(out_axis));
-    text += ",";
-    text += std::to_string(direction);
-    text += ")";
-    return text;
-  }
-  
-  virtual std::string to_string() {
-    if (direction != -1 && direction != +1) return to_string_long();
-    std::string prefix = direction > 0 ? "+" : "-";
-    return prefix + std::string(get_axis_name(out_axis));
-  }
-  
   virtual btn2axis* clone() {return new btn2axis(*this);}
   
   static const MGType fields[];
@@ -204,19 +167,7 @@ public:
     out_ev.value = value;
     write_out(out_ev,out);
   }
-  virtual std::string to_string_long() {
-    std::string text = "axis2axis(";
-    text += std::string(get_axis_name(out_axis));
-    text += ",";
-    text += std::to_string(direction);
-    text += ")";
-    return text;
-  }
-  virtual std::string to_string() {
-    if (direction != -1 && direction != +1) return to_string_long();
-    std::string prefix = direction > 0 ? "+" : "-";
-    return prefix + std::string(get_axis_name(out_axis));
-  }
+
   virtual axis2axis* clone() {return new axis2axis(*this);}
   
   static const MGType fields[];
@@ -254,19 +205,7 @@ public:
     }
     
   }
-  
-  virtual std::string to_string_long() {
-    std::string text = "axis2btns(";
-    text += std::string(get_key_name(neg_btn));
-    text += ",";
-    text += std::string(get_key_name(pos_btn));
-    text += ")";
-    return text;
-  }
-  virtual std::string to_string() {
-    return std::string(get_key_name(neg_btn)) + "," + std::string(get_key_name(pos_btn));
-  }
-  
+
   virtual axis2btns* clone() {return new axis2btns(*this);}
   
   static const MGType fields[];
@@ -298,9 +237,6 @@ public:
     write_out(out_ev,redirected);
     
   }
-  virtual std::string to_string() {
-    return "redirect(" + trans->to_string() + "," + redirected->name + ")";
-  }
   
   virtual redirect_trans* clone() {return new redirect_trans(trans->clone(),redirected);}
   
@@ -318,10 +254,6 @@ public:
   int key_code;
   keyboard_redirect(int key_code, event_translator* trans, virtual_device* redirected ) : redirect_trans(trans,redirected) {
     this->key_code = key_code;
-  }
-  
-  virtual std::string to_string() {
-    return "key(" + std::string(get_key_name(key_code))+")";
   }
   
   virtual keyboard_redirect* clone() {return new keyboard_redirect(key_code,this->trans->clone(),redirected);}
@@ -351,9 +283,7 @@ public:
 
   virtual bool claim_event(int id, mg_ev event);
   virtual advanced_event_translator* clone() {return new simple_chord(event_names,out_trans->clone());}
-  
-  virtual std::string to_string() { return out_trans->to_string(); };
-  
+
   static const MGType fields[];
   simple_chord(std::vector<std::string> event_names, std::vector<MGField>& fields);
   virtual void fill_def(MGTransDef& def);
@@ -374,9 +304,7 @@ public:
   virtual void init(input_source* source);
   virtual bool claim_event(int id, mg_ev event);
   virtual advanced_event_translator* clone() {return new exclusive_chord(event_names,out_trans->clone());}
-  
-  virtual std::string to_string() { return "exclusive(" + out_trans->to_string() + ")"; };
-  
+
   void thread_func();
   volatile bool thread_active;
   
