@@ -52,6 +52,8 @@ int shell_loop(moltengamepad* mg, std::istream &in) {
   bool keep_looping = true;
   std::string header = "";
   char* buff = new char [1024];
+  MGparser parser(mg);
+  
   while(!QUIT_APPLICATION && keep_looping) {
     in.getline(buff,1024);
     
@@ -61,7 +63,7 @@ int shell_loop(moltengamepad* mg, std::istream &in) {
       keep_looping = false;
     }
     
-    parse_line(tokens,header,mg);
+    parser.exec_line(tokens,header);
     
     
     if (in.eof()) break;

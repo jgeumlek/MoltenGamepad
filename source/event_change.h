@@ -18,7 +18,46 @@ struct mg_ev {
 };
 
 class input_source;
+class event_translator;
+class advanced_event_translator;
 
+enum MGType {
+  MG_KEY_TRANS,
+  MG_REL_TRANS,
+  MG_AXIS_TRANS,
+  MG_TRANS,
+  MG_ADVANCED_TRANS,
+  MG_KEY,
+  MG_AXIS,
+  MG_REL,
+  MG_STRING,
+  MG_INT,
+  MG_FLOAT, //Not implemented...
+  MG_SLOT,
+  MG_KEYBOARD_SLOT,
+  MG_NULL,
+};
+//Maybe add a varargs or tuple type?
+
+struct MGField {
+  MGType type;
+  union {
+    event_translator* trans;
+    advanced_event_translator* adv_trans;
+    int key;
+    int axis;
+    int rel;
+    std::string* string;
+    int integer;
+    float real;
+    virtual_device* slot;
+  };
+};
+
+struct MGTransDef {
+  std::string identifier;
+  std::vector<MGField> fields;
+};
 
 //A simple event translator. Takes one input event, and translates it. Essentially just a "pipe".
 class event_translator {
@@ -43,6 +82,14 @@ public:
   
   virtual ~event_translator() {};
   
+  event_translator(std::vector<MGField>& fields) {};
+  virtual void fill_def(MGTransDef& def) {
+    def.identifier = "nothing";
+  }
+  event_translator() {};
+  
+  static constexpr const MGType fields[] = { MG_NULL };
+  
 };
 
 //A more complicated event translator. It can request to listen to multiple events.
@@ -58,17 +105,17 @@ public:
   virtual advanced_event_translator* clone() {return new advanced_event_translator(*this);}
   virtual ~advanced_event_translator() {};
   
-  std::string get_syntax() {
-    if (!syntax_cache.empty()) return syntax_cache;
-    return to_string();
-  }
-  
   virtual std::string to_string() {
     return "nothing";
   }
   
-  std::string syntax_cache;
+  
+  advanced_event_translator(std::vector<MGField>& fields) {};
+  advanced_event_translator() {};
+  
+  static constexpr const MGType fields[] = { MG_NULL };
 };
+
 
 class btn2btn : public event_translator {
 public:
@@ -98,6 +145,10 @@ public:
   }
   
   virtual btn2btn* clone() {return new btn2btn(*this);}
+  
+  static const MGType fields[];
+  btn2btn(std::vector<MGField>& fields);
+  virtual void fill_def(MGTransDef& def);
 };
 
 class btn2axis : public event_translator {
@@ -133,6 +184,10 @@ public:
   }
   
   virtual btn2axis* clone() {return new btn2axis(*this);}
+  
+  static const MGType fields[];
+  btn2axis(std::vector<MGField>& fields);
+  virtual void fill_def(MGTransDef& def);
 };
 
 class axis2axis : public event_translator {
@@ -166,6 +221,10 @@ public:
     return prefix + std::string(get_axis_name(out_axis));
   }
   virtual axis2axis* clone() {return new axis2axis(*this);}
+  
+  static const MGType fields[];
+  axis2axis(std::vector<MGField>& fields);
+  virtual void fill_def(MGTransDef& def);
 };
 
 class axis2btns : public event_translator {
@@ -212,6 +271,10 @@ public:
   }
   
   virtual axis2btns* clone() {return new axis2btns(*this);}
+  
+  static const MGType fields[];
+  axis2btns(std::vector<MGField>& fields);
+  virtual void fill_def(MGTransDef& def);
 
 };
 
@@ -244,6 +307,13 @@ public:
   
   virtual redirect_trans* clone() {return new redirect_trans(trans->clone(),redirected);}
   
+  static const MGType fields[];
+  redirect_trans(std::vector<MGField>& fields);
+  virtual void fill_def(MGTransDef& def);
+  
+protected:
+  redirect_trans() {};
+  
 };
 
 class keyboard_redirect : public redirect_trans {
@@ -258,6 +328,10 @@ public:
   }
   
   virtual keyboard_redirect* clone() {return new keyboard_redirect(key_code,this->trans->clone(),redirected);}
+  
+  static const MGType fields[];
+  keyboard_redirect(std::vector<MGField>& fields);
+  virtual void fill_def(MGTransDef& def);
 };
   
 
@@ -282,6 +356,8 @@ public:
   virtual advanced_event_translator* clone() {return new simple_chord(event_names,out_trans->clone());}
   
   virtual std::string to_string() { return out_trans->to_string(); };
+  
+  static constexpr const MGType fields[] = { MG_KEY_TRANS, MG_NULL};
 };
 
 class exclusive_chord : public simple_chord {
@@ -302,6 +378,8 @@ public:
   
   void thread_func();
   volatile bool thread_active;
+  
+  static constexpr const MGType fields[] = { MG_KEY_TRANS, MG_NULL};
 };
 
 //TODO: Do an advanced_event_translator for taking circular x/y axes and making them square.

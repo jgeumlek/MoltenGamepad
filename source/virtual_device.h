@@ -16,7 +16,7 @@ public:
    std::string descr;
    virtual_device(std::string name) : name(name) {};
    virtual_device(std::string name, std::string descr) : name(name), descr(descr) {};
-   ~virtual_device();
+   virtual ~virtual_device();
    virtual void take_event(struct input_event in) {
    }
   

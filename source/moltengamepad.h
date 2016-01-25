@@ -57,6 +57,8 @@ private:
 
 };
 
+
+
 int shell_loop(moltengamepad* mg, std::istream &in);
 
 

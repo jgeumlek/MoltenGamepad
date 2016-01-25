@@ -4,6 +4,109 @@
 #include <iostream>
 #include <unistd.h>
 
+const MGType btn2btn::fields[] = { MG_KEY, MG_NULL };
+btn2btn::btn2btn(std::vector<MGField>& fields) {
+  if (fields.size() > 0 && fields.front().type == MG_KEY)
+    out_button = fields.front().key;
+}
+void btn2btn::fill_def(MGTransDef& def) {
+  def.identifier = "btn2btn";
+  MGField field;
+  field.type = MG_KEY;
+  field.key = out_button;
+  def.fields.push_back(field);
+}
+
+const MGType btn2axis::fields[] = { MG_AXIS, MG_INT, MG_NULL };
+btn2axis::btn2axis(std::vector<MGField>& fields) {
+  if (fields.size() > 0 && fields.front().type == MG_AXIS)
+    out_axis = fields.front().axis;
+  if (fields.size() > 1 && fields[1].type == MG_INT)
+    direction = fields[1].integer;
+}
+void btn2axis::fill_def(MGTransDef& def) {
+  def.identifier = "btn2axis";
+  MGField field;
+  field.type = MG_AXIS;
+  field.axis = out_axis;
+  def.fields.push_back(field);
+  field.type = MG_INT;
+  field.integer = direction;
+  def.fields.push_back(field);
+}
+
+const MGType axis2axis::fields[] = { MG_AXIS, MG_INT, MG_NULL };
+axis2axis::axis2axis(std::vector<MGField>& fields) {
+  if (fields.size() > 0 && fields.front().type == MG_AXIS)
+    out_axis = fields.front().axis;
+  if (fields.size() > 1 && fields[1].type == MG_INT)
+    direction = fields[1].integer;
+}
+void axis2axis::fill_def(MGTransDef& def) {
+  def.identifier = "axis2axis";
+  MGField field;
+  field.type = MG_AXIS;
+  field.axis = out_axis;
+  def.fields.push_back(field);
+  field.type = MG_INT;
+  field.integer = direction;
+  def.fields.push_back(field);
+}
+
+const MGType axis2btns::fields[] = { MG_KEY, MG_KEY, MG_NULL };
+axis2btns::axis2btns(std::vector<MGField>& fields) {
+  if (fields.size() > 0 && fields.front().type == MG_KEY)
+    neg_btn = fields.front().key;
+  if (fields.size() > 1 && fields[1].type == MG_KEY)
+    pos_btn = fields[1].key;
+}
+void axis2btns::fill_def(MGTransDef& def) {
+  def.identifier = "axis2btns";
+  MGField field;
+  field.type = MG_KEY;
+  field.key = neg_btn;
+  def.fields.push_back(field);
+  field.type = MG_KEY;
+  field.key = pos_btn;
+  def.fields.push_back(field);
+}
+const MGType redirect_trans::fields[] = { MG_TRANS, MG_SLOT, MG_NULL };
+redirect_trans::redirect_trans(std::vector<MGField>& fields) {
+  if (fields.size() > 0 && fields.front().type == MG_TRANS)
+    this->trans = fields.front().trans->clone();
+  if (fields.size() > 1 && fields[1].type == MG_SLOT)
+    this->redirected = fields[1].slot;
+}
+void redirect_trans::fill_def(MGTransDef& def) {
+  def.identifier = "redirect";
+  MGField field;
+  field.type = MG_TRANS;
+  field.trans = trans;
+  def.fields.push_back(field);
+  field.type = MG_SLOT;
+  field.slot = redirected;
+  def.fields.push_back(field);
+}
+const MGType keyboard_redirect::fields[] = { MG_KEY, MG_KEYBOARD_SLOT, MG_NULL };
+keyboard_redirect::keyboard_redirect(std::vector<MGField>& fields)  : redirect_trans() {
+  if (fields.size() > 0 && fields.front().type == MG_KEY) {
+    this->trans = new btn2btn(fields[0].key);
+    key_code = fields[0].key;
+  }
+  if (fields.size() > 1 && fields[1].type == MG_KEYBOARD_SLOT)
+    this->redirected = fields[1].slot;
+}
+void keyboard_redirect::fill_def(MGTransDef& def) {
+  def.identifier = "key";
+  MGField field;
+  field.type = MG_TRANS;
+  field.trans = trans;
+  def.fields.push_back(field);
+  field.type = MG_KEYBOARD_SLOT;
+  field.slot = redirected;
+  def.fields.push_back(field);
+}
+
 void simple_chord::init(input_source* source) {
   //Stash the actual event ids this device has for the names we are interested in.
   auto events = source->get_events();
