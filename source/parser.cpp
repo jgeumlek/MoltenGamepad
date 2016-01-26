@@ -342,7 +342,7 @@ event_translator* MGparser::parse_trans(enum entry_type intype, std::vector<toke
   //not as some recursive substep. If we wish to avoid the quirks, use parse_complex_trans instead.
   event_translator* trans = parse_trans_toplevel_quirks(intype,tokens,it);
   if (trans) return trans;
-  trans = parse_complex_trans(intype, tokens, it);
+  trans = parse_trans_strict(intype, tokens, it);
   
   return trans;
 }
@@ -372,7 +372,7 @@ event_translator* MGparser::parse_trans_toplevel_quirks(enum entry_type intype, 
 }
     
 
-event_translator* MGparser::parse_complex_trans(enum entry_type intype, std::vector<token> &tokens, std::vector<token>::iterator &it) {
+event_translator* MGparser::parse_trans_strict(enum entry_type intype, std::vector<token> &tokens, std::vector<token>::iterator &it) {
   auto localit = it;
   complex_expr* expr = read_expr(tokens, localit);
   event_translator* trans =  parse_trans_expr(intype, expr);
@@ -496,14 +496,12 @@ bool MGparser::parse_def(enum entry_type intype, MGTransDef& def, complex_expr* 
   if (!expr) return false;
   if (def.identifier != expr->ident) return false;
   int fieldsfound = expr->params.size();
-  std::cout<<"Parse def of " << def.fields.size() << " given " << fieldsfound << std::endl;
   int j = 0;
   for (int i = 0; i < def.fields.size(); i++) {
     MGType type = def.fields[i].type;
     if (type == MG_KEYBOARD_SLOT) {def.fields[i].slot = mg->slots->keyboard; continue;};
     if (j >= fieldsfound) return false;
     
-    std::cout<<"Parsing type " << type << " at " << expr->params[j]->ident << std::endl;
     if (type == MG_TRANS) def.fields[i].trans = parse_trans_expr(intype, expr->params[j]);
     if (type == MG_KEY_TRANS) def.fields[i].trans = parse_trans_expr(DEV_KEY, expr->params[j]);
     if (type == MG_REL_TRANS) def.fields[i].trans = parse_trans_expr(DEV_REL, expr->params[j]);
