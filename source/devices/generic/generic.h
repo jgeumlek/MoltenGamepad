@@ -210,7 +210,7 @@ public:
   bool flatten = false;
   
   
-  generic_manager(slot_manager* slot_man, generic_driver_info &descr);
+  generic_manager(moltengamepad* mg, generic_driver_info &descr);
 
   ~generic_manager(); 
   

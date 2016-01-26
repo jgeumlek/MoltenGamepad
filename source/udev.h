@@ -3,8 +3,9 @@
 #include <libudev.h>
 #include <vector>
 #include <thread>
-#include "devices/device.h"
 
+
+class device_manager;
 class udev_handler {
 public:
   std::vector<device_manager*>* managers;

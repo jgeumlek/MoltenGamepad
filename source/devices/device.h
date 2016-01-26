@@ -8,13 +8,14 @@
 #include <map>
 #include <mutex>
 #include "../event_change.h"
-#include "../slot_manager.h"
+#include "../moltengamepad.h"
 #include "../profile.h"
 
 #define ABS_RANGE 32000
 
 class event_translator;
 class advanced_event_translator;
+class moltengamepad;
 
 
 class slot_manager;
@@ -126,14 +127,14 @@ protected:
 
 class device_manager {
 public:
-  slot_manager* slot_man;
+  moltengamepad* mg;
   virtual int accept_device(struct udev* udev, struct udev_device* dev) {
   return -1;
   }
   virtual void list_devs(name_list &list) {
   };
   
-  device_manager(slot_manager* slot_man) : slot_man(slot_man) {
+  device_manager(moltengamepad* mg) : mg(mg) {
   }
 
   virtual ~device_manager() {

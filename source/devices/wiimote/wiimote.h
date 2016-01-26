@@ -166,7 +166,7 @@ public:
   
   void init_profile();
 
-  wiimotes(slot_manager* slot_man) : device_manager(slot_man) {
+  wiimotes(moltengamepad* mg) : device_manager(mg) {
     name = "wiimote";
     mapprofile.name = "wiimote";
     init_profile();

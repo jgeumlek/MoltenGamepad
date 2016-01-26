@@ -3,6 +3,7 @@
 #include <sys/epoll.h>
 #include <cstring>
 #include <unistd.h>
+#include "devices/device.h"
 
 void pass_along_device(std::vector<device_manager*>* devs, struct udev* ud, struct udev_device* new_dev) {
   if (new_dev == nullptr) return;

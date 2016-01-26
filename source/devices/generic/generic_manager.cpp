@@ -1,6 +1,6 @@
 #include "generic.h"
 
-generic_manager::generic_manager(slot_manager* slot_man, generic_driver_info &descr) : device_manager(slot_man) {
+generic_manager::generic_manager(moltengamepad* mg, generic_driver_info &descr) : device_manager(mg) {
   this->name = descr.name.c_str();
   this->devname = descr.devname.c_str();
   mapprofile.name = name;
@@ -99,7 +99,7 @@ int generic_manager::open_device(struct udev* udev, struct udev_device* dev) {
 
 void generic_manager::create_inputs(generic_file* opened_file,int fd, bool watch) {
   if (split == 1) {
-    generic_device* gendev = new generic_device(descr->events,fd,watch,slot_man);
+    generic_device* gendev = new generic_device(descr->events,fd,watch,mg->slots);
     char* newdevname = nullptr;
     asprintf(&newdevname,"%s%d",devname.c_str(),++dev_counter);
     gendev->nameptr = newdevname;
@@ -109,7 +109,7 @@ void generic_manager::create_inputs(generic_file* opened_file,int fd, bool watch
     gendev->load_profile(&mapprofile);
   } else {
     for (int i = 1; i <= split; i++) {
-      generic_device* gendev = new generic_device(splitevents.at(i-1),fd,watch,slot_man);
+      generic_device* gendev = new generic_device(splitevents.at(i-1),fd,watch,mg->slots);
       char* newdevname = nullptr;
       asprintf(&newdevname,"%s%d",devname.c_str(),++dev_counter);
       gendev->nameptr = newdevname;

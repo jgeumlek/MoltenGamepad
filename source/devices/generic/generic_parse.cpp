@@ -133,7 +133,7 @@ void generic_parse_line(std::vector<token> &line, generic_driver_info* &info, mo
       
       
       if (info->events.size() > 0 && !info->name.empty() && !info->devname.empty()) {
-        mg->devs.push_back(new generic_manager(mg->slots,*info));
+        mg->devs.push_back(new generic_manager(mg,*info));
         info = new generic_driver_info;
       }
       info->matches.push_back({0,0,std::string(newhead)});
@@ -172,7 +172,7 @@ int generic_config_loop(moltengamepad* mg, std::istream &in) {
   }
   
   if (info->events.size() > 0 && !info->name.empty() && !info->devname.empty()) {
-        mg->devs.push_back(new generic_manager(mg->slots,*info));
+        mg->devs.push_back(new generic_manager(mg,*info));
   } else {
     delete info;
     failed = true;

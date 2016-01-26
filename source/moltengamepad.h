@@ -4,15 +4,17 @@
 #include <vector>
 #include <thread>
 #include <string>
-#include <devices/device.h>
-#include <devices/wiimote/wiimote.h>
-#include <devices/generic/generic.h>
+#include "devices/device.h"
 #include "slot_manager.h"
 #include "uinput.h"
 #include "udev.h"
 #include "signalflags.h"
 
 #define VERSION_STRING "alpha"
+
+class slot_manager;
+class device_manager;
+class udev_handler;
 
 class moltengamepad {
 public:

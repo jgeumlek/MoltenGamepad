@@ -4,6 +4,8 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <glob.h>
+#include <devices/wiimote/wiimote.h>
+#include <devices/generic/generic.h>
 
 moltengamepad::moltengamepad() {
 }
@@ -81,7 +83,7 @@ int moltengamepad::init() {
   if (options.mimic_xpad) padstyle = xpad_padstyle;
   slots = new slot_manager(options.num_gamepads, options.make_keyboard, padstyle);
   
-  devs.push_back( new wiimotes(slots));
+  devs.push_back( new wiimotes(this));
   
   if (options.config_dir.empty()) options.config_dir = find_config_folder();
   

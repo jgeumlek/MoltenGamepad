@@ -348,7 +348,7 @@ int wiimotes::accept_device(struct udev* udev, struct udev_device* dev) {
   if (existing == nullptr) {
     //time to add a device;
     std::cout << "Wiimote found (count:" << wii_devs.size() << " )" << std::endl;;
-    wiimote* wm = new wiimote(slot_man);
+    wiimote* wm = new wiimote(mg->slots);
     char* devname;
     asprintf(&devname, "wm%d",++dev_counter);
     wm->name = devname;
