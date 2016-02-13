@@ -4,6 +4,7 @@
 #include <vector>
 #include <thread>
 #include <string>
+#include <memory>
 #include "devices/device.h"
 #include "slot_manager.h"
 #include "uinput.h"
@@ -15,6 +16,8 @@
 class slot_manager;
 class device_manager;
 class udev_handler;
+class input_source;
+
 
 class moltengamepad {
 public:
@@ -37,6 +40,8 @@ public:
   } options;
 
   std::vector<device_manager*> devs;
+  //TODO: Go through this whole project fixing up nomenclature...
+  std::vector<std::shared_ptr<input_source>> devices;
   slot_manager* slots;
   udev_handler udev;
 
@@ -48,6 +53,8 @@ public:
   
   device_manager* find_manager(const char* name);
   input_source* find_device(const char* name);
+  void add_device(input_source* source);
+  void remove_device(input_source* source);
   
 private:
   bool udev_loop = true;
