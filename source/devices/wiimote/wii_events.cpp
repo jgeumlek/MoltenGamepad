@@ -49,6 +49,9 @@ const source_event wiimote_events[] = {
 {EVNAME(cc_r),"Classic Controller R button",BTN},
 {EVNAME(cc_zr),"Classic Controller ZR button",BTN},
 
+{EVNAME(cc_thumbl),"Classic Controller Left Stick Click (Wii U Pro only)",BTN},
+{EVNAME(cc_thumbr),"Classic Controller Right Stick Click  (Wii U Pro only)",BTN},
+
 {EVNAME(wm_accel_x),"Wiimote X acceleration ((-) <--> (+) axis)",ABS},
 {EVNAME(wm_accel_y),"Wiimote Y acceleration (plug <--> pointer axis)",ABS},
 {EVNAME(wm_accel_z),"Wiimote Z acceleration (top <--> bottom axis)",ABS},
@@ -71,6 +74,10 @@ const source_event wiimote_events[] = {
 {EVNAME(cc_left_y),"Classic Controller Left Stick Y",ABS},
 {EVNAME(cc_right_x),"Classic Controller Right Stick X",ABS},
 {EVNAME(cc_right_y),"Classic Controller Right Stick Y",ABS},
+
+{EVNAME(bal_x),"Balance Board Center of Gravity X",ABS},
+{EVNAME(bal_y),"Balance Board Center of Gravity Y",ABS},
+
 
 {-1,nullptr, nullptr,NO_ENTRY,0,nullptr}
 };
@@ -252,4 +259,82 @@ void wiimote::compute_ir() {
     process(EVENT_AXIS, offset+1, y*IR_Y_SCALE);
   }
   
+}
+
+#define BAL_X_SCALE ABS_RANGE
+#define BAL_Y_SCALE ABS_RANGE
+void wiimote::process_balance(int fd) {
+  struct input_event ev;
+  int ret;
+  while(ret = read(fd,&ev,sizeof(ev)) > 0) {
+    switch (ev.code) {
+      case ABS_HAT0X: balancecache[0] = ev.value; break;
+      case ABS_HAT0Y: balancecache[1] = ev.value; break;
+      case ABS_HAT1X: balancecache[2] = ev.value; break;
+      case ABS_HAT1Y: balancecache[3] = ev.value; break;
+      case SYN_REPORT: compute_balance(); if (out_dev) out_dev->take_event(ev); break;
+    }
+  }
+  if (ret < 0) perror("read balance board");
+}
+
+void wiimote::compute_balance() {
+  int total = balancecache[0] + balancecache[1] + balancecache[2] + balancecache[3];
+  int left = balancecache[2] + balancecache[3];
+  int right = total - left;
+  int front = balancecache[0] + balancecache[2];
+  int back = total - front;
+
+  /*Beware: lots of constants from experimentation below!*/
+
+  float x = (right - left)/((total + 1)*0.7f);
+  float y = (back - front)/((total + 1)*0.7f);
+
+  if (total < 125) {
+    x = 0;
+    y = 0;
+  }
+  
+  process(EVENT_AXIS, bal_x, (int) (x*BAL_X_SCALE));
+  process(EVENT_AXIS, bal_y, (int) (y*BAL_Y_SCALE));
+  
+}
+
+#define PRO_STICK_SCALE 32
+void wiimote::process_pro(int fd) {
+  struct input_event ev;
+  int ret = read(fd,&ev,sizeof(ev));
+  if (ret > 0) {
+    
+    if (ev.type == EV_KEY) switch (ev.code) {
+      case BTN_DPAD_LEFT: process(EVENT_KEY, cc_left,ev.value); break;
+      case BTN_DPAD_RIGHT:process(EVENT_KEY, cc_right,ev.value); break;
+      case BTN_DPAD_UP:   process(EVENT_KEY, cc_up,ev.value); break;
+      case BTN_DPAD_DOWN: process(EVENT_KEY, cc_down,ev.value); break;
+      case BTN_EAST:    process(EVENT_KEY, cc_a,ev.value); break;
+      case BTN_SOUTH:    process(EVENT_KEY, cc_b,ev.value); break;
+      case BTN_NORTH:    process(EVENT_KEY, cc_x,ev.value); break;
+      case BTN_WEST:    process(EVENT_KEY, cc_y,ev.value); break;
+      case BTN_SELECT:
+                     process(EVENT_KEY, cc_minus,ev.value); break;
+      case BTN_START: process(EVENT_KEY, cc_plus,ev.value); break;
+      case BTN_MODE: process(EVENT_KEY, cc_home,ev.value); break;
+      case BTN_TL:   process(EVENT_KEY, cc_l,ev.value); break;
+      case BTN_TR:   process(EVENT_KEY, cc_r,ev.value); break;
+      case BTN_TL2:  process(EVENT_KEY, cc_zl,ev.value); break;
+      case BTN_TR2:  process(EVENT_KEY, cc_zr,ev.value); break;
+      case BTN_THUMBL:  process(EVENT_KEY, cc_thumbl,ev.value); break;
+      case BTN_THUMBR:  process(EVENT_KEY, cc_thumbr,ev.value); break;
+    } else if (ev.type == EV_ABS) switch (ev.code) {
+      case ABS_X:  process(EVENT_AXIS, cc_left_x,ev.value*PRO_STICK_SCALE); break;
+      case ABS_Y:  process(EVENT_AXIS, cc_left_y,ev.value*PRO_STICK_SCALE); break;
+      case ABS_RX:  process(EVENT_AXIS, cc_right_x,ev.value*PRO_STICK_SCALE); break;
+      case ABS_RY:  process(EVENT_AXIS, cc_right_y,ev.value*PRO_STICK_SCALE); break;
+    } else {
+    
+      if (out_dev) out_dev->take_event(ev);
+
+    }
+      
+  }
 }

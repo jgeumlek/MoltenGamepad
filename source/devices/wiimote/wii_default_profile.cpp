@@ -44,6 +44,8 @@ void wiimotes::init_profile() {
   (*map)["cc_r"] =    {new btn2btn(BTN_TR), DEV_KEY};
   (*map)["cc_zl"] =   {new btn2btn(BTN_TL2), DEV_KEY};
   (*map)["cc_zr"] =   {new btn2btn(BTN_TR2), DEV_KEY};
+  (*map)["cc_thumbl"] =   {new btn2btn(BTN_THUMBL), DEV_KEY};
+  (*map)["cc_thumbr"] =   {new btn2btn(BTN_THUMBR), DEV_KEY};
   
   
   (*map)["nk_stick_x"] = {new axis2axis(ABS_X,1), DEV_AXIS};

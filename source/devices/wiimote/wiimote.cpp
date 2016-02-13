@@ -4,7 +4,7 @@
 #include <sys/epoll.h>
 #include <fcntl.h>
 #include <errno.h>
-wiimote::wiimote(slot_manager* slot_man) : wii_dev(slot_man) {
+wiimote::wiimote(slot_manager* slot_man) : input_source(slot_man) {
     for (int i = 0; i < wii_event_max; i++) {
       register_event(wiimote_events[i]);
     }
@@ -15,16 +15,16 @@ wiimote::wiimote(slot_manager* slot_man) : wii_dev(slot_man) {
 }
 
 wiimote::~wiimote() {
+   clear_node(&base);
    clear_node(&buttons);
    clear_node(&accel);
    clear_node(&ir);
    clear_node(&motionplus);
    clear_node(&nunchuk);
    clear_node(&classic);
-   
-   
-   
-   
+   clear_node(&pro);
+   clear_node(&balance);
+
    free (nameptr);
 }
 
@@ -62,7 +62,7 @@ void wiimote::clear_node(struct dev_node* node) {
 /*NOTE: Finding uses prefixes, but destroying needs an exact match.
   This allows easily adding/removing subnodes while only deleting
   if the base node is removed                                    */
-wii_dev* find_wii_dev_by_path(std::vector<wii_dev*>* devs, const char* syspath) {
+wiimote* find_wii_dev_by_path(std::vector<wiimote*>* devs, const char* syspath) {
   if (syspath == nullptr) return nullptr;
   for (auto it = devs->begin(); it != devs->end(); ++it) {
     const char* devpath = udev_device_get_syspath( (*it)->base.dev);
@@ -73,7 +73,7 @@ wii_dev* find_wii_dev_by_path(std::vector<wii_dev*>* devs, const char* syspath) 
   return nullptr;
 }
 
-int destroy_wii_dev_by_path(moltengamepad* mg, std::vector<wii_dev*>* devs, const char* syspath) {
+int destroy_wii_dev_by_path(moltengamepad* mg, std::vector<wiimote*>* devs, const char* syspath) {
   if (syspath == nullptr) return -1;
   for (auto it = devs->begin(); it != devs->end(); ++it) {
     const char* devpath = udev_device_get_syspath( (*it)->base.dev);
@@ -130,7 +130,7 @@ void wiimote::handle_event(struct udev_device* dev) {
   }
 }
 
-enum nodes {CORE, E_NK, E_CC,  IR, ACCEL, MP, NONE};
+enum nodes {CORE, E_NK, E_CC,  IR, ACCEL, MP, BALANCE, WII_U_PRO, NONE};
 int name_to_node(const char* name) {
   if (!strcmp(name, WIIMOTE_NAME)) return CORE;
   if (!strcmp(name, WIIMOTE_IR_NAME)) return IR;
@@ -138,6 +138,8 @@ int name_to_node(const char* name) {
   if (!strcmp(name, MOTIONPLUS_NAME)) return MP;
   if (!strcmp(name, NUNCHUK_NAME)) return E_NK;
   if (!strcmp(name, CLASSIC_NAME)) return E_CC;
+  if (!strcmp(name, BALANCE_BOARD_NAME)) return BALANCE;
+  if (!strcmp(name, WII_U_PRO_NAME)) return WII_U_PRO;
   return NONE;
 }
 
@@ -181,6 +183,17 @@ void wiimote::store_node(struct udev_device* dev, const char* name) {
     update_mode();
     std::cout<< this->name << " gained a classic controller." << std::endl;
     break;
+  case BALANCE:
+    balance.dev = udev_device_ref(dev);
+    open_node(&balance);
+    descr = "Wii Balance Board";
+    break;
+  case WII_U_PRO:
+    pro.dev = udev_device_ref(dev);
+    open_node(&pro);
+    descr = "Wii U Pro Controller";
+    break;
+    
   }
 
 
@@ -223,7 +236,22 @@ void wiimote::list_events(cat_list &list) {
   struct name_descr info;
   
   cat.name = "Wiimote";
-  for (int i = 0; i < events.size(); i++) {
+  int minevent = 0;
+  int maxevent = cc_right_y;
+  /*Going to assume we'll never see a combination of a wiimote with the two devices below..*/
+  if (pro.dev) {
+    cat.name = "Wii U Pro Controller";
+    minevent = cc_a;
+    maxevent = cc_thumbr;
+  }
+  if (balance.dev) {
+    cat.name = "Wii Balance Board";
+    minevent = bal_x;
+    maxevent = bal_y;
+  }
+    
+  
+  for (int i = minevent; i <= maxevent; i++) {
     info.name = wiimote_events[i].name;
     info.descr = wiimote_events[i].descr;
     info.data = wiimote_events[i].type;
@@ -282,6 +310,8 @@ void wiimote::process(void* tag) {
   if (tag == &nunchuk) type = E_NK;
   if (tag == &ir) type = IR;
   if (tag == &accel) type = ACCEL;
+  if (tag == &pro)  type = WII_U_PRO;
+  if (tag == &balance) type = BALANCE;
   switch(type) {
     case CORE:
       process_core();
@@ -298,6 +328,12 @@ void wiimote::process(void* tag) {
     case ACCEL:
       process_accel(accel.fd);
       break;
+    case BALANCE:
+      process_balance(balance.fd);
+      break;
+    case WII_U_PRO:
+      process_pro(pro.fd);
+      break;
   }
 }
 
@@ -311,7 +347,7 @@ int wiimotes::accept_device(struct udev* udev, struct udev_device* dev) {
   if (!strcmp(action,"remove")) {
 
     const char* syspath = udev_device_get_syspath(dev);
-    wii_dev* existing = find_wii_dev_by_path(&wii_devs, syspath);
+    wiimote* existing = find_wii_dev_by_path(&wii_devs, syspath);
 
     if (existing) {
       int ret = destroy_wii_dev_by_path(mg, &wii_devs, syspath);
@@ -341,11 +377,11 @@ int wiimotes::accept_device(struct udev* udev, struct udev_device* dev) {
 
   const char* parentpath = udev_device_get_syspath(parent);
 
-  wii_dev* existing = find_wii_dev_by_path(&wii_devs, parentpath);
+  wiimote* existing = find_wii_dev_by_path(&wii_devs, parentpath);
 
   if (existing == nullptr) {
     //time to add a device;
-    std::cout << "Wiimote found (count:" << wii_devs.size() << " )" << std::endl;;
+    std::cout << "Wiimote found." << std::endl;;
     wiimote* wm = new wiimote(mg->slots);
     char* devname;
     asprintf(&devname, "wm%d",++dev_counter);

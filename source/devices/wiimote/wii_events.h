@@ -45,6 +45,8 @@ cc_l,
 cc_zl,
 cc_r,
 cc_zr,
+cc_thumbl,
+cc_thumbr,
 
 wm_accel_x,
 wm_accel_y,
@@ -68,6 +70,10 @@ cc_left_x,
 cc_left_y,
 cc_right_x,
 cc_right_y,
+
+
+bal_x,
+bal_y,
 
 wii_event_max
 };

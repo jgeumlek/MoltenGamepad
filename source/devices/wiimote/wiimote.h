@@ -15,6 +15,7 @@
 #define NUNCHUK_NAME "Nintendo Wii Remote Nunchuk"
 #define CLASSIC_NAME "Nintendo Wii Remote Classic Controller"
 #define BALANCE_BOARD_NAME "Nintendo Wii Remote Balance Board"
+#define WII_U_PRO_NAME "Nintendo Wii Remote Pro Controller"
 
 struct dev_node {
   struct udev_device* dev = nullptr;
@@ -25,35 +26,7 @@ struct dev_node {
 enum ext_type {NUNCHUK, CLASSIC, GUITAR, DRUMS, UNKNOWN};
 
 
-class wii_dev : public input_source {
-public:
-  struct dev_node base;
 
-  
-  const char* descr = "unidentified Wii device";
-  
-  wii_dev(slot_manager* slot_man) : input_source(slot_man) {};
-
-  virtual struct name_descr get_info() {
-    struct name_descr info;
-    info.name = name;
-    info.descr = descr;
-    return info;
-  }
-  
-  virtual void handle_event(struct udev_device* dev) {
-  } 
-
-  virtual void list_events(name_list &list) {
-  }
-  virtual void list_options(name_list &list) {
-  }
-  virtual ~wii_dev() {
-    
-    if(base.dev) udev_device_unref(base.dev);
-  };
-
-};
 
 struct wii_leds {
   int led_fd[4];
@@ -66,19 +39,23 @@ struct irdata {
 enum modes {NO_EXT, NUNCHUK_EXT, CLASSIC_EXT};
 
 
-class wiimote : public wii_dev {
+class wiimote : public input_source {
 public:
+  struct dev_node base;
   struct dev_node buttons;
   struct dev_node accel;
   struct dev_node ir;
   struct dev_node motionplus;
   struct dev_node nunchuk;
   struct dev_node classic;
+  struct dev_node pro;
+  struct dev_node balance;
   struct wii_leds leds;
 
   modes mode = NO_EXT;
 
   char* nameptr;
+  const char* descr = "unidentified Wii device";
   
   wiimote(slot_manager* slot_man);
 
@@ -89,7 +66,7 @@ public:
   virtual struct name_descr get_info() {
     struct name_descr desc;
     desc.name = name;
-    desc.descr = "Wiimote";
+    desc.descr = descr;
     return desc;
   }
   void enable_ir(bool enable);
@@ -118,6 +95,7 @@ protected:
 
 private:
   irdata ircache[4];
+  int balancecache[4] = {0,0,0,0};
   bool wm_accel_active = false;
   bool nk_accel_active = false;
   bool wm_ir_active = false;
@@ -133,7 +111,10 @@ private:
   void process_nunchuk(int fd);
   void process_accel(int fd);
   void process_ir(int fd);
+  void process_pro(int fd);
+  void process_balance(int fd);
   void compute_ir();
+  void compute_balance();
   void process(int type, int event_id, long long value);
   
   void clear_node(struct dev_node* node);
@@ -147,7 +128,7 @@ private:
 
 class wiimotes : public device_manager {
 public:
-  std::vector<wii_dev*> wii_devs;
+  std::vector<wiimote*> wii_devs;
 
   virtual int accept_device(struct udev* udev, struct udev_device* dev);
 

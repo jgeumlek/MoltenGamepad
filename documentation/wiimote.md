@@ -5,7 +5,7 @@ The MoltenGamepad wiimote driver is based off of the ideas of the WiimoteGlue pr
 * Combine the multiple kernel event devices into one.
 * Support changing the mapping when extensions are swapped.
 
-Notably MoltenGamepad DOES NOT yet support the LEDs, the Wii balance board, or the Wii U Pro controller. Like WiimoteGlue, it will never support the Wii U Gamepad, and does not yet support the drums or guitar controllers.
+Like WiimoteGlue, it will never support the Wii U Gamepad, and does not yet support the drums or guitar controllers. LEDs are not changed.
 
 Accel and IR values are reported very simply, with a fair bit of noise and jitter as a result.
 
@@ -50,6 +50,8 @@ A wiimote provides the following events, though only a subset will be reachable 
 * cc_zl (Classic Controller ZL button)
 * cc_r (Classic Controller R button)
 * cc_zr (Classic Controller ZR button)
+* cc_thumbl (Left stick click, Wii U Pro Only)
+* cc_thumbr (Right stick click, Wii U Pro Only)
 * wm_accel_x (Wiimote X acceleration (long axis))
 * wm_accel_y (Wiimote Y acceleration ((+) <--> (-) axis))
 * wm_accel_z (Wiimote Z acceleration (top <--> bottom axis))
@@ -69,7 +71,11 @@ A wiimote provides the following events, though only a subset will be reachable 
 * cc_left_y (Classic Controller Left Stick Y)
 * cc_right_x (Classic Controller Right Stick X)
 * cc_right_y (Classic Controller Right Stick Y)
+* bal_x (Balance Board Center of Gravity X)
+* bal_y (Balance Board Center of Gravity Y)
 
 Instead of the "modes" of WiimoteGlue, MoltenGamepad has the slightly less flexible approach of creating appropriate separate events for each mode. In other words, if no extension is present, the wiimote "a" button fires the "wm_a" event. When a nunchuk is present, it fires the "nk_a" event instead. (Do note that the nunchuk has no "a" button of its own!)
+
+A Wii U Pro controller will use the "cc_" events like a classic controller.
 
 Connecting a wiimote is done outside of MoltenGamepad.
