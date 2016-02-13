@@ -6,7 +6,6 @@
 #include <thread>
 #include <iostream>
 
-std::mutex device_delete_lock;
 
 
 input_source::input_source(slot_manager* slot_man) : slot_man(slot_man){

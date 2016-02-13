@@ -80,10 +80,8 @@ int destroy_wii_dev_by_path(moltengamepad* mg, std::vector<wii_dev*>* devs, cons
     if (!devpath) continue;
     
     if (!strcmp(devpath,syspath)) {
-      device_delete_lock.lock();
       mg->remove_device(*it);
       devs->erase(it);
-      device_delete_lock.unlock();
       return 0;
     }
   }

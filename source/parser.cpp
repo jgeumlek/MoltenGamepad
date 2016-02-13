@@ -321,11 +321,9 @@ void MGparser::parse_line(std::vector<token> &line, std::string &header) {
     std::cout << "header is " << header << std::endl;
     return;
   }
-  /*process the command, prevent input_sources from being deleted under our nose.*/
+  
   if (find_token_type(TK_EQUAL, line)) {
-    device_delete_lock.lock();
     do_assignment_line(line, header);
-    device_delete_lock.unlock();
   } else {
     do_command(mg,line);
   }

@@ -25,15 +25,11 @@ int do_command(moltengamepad* mg, std::vector<token> &command) {
   if (command.empty()) return 0;
   if (command.front().type == TK_ENDL) return 0;
   if (command.front().value == "print") {
-    device_delete_lock.lock();
     do_print(mg,command);
-    device_delete_lock.unlock();
     return 0;
   }
    if (command.front().value == "move") {
-    device_delete_lock.lock();
     do_move(mg,command);
-    device_delete_lock.unlock();
     return 0;
   }
     

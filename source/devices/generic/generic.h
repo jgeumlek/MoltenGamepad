@@ -112,11 +112,9 @@ public:
     for (auto node_it : nodes) {
       close_node(node_it.first,false); //TODO: Fix this repeated map look up...
     }
-    device_delete_lock.lock();
     for (auto dev : devices) {
       mg->remove_device(dev);
     }
-    device_delete_lock.unlock();
     if(thread) {thread->join(); delete thread;}
   }
     

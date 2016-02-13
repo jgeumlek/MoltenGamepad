@@ -19,7 +19,6 @@ class moltengamepad;
 
 
 class slot_manager;
-extern std::mutex device_delete_lock;
 
 
 typedef std::vector<struct name_descr> name_list;
