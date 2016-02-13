@@ -89,6 +89,7 @@ public:
   bool grab_ioctl = false;
   bool grab_chmod = false;
   bool keep_looping = true;
+  moltengamepad* mg;
   
   generic_file(struct udev_device* node, bool grab_ioctl, bool grab_chmod) {
     epfd = epoll_create(1);
@@ -113,7 +114,7 @@ public:
     }
     device_delete_lock.lock();
     for (auto dev : devices) {
-      delete dev;
+      mg->remove_device(dev);
     }
     device_delete_lock.unlock();
     if(thread) {thread->join(); delete thread;}

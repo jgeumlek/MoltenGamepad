@@ -73,7 +73,7 @@ wii_dev* find_wii_dev_by_path(std::vector<wii_dev*>* devs, const char* syspath) 
   return nullptr;
 }
 
-int destroy_wii_dev_by_path(std::vector<wii_dev*>* devs, const char* syspath) {
+int destroy_wii_dev_by_path(moltengamepad* mg, std::vector<wii_dev*>* devs, const char* syspath) {
   if (syspath == nullptr) return -1;
   for (auto it = devs->begin(); it != devs->end(); ++it) {
     const char* devpath = udev_device_get_syspath( (*it)->base.dev);
@@ -81,7 +81,7 @@ int destroy_wii_dev_by_path(std::vector<wii_dev*>* devs, const char* syspath) {
     
     if (!strcmp(devpath,syspath)) {
       device_delete_lock.lock();
-      delete *it;
+      mg->remove_device(*it);
       devs->erase(it);
       device_delete_lock.unlock();
       return 0;
@@ -316,7 +316,7 @@ int wiimotes::accept_device(struct udev* udev, struct udev_device* dev) {
     wii_dev* existing = find_wii_dev_by_path(&wii_devs, syspath);
 
     if (existing) {
-      int ret = destroy_wii_dev_by_path(&wii_devs, syspath);
+      int ret = destroy_wii_dev_by_path(mg, &wii_devs, syspath);
       if (ret) {
         //exact path wasn't found, therefore this is not a parent device.
         existing->handle_event(dev);
@@ -356,6 +356,7 @@ int wiimotes::accept_device(struct udev* udev, struct udev_device* dev) {
     wm->base.dev = udev_device_ref(parent);
     wm->handle_event(dev);
     wii_devs.push_back(wm);
+    mg->add_device(wm);
     wm->start_thread();
     wm->load_profile(&mapprofile);
   } else {

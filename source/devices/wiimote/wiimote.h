@@ -174,7 +174,7 @@ public:
   
   ~wiimotes() {
     for (auto it = wii_devs.begin(); it != wii_devs.end(); ++it) {
-      delete (*it);
+      mg->remove_device(*it);
     }
   }
 private:

@@ -59,7 +59,7 @@ struct adv_entry {
 class input_source {
 public:
   input_source(slot_manager* slot_man);
-  ~input_source();
+  virtual ~input_source();
   const char* name = "unnamed";
   virtual int set_player(int player_num) {
   }

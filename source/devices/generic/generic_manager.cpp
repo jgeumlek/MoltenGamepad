@@ -83,12 +83,14 @@ int generic_manager::open_device(struct udev* udev, struct udev_device* dev) {
     if (flatten) {
       if (openfiles.size() < 1) {
         openfiles.push_back(new generic_file(dev,descr->grab_ioctl, descr->grab_chmod));
+        openfiles.front()->mg = mg;
         create_inputs(openfiles.front(),openfiles.front()->fds.front(),false);
       } else {
         openfiles.front()->open_node(dev);
       }
     } else {
       openfiles.push_back(new generic_file(dev,descr->grab_ioctl, descr->grab_chmod));
+      openfiles.back()->mg = mg;
       create_inputs(openfiles.back(),openfiles.back()->fds.front(),false);
     }
   } catch(...) {
@@ -105,6 +107,7 @@ void generic_manager::create_inputs(generic_file* opened_file,int fd, bool watch
     gendev->nameptr = newdevname;
     gendev->name = newdevname;
     opened_file->add_dev(gendev);
+    mg->add_device(gendev);
     gendev->start_thread();
     gendev->load_profile(&mapprofile);
   } else {
@@ -115,6 +118,7 @@ void generic_manager::create_inputs(generic_file* opened_file,int fd, bool watch
       gendev->nameptr = newdevname;
       gendev->name = newdevname;
       opened_file->add_dev(gendev);
+      mg->add_device(gendev);
       gendev->start_thread();
       gendev->load_profile(&mapprofile);
     }

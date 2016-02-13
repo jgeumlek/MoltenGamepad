@@ -51,6 +51,10 @@ moltengamepad::~moltengamepad() {
   for (auto it = devs.begin(); it != devs.end(); ++it) {
     delete (*it);
   }
+  
+  
+  devices.clear();
+  
   delete slots;
 }
 
@@ -148,12 +152,28 @@ device_manager* moltengamepad::find_manager(const char* name) {
   return nullptr;
 }
 
-input_source* moltengamepad::find_device(const char* name) {
-  for (auto it = devs.begin(); it != devs.end(); it++) {
-    input_source* dev = (*it)->find_device(name);
-    if (dev) return dev;
+std::shared_ptr<input_source> moltengamepad::find_device(const char* name) {
+  for (auto it = devices.begin(); it != devices.end(); it++) {
+    
+    if (!strcmp((*it)->name,name)) return (*it);
   }
   return nullptr;
 }
+void moltengamepad::add_device(input_source* source) {
+  device_list_lock.lock();
+  devices.push_back(std::shared_ptr<input_source>(source));
+  device_list_lock.unlock();
+}
 
+void moltengamepad::remove_device(input_source* source) {
+  device_list_lock.lock();
+  for (int i = 0; i < devices.size(); i++) {
+    if (source == devices[i].get()) {
+      devices.erase(devices.begin()+i);
+      i--;
+    }
+  }
+  device_list_lock.unlock();
+}
+  
 

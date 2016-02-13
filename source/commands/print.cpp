@@ -45,8 +45,8 @@ int do_print_profile(moltengamepad* mg, std::string name, std::ostream &out) {
     
     return 0;
   } else {
-    input_source* dev =mg->find_device(name.c_str());
-    if (dev) {
+    std::shared_ptr<input_source> dev =mg->find_device(name.c_str());
+    if (dev.get()) {
       profile profile;
       dev->export_profile(&profile);
       profile.name = dev->name;
@@ -69,8 +69,8 @@ void print_driver_dev_list(device_manager* man, std::ostream &out) {
 
 int do_print_devs(moltengamepad* mg, std::string name, std::ostream &out) {
   if (!name.empty()) {
-    input_source* dev =mg->find_device(name.c_str());
-    if (dev) {
+    std::shared_ptr<input_source> dev = mg->find_device(name.c_str());
+    if (dev.get()) {
       out << dev->name << " events:"<<std::endl;
       cat_list cats;
       dev->list_events(cats);

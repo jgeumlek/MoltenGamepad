@@ -147,13 +147,13 @@ void MGparser::do_assignment(std::string header, std::string field, std::vector<
   enum entry_type left_type = NO_ENTRY;
   const char* entry = field.c_str();
   device_manager* man = mg->find_manager(header.c_str());
-  input_source* dev = nullptr;
+  std::shared_ptr<input_source> dev = nullptr;
   if (man != nullptr) {
     left_type = man->entry_type(entry);
   } else {
-    dev =mg->find_device(header.c_str());
-    if (dev != nullptr) {
-    left_type = dev->entry_type(entry);
+    dev = mg->find_device(header.c_str());
+    if (dev.get() != nullptr) {
+      left_type = dev->entry_type(entry);
     }
   }
   
@@ -174,7 +174,7 @@ void MGparser::do_assignment(std::string header, std::string field, std::vector<
     }
     
     if (man) man->update_maps(entry,trans);
-    if (dev) dev->update_map(entry,trans);
+    if (dev.get()) dev->update_map(entry,trans);
     
     if (trans) delete trans;
   }
@@ -184,7 +184,7 @@ void MGparser::do_assignment(std::string header, std::string field, std::vector<
   if (field.front() == '?') {
     field.erase(field.begin());
     if (man) man->update_options(field.c_str(),rhs.front().value.c_str());
-    if (dev) dev->update_option(field.c_str(),rhs.front().value.c_str());
+    if (dev.get()) dev->update_option(field.c_str(),rhs.front().value.c_str());
   }
   
 }
@@ -194,31 +194,30 @@ void MGparser::do_assignment(std::string header, std::string field, std::vector<
 void MGparser::do_adv_assignment(std::string header, const std::vector<std::string>& fields, std::vector<token> rhs) {
   if (rhs.empty()) return;
   device_manager* man = mg->find_manager(header.c_str());
-  input_source* dev = (!man) ? mg->find_device(header.c_str()) : nullptr;
+  std::shared_ptr<input_source> dev = (!man) ? mg->find_device(header.c_str()) : nullptr;
   
   if (!dev && !man) return;
   
-  if (true) {
-    if (rhs.front().value == "nothing") {
-      if (dev) dev->update_advanced(fields,nullptr);
-      if (man) man->update_advanceds(fields,nullptr);
-      return;
-    }
-    advanced_event_translator* trans = parse_adv_trans(fields,rhs);
-    if (!trans) return; //Abort
-    if (trans) { 
-      std::stringstream ss;
-      MGTransDef def;
-      trans->fill_def(def);
-      print_def(DEV_KEY,def,ss);
-      std::cout << "parse to " << ss.str() << std::endl;
-    }
-    
-    if (dev) dev->update_advanced(fields, trans);
-    if (man) man->update_advanceds(fields, trans);
-    
-    if (trans) delete trans;
+  if (rhs.front().value == "nothing") {
+    if (dev.get()) dev->update_advanced(fields,nullptr);
+    if (man) man->update_advanceds(fields,nullptr);
+    return;
   }
+  advanced_event_translator* trans = parse_adv_trans(fields,rhs);
+  if (!trans) return; //Abort
+  if (trans) { 
+    std::stringstream ss;
+    MGTransDef def;
+    trans->fill_def(def);
+    print_def(DEV_KEY,def,ss);
+    std::cout << "parse to " << ss.str() << std::endl;
+  }
+  
+  if (dev.get()) dev->update_advanced(fields, trans);
+  if (man) man->update_advanceds(fields, trans);
+  
+  if (trans) delete trans;
+  
   
   if (rhs.empty()) return;
   

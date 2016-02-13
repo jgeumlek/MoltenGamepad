@@ -5,6 +5,8 @@
 #include <thread>
 #include <string>
 #include <memory>
+#include <mutex>
+#include <mutex>
 #include "devices/device.h"
 #include "slot_manager.h"
 #include "uinput.h"
@@ -52,7 +54,7 @@ public:
   int stop();
   
   device_manager* find_manager(const char* name);
-  input_source* find_device(const char* name);
+  std::shared_ptr<input_source> find_device(const char* name);
   void add_device(input_source* source);
   void remove_device(input_source* source);
   
@@ -62,6 +64,7 @@ private:
   void udev_run();
   std::thread* udev_thread;
   std::thread* remote_handler = nullptr;
+  std::mutex  device_list_lock;
 
 
 };
