@@ -87,6 +87,8 @@ const source_option wiimote_options[] = {
 {"nk_accel_active","Enable accelerometers when nunchuk is present","false"},
 {"wm_ir_active","Enable IR data when no extension","false"},
 {"nk_ir_active","Enable IR data when nunchuk is present","false"},
+{"grab_exclusive","Grab device events via ioctl EVIOCGRAB","true"},
+{"grab_permissions","Grab device via blocking all read permissions","false"},
 {"","",""},
 };
 

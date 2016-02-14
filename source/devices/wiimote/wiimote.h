@@ -20,6 +20,7 @@
 struct dev_node {
   struct udev_device* dev = nullptr;
   int fd = -1;
+  mode_t orig_mode;
 };
 
 
@@ -100,12 +101,20 @@ private:
   bool nk_accel_active = false;
   bool wm_ir_active = false;
   bool nk_ir_active = false;
+  bool grab_exclusive = true;
+  bool grab_permissions = false;
   
   bool active_ir = false;
   bool active_accel = false;
   bool toggle_motionplus;
   void listen_node(int type,int fd);
   void open_node(struct dev_node* node);
+  void grab_ioctl_node(struct dev_node* node, bool grabbed);
+  void grab_chmod_node(struct dev_node* node, bool grabbed);
+  void grab_ioctl(bool grabbed);
+  void grab_chmod(bool grabbed);
+  
+
   void process_core();
   void process_classic(int fd);
   void process_nunchuk(int fd);

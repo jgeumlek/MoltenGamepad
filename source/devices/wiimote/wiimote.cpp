@@ -4,6 +4,8 @@
 #include <sys/epoll.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <sys/stat.h>
+
 wiimote::wiimote(slot_manager* slot_man) : input_source(slot_man) {
     for (int i = 0; i < wii_event_max; i++) {
       register_event(wiimote_events[i]);
@@ -49,11 +51,23 @@ int wiimote::process_option(const char* name, const char* value) {
     if (!strcmp(value,"false")) { nk_ir_active = false; update_mode(); return 0;};
     return -1;
   }
+  if (!strcmp(name,"grab_exclusive")) {
+    if (!strcmp(value,"true")) { grab_exclusive = true; grab_ioctl(true); return 0;};
+    if (!strcmp(value,"false")) { grab_exclusive = false; grab_ioctl(false); return 0;};
+    return -1;
+  }
+  if (!strcmp(name,"grab_permissions")) {
+    if (!strcmp(value,"true")) { grab_permissions = true; grab_chmod(true); return 0;};
+    if (!strcmp(value,"false")) { grab_permissions = false; grab_chmod(false); return 0;};
+    return -1;
+  }
   
   return -1;
 }
 
 void wiimote::clear_node(struct dev_node* node) {
+  if (grab_exclusive) grab_ioctl_node(node,false);
+  if (grab_permissions) grab_chmod_node(node,false);
   if (node->dev) udev_device_unref(node->dev);
   node->dev = nullptr;
   if (node->fd >= 0) close(node->fd);
@@ -266,10 +280,58 @@ void wiimote::open_node(struct dev_node* node) {
   node->fd = open(udev_device_get_devnode(node->dev), O_RDONLY | O_NONBLOCK | O_CLOEXEC);
   if (node->fd < 0)
     perror("open subdevice:");
-  ioctl(node->fd, EVIOCGRAB, this);
+  
+  
+  if (grab_exclusive) grab_ioctl_node(node,true);
+  if (grab_permissions) grab_chmod_node(node,true);
   
   watch_file(node->fd,node);
 };
+
+void wiimote::grab_chmod_node(struct dev_node* node, bool grab) {
+  if (node->fd < 0) return;
+  if (grab) {
+   struct stat filestat;
+   fstat(node->fd,&filestat);
+   node->orig_mode = filestat.st_mode;
+   chmod(udev_device_get_devnode(node->dev),0);
+  } else {
+    chmod(udev_device_get_devnode(node->dev),node->orig_mode);
+  }
+}
+
+void wiimote::grab_chmod(bool grab) {
+   grab_chmod_node(&base,grab);
+   grab_chmod_node(&buttons,grab);
+   grab_chmod_node(&accel,grab);
+   grab_chmod_node(&ir,grab);
+   grab_chmod_node(&motionplus,grab);
+   grab_chmod_node(&nunchuk,grab);
+   grab_chmod_node(&classic,grab);
+   grab_chmod_node(&pro,grab);
+   grab_chmod_node(&balance,grab);
+}
+
+void wiimote::grab_ioctl_node(struct dev_node* node, bool grab) {
+  if (node->fd < 0) return;
+  if (grab) {
+    ioctl(node->fd, EVIOCGRAB, 1);
+  } else {
+    ioctl(node->fd, EVIOCGRAB, 0);
+  }
+}
+
+void wiimote::grab_ioctl(bool grab) {
+   grab_ioctl_node(&base,grab);
+   grab_ioctl_node(&buttons,grab);
+   grab_ioctl_node(&accel,grab);
+   grab_ioctl_node(&ir,grab);
+   grab_ioctl_node(&motionplus,grab);
+   grab_ioctl_node(&nunchuk,grab);
+   grab_ioctl_node(&classic,grab);
+   grab_ioctl_node(&pro,grab);
+   grab_ioctl_node(&balance,grab);
+}
 
 
 
