@@ -1,10 +1,10 @@
 #include "profile.h"
 #include "event_change.h"
 
-  
+
 trans_map profile::get_mapping(std::string in_event_name) {
   auto it = mapping.find(in_event_name);
-  if (it == mapping.end()) return {nullptr,NO_ENTRY};
+  if (it == mapping.end()) return {nullptr, NO_ENTRY};
   return (it->second);
 }
 
@@ -18,7 +18,7 @@ void profile::set_mapping(std::string in_event_name, event_translator* mapper, e
   trans_map oldmap = get_mapping(in_event_name);
   if (oldmap.trans) delete oldmap.trans;
   mapping.erase(in_event_name);
-  mapping[in_event_name] = {mapper,type};
+  mapping[in_event_name] = {mapper, type};
 }
 
 
@@ -37,20 +37,20 @@ void profile::set_advanced(const std::vector<std::string>& names, advanced_event
   for (; it != names.end(); it++) {
     key += "," + (*it);
   }
-  
+
   auto stored = adv_trans.find(key);
   if (stored != adv_trans.end()) {
     delete stored->second.trans;
     adv_trans.erase(stored);
   }
-  
+
   if (trans) {
     adv_map entry;
     entry.fields = names;
     entry.trans = trans;
     adv_trans[key] = entry;
   }
-  
+
 }
 
 std::string profile::get_option(std::string opname) {
@@ -58,19 +58,19 @@ std::string profile::get_option(std::string opname) {
   if (it == options.end()) return "";
   return it->second;
 }
-  
+
 
 profile::~profile() {
   for (auto it = mapping.begin(); it != mapping.end(); it++) {
     if (it->second.trans) delete it->second.trans;
   }
-  
+
   for (auto e : adv_trans) {
     if (e.second.trans) delete e.second.trans;
   }
 
   mapping.clear();
 }
-  
+
 
 

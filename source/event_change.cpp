@@ -106,7 +106,7 @@ void keyboard_redirect::fill_def(MGTransDef& def) {
   field.slot = redirected;
   def.fields.push_back(field);
 }
-const MGType multitrans::fields[] = { MG_TRANS,MG_TRANS, MG_NULL };
+const MGType multitrans::fields[] = { MG_TRANS, MG_TRANS, MG_NULL };
 multitrans::multitrans(std::vector<MGField>& fields) {
   if (fields.size() > 0 && fields.front().type == MG_TRANS) {
     this->trans.push_back(fields.at(0).trans->clone());
@@ -130,7 +130,7 @@ const MGType simple_chord::fields[] = { MG_KEY_TRANS, MG_NULL };
 simple_chord::simple_chord(std::vector<std::string> event_names, std::vector<MGField>& fields) {
   if (fields.size() > 0 && fields.front().type == MG_KEY_TRANS)
     this->out_trans = fields.front().trans->clone();
-  
+
   this->event_names = event_names;
 }
 void simple_chord::fill_def(MGTransDef& def) {
@@ -150,28 +150,28 @@ void simple_chord::init(input_source* source) {
   }
   for (auto event : events) {
     for (int i = 0; i < event_names.size(); i++) {
-      if (!strcmp(event.name,event_names[i].c_str())) {
+      if (!strcmp(event.name, event_names[i].c_str())) {
         event_ids[i] = event.id;
         event_vals[i] = event.value;
       }
     }
   }
-  
+
   out_dev_ptr = &(source->out_dev);
 };
 
 void simple_chord::attach(input_source* source) {
-  
+
   for (int id : event_ids)
-    source->add_listener(id,this);
-  
+    source->add_listener(id, this);
+
   this->source = source;
 };
 
 simple_chord::~simple_chord() {
   if (source) {
     for (int id : event_ids) {
-      source->remove_listener(id,this);
+      source->remove_listener(id, this);
     }
   }
   if (out_trans) delete out_trans;
@@ -186,7 +186,7 @@ bool simple_chord::claim_event(int id, mg_ev event) {
     output = output && (event_vals[i]);
   }
   if (output != output_cache) {
-    out_trans->process({output},*out_dev_ptr);
+    out_trans->process({output}, *out_dev_ptr);
     output_cache = output;
   }
 
@@ -195,7 +195,7 @@ bool simple_chord::claim_event(int id, mg_ev event) {
 
 
 const MGType exclusive_chord::fields[] = { MG_KEY_TRANS, MG_NULL };
-exclusive_chord::exclusive_chord(std::vector<std::string> event_names,std::vector<MGField>& fields) {
+exclusive_chord::exclusive_chord(std::vector<std::string> event_names, std::vector<MGField>& fields) {
   if (fields.size() > 0 && fields.front().type == MG_KEY_TRANS)
     this->out_trans = fields.front().trans->clone();
   this->event_names = event_names;
@@ -212,7 +212,7 @@ bool exclusive_chord::claim_event(int id, mg_ev event) {
   bool output = true;
   int index;
   int old_val;
-  
+
 
   for (int i = 0; i < event_ids.size(); i++) {
     if (id == event_ids[i]) {
@@ -223,28 +223,28 @@ bool exclusive_chord::claim_event(int id, mg_ev event) {
     }
     output = output && (chord_hits[i]);
   }
-  
-   //if not thread, start thread.
+
+  //if not thread, start thread.
   if (!thread && event.value && !old_val) {
     thread_active = true;
     for (int i = 0; i < event_vals.size(); i++) {
       chord_hits[i] = 0;
     }
     chord_hits[index] = event.value;
-    thread = new std::thread(&exclusive_chord::thread_func,this);
+    thread = new std::thread(&exclusive_chord::thread_func, this);
     thread->detach();
   }
-  
+
   if (output && output != output_cache) {
     //chord succeeded. Send event only if thread hasn't timed out.
     thread_active = false;
-    if (thread) out_trans->process({output},*out_dev_ptr);
- 
+    if (thread) out_trans->process({output}, *out_dev_ptr);
+
     output_cache = output;
   }
   if (!output && output != output_cache) {
     //chord released. clear out everything.
-    out_trans->process({output},*out_dev_ptr);
+    out_trans->process({output}, *out_dev_ptr);
     for (int i = 0; i < event_vals.size(); i++) {
       chord_hits[i] = 0;
     }
@@ -253,9 +253,9 @@ bool exclusive_chord::claim_event(int id, mg_ev event) {
   //If key up, let it pass.
   //If we have no thread and our output says we failed, let it pass.
   if (!event.value || (!output_cache && !thread_active)) return false; //Pass along key up events.
-  
+
   //We have a thread still going, or we hit a chord claiming this event.
-  
+
   return true;
 };
 
@@ -269,13 +269,13 @@ void exclusive_chord::init(input_source* source) {
   }
   for (auto event : events) {
     for (int i = 0; i < event_names.size(); i++) {
-      if (!strcmp(event.name,event_names[i].c_str())) {
+      if (!strcmp(event.name, event_names[i].c_str())) {
         event_ids[i] = event.id;
         event_vals[i] = event.value;
       }
     }
   }
-  
+
   out_dev_ptr = &(source->out_dev);
 };
 
@@ -291,6 +291,6 @@ void exclusive_chord::thread_func() {
       chord_hits[i] = 0;
     }
   }
-    delete thread;
-    thread = nullptr;
+  delete thread;
+  thread = nullptr;
 }

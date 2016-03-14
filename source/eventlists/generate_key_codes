@@ -5,61 +5,61 @@
 
 FILE="/usr/include/linux/input.h"
 
-if [ "$#" -ne 1 ]; then
-  if [ -e "$FILE" ]; then
-    echo "Found /usr/include/linux/input.h"
-    echo ""
+     if [ "$#" -ne 1 ]; then
+if [ -e "$FILE" ]; then
+echo "Found /usr/include/linux/input.h"
+echo ""
 
-  else
-    echo "Could not find linux/input.h" >&2
-    echo "Usage: $0 <path to linux/input.h>" >&2
-    exit 1
-  fi
 else
-  FILE=$1
-fi
-if ! [ -e "$FILE" ]; then
-  echo "$1 not found" >&2
+  echo "Could not find linux/input.h" >&2
+  echo "Usage: $0 <path to linux/input.h>" >&2
   exit 1
+  fi
+  else
+    FILE=$1
+         fi
+         if ! [ -e "$FILE" ]; then
+echo "$1 not found" >&2
+exit 1
 fi
 
 cat <<CONSTANT_CODE_PREFIX >key_list.cpp
 #include "eventlist.h"
-const event_listing key_list[] = {
-CONSTANT_CODE_PREFIX
+    const event_listing key_list[] = {
+                                       CONSTANT_CODE_PREFIX
 
 
-grep -o "\(KEY\|BTN\)_[A-Z0-9_]*"  $FILE | grep -v "CNT\|MAX" | sed -e 's/\(.*\)/  {\1, \"\L\1\",\"\"},/g' >>key_list.cpp
+                                       grep -o "\(KEY\|BTN\)_[A-Z0-9_]*"  $FILE | grep -v "CNT\|MAX" | sed -e 's / \(.*\) /  {\1, \"\L\1\",\"\"},/g' >>key_list.cpp
 
-cat <<CONSTANT_CODE_SUFFIX >>key_list.cpp
-{-1,nullptr,nullptr},
-};
+                                       cat <<CONSTANT_CODE_SUFFIX >>key_list.cpp
+                                       {-1,nullptr,nullptr},
+                                     };
 CONSTANT_CODE_SUFFIX
 
 cat <<CONSTANT_CODE_PREFIX >axis_list.cpp
 #include "eventlist.h"
-const event_listing axis_list[] = {
-CONSTANT_CODE_PREFIX
+    const event_listing axis_list[] = {
+                                        CONSTANT_CODE_PREFIX
 
 
-grep -o define\ ABS_[A-Z0-9_]\*  $FILE | grep -v "CNT\|MAX" | sed -e 's/define \(.*\)/  {\1, \"\L\1\",\"\"},/g' >>axis_list.cpp
+                                        grep -o define\ ABS_[A-Z0-9_]\*  $FILE | grep -v "CNT\ | MAX" | sed -e 's/define \(.*\)/  {\1, \"\L\1\",\"\"},/g' >>axis_list.cpp
 
-cat <<CONSTANT_CODE_SUFFIX >>axis_list.cpp
-{-1,nullptr,nullptr},
-};
+                                        cat <<CONSTANT_CODE_SUFFIX >>axis_list.cpp
+                                        {-1,nullptr,nullptr},
+                                      };
 CONSTANT_CODE_SUFFIX
 
 cat <<CONSTANT_CODE_PREFIX >rel_list.cpp
 #include "eventlist.h"
-const event_listing rel_list[] = {
-CONSTANT_CODE_PREFIX
+    const event_listing rel_list[] = {
+                                       CONSTANT_CODE_PREFIX
 
 
-grep -o REL_[A-Z0-9_]\*  $FILE | grep -v "CNT\|MAX" | sed -e 's/\(.*\)/  {\1, \"\L\1\",\"\"},/g' >>rel_list.cpp
+                                       grep -o REL_[A-Z0-9_]\*  $FILE | grep -v "CNT\ | MAX" | sed -e 's/\(.*\)/  {\1, \"\L\1\",\"\"},/g' >>rel_list.cpp
 
-cat <<CONSTANT_CODE_SUFFIX >>rel_list.cpp
-{-1,nullptr,nullptr},
-};
+                                       cat <<CONSTANT_CODE_SUFFIX >>rel_list.cpp
+                                       {-1,nullptr,nullptr},
+                                     };
 CONSTANT_CODE_SUFFIX
 
 

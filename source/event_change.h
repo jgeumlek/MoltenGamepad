@@ -64,7 +64,7 @@ class event_translator {
 public:
   virtual void process(struct mg_ev ev, virtual_device* out) {
   }
-  
+
   void write_out(struct input_event ev, virtual_device* out) {
     out->take_event(ev);
   }
@@ -72,10 +72,12 @@ public:
   //event translators are passed around via cloning.
   //This isn't just for memory management, but also
   //lets the profile store a translator as a "prototype"
-  virtual event_translator* clone() {return new event_translator(*this);}
-  
+  virtual event_translator* clone() {
+    return new event_translator(*this);
+  }
+
   virtual ~event_translator() {};
-  
+
   event_translator(std::vector<MGField>& fields) {};
   virtual void fill_def(MGTransDef& def) {
     def.identifier = "nothing";
@@ -91,11 +93,15 @@ public:
   //Called when the device's thread is ready for attaching.
   virtual void attach(input_source* source) {};
   //Return true to block the input source's native handling of this event.
-  virtual bool claim_event(int id, mg_ev event) { return false; };
+  virtual bool claim_event(int id, mg_ev event) {
+    return false;
+  };
   //Similar to the above, acts as a prototype method.
-  virtual advanced_event_translator* clone() {return new advanced_event_translator(*this);}
+  virtual advanced_event_translator* clone() {
+    return new advanced_event_translator(*this);
+  }
   virtual ~advanced_event_translator() {};
-  
+
   advanced_event_translator(std::vector<MGField>& fields) {};
   advanced_event_translator() {};
   virtual void fill_def(MGTransDef& def) {
@@ -109,18 +115,20 @@ public:
   int out_button;
   btn2btn(int out) : out_button(out) {
   }
-  
+
   virtual void process(struct mg_ev ev, virtual_device* out) {
     struct input_event out_ev;
-    memset(&out_ev,0,sizeof(out_ev));
+    memset(&out_ev, 0, sizeof(out_ev));
     out_ev.type = EV_KEY;
     out_ev.code = out_button;
     out_ev.value = ev.value;
-    write_out(out_ev,out);
+    write_out(out_ev, out);
   }
-  
-  virtual btn2btn* clone() {return new btn2btn(*this);}
-  
+
+  virtual btn2btn* clone() {
+    return new btn2btn(*this);
+  }
+
   static const MGType fields[];
   btn2btn(std::vector<MGField>& fields);
   virtual void fill_def(MGTransDef& def);
@@ -130,21 +138,23 @@ class btn2axis : public event_translator {
 public:
   int out_axis;
   int direction;
-  
+
   btn2axis(int out_axis, int direction) : out_axis(out_axis), direction(direction) {
   }
-  
+
   virtual void process(struct mg_ev ev, virtual_device* out) {
     struct input_event out_ev;
-    memset(&out_ev,0,sizeof(out_ev));
+    memset(&out_ev, 0, sizeof(out_ev));
     out_ev.type = EV_ABS;
     out_ev.code = out_axis;
-    out_ev.value = ev.value*direction*RANGE;
-    write_out(out_ev,out);
+    out_ev.value = ev.value * direction * RANGE;
+    write_out(out_ev, out);
   }
-  
-  virtual btn2axis* clone() {return new btn2axis(*this);}
-  
+
+  virtual btn2axis* clone() {
+    return new btn2axis(*this);
+  }
+
   static const MGType fields[];
   btn2axis(std::vector<MGField>& fields);
   virtual void fill_def(MGTransDef& def);
@@ -157,19 +167,21 @@ public:
   axis2axis(int axis, int dir) : out_axis(axis), direction(dir) {
   }
   virtual void process(struct mg_ev ev, virtual_device* out) {
-    int value = ev.value*direction;
+    int value = ev.value * direction;
     if (value < -RANGE) value = -RANGE;
     if (value > RANGE) value = RANGE;
     struct input_event out_ev;
-    memset(&out_ev,0,sizeof(out_ev));
+    memset(&out_ev, 0, sizeof(out_ev));
     out_ev.type = EV_ABS;
     out_ev.code = out_axis;
     out_ev.value = value;
-    write_out(out_ev,out);
+    write_out(out_ev, out);
   }
 
-  virtual axis2axis* clone() {return new axis2axis(*this);}
-  
+  virtual axis2axis* clone() {
+    return new axis2axis(*this);
+  }
+
   static const MGType fields[];
   axis2axis(std::vector<MGField>& fields);
   virtual void fill_def(MGTransDef& def);
@@ -179,7 +191,7 @@ class axis2btns : public event_translator {
 public:
   int neg_btn;
   int pos_btn;
-  
+
   int neg_cache = 0;
   int pos_cache = 0;
   axis2btns(int neg_btn, int pos_btn) : neg_btn(neg_btn), pos_btn(pos_btn) {
@@ -187,27 +199,29 @@ public:
 
   virtual void process(struct mg_ev ev, virtual_device* out) {
     struct input_event out_ev;
-    memset(&out_ev,0,sizeof(out_ev));
+    memset(&out_ev, 0, sizeof(out_ev));
     out_ev.type = EV_KEY;
     out_ev.code = neg_btn;
-    out_ev.value = ev.value < -.8*RANGE;
+    out_ev.value = ev.value < -.8 * RANGE;
     if (out_ev.value != neg_cache) {
-      write_out(out_ev,out);
+      write_out(out_ev, out);
       neg_cache = out_ev.value;
     }
-    
+
     out_ev.type = EV_KEY;
     out_ev.code = pos_btn;
-    out_ev.value = ev.value > .8*RANGE;
+    out_ev.value = ev.value > .8 * RANGE;
     if (out_ev.value != pos_cache) {
-      write_out(out_ev,out);
+      write_out(out_ev, out);
       pos_cache = out_ev.value;
     }
-    
+
   }
 
-  virtual axis2btns* clone() {return new axis2btns(*this);}
-  
+  virtual axis2btns* clone() {
+    return new axis2btns(*this);
+  }
+
   static const MGType fields[];
   axis2btns(std::vector<MGField>& fields);
   virtual void fill_def(MGTransDef& def);
@@ -218,46 +232,50 @@ class redirect_trans : public event_translator {
 public:
   event_translator* trans = nullptr;
   virtual_device* redirected;
-  
+
   redirect_trans(event_translator* trans, virtual_device* redirected) :  redirected(redirected) {
     this->trans = trans;
   }
-  
+
   ~redirect_trans() {
     if (trans) delete trans;
   }
-  
+
   virtual void process(struct mg_ev ev, virtual_device* out) {
-    trans->process(ev,redirected);
+    trans->process(ev, redirected);
     struct input_event out_ev;
-    memset(&out_ev,0,sizeof(out_ev));
+    memset(&out_ev, 0, sizeof(out_ev));
     out_ev.type = EV_SYN;
     out_ev.code = SYN_REPORT;
     out_ev.value = 0;
-    write_out(out_ev,redirected);
-    
+    write_out(out_ev, redirected);
+
   }
-  
-  virtual redirect_trans* clone() {return new redirect_trans(trans->clone(),redirected);}
-  
+
+  virtual redirect_trans* clone() {
+    return new redirect_trans(trans->clone(), redirected);
+  }
+
   static const MGType fields[];
   redirect_trans(std::vector<MGField>& fields);
   virtual void fill_def(MGTransDef& def);
-  
+
 protected:
   redirect_trans() {};
-  
+
 };
 
 class keyboard_redirect : public redirect_trans {
 public:
   int key_code;
-  keyboard_redirect(int key_code, event_translator* trans, virtual_device* redirected ) : redirect_trans(trans,redirected) {
+  keyboard_redirect(int key_code, event_translator* trans, virtual_device* redirected) : redirect_trans(trans, redirected) {
     this->key_code = key_code;
   }
-  
-  virtual keyboard_redirect* clone() {return new keyboard_redirect(key_code,this->trans->clone(),redirected);}
-  
+
+  virtual keyboard_redirect* clone() {
+    return new keyboard_redirect(key_code, this->trans->clone(), redirected);
+  }
+
   static const MGType fields[];
   keyboard_redirect(std::vector<MGField>& fields);
   virtual void fill_def(MGTransDef& def);
@@ -275,18 +293,20 @@ public:
   }
   virtual void process(struct mg_ev ev, virtual_device* out) {
     for (auto tran : trans)
-	    tran->process(ev,out);
+      tran->process(ev, out);
   }
 
-  virtual multitrans* clone() {return new multitrans(*this);}
-  
+  virtual multitrans* clone() {
+    return new multitrans(*this);
+  }
+
   static const MGType fields[];
   multitrans(std::vector<MGField>& fields);
   virtual void fill_def(MGTransDef& def);
 };
 
 
-  
+
 
 class simple_chord : public advanced_event_translator {
 public:
@@ -297,16 +317,18 @@ public:
   input_source* source = nullptr;
   event_translator* out_trans = nullptr;
   virtual_device** out_dev_ptr;
-  
+
   simple_chord(std::vector<std::string> event_names, event_translator* trans) : event_names(event_names), out_trans(trans) {};
-  
+
   virtual ~simple_chord();
 
   virtual void init(input_source* source);
   virtual void attach(input_source* source);
 
   virtual bool claim_event(int id, mg_ev event);
-  virtual advanced_event_translator* clone() {return new simple_chord(event_names,out_trans->clone());}
+  virtual advanced_event_translator* clone() {
+    return new simple_chord(event_names, out_trans->clone());
+  }
 
   static const MGType fields[];
   simple_chord(std::vector<std::string> event_names, std::vector<MGField>& fields);
@@ -317,28 +339,30 @@ protected:
 
 class exclusive_chord : public simple_chord {
 public:
-  
-  exclusive_chord(std::vector<std::string> event_names, event_translator* trans) : simple_chord(event_names,trans) {};
-  
+
+  exclusive_chord(std::vector<std::string> event_names, event_translator* trans) : simple_chord(event_names, trans) {};
+
   std::thread* thread = nullptr;
   std::vector<int> chord_hits;
 
 
-  
+
   virtual void init(input_source* source);
   virtual bool claim_event(int id, mg_ev event);
-  virtual advanced_event_translator* clone() {return new exclusive_chord(event_names,out_trans->clone());}
+  virtual advanced_event_translator* clone() {
+    return new exclusive_chord(event_names, out_trans->clone());
+  }
 
   void thread_func();
   volatile bool thread_active;
-  
+
   static const MGType fields[];
   exclusive_chord(std::vector<std::string> event_names, std::vector<MGField>& fields);
   virtual void fill_def(MGTransDef& def);
 };
 
 //TODO: Do an advanced_event_translator for taking circular x/y axes and making them square.
-  
+
 
 
 

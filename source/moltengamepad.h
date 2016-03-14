@@ -38,7 +38,7 @@ public:
     std::string gendev_dir;
     std::string fifo_path;
     std::string uinput_path;
-    
+
   } options;
 
   std::vector<device_manager*> devs;
@@ -52,15 +52,15 @@ public:
   ~moltengamepad();
   int init();
   int stop();
-  
+
   device_manager* find_manager(const char* name);
   std::shared_ptr<input_source> find_device(const char* name);
   void add_device(input_source* source);
   void remove_device(input_source* source);
-  
+
 private:
   bool udev_loop = true;
-  
+
   void udev_run();
   std::thread* udev_thread;
   std::thread* remote_handler = nullptr;
@@ -71,7 +71,7 @@ private:
 
 
 
-int shell_loop(moltengamepad* mg, std::istream &in);
+int shell_loop(moltengamepad* mg, std::istream& in);
 
 
 #endif

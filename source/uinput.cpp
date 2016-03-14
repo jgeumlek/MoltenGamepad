@@ -12,7 +12,7 @@ const char* try_to_find_uinput() {
   int i;
 
   for (i = 0; i < num_paths; i++) {
-    if (access(paths[i],F_OK) == 0) {
+    if (access(paths[i], F_OK) == 0) {
       return paths[i];
     }
   }
@@ -25,12 +25,12 @@ void uinput_destroy(int fd) {
 
 uinput::uinput() {
   filename = try_to_find_uinput();
-  if (filename == nullptr) throw -1;
+  if (filename == nullptr) throw - 1;
 
-  
+
 }
 
-int uinput::make_gamepad(const uinput_ids &ids, bool dpad_as_hat, bool analog_triggers) {
+int uinput::make_gamepad(const uinput_ids& ids, bool dpad_as_hat, bool analog_triggers) {
   static int abs[] = { ABS_X, ABS_Y, ABS_RX, ABS_RY};
   static int key[] = { BTN_SOUTH, BTN_EAST, BTN_NORTH, BTN_WEST, BTN_SELECT, BTN_MODE, BTN_START, BTN_TL, BTN_TR, BTN_THUMBL, BTN_THUMBR, -1};
   struct uinput_user_dev uidev;
@@ -56,13 +56,13 @@ int uinput::make_gamepad(const uinput_ids &ids, bool dpad_as_hat, bool analog_tr
     uidev.absmax[abs[i]] = 32767;
     uidev.absflat[abs[i]] = 1024;
   }
-  
+
   if (analog_triggers) {
-    ioctl(fd,UI_SET_ABSBIT, ABS_Z);
+    ioctl(fd, UI_SET_ABSBIT, ABS_Z);
     uidev.absmin[ABS_Z] = 0;
     uidev.absmax[ABS_Z] = 255;
     uidev.absflat[ABS_Z] = 0;
-    ioctl(fd,UI_SET_ABSBIT, ABS_RZ);
+    ioctl(fd, UI_SET_ABSBIT, ABS_RZ);
     uidev.absmin[ABS_RZ] = 0;
     uidev.absmax[ABS_RZ] = 255;
     uidev.absflat[ABS_RZ] = 0;
@@ -72,7 +72,7 @@ int uinput::make_gamepad(const uinput_ids &ids, bool dpad_as_hat, bool analog_tr
   for (i = 0; key[i] >= 0; i++) {
     ioctl(fd, UI_SET_KEYBIT, key[i]);
   }
-  
+
   if (dpad_as_hat) {
     ioctl(fd, UI_SET_ABSBIT, ABS_HAT0X);
     uidev.absmin[ABS_HAT0X] = -1;
@@ -89,10 +89,10 @@ int uinput::make_gamepad(const uinput_ids &ids, bool dpad_as_hat, bool analog_tr
     ioctl(fd, UI_SET_KEYBIT, BTN_DPAD_RIGHT);
   }
   if (!analog_triggers) {
-    ioctl(fd,UI_SET_KEYBIT, BTN_TL2);
-    ioctl(fd,UI_SET_KEYBIT, BTN_TR2);
+    ioctl(fd, UI_SET_KEYBIT, BTN_TL2);
+    ioctl(fd, UI_SET_KEYBIT, BTN_TR2);
   }
-    
+
 
   write(fd, &uidev, sizeof(uidev));
   if (ioctl(fd, UI_DEV_CREATE) < 0)
@@ -101,7 +101,7 @@ int uinput::make_gamepad(const uinput_ids &ids, bool dpad_as_hat, bool analog_tr
 }
 
 
-int uinput::make_keyboard(const uinput_ids &ids) {
+int uinput::make_keyboard(const uinput_ids& ids) {
   struct uinput_user_dev uidev;
   int fd;
   int i;
@@ -119,7 +119,7 @@ int uinput::make_keyboard(const uinput_ids &ids) {
   uidev.id.product = ids.product_id;
   uidev.id.version = ids.version_id;
 
-  
+
 
 
   /*Just set all possible keys that come before BTN_MISC
@@ -133,7 +133,7 @@ int uinput::make_keyboard(const uinput_ids &ids) {
   }
 
 
-  
+
   write(fd, &uidev, sizeof(uidev));
   if (ioctl(fd, UI_DEV_CREATE) < 0)
     perror("uinput device creation");

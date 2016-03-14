@@ -2,61 +2,67 @@
 #include "uinput.h"
 
 virtual_device::~virtual_device() {
-   if (uinput_fd >= 0) uinput_destroy(uinput_fd);
+  if (uinput_fd >= 0) uinput_destroy(uinput_fd);
 }
 
-static std::string boolstrings[2] = {"false","true"};
-virtual_gamepad::virtual_gamepad(std::string name, std::string descr, virtpad_settings settings, uinput* ui) : virtual_device(name,descr) {
-   this->dpad_as_hat = settings.dpad_as_hat;
-   this->analog_triggers = settings.analog_triggers;
-   set_face_map(settings.facemap_1234);
-   uinput_fd = ui->make_gamepad(settings.u_ids,dpad_as_hat,analog_triggers);
-   if (uinput_fd < 0) throw -5;
-   options["dpad_as_hat"] = boolstrings[dpad_as_hat];
-   options["analog_triggers"] = boolstrings[analog_triggers];
-   options["device_string"] = settings.u_ids.device_string;
-   options["vendor_id"] = std::to_string(settings.u_ids.vendor_id);
-   options["product_id"] = std::to_string(settings.u_ids.product_id);
-   options["version_id"] = std::to_string(settings.u_ids.version_id);
-   options["facemap_1234"] = get_face_map();
-   this->padstyle = settings;
+static std::string boolstrings[2] = {"false", "true"};
+virtual_gamepad::virtual_gamepad(std::string name, std::string descr, virtpad_settings settings, uinput* ui) : virtual_device(name, descr) {
+  this->dpad_as_hat = settings.dpad_as_hat;
+  this->analog_triggers = settings.analog_triggers;
+  set_face_map(settings.facemap_1234);
+  uinput_fd = ui->make_gamepad(settings.u_ids, dpad_as_hat, analog_triggers);
+  if (uinput_fd < 0) throw - 5;
+  options["dpad_as_hat"] = boolstrings[dpad_as_hat];
+  options["analog_triggers"] = boolstrings[analog_triggers];
+  options["device_string"] = settings.u_ids.device_string;
+  options["vendor_id"] = std::to_string(settings.u_ids.vendor_id);
+  options["product_id"] = std::to_string(settings.u_ids.product_id);
+  options["version_id"] = std::to_string(settings.u_ids.version_id);
+  options["facemap_1234"] = get_face_map();
+  this->padstyle = settings;
 }
 
-virtual_keyboard::virtual_keyboard(std::string name, std::string descr, uinput_ids u_ids, uinput* ui) : virtual_device(name,descr) {
-   uinput_fd = ui->make_keyboard(u_ids);
-   if (uinput_fd < 0) throw -5;
-   options["device_string"] = u_ids.device_string;
-   options["vendor_id"] = std::to_string(u_ids.vendor_id);
-   options["product_id"] = std::to_string(u_ids.product_id);
-   options["version_id"] = std::to_string(u_ids.version_id);
-   this->u_ids = u_ids;
+virtual_keyboard::virtual_keyboard(std::string name, std::string descr, uinput_ids u_ids, uinput* ui) : virtual_device(name, descr) {
+  uinput_fd = ui->make_keyboard(u_ids);
+  if (uinput_fd < 0) throw - 5;
+  options["device_string"] = u_ids.device_string;
+  options["vendor_id"] = std::to_string(u_ids.vendor_id);
+  options["product_id"] = std::to_string(u_ids.product_id);
+  options["version_id"] = std::to_string(u_ids.version_id);
+  this->u_ids = u_ids;
 }
 
 
 
 static int dpad_hat_axis[4] = {ABS_HAT0Y, ABS_HAT0Y, ABS_HAT0X, ABS_HAT0X};
-static int dpad_hat_mult[4] = {-1,        1,         -1,        1        };
+static int dpad_hat_mult[4] = { -1,        1,         -1,        1        };
 
 void virtual_gamepad::take_event(struct input_event in) {
-    
-    if (dpad_as_hat && in.type == EV_KEY && (in.code >= BTN_DPAD_UP && in.code <= BTN_DPAD_RIGHT)) {
-      int index = in.code - BTN_DPAD_UP;
-      in.type = EV_ABS;
-      in.code = dpad_hat_axis[index];
-      in.value *= dpad_hat_mult[index];
-    }
-    if (in.type == EV_KEY && (in.code >= BTN_SOUTH && in.code <= BTN_WEST)) {
-      if (in.code >= BTN_C) in.code--; //Skip BTN_C for computing the offset
-      in.code = face_1234[in.code - BTN_SOUTH];
-    }
-    if (in.type == EV_ABS && (in.code == ABS_Z || in.code == ABS_RZ)) {
-      long long value = (in.value + 32768) * 255;
-      value /= 2*32768l;
-      in.value = value;
-    }
-    if (analog_triggers && in.type == EV_KEY && in.code == BTN_TR2) { in.type = EV_ABS; in.code = ABS_RZ, in.value *= 255;}
-    if (analog_triggers && in.type == EV_KEY && in.code == BTN_TL2) { in.type = EV_ABS; in.code = ABS_Z,  in.value *= 255;}
-    write(uinput_fd,&in,sizeof(in));
+
+  if (dpad_as_hat && in.type == EV_KEY && (in.code >= BTN_DPAD_UP && in.code <= BTN_DPAD_RIGHT)) {
+    int index = in.code - BTN_DPAD_UP;
+    in.type = EV_ABS;
+    in.code = dpad_hat_axis[index];
+    in.value *= dpad_hat_mult[index];
+  }
+  if (in.type == EV_KEY && (in.code >= BTN_SOUTH && in.code <= BTN_WEST)) {
+    if (in.code >= BTN_C) in.code--; //Skip BTN_C for computing the offset
+    in.code = face_1234[in.code - BTN_SOUTH];
+  }
+  if (in.type == EV_ABS && (in.code == ABS_Z || in.code == ABS_RZ)) {
+    long long value = (in.value + 32768) * 255;
+    value /= 2 * 32768l;
+    in.value = value;
+  }
+  if (analog_triggers && in.type == EV_KEY && in.code == BTN_TR2) {
+    in.type = EV_ABS;
+    in.code = ABS_RZ, in.value *= 255;
+  }
+  if (analog_triggers && in.type == EV_KEY && in.code == BTN_TL2) {
+    in.type = EV_ABS;
+    in.code = ABS_Z,  in.value *= 255;
+  }
+  write(uinput_fd, &in, sizeof(in));
 };
 
 void virtual_gamepad::set_face_map(std::string map) {
@@ -74,10 +80,22 @@ void virtual_gamepad::set_face_map(std::string map) {
 std::string virtual_gamepad::get_face_map() {
   std::string out;
   for (int i = 0; i < 4; i++) {
-    if (face_1234[i] == BTN_SOUTH) {out.push_back('S'); continue;};
-    if (face_1234[i] == BTN_EAST)  {out.push_back('E'); continue;};
-    if (face_1234[i] == BTN_NORTH) {out.push_back('N'); continue;};
-    if (face_1234[i] == BTN_WEST)  {out.push_back('W'); continue;};
+    if (face_1234[i] == BTN_SOUTH) {
+      out.push_back('S');
+      continue;
+    };
+    if (face_1234[i] == BTN_EAST)  {
+      out.push_back('E');
+      continue;
+    };
+    if (face_1234[i] == BTN_NORTH) {
+      out.push_back('N');
+      continue;
+    };
+    if (face_1234[i] == BTN_WEST)  {
+      out.push_back('W');
+      continue;
+    };
     out.push_back('?');
   }
   return out;

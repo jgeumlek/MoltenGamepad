@@ -38,11 +38,11 @@ struct event_info {
 };
 
 
-extern const event_listing key_list[]; 
-extern const event_listing axis_list[]; 
-extern const event_listing rel_list[]; 
-extern const event_listing gamepad_btn_list[]; 
-extern const event_listing gamepad_axis_list[]; 
+extern const event_listing key_list[];
+extern const event_listing axis_list[];
+extern const event_listing rel_list[];
+extern const event_listing gamepad_btn_list[];
+extern const event_listing gamepad_axis_list[];
 
 const char* get_key_name(int key_id);
 const char* get_axis_name(int axis_id);

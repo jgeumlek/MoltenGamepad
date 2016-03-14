@@ -23,10 +23,10 @@ class uinput {
 public:
   uinput();
   ~uinput();
-  int make_gamepad(const uinput_ids &ids, bool dpad_as_hat,bool analog_triggers);
-  int make_keyboard(const uinput_ids &ids);
-  int make_mouse(const uinput_ids &ids);
-  int make_pointer(const uinput_ids &ids);
+  int make_gamepad(const uinput_ids& ids, bool dpad_as_hat, bool analog_triggers);
+  int make_keyboard(const uinput_ids& ids);
+  int make_mouse(const uinput_ids& ids);
+  int make_pointer(const uinput_ids& ids);
 
 private:
   const char* filename;
