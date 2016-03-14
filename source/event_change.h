@@ -262,6 +262,30 @@ public:
   keyboard_redirect(std::vector<MGField>& fields);
   virtual void fill_def(MGTransDef& def);
 };
+
+class multitrans : public event_translator {
+public:
+  std::vector<event_translator*> trans;
+  multitrans(std::vector<event_translator*> trans) {
+    this->trans = trans;
+  }
+  ~multitrans() {
+    for (auto tran : trans)
+      delete tran;
+  }
+  virtual void process(struct mg_ev ev, virtual_device* out) {
+    for (auto tran : trans)
+	    tran->process(ev,out);
+  }
+
+  virtual multitrans* clone() {return new multitrans(*this);}
+  
+  static const MGType fields[];
+  multitrans(std::vector<MGField>& fields);
+  virtual void fill_def(MGTransDef& def);
+};
+
+
   
 
 class simple_chord : public advanced_event_translator {

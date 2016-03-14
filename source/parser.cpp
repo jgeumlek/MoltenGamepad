@@ -386,6 +386,7 @@ event_translator* build_from_def(MGTransDef& def) {
   if (def.identifier == "axis2btns") return new axis2btns(def.fields);
   if (def.identifier == "redirect") return new redirect_trans(def.fields);
   if (def.identifier == "key") return new keyboard_redirect(def.fields);
+  if (def.identifier == "multi") return new multitrans(def.fields);
   return nullptr;
 }
 
@@ -415,6 +416,7 @@ event_translator* MGparser::parse_trans_expr(enum entry_type intype, complex_exp
   if (expr->ident == "axis2btns") fields = axis2btns::fields;
   if (expr->ident == "redirect") fields = redirect_trans::fields;
   if (expr->ident == "key") fields = keyboard_redirect::fields;
+  if (expr->ident == "multi") fields = multitrans::fields;
   
   if (!fields) return nullptr;
   
