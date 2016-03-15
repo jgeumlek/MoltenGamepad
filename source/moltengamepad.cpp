@@ -48,7 +48,7 @@ moltengamepad::~moltengamepad() {
     delete remote_handler;
   }
 
-  for (auto it = devs.begin(); it != devs.end(); ++it) {
+  for (auto it = managers.begin(); it != managers.end(); ++it) {
     delete(*it);
   }
 
@@ -87,7 +87,7 @@ int moltengamepad::init() {
   if (options.mimic_xpad) padstyle = xpad_padstyle;
   slots = new slot_manager(options.num_gamepads, options.make_keyboard, padstyle);
 
-  devs.push_back(new wiimotes(this));
+  managers.push_back(new wiimotes(this));
 
   if (options.config_dir.empty()) options.config_dir = find_config_folder();
 
@@ -115,10 +115,7 @@ int moltengamepad::init() {
 
   globfree(&globbuffer);
 
-
-
-
-  udev.set_managers(&devs);
+  udev.set_managers(&managers);
   if (options.listen_for_devices) udev.start_monitor();
   if (options.look_for_devices)   udev.enumerate();
   if (options.make_fifo) {
@@ -140,13 +137,12 @@ int moltengamepad::init() {
     }
   }
 
-
 }
 
 
 
 device_manager* moltengamepad::find_manager(const char* name) {
-  for (auto it = devs.begin(); it != devs.end(); it++) {
+  for (auto it = managers.begin(); it != managers.end(); it++) {
     if (!strcmp((*it)->name, name)) return (*it);
   }
   return nullptr;

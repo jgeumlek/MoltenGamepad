@@ -513,7 +513,7 @@ bool MGparser::parse_def(enum entry_type intype, MGTransDef& def, complex_expr* 
     if (type == MG_AXIS) def.fields[i].axis = read_ev_code(expr->params[j]->ident, OUT_ABS);
     if (type == MG_INT) def.fields[i].integer = read_ev_code(expr->params[j]->ident, OUT_NONE);
     if (type == MG_SLOT) {
-      virtual_device* slot = mg->slots->find_slot(expr->params[j]->ident);
+      output_slot* slot = mg->slots->find_slot(expr->params[j]->ident);
       if (!slot) return false;
       def.fields[i].slot = slot;
     }

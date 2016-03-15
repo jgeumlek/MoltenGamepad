@@ -29,7 +29,7 @@ void print_profile(profile& profile, std::ostream& out) {
 
 int do_print_profile(moltengamepad* mg, std::string name, std::ostream& out) {
   if (name.empty()) {
-    for (auto man : mg->devs) {
+    for (auto man : mg->managers) {
       out << man->name << std::endl;
       name_list names;
       man->list_devs(names);
@@ -99,8 +99,8 @@ int do_print_devs(moltengamepad* mg, std::string name, std::ostream& out) {
     return -1;
   }
 
-  for (auto driver : mg->devs) {
-    print_driver_dev_list(driver, out);
+  for (auto man : mg->managers) {
+    print_driver_dev_list(man, out);
   }
 
   return 0;
@@ -108,8 +108,8 @@ int do_print_devs(moltengamepad* mg, std::string name, std::ostream& out) {
 
 int do_print_drivers(moltengamepad* mg, std::string name, std::ostream& out) {
   if (name.empty()) {
-    for (auto drv : mg->devs) {
-      out << drv->name <<  std::endl;
+    for (auto man : mg->managers) {
+      out << man->name <<  std::endl;
     }
     return 0;
   }
@@ -132,7 +132,7 @@ int do_print_slots(moltengamepad* mg, std::string name, std::ostream& out) {
     if (mg->slots->debugslot) out << mg->slots->debugslot->name << ":\t" << mg->slots->debugslot->descr << std::endl;
     return 0;
   }
-  virtual_device* slot = mg->slots->find_slot(name);
+  output_slot* slot = mg->slots->find_slot(name);
   if (slot) {
     out << slot->name << ":\t" << slot->descr << std::endl;
     for (auto e : slot->options) {

@@ -1,5 +1,5 @@
-#ifndef VIRTUAL_DEVICE_H
-#define VIRTUAL_DEVICE_H
+#ifndef OUTPUT_SLOT_H
+#define OUTPUT_SLOT_H
 
 #include "uinput.h"
 #include "eventlists/eventlist.h"
@@ -10,13 +10,13 @@
 #define OPTION_ACCEPTED 0
 
 
-class virtual_device {
+class output_slot {
 public:
   std::string name;
   std::string descr;
-  virtual_device(std::string name) : name(name) {};
-  virtual_device(std::string name, std::string descr) : name(name), descr(descr) {};
-  virtual ~virtual_device();
+  output_slot(std::string name) : name(name) {};
+  output_slot(std::string name, std::string descr) : name(name), descr(descr) {};
+  virtual ~output_slot();
   virtual void take_event(struct input_event in) {
   }
 
@@ -45,7 +45,7 @@ struct virtpad_settings {
   std::string facemap_1234;
 };
 
-class virtual_gamepad : public virtual_device {
+class virtual_gamepad : public output_slot {
 public:
   bool dpad_as_hat = false;
   bool analog_triggers = false;
@@ -61,7 +61,7 @@ protected:
   std::string get_face_map();
 };
 
-class virtual_keyboard : public virtual_device {
+class virtual_keyboard : public output_slot {
 public:
   virtual_keyboard(std::string name, std::string descr, uinput_ids u_ids, uinput* ui);
   virtual void take_event(struct input_event in) {
@@ -73,9 +73,9 @@ protected:
   virtual int process_option(std::string name, std::string value);
 };
 
-class debug_device : public virtual_device {
+class debug_device : public output_slot {
 public:
-  debug_device(std::string name, std::string descr) : virtual_device(name, descr) {};
+  debug_device(std::string name, std::string descr) : output_slot(name, descr) {};
   virtual void take_event(struct input_event in) {
     if (in.type == EV_KEY) std::cout << name << ": " << in.code << " " << in.value << "(" << get_key_name(in.code) << ")" << std::endl;
     if (in.type == EV_ABS) std::cout << name << ": " << in.code << " " << in.value << "(" << get_axis_name(in.code) << ")" << std::endl;

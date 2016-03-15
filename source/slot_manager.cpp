@@ -2,12 +2,12 @@
 
 slot_manager::slot_manager(int num_pads, bool keys, const virtpad_settings& padstyle) {
   ui = new uinput();
-  dummyslot = new virtual_device("blank", "Dummy slot (ignores all events)");
+  dummyslot = new output_slot("blank", "Dummy slot (ignores all events)");
   debugslot = new debug_device("debugslot", "Prints out all received events");
   if (keys) {
     keyboard = new virtual_keyboard("keyboard", "A virtual keyboard", {"Virtual Keyboard (MoltenGamepad)", 1, 1, 1}, ui);
   } else {
-    keyboard = new virtual_device("keyboard(disabled)", "Disabled virtual keyboard slot");
+    keyboard = new output_slot("keyboard(disabled)", "Disabled virtual keyboard slot");
   }
 
   for (int i = 0; i < num_pads; i++) {
@@ -39,7 +39,7 @@ void slot_manager::request_slot(input_source* dev) {
   lock.unlock();
 }
 
-void slot_manager::move_to_slot(input_source* dev, virtual_device* target) {
+void slot_manager::move_to_slot(input_source* dev, output_slot* target) {
   if (!dev) return;
   if (dev->out_dev == target) return;
   lock.lock();
@@ -53,7 +53,7 @@ void slot_manager::move_to_slot(input_source* dev, virtual_device* target) {
   lock.unlock();
 }
 
-void slot_manager::remove_from(virtual_device* slot) {
+void slot_manager::remove_from(output_slot* slot) {
   //private, should only be called with lock acquired
   slot->pad_count -= 1;
 
@@ -67,7 +67,7 @@ void slot_manager::remove(input_source* dev) {
 }
 
 
-virtual_device* slot_manager::find_slot(std::string slotname) {
+output_slot* slot_manager::find_slot(std::string slotname) {
   for (auto it = slots.begin(); it != slots.end(); it++) {
     if ((*it)->name == slotname) return *it;
   }

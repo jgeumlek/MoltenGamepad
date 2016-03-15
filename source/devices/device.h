@@ -65,7 +65,7 @@ public:
   virtual void list_events(cat_list& list) {
   }
   void list_options(std::vector<source_option>& list);
-  virtual void set_slot(virtual_device* outdev) {
+  virtual void set_slot(output_slot* outdev) {
     this->out_dev = outdev;
     if (outdev)  {
       std::cout << name << " assigned to slot " << outdev->name << std::endl;
@@ -98,7 +98,7 @@ public:
   void send_value(int id, long long value);
 
 
-  virtual_device* out_dev = nullptr;
+  output_slot* out_dev = nullptr;
 protected:
   slot_manager* slot_man;
   int epfd = 0;

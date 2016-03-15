@@ -1,12 +1,12 @@
-#include "virtual_device.h"
+#include "output_slot.h"
 #include "uinput.h"
 
-virtual_device::~virtual_device() {
+output_slot::~output_slot() {
   if (uinput_fd >= 0) uinput_destroy(uinput_fd);
 }
 
 static std::string boolstrings[2] = {"false", "true"};
-virtual_gamepad::virtual_gamepad(std::string name, std::string descr, virtpad_settings settings, uinput* ui) : virtual_device(name, descr) {
+virtual_gamepad::virtual_gamepad(std::string name, std::string descr, virtpad_settings settings, uinput* ui) : output_slot(name, descr) {
   this->dpad_as_hat = settings.dpad_as_hat;
   this->analog_triggers = settings.analog_triggers;
   set_face_map(settings.facemap_1234);
@@ -22,7 +22,7 @@ virtual_gamepad::virtual_gamepad(std::string name, std::string descr, virtpad_se
   this->padstyle = settings;
 }
 
-virtual_keyboard::virtual_keyboard(std::string name, std::string descr, uinput_ids u_ids, uinput* ui) : virtual_device(name, descr) {
+virtual_keyboard::virtual_keyboard(std::string name, std::string descr, uinput_ids u_ids, uinput* ui) : output_slot(name, descr) {
   uinput_fd = ui->make_keyboard(u_ids);
   if (uinput_fd < 0) throw - 5;
   options["device_string"] = u_ids.device_string;

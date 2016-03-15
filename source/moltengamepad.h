@@ -41,8 +41,7 @@ public:
 
   } options;
 
-  std::vector<device_manager*> devs;
-  //TODO: Go through this whole project fixing up nomenclature...
+  std::vector<device_manager*> managers;
   std::vector<std::shared_ptr<input_source>> devices;
   slot_manager* slots;
   udev_handler udev;

@@ -28,7 +28,7 @@ int do_save(moltengamepad* mg, std::vector<token>& command) {
     std::cout << "could not open file" << std::endl;
     return -2;
   }
-  for (auto it = mg->devs.begin(); it != mg->devs.end(); it++) {
+  for (auto it = mg->managers.begin(); it != mg->managers.end(); it++) {
     file << "[" << (*it)->name << "]" << std::endl;
     do_print_profile(mg, (*it)->name, file);
   }

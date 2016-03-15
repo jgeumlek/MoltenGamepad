@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "uinput.h"
-#include "virtual_device.h"
+#include "output_slot.h"
 #include "devices/device.h"
 
 class input_source;
@@ -21,18 +21,18 @@ public:
   ~slot_manager();
 
   void request_slot(input_source* dev);
-  void move_to_slot(input_source* dev, virtual_device* target);
+  void move_to_slot(input_source* dev, output_slot* target);
   void remove(input_source* dev);
 
 
-  virtual_device* find_slot(std::string name);
-  virtual_device* keyboard = nullptr;
-  virtual_device* dummyslot = nullptr;
-  virtual_device* debugslot = nullptr;
-  std::vector<virtual_device*> slots;
+  output_slot* find_slot(std::string name);
+  output_slot* keyboard = nullptr;
+  output_slot* dummyslot = nullptr;
+  output_slot* debugslot = nullptr;
+  std::vector<output_slot*> slots;
 private:
   virtpad_type padtype;
-  void remove_from(virtual_device* slot);
+  void remove_from(output_slot* slot);
 
   bool slots_on_demand = false;
 

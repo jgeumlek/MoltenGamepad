@@ -1,6 +1,6 @@
 #ifndef EVENT_CHANGE_H
 #define EVENT_CHANGE_H
-#include "virtual_device.h"
+#include "output_slot.h"
 //#include "devices/device.h"
 #include <linux/input.h>
 #include <string>
@@ -50,7 +50,7 @@ struct MGField {
     std::string* string;
     int integer;
     float real;
-    virtual_device* slot;
+    output_slot* slot;
   };
 };
 
@@ -62,10 +62,10 @@ struct MGTransDef {
 //A simple event translator. Takes one input event, and translates it. Essentially just a "pipe".
 class event_translator {
 public:
-  virtual void process(struct mg_ev ev, virtual_device* out) {
+  virtual void process(struct mg_ev ev, output_slot* out) {
   }
 
-  void write_out(struct input_event ev, virtual_device* out) {
+  void write_out(struct input_event ev, output_slot* out) {
     out->take_event(ev);
   }
 
@@ -116,7 +116,7 @@ public:
   btn2btn(int out) : out_button(out) {
   }
 
-  virtual void process(struct mg_ev ev, virtual_device* out) {
+  virtual void process(struct mg_ev ev, output_slot* out) {
     struct input_event out_ev;
     memset(&out_ev, 0, sizeof(out_ev));
     out_ev.type = EV_KEY;
@@ -142,7 +142,7 @@ public:
   btn2axis(int out_axis, int direction) : out_axis(out_axis), direction(direction) {
   }
 
-  virtual void process(struct mg_ev ev, virtual_device* out) {
+  virtual void process(struct mg_ev ev, output_slot* out) {
     struct input_event out_ev;
     memset(&out_ev, 0, sizeof(out_ev));
     out_ev.type = EV_ABS;
@@ -166,7 +166,7 @@ public:
   int direction;
   axis2axis(int axis, int dir) : out_axis(axis), direction(dir) {
   }
-  virtual void process(struct mg_ev ev, virtual_device* out) {
+  virtual void process(struct mg_ev ev, output_slot* out) {
     int value = ev.value * direction;
     if (value < -RANGE) value = -RANGE;
     if (value > RANGE) value = RANGE;
@@ -197,7 +197,7 @@ public:
   axis2btns(int neg_btn, int pos_btn) : neg_btn(neg_btn), pos_btn(pos_btn) {
   }
 
-  virtual void process(struct mg_ev ev, virtual_device* out) {
+  virtual void process(struct mg_ev ev, output_slot* out) {
     struct input_event out_ev;
     memset(&out_ev, 0, sizeof(out_ev));
     out_ev.type = EV_KEY;
@@ -231,9 +231,9 @@ public:
 class redirect_trans : public event_translator {
 public:
   event_translator* trans = nullptr;
-  virtual_device* redirected;
+  output_slot* redirected;
 
-  redirect_trans(event_translator* trans, virtual_device* redirected) :  redirected(redirected) {
+  redirect_trans(event_translator* trans, output_slot* redirected) :  redirected(redirected) {
     this->trans = trans;
   }
 
@@ -241,7 +241,7 @@ public:
     if (trans) delete trans;
   }
 
-  virtual void process(struct mg_ev ev, virtual_device* out) {
+  virtual void process(struct mg_ev ev, output_slot* out) {
     trans->process(ev, redirected);
     struct input_event out_ev;
     memset(&out_ev, 0, sizeof(out_ev));
@@ -268,7 +268,7 @@ protected:
 class keyboard_redirect : public redirect_trans {
 public:
   int key_code;
-  keyboard_redirect(int key_code, event_translator* trans, virtual_device* redirected) : redirect_trans(trans, redirected) {
+  keyboard_redirect(int key_code, event_translator* trans, output_slot* redirected) : redirect_trans(trans, redirected) {
     this->key_code = key_code;
   }
 
@@ -291,7 +291,7 @@ public:
     for (auto tran : trans)
       delete tran;
   }
-  virtual void process(struct mg_ev ev, virtual_device* out) {
+  virtual void process(struct mg_ev ev, output_slot* out) {
     for (auto tran : trans)
       tran->process(ev, out);
   }
@@ -316,7 +316,7 @@ public:
   int output_cache = 0;
   input_source* source = nullptr;
   event_translator* out_trans = nullptr;
-  virtual_device** out_dev_ptr;
+  output_slot** out_dev_ptr;
 
   simple_chord(std::vector<std::string> event_names, event_translator* trans) : event_names(event_names), out_trans(trans) {};
 

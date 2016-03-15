@@ -18,7 +18,7 @@ public:
   udev_handler();
   ~udev_handler();
 
-  void set_managers(std::vector<device_manager*>* devs);
+  void set_managers(std::vector<device_manager*>* managers);
   int enumerate();
   int start_monitor();
   int udev_fd();

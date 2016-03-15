@@ -22,7 +22,7 @@ int do_alterslot(moltengamepad* mg, std::vector<token>& command) {
     }
     return 0;
   }
-  virtual_device* slot = mg->slots->find_slot(slotname);
+  output_slot* slot = mg->slots->find_slot(slotname);
   if (!slot) return -1;
   slot->update_option(setting, value);
   return 0;

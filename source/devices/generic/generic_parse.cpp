@@ -4,10 +4,6 @@
 #include "../../moltengamepad.h"
 #include "../../eventlists/eventlist.h"
 
-
-
-
-
 void generic_assignment_line(std::vector<token>& line, generic_driver_info*& info, moltengamepad* mg) {
 
   auto it = line.begin();
@@ -118,13 +114,9 @@ void generic_assignment_line(std::vector<token>& line, generic_driver_info*& inf
     return;
   }
 
-
-
 }
 
 void generic_parse_line(std::vector<token>& line, generic_driver_info*& info, moltengamepad* mg) {
-
-
 
   if (find_token_type(TK_HEADER_OPEN, line)) {
     std::string newhead;
@@ -133,7 +125,7 @@ void generic_parse_line(std::vector<token>& line, generic_driver_info*& info, mo
 
 
       if (info->events.size() > 0 && !info->name.empty() && !info->devname.empty()) {
-        mg->devs.push_back(new generic_manager(mg, *info));
+        mg->managers.push_back(new generic_manager(mg, *info));
         info = new generic_driver_info;
       }
       info->matches.push_back({0, 0, std::string(newhead)});
@@ -172,7 +164,7 @@ int generic_config_loop(moltengamepad* mg, std::istream& in) {
   }
 
   if (info->events.size() > 0 && !info->name.empty() && !info->devname.empty()) {
-    mg->devs.push_back(new generic_manager(mg, *info));
+    mg->managers.push_back(new generic_manager(mg, *info));
   } else {
     delete info;
     failed = true;

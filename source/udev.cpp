@@ -5,11 +5,11 @@
 #include <unistd.h>
 #include "devices/device.h"
 
-void pass_along_device(std::vector<device_manager*>* devs, struct udev* ud, struct udev_device* new_dev) {
+void pass_along_device(std::vector<device_manager*>* managers, struct udev* ud, struct udev_device* new_dev) {
   if (new_dev == nullptr) return;
-  for (auto it = devs->begin(); it != devs->end(); ++it) {
-    device_manager* what = *it;
-    int ret = what->accept_device(ud, new_dev);
+  for (auto it = managers->begin(); it != managers->end(); ++it) {
+    device_manager* man = *it;
+    int ret = man->accept_device(ud, new_dev);
     if (ret == 0) break;
   }
 }
@@ -35,8 +35,8 @@ udev_handler::~udev_handler() {
   if (udev) udev_unref(udev);
 }
 
-void udev_handler::set_managers(std::vector<device_manager*>* devs) {
-  managers = devs;
+void udev_handler::set_managers(std::vector<device_manager*>* managers) {
+  this->managers = managers;
 }
 
 int udev_handler::start_monitor() {
