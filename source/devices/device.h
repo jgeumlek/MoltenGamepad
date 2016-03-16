@@ -57,7 +57,8 @@ struct adv_entry {
 
 class input_source {
 public:
-  input_source(slot_manager* slot_man);
+  enum devtype { GAMEPAD, KEYBOARD, SPECIAL, UNKNOWN};
+  input_source(slot_manager* slot_man, devtype type);
   virtual ~input_source();
   const char* name = "unnamed";
   virtual int set_player(int player_num) {
@@ -124,8 +125,7 @@ protected:
   virtual int process_option(const char* opname, const char* value) {
     return 0;
   };
-
-
+  devtype type = UNKNOWN;
 };
 
 class device_manager {

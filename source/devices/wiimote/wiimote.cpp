@@ -6,7 +6,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 
-wiimote::wiimote(slot_manager* slot_man) : input_source(slot_man) {
+wiimote::wiimote(slot_manager* slot_man) : input_source(slot_man, input_source::GAMEPAD) {
   for (int i = 0; i < wii_event_max; i++) {
     register_event(wiimote_events[i]);
   }

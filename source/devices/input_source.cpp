@@ -8,7 +8,7 @@
 
 
 
-input_source::input_source(slot_manager* slot_man) : slot_man(slot_man) {
+input_source::input_source(slot_manager* slot_man, devtype type) : slot_man(slot_man), type(type) {
   epfd = epoll_create(1);
   if (epfd < 1) perror("epoll create");
 
