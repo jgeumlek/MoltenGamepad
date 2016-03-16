@@ -20,6 +20,8 @@ public:
   virtual void take_event(struct input_event in) {
   }
 
+  virtual bool accepting() {return true;};
+
   void update_option(std::string option, std::string value) {
     if (options.find(option) == options.end()) return;
     if (process_option(option, value) == OPTION_ACCEPTED)
@@ -51,6 +53,7 @@ public:
   bool analog_triggers = false;
   virtual_gamepad(std::string name, std::string descr, virtpad_settings settings, uinput* ui);
   virtual void take_event(struct input_event in);
+  virtual bool accepting();
 protected:
   virtual int process_option(std::string name, std::string value);
 
@@ -59,6 +62,7 @@ protected:
   int face_1234[4] = {BTN_SOUTH, BTN_EAST, BTN_WEST, BTN_NORTH};
   void set_face_map(std::string map);
   std::string get_face_map();
+  enum acceptancetype { NONE, SINGULAR, GREEDY} acceptance = SINGULAR;
 };
 
 class virtual_keyboard : public output_slot {

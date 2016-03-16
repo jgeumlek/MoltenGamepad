@@ -19,6 +19,7 @@ virtual_gamepad::virtual_gamepad(std::string name, std::string descr, virtpad_se
   options["product_id"] = std::to_string(settings.u_ids.product_id);
   options["version_id"] = std::to_string(settings.u_ids.version_id);
   options["facemap_1234"] = get_face_map();
+  options["acceptance"] = "singular";
   this->padstyle = settings;
 }
 
@@ -65,6 +66,14 @@ void virtual_gamepad::take_event(struct input_event in) {
   write(uinput_fd, &in, sizeof(in));
 };
 
+bool virtual_gamepad::accepting() {
+  if (acceptance == NONE)
+    return false;
+  if (acceptance == GREEDY)
+    return true;
+  return (pad_count == 0);
+}
+
 void virtual_gamepad::set_face_map(std::string map) {
   if (map.size() != 4) return;
   //Take a string like "SENW" and use it to map the four action buttons in order.
@@ -106,6 +115,20 @@ int virtual_gamepad::process_option(std::string name, std::string value) {
   if (name == "facemap_1234") {
     set_face_map(value);
     return OPTION_ACCEPTED;
+  }
+  if (name == "acceptance") {
+    if (value == "singular") {
+      acceptance = SINGULAR;
+      return OPTION_ACCEPTED;
+    }
+    if (value == "none") {
+      acceptance = NONE;
+      return OPTION_ACCEPTED;
+    }
+    if (value == "greedy") {
+      acceptance = GREEDY;
+      return OPTION_ACCEPTED;
+    }
   }
   /*all other options not handled yet*/
   return -1;

@@ -25,9 +25,16 @@ slot_manager::~slot_manager() {
 }
 
 void slot_manager::request_slot(input_source* dev) {
+  if (dev->getType() == input_source::KEYBOARD) {
+    lock.lock();
+    dev->set_slot(keyboard);
+    keyboard->pad_count += 1;
+    lock.unlock();
+    return;
+  }
   lock.lock();
   for (int i = 0; i < slots.size(); i++) {
-    if (slots[i]->pad_count == 0) {
+    if (slots[i]->accepting()) {
       dev->set_slot(slots[i]);
       slots[i]->pad_count += 1;
       lock.unlock();

@@ -97,6 +97,7 @@ public:
   void remove_listener(int id, advanced_event_translator* trans);
   void force_value(int id, long long value);
   void send_value(int id, long long value);
+  const devtype getType() {return type;};
 
 
   output_slot* out_dev = nullptr;
