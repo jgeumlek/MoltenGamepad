@@ -3,7 +3,9 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <map>
 #include <sstream>
+#include <functional>
 #include "moltengamepad.h"
 
 enum tokentype { TK_IDENT, TK_DOT, TK_EQUAL, TK_HEADER_OPEN, TK_HEADER_CLOSE, TK_LPAREN, TK_RPAREN, TK_COMMA, TK_VALUE, TK_ENDL};
@@ -20,9 +22,18 @@ struct complex_expr {
   std::vector<complex_expr*> params;
 };
 
+template<typename T>
+class trans_generator {
+public:
+  const MGType* fields;
+  std::function<T* (std::vector<MGField>&)> generate;
+  trans_generator<T>( const MGType* fields, std::function<T* (std::vector<MGField>&)> generate) : fields(fields), generate(generate) {};
+  trans_generator<T>() : fields(nullptr) {};
+};
+
 class MGparser {
 public:
-  MGparser(moltengamepad* mg) : mg(mg) {};
+  MGparser(moltengamepad* mg);
   void exec_line(std::vector<token>& line, std::string& header);
   event_translator* parse_trans(enum entry_type intype, std::vector<token>& tokens, std::vector<token>::iterator& it);
   event_translator* parse_special_trans(enum entry_type intype, complex_expr* expr);
@@ -39,7 +50,8 @@ private:
   void do_assignment_line(std::vector<token>& line, std::string& header);
   void parse_line(std::vector<token>& line, std::string& header);
   event_translator* parse_trans_toplevel_quirks(enum entry_type intype, std::vector<token>& tokens, std::vector<token>::iterator& it);
-
+  std::map<std::string,trans_generator<event_translator> > trans_gens;
+  std::map<std::string,trans_generator<advanced_event_translator> > adv_trans_gens;
 };
 
 

@@ -234,7 +234,7 @@ public:
   output_slot* redirected;
 
   redirect_trans(event_translator* trans, output_slot* redirected) :  redirected(redirected) {
-    this->trans = trans;
+    this->trans = trans->clone();
   }
 
   ~redirect_trans() {
@@ -283,21 +283,22 @@ public:
 
 class multitrans : public event_translator {
 public:
-  std::vector<event_translator*> trans;
-  multitrans(std::vector<event_translator*> trans) {
-    this->trans = trans;
+  std::vector<event_translator*> translist;
+  multitrans(std::vector<event_translator*>& translist) {
+    for (auto trans : translist)
+      this->translist.push_back(trans->clone());
   }
   ~multitrans() {
-    for (auto tran : trans)
-      delete tran;
+    for (auto trans : translist)
+      delete trans;
   }
   virtual void process(struct mg_ev ev, output_slot* out) {
-    for (auto tran : trans)
-      tran->process(ev, out);
+    for (auto trans : translist)
+      trans->process(ev, out);
   }
 
   virtual multitrans* clone() {
-    return new multitrans(*this);
+    return new multitrans(translist);
   }
 
   static const MGType fields[];

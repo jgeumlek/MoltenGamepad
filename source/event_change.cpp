@@ -109,18 +109,18 @@ void keyboard_redirect::fill_def(MGTransDef& def) {
 const MGType multitrans::fields[] = { MG_TRANS, MG_TRANS, MG_NULL };
 multitrans::multitrans(std::vector<MGField>& fields) {
   if (fields.size() > 0 && fields.front().type == MG_TRANS) {
-    this->trans.push_back(fields.at(0).trans->clone());
+    translist.push_back(fields.at(0).trans->clone());
   }
   if (fields.size() > 1 && fields.at(1).type == MG_TRANS) {
-    this->trans.push_back(fields.at(1).trans->clone());
+    translist.push_back(fields.at(1).trans->clone());
   }
 }
 void multitrans::fill_def(MGTransDef& def) {
   def.identifier = "multi";
   MGField field;
   field.type = MG_TRANS;
-  for (auto tran : trans) {
-    field.trans = tran;
+  for (auto trans : translist) {
+    field.trans = trans;
     def.fields.push_back(field);
   }
 }

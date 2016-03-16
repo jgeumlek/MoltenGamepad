@@ -143,6 +143,18 @@ void do_header_line(std::vector<token>& line, std::string& header) {
   }
 }
 
+#define TRANSGEN(X) trans_gens[#X] = trans_generator<event_translator>(X::fields,[] (std::vector<MGField>& fields) { return new X(fields);});
+#define RENAME_TRANSGEN(name,X) trans_gens[#name] = trans_generator<event_translator>(X::fields,[] (std::vector<MGField>& fields) { return new X(fields);});
+MGparser::MGparser(moltengamepad* mg) : mg(mg) {
+  TRANSGEN(btn2btn);
+  TRANSGEN(btn2axis);
+  TRANSGEN(axis2axis);
+  TRANSGEN(axis2btns);
+  RENAME_TRANSGEN(redirect,redirect_trans);
+  RENAME_TRANSGEN(key,keyboard_redirect);
+  RENAME_TRANSGEN(multi,multitrans);
+}
+
 void MGparser::do_assignment(std::string header, std::string field, std::vector<token> rhs) {
   enum entry_type left_type = NO_ENTRY;
   const char* entry = field.c_str();
@@ -379,16 +391,7 @@ event_translator* MGparser::parse_trans_strict(enum entry_type intype, std::vect
 
 }
 
-event_translator* build_from_def(MGTransDef& def) {
-  if (def.identifier == "btn2btn") return new btn2btn(def.fields);
-  if (def.identifier == "btn2axis") return new btn2axis(def.fields);
-  if (def.identifier == "axis2axis") return new axis2axis(def.fields);
-  if (def.identifier == "axis2btns") return new axis2btns(def.fields);
-  if (def.identifier == "redirect") return new redirect_trans(def.fields);
-  if (def.identifier == "key") return new keyboard_redirect(def.fields);
-  if (def.identifier == "multi") return new multitrans(def.fields);
-  return nullptr;
-}
+
 
 void release_def(MGTransDef& def) {
   for (auto entry : def.fields) {
@@ -410,15 +413,11 @@ event_translator* MGparser::parse_trans_expr(enum entry_type intype, complex_exp
 
   const MGType(*fields) = nullptr;
 
-  if (expr->ident == "btn2btn") fields = btn2btn::fields;
-  if (expr->ident == "btn2axis") fields = btn2axis::fields;
-  if (expr->ident == "axis2axis") fields = axis2axis::fields;
-  if (expr->ident == "axis2btns") fields = axis2btns::fields;
-  if (expr->ident == "redirect") fields = redirect_trans::fields;
-  if (expr->ident == "key") fields = keyboard_redirect::fields;
-  if (expr->ident == "multi") fields = multitrans::fields;
+  auto generator = trans_gens.find(expr->ident);
+  if (generator == trans_gens.end())
+    return nullptr;
 
-  if (!fields) return nullptr;
+  fields = generator->second.fields;
 
   MGTransDef def;
   def.identifier = expr->ident;
@@ -431,7 +430,7 @@ event_translator* MGparser::parse_trans_expr(enum entry_type intype, complex_exp
 
 
   //still need to build it!
-  trans = build_from_def(def);
+  trans = generator->second.generate(def.fields);
   release_def(def);
   return trans;
 }
