@@ -29,7 +29,6 @@ public:
   output_slot* keyboard = nullptr;
   output_slot* dummyslot = nullptr;
   output_slot* debugslot = nullptr;
-  output_slot* defaultslot = nullptr;
   std::vector<output_slot*> slots;
 private:
   virtpad_type padtype;

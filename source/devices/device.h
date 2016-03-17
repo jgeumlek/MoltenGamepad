@@ -78,7 +78,7 @@ public:
   void update_map(const char* evname, event_translator* trans);
   void update_chord(const char* key1, const char* key2, event_translator* trans);
   void update_option(const char* opname, const char* value);
-  void update_advanced(std::vector<std::string> evnames, advanced_event_translator* trans);
+  void update_advanced(const std::vector<std::string>& evnames, advanced_event_translator* trans);
 
   virtual enum entry_type entry_type(const char* name) {
   }
@@ -108,6 +108,7 @@ protected:
   int internalpipe = 0;
   std::vector<source_event> events;
   std::map<std::string, source_option> options;
+  std::unordered_map<std::string, std::string> aliases;
   std::map<std::string, adv_entry> adv_trans;
   std::thread* thread = nullptr;
   volatile bool keep_looping = true;

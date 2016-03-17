@@ -27,6 +27,7 @@ public:
   const char* name;
   std::unordered_map<std::string, trans_map> mapping;
   std::unordered_map<std::string, std::string> options;
+  std::unordered_map<std::string, std::string> aliases;
   std::map<std::string, adv_map> adv_trans;
 
   trans_map get_mapping(std::string in_event_name);
@@ -38,6 +39,9 @@ public:
   void set_advanced(const std::vector<std::string>& names, advanced_event_translator* trans);
 
   void set_option(std::string opname, std::string value);
+
+  void set_alias(std::string external, std::string local);
+  std::string get_alias(std::string name);
 
   std::string get_option(std::string opname);
 

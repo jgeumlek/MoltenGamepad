@@ -401,6 +401,9 @@ int lookup_wii_event(const char* evname) {
 
 
 enum entry_type wiimote::entry_type(const char* name) {
+  auto alias = aliases.find(std::string(name));
+  if (alias != aliases.end())
+    name = alias->second.c_str();
   int ret = lookup_wii_event(name);
   if (ret != -1) {
     return events[ret].type;
@@ -410,6 +413,9 @@ enum entry_type wiimote::entry_type(const char* name) {
 }
 
 enum entry_type wiimotes::entry_type(const char* name) {
+  auto alias = mapprofile.get_alias(std::string(name));
+  if (!alias.empty())
+    name = alias.c_str();
   int ret = lookup_wii_event(name);
   if (ret != -1) {
     return wiimote_events[ret].type;

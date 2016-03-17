@@ -64,6 +64,9 @@ void input_source::watch_file(int fd, void* tag) {
 
 
 void input_source::update_map(const char* evname, event_translator* trans) {
+  auto alias = aliases.find(std::string(name));
+  if (alias != aliases.end())
+    evname = alias->second.c_str();
   for (int i = 0; i < events.size(); i++) {
     if (!strcmp(evname, events[i].name)) {
       set_trans(i, trans->clone());
@@ -99,10 +102,18 @@ struct pass_trans {
 
 
 
-void input_source::update_advanced(std::vector<std::string> evnames, advanced_event_translator* trans) {
+void input_source::update_advanced(const std::vector<std::string>& evnames, advanced_event_translator* trans) {
   struct pass_trans msg;
   memset(&msg, 0, sizeof(msg));
-  for (std::string name : evnames) {
+
+  msg.adv.fields = new std::vector<std::string>();
+  *msg.adv.fields = evnames;
+  for (int i = 0; i < msg.adv.fields->size(); i++) {
+    auto alias = aliases.find(std::string(evnames.at(i)));
+    if (alias != aliases.end())
+      (*msg.adv.fields)[i] = alias->second.c_str();
+  }
+  for (std::string name : *msg.adv.fields) {
     bool found = false;
     for (auto ev : events) {
       if (!strcmp(name.c_str(), ev.name)) {
@@ -110,7 +121,10 @@ void input_source::update_advanced(std::vector<std::string> evnames, advanced_ev
         break;
       }
     }
-    if (!found) return; //Abort!
+    if (!found) {
+      delete msg.adv.fields;
+      return; //Abort!
+    }
   }
 
   msg.adv.trans = nullptr;
@@ -118,12 +132,8 @@ void input_source::update_advanced(std::vector<std::string> evnames, advanced_ev
     msg.adv.trans = trans->clone();
     msg.adv.trans->init(this);
   }
-  msg.adv.fields = new std::vector<std::string>();
-  *msg.adv.fields = evnames;
-
 
   msg.id = -1;
-
 
   write(priv_pipe, &msg, sizeof(msg));
 }
@@ -188,6 +198,9 @@ void input_source::load_profile(profile* profile) {
   }
   for (auto entry : profile->adv_trans) {
     update_advanced(entry.second.fields, entry.second.trans);
+  }
+  for (auto entry : profile->aliases) {
+    aliases[entry.first] = entry.second;
   }
 
 }
