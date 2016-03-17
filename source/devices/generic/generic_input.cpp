@@ -61,6 +61,9 @@ void generic_device::list_options(name_list& list) {};
 void generic_device::update_option(const char* opname, const char* value) {};
 
 enum entry_type generic_device::entry_type(const char* name) {
+  auto alias = aliases.find(std::string(name));
+  if (alias != aliases.end())
+    name = alias->second.c_str();
   for (auto ev : events) {
     if (!strcmp(ev.name, name)) return ev.type;
   }

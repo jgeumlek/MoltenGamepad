@@ -132,6 +132,10 @@ void generic_parse_line(std::vector<token>& line, generic_driver_info*& info, mo
     }
     return;
   }
+  if (line.front().value == "alias" && line.size() > 3) {
+	  info->aliases.push_back({line[1].value,line[2].value});
+	  return;
+  }
 
   if (find_token_type(TK_EQUAL, line)) {
     generic_assignment_line(line, info, mg);

@@ -64,9 +64,11 @@ void input_source::watch_file(int fd, void* tag) {
 
 
 void input_source::update_map(const char* evname, event_translator* trans) {
-  auto alias = aliases.find(std::string(name));
+  std::string name(evname);
+  auto alias = aliases.find(name);
   if (alias != aliases.end())
     evname = alias->second.c_str();
+
   for (int i = 0; i < events.size(); i++) {
     if (!strcmp(evname, events[i].name)) {
       set_trans(i, trans->clone());

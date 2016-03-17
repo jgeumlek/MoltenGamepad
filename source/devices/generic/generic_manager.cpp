@@ -22,7 +22,9 @@ generic_manager::generic_manager(moltengamepad* mg, generic_driver_info& descr) 
     }
 
   }
-
+  for (auto alias : descr.aliases) {
+    mapprofile.set_alias(alias.first,alias.second);
+  }
 
   std::cout << name << " driver initialized." << std::endl;
 
@@ -164,6 +166,9 @@ input_source* generic_manager::find_device(const char* name) {
   return nullptr;
 }
 enum entry_type generic_manager::entry_type(const char* name) {
+  auto alias = mapprofile.get_alias(std::string(name));
+  if (!alias.empty())
+    name = alias.c_str();
   for (auto ev : descr->events) {
     if (!strcmp(ev.name.c_str(), name)) return ev.type;
   }
