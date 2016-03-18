@@ -6,6 +6,7 @@
 #include "../parser.h"
 
 void print_profile(profile& profile, std::ostream& out) {
+  profile.lock.lock();
   for (auto it = profile.mapping.begin(); it != profile.mapping.end(); it++) {
     out << profile.name << "." << it->first << " = ";
     MGTransDef def;
@@ -25,6 +26,7 @@ void print_profile(profile& profile, std::ostream& out) {
   }
   if (profile.mapping.empty() && profile.adv_trans.empty() && profile.options.empty())
     out << "#(empty profile)" << std::endl;
+  profile.lock.unlock();
 }
 
 int do_print_profile(moltengamepad* mg, std::string name, std::ostream& out) {

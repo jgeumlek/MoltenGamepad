@@ -95,11 +95,11 @@ void generic_assignment_line(std::vector<token>& line, generic_driver_info*& inf
 
   if (field == "device_type") {
     if (value == "gamepad")
-      info->split_types[split_id] = input_source::GAMEPAD;
+      info->split_types[split_id-1] = input_source::GAMEPAD;
     if (value == "special")
-      info->split_types[split_id] = input_source::SPECIAL;
+      info->split_types[split_id-1] = input_source::SPECIAL;
     if (value == "keyboard")
-      info->split_types[split_id] = input_source::KEYBOARD;
+      info->split_types[split_id-1] = input_source::KEYBOARD;
   }
 
   int id = get_key_id(field.c_str());
