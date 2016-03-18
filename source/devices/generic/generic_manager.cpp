@@ -103,7 +103,7 @@ int generic_manager::open_device(struct udev* udev, struct udev_device* dev) {
 
 void generic_manager::create_inputs(generic_file* opened_file, int fd, bool watch) {
   if (split == 1) {
-    generic_device* gendev = new generic_device(descr->events, fd, watch, mg->slots);
+    generic_device* gendev = new generic_device(descr->events, fd, watch, mg->slots, descr->split_types[1]);
     char* newdevname = nullptr;
     asprintf(&newdevname, "%s%d", devname.c_str(), ++dev_counter);
     gendev->nameptr = newdevname;
@@ -114,7 +114,7 @@ void generic_manager::create_inputs(generic_file* opened_file, int fd, bool watc
     gendev->load_profile(&mapprofile);
   } else {
     for (int i = 1; i <= split; i++) {
-      generic_device* gendev = new generic_device(splitevents.at(i - 1), fd, watch, mg->slots);
+      generic_device* gendev = new generic_device(splitevents.at(i - 1), fd, watch, mg->slots, descr->split_types[i]);
       char* newdevname = nullptr;
       asprintf(&newdevname, "%s%d", devname.c_str(), ++dev_counter);
       gendev->nameptr = newdevname;

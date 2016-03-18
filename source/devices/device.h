@@ -98,7 +98,15 @@ public:
   void force_value(int id, long long value);
   void send_value(int id, long long value);
   const devtype getType() {return type;};
-
+  static std::string type_name(devtype type) {
+    if (type == GAMEPAD)
+      return "gamepad";
+    if (type == KEYBOARD)
+      return "keyboard";
+    if (type == SPECIAL)
+      return "special";
+    return "unknown";
+  }
 
   output_slot* out_dev = nullptr;
 protected:

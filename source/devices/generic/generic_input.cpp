@@ -1,6 +1,6 @@
 #include "generic.h"
 
-generic_device::generic_device(std::vector<gen_source_event>& inevents, int fd, bool watch, slot_manager* slot_man) : input_source(slot_man, input_source::GAMEPAD) {
+generic_device::generic_device(std::vector<gen_source_event>& inevents, int fd, bool watch, slot_manager* slot_man,input_source::devtype type) : input_source(slot_man, type) {
   this->fd = fd;
   for (int i = 0; i < inevents.size(); i++) {
     source_event ev;

@@ -73,7 +73,8 @@ int do_print_devs(moltengamepad* mg, std::string name, std::ostream& out) {
   if (!name.empty()) {
     std::shared_ptr<input_source> dev = mg->find_device(name.c_str());
     if (dev.get()) {
-      out << dev->name << " events:" << std::endl;
+      out << dev->name << " (" << input_source::type_name(dev->getType()) << ")" << std::endl;
+      out << " events:" << std::endl;
       cat_list cats;
       dev->list_events(cats);
       for (auto v : cats) {
@@ -85,7 +86,7 @@ int do_print_devs(moltengamepad* mg, std::string name, std::ostream& out) {
 
       std::vector<source_option> list;
       dev->list_options(list);
-      out << "\n" << dev->name << " options:" << std::endl;
+      out << " options:" << std::endl;
       for (auto v : list) {
         out << "?" << v.name << " = " << v.value << "\n\t" << v.descr << std::endl;
       }

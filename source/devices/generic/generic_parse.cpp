@@ -73,7 +73,8 @@ void generic_assignment_line(std::vector<token>& line, generic_driver_info*& inf
     try {
       int split_count  = std::stoi(value);
       info->split = split_count;
-
+      info->split_types.clear();
+      info->split_types.assign(split_count,input_source::GAMEPAD);
     } catch (...) {
 
     }
@@ -84,10 +85,21 @@ void generic_assignment_line(std::vector<token>& line, generic_driver_info*& inf
   if (!prefix.empty()) {
     try {
       split_id  = std::stoi(prefix);
+      split_id = (split_id <= 0 || split_id > info->split) ? 1 : split_id;
+      info->split_types.resize(info->split);
 
     } catch (...) {
 
     }
+  }
+
+  if (field == "device_type") {
+    if (value == "gamepad")
+      info->split_types[split_id] = input_source::GAMEPAD;
+    if (value == "special")
+      info->split_types[split_id] = input_source::SPECIAL;
+    if (value == "keyboard")
+      info->split_types[split_id] = input_source::KEYBOARD;
   }
 
   int id = get_key_id(field.c_str());
