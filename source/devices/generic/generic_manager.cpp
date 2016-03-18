@@ -11,21 +11,20 @@ generic_manager::generic_manager(moltengamepad* mg, generic_driver_info& descr) 
   split = descr.split;
   flatten = descr.flatten;
 
-  if (split > 1) {
-    for (int i = 1; i <= split; i++) {
-      splitevents.push_back(std::vector<gen_source_event>());
-    }
+  for (int i = 1; i <= split; i++) {
+    splitevents.push_back(std::vector<gen_source_event>());
+  }
 
-    for (auto gen_ev : descr.events) {
-      if (gen_ev.split_id < 1 || gen_ev.split_id > split) continue;
-      splitevents.at(gen_ev.split_id - 1).push_back(gen_ev);
-
-    }
+  for (auto gen_ev : descr.events) {
+    if (gen_ev.split_id < 1 || gen_ev.split_id > split) continue;
+    splitevents.at(gen_ev.split_id - 1).push_back(gen_ev);
 
   }
+
   for (auto alias : descr.aliases) {
     mapprofile.set_alias(alias.first,alias.second);
   }
+
   descr.split_types.resize(split,input_source::GAMEPAD);
   for (auto type : descr.split_types) {
     if (type == input_source::GAMEPAD) {
@@ -110,8 +109,8 @@ int generic_manager::open_device(struct udev* udev, struct udev_device* dev) {
 }
 
 void generic_manager::create_inputs(generic_file* opened_file, int fd, bool watch) {
-  if (split == 1) {
-    generic_device* gendev = new generic_device(descr->events, fd, watch, mg->slots, descr->split_types[0]);
+  for (int i = 1; i <= split; i++) {
+    generic_device* gendev = new generic_device(splitevents.at(i - 1), fd, watch, mg->slots, descr->split_types[i-1]);
     char* newdevname = nullptr;
     asprintf(&newdevname, "%s%d", devname.c_str(), ++dev_counter);
     gendev->nameptr = newdevname;
@@ -120,18 +119,6 @@ void generic_manager::create_inputs(generic_file* opened_file, int fd, bool watc
     mg->add_device(gendev);
     gendev->start_thread();
     gendev->load_profile(&mapprofile);
-  } else {
-    for (int i = 1; i <= split; i++) {
-      generic_device* gendev = new generic_device(splitevents.at(i - 1), fd, watch, mg->slots, descr->split_types[i-1]);
-      char* newdevname = nullptr;
-      asprintf(&newdevname, "%s%d", devname.c_str(), ++dev_counter);
-      gendev->nameptr = newdevname;
-      gendev->name = newdevname;
-      opened_file->add_dev(gendev);
-      mg->add_device(gendev);
-      gendev->start_thread();
-      gendev->load_profile(&mapprofile);
-    }
   }
 }
 
