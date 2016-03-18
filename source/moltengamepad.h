@@ -6,7 +6,7 @@
 #include <string>
 #include <memory>
 #include <mutex>
-#include <mutex>
+#include <functional>
 #include "devices/device.h"
 #include "slot_manager.h"
 #include "uinput.h"
@@ -56,6 +56,7 @@ public:
   std::shared_ptr<input_source> find_device(const char* name);
   void add_device(input_source* source);
   void remove_device(input_source* source);
+  void for_all_devices(std::function<void (std::shared_ptr<input_source>&)> func);
 
 private:
   bool udev_loop = true;

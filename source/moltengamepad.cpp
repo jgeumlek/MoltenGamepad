@@ -172,4 +172,9 @@ void moltengamepad::remove_device(input_source* source) {
   device_list_lock.unlock();
 }
 
-
+void moltengamepad::for_all_devices(std::function<void (std::shared_ptr<input_source>&)> func) {
+  device_list_lock.lock();
+  for (auto dev : devices)
+    func(dev);
+  device_list_lock.unlock();
+}

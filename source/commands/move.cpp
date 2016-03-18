@@ -31,9 +31,9 @@ int do_move(moltengamepad* mg, std::vector<token>& command) {
   if (devname != "all") {
     mg->slots->move_to_slot(dev.get(), slot);
   } else {
-    for (auto dev : mg->devices) {
+    mg->for_all_devices( [slot,mg] (auto dev) {
       mg->slots->move_to_slot(dev.get(), slot);
-    }
+    });
   }
   return 0;
 }

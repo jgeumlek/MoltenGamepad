@@ -158,10 +158,10 @@ int do_print(moltengamepad* mg, std::vector<token>& command) {
     return -1;
   }
   std::string arg = (command.size() >= 3 && command.at(2).type == TK_IDENT) ? command.at(2).value : "";
-  if (command.at(1).value.compare(0, 6, "driver")) return do_print_drivers(mg, arg, std::cout);
-  if (command.at(1).value.compare(0, 6, "device")) return do_print_devs(mg, arg, std::cout);
-  if (command.at(1).value.compare(0, 7, "profile")) return do_print_profile(mg, arg, std::cout);
-  if (command.at(1).value.compare(0, 4, "slot")) return do_print_slots(mg, arg, std::cout);
+  if (command.at(1).value.compare(0, 6, "driver") == 0) return do_print_drivers(mg, arg, std::cout);
+  if (command.at(1).value.compare(0, 6, "device") == 0) return do_print_devs(mg, arg, std::cout);
+  if (command.at(1).value.compare(0, 7, "profile") == 0) return do_print_profile(mg, arg, std::cout);
+  if (command.at(1).value.compare(0, 4, "slot") == 0) return do_print_slots(mg, arg, std::cout);
 
   std::cout << PRINT_USAGE << std::endl;
   return 0;
