@@ -86,14 +86,13 @@ void generic_assignment_line(std::vector<token>& line, generic_driver_info*& inf
     try {
       split_id  = std::stoi(prefix);
       split_id = (split_id <= 0 || split_id > info->split) ? 1 : split_id;
-      info->split_types.resize(info->split);
-
     } catch (...) {
 
     }
   }
 
   if (field == "device_type") {
+    info->split_types.resize(info->split);
     if (value == "gamepad")
       info->split_types[split_id-1] = input_source::GAMEPAD;
     if (value == "special")

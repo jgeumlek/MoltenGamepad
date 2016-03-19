@@ -132,6 +132,10 @@ void profile::build_default_gamepad_profile() {
     (*map)["right_y"] = {new axis2axis(ABS_RY, 1), DEV_AXIS};
     (*map)["tr2_axis"] = {new axis2axis(ABS_Z, 1), DEV_AXIS};
     (*map)["tl2_axis"] = {new axis2axis(ABS_RZ, 1), DEV_AXIS};
+
+    //For devices with the dpad as a hat.
+    (*map)["updown"] =   {new axis2btns(BTN_DPAD_UP,BTN_DPAD_DOWN), DEV_AXIS};
+    (*map)["leftright"] =   {new axis2btns(BTN_DPAD_LEFT,BTN_DPAD_RIGHT), DEV_AXIS};
   }
   default_gamepad_profile.lock.unlock();
 }
