@@ -14,10 +14,30 @@
 #define FILL_DEF_SLOT(X) FILL_DEF(X,MG_SLOT,slot)
 #define FILL_DEF_KEYBOARD(X) FILL_DEF(X,MG_KEYBOARD_SLOT,slot)
 
+//TODO: TRANS_FAIL doesn't clean up any cloned translators.
+//      potential memory leak, but low priority
+//      since the parser should be preventing any of these exceptions.
+#define BEGIN_READ_DEF int __index = 0;
+#define TRANS_FAIL throw -5;
+#define READ_DEF(X,TYPE,LOC)  \
+  if (fields.size() > __index && fields.at(__index).type == TYPE) { \
+    X = fields.at(__index).LOC; \
+    __index++; \
+  } else { \
+    TRANS_FAIL \
+  } 
+#define READ_KEY(X) READ_DEF(X,MG_KEY,key)
+#define READ_AXIS(X) READ_DEF(X,MG_AXIS,axis)
+#define READ_REL(X) READ_DEF(X,MG_REL,rel)
+#define READ_INT(X) READ_DEF(X,MG_INT,integer)
+#define READ_TRANS(X,TYPE) READ_DEF(X,TYPE,trans); X = X->clone();
+#define READ_SLOT(X) READ_DEF(X,MG_SLOT,slot)
+#define READ_KEYBOARD(X) READ_DEF(X,MG_KEYBOARD_SLOT,slot)
+
 const MGType btn2btn::fields[] = { MG_KEY, MG_NULL };
 btn2btn::btn2btn(std::vector<MGField>& fields) {
-  if (fields.size() > 0 && fields.front().type == MG_KEY)
-    out_button = fields.front().key;
+  BEGIN_READ_DEF;
+  READ_KEY(out_button);
 }
 void btn2btn::fill_def(MGTransDef& def) {
   BEGIN_FILL_DEF("btn2btn");
@@ -26,10 +46,9 @@ void btn2btn::fill_def(MGTransDef& def) {
 
 const MGType btn2axis::fields[] = { MG_AXIS, MG_INT, MG_NULL };
 btn2axis::btn2axis(std::vector<MGField>& fields) {
-  if (fields.size() > 0 && fields.front().type == MG_AXIS)
-    out_axis = fields.front().axis;
-  if (fields.size() > 1 && fields[1].type == MG_INT)
-    direction = fields[1].integer;
+  BEGIN_READ_DEF;
+  READ_AXIS(out_axis);
+  READ_INT(direction);
 }
 void btn2axis::fill_def(MGTransDef& def) {
   BEGIN_FILL_DEF("btn2axis");
@@ -39,10 +58,9 @@ void btn2axis::fill_def(MGTransDef& def) {
 
 const MGType axis2axis::fields[] = { MG_AXIS, MG_INT, MG_NULL };
 axis2axis::axis2axis(std::vector<MGField>& fields) {
-  if (fields.size() > 0 && fields.front().type == MG_AXIS)
-    out_axis = fields.front().axis;
-  if (fields.size() > 1 && fields[1].type == MG_INT)
-    direction = fields[1].integer;
+  BEGIN_READ_DEF;
+  READ_AXIS(out_axis);
+  READ_INT(direction);
 }
 void axis2axis::fill_def(MGTransDef& def) {
   BEGIN_FILL_DEF("axis2axis");
@@ -52,10 +70,9 @@ void axis2axis::fill_def(MGTransDef& def) {
 
 const MGType axis2btns::fields[] = { MG_KEY, MG_KEY, MG_NULL };
 axis2btns::axis2btns(std::vector<MGField>& fields) {
-  if (fields.size() > 0 && fields.front().type == MG_KEY)
-    neg_btn = fields.front().key;
-  if (fields.size() > 1 && fields[1].type == MG_KEY)
-    pos_btn = fields[1].key;
+  BEGIN_READ_DEF;
+  READ_KEY(neg_btn);
+  READ_KEY(pos_btn);
 }
 void axis2btns::fill_def(MGTransDef& def) {
   BEGIN_FILL_DEF("axis2btns");
@@ -64,10 +81,9 @@ void axis2btns::fill_def(MGTransDef& def) {
 }
 const MGType redirect_trans::fields[] = { MG_TRANS, MG_SLOT, MG_NULL };
 redirect_trans::redirect_trans(std::vector<MGField>& fields) {
-  if (fields.size() > 0 && fields.front().type == MG_TRANS)
-    this->trans = fields.front().trans->clone();
-  if (fields.size() > 1 && fields[1].type == MG_SLOT)
-    this->redirected = fields[1].slot;
+  BEGIN_READ_DEF;
+  READ_TRANS(trans,MG_TRANS);
+  READ_SLOT(redirected);
 }
 void redirect_trans::fill_def(MGTransDef& def) {
   BEGIN_FILL_DEF("redirect");
@@ -76,12 +92,10 @@ void redirect_trans::fill_def(MGTransDef& def) {
 }
 const MGType keyboard_redirect::fields[] = { MG_KEY, MG_KEYBOARD_SLOT, MG_NULL };
 keyboard_redirect::keyboard_redirect(std::vector<MGField>& fields)  : redirect_trans() {
-  if (fields.size() > 0 && fields.front().type == MG_KEY) {
-    this->trans = new btn2btn(fields[0].key);
-    key_code = fields[0].key;
-  }
-  if (fields.size() > 1 && fields[1].type == MG_KEYBOARD_SLOT)
-    this->redirected = fields[1].slot;
+  BEGIN_READ_DEF;
+  READ_KEY(key_code);
+  READ_KEYBOARD(redirected);
+  trans = new btn2btn(key_code);
 }
 void keyboard_redirect::fill_def(MGTransDef& def) {
   BEGIN_FILL_DEF("key");
@@ -90,12 +104,12 @@ void keyboard_redirect::fill_def(MGTransDef& def) {
 }
 const MGType multitrans::fields[] = { MG_TRANS, MG_TRANS, MG_NULL };
 multitrans::multitrans(std::vector<MGField>& fields) {
-  if (fields.size() > 0 && fields.front().type == MG_TRANS) {
-    translist.push_back(fields.at(0).trans->clone());
-  }
-  if (fields.size() > 1 && fields.at(1).type == MG_TRANS) {
-    translist.push_back(fields.at(1).trans->clone());
-  }
+  BEGIN_READ_DEF;
+  event_translator* next;
+  READ_TRANS(next,MG_TRANS);
+  translist.push_back(next);
+  READ_TRANS(next,MG_TRANS);
+  translist.push_back(next);
 }
 void multitrans::fill_def(MGTransDef& def) {
   BEGIN_FILL_DEF("multi");
@@ -107,9 +121,8 @@ void multitrans::fill_def(MGTransDef& def) {
 
 const MGType simple_chord::fields[] = { MG_KEY_TRANS, MG_NULL };
 simple_chord::simple_chord(std::vector<std::string> event_names, std::vector<MGField>& fields) {
-  if (fields.size() > 0 && fields.front().type == MG_KEY_TRANS)
-    this->out_trans = fields.front().trans->clone();
-
+  BEGIN_READ_DEF;
+  READ_TRANS(out_trans,MG_KEY_TRANS);
   this->event_names = event_names;
 }
 void simple_chord::fill_def(MGTransDef& def) {
@@ -172,8 +185,8 @@ bool simple_chord::claim_event(int id, mg_ev event) {
 
 const MGType exclusive_chord::fields[] = { MG_KEY_TRANS, MG_NULL };
 exclusive_chord::exclusive_chord(std::vector<std::string> event_names, std::vector<MGField>& fields) {
-  if (fields.size() > 0 && fields.front().type == MG_KEY_TRANS)
-    this->out_trans = fields.front().trans->clone();
+  BEGIN_READ_DEF;
+  READ_TRANS(out_trans,MG_KEY_TRANS);
   this->event_names = event_names;
 }
 void exclusive_chord::fill_def(MGTransDef& def) {
