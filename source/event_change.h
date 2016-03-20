@@ -1,7 +1,6 @@
 #ifndef EVENT_CHANGE_H
 #define EVENT_CHANGE_H
 #include "output_slot.h"
-//#include "devices/device.h"
 #include <linux/input.h>
 #include <string>
 #include "eventlists/eventlist.h"

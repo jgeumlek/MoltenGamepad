@@ -4,17 +4,24 @@
 #include <iostream>
 #include <unistd.h>
 
+#define BEGIN_FILL_DEF(X) def.identifier = X; MGField field;
+#define FILL_DEF(X,TYPE,LOC) field.type = TYPE; field.LOC = X; def.fields.push_back(field);
+#define FILL_DEF_KEY(X) FILL_DEF(X,MG_KEY,key)
+#define FILL_DEF_AXIS(X) FILL_DEF(X,MG_AXIS,axis)
+#define FILL_DEF_REL(X) FILL_DEF(X,MG_REL,rel)
+#define FILL_DEF_INT(X) FILL_DEF(X,MG_INT,integer)
+#define FILL_DEF_TRANS(X,TYPE) FILL_DEF(X,TYPE,trans)
+#define FILL_DEF_SLOT(X) FILL_DEF(X,MG_SLOT,slot)
+#define FILL_DEF_KEYBOARD(X) FILL_DEF(X,MG_KEYBOARD_SLOT,slot)
+
 const MGType btn2btn::fields[] = { MG_KEY, MG_NULL };
 btn2btn::btn2btn(std::vector<MGField>& fields) {
   if (fields.size() > 0 && fields.front().type == MG_KEY)
     out_button = fields.front().key;
 }
 void btn2btn::fill_def(MGTransDef& def) {
-  def.identifier = "btn2btn";
-  MGField field;
-  field.type = MG_KEY;
-  field.key = out_button;
-  def.fields.push_back(field);
+  BEGIN_FILL_DEF("btn2btn");
+  FILL_DEF_KEY(out_button);
 }
 
 const MGType btn2axis::fields[] = { MG_AXIS, MG_INT, MG_NULL };
@@ -25,14 +32,9 @@ btn2axis::btn2axis(std::vector<MGField>& fields) {
     direction = fields[1].integer;
 }
 void btn2axis::fill_def(MGTransDef& def) {
-  def.identifier = "btn2axis";
-  MGField field;
-  field.type = MG_AXIS;
-  field.axis = out_axis;
-  def.fields.push_back(field);
-  field.type = MG_INT;
-  field.integer = direction;
-  def.fields.push_back(field);
+  BEGIN_FILL_DEF("btn2axis");
+  FILL_DEF_AXIS(out_axis);
+  FILL_DEF_INT(direction);
 }
 
 const MGType axis2axis::fields[] = { MG_AXIS, MG_INT, MG_NULL };
@@ -43,14 +45,9 @@ axis2axis::axis2axis(std::vector<MGField>& fields) {
     direction = fields[1].integer;
 }
 void axis2axis::fill_def(MGTransDef& def) {
-  def.identifier = "axis2axis";
-  MGField field;
-  field.type = MG_AXIS;
-  field.axis = out_axis;
-  def.fields.push_back(field);
-  field.type = MG_INT;
-  field.integer = direction;
-  def.fields.push_back(field);
+  BEGIN_FILL_DEF("axis2axis");
+  FILL_DEF_AXIS(out_axis);
+  FILL_DEF_INT(direction);
 }
 
 const MGType axis2btns::fields[] = { MG_KEY, MG_KEY, MG_NULL };
@@ -61,14 +58,9 @@ axis2btns::axis2btns(std::vector<MGField>& fields) {
     pos_btn = fields[1].key;
 }
 void axis2btns::fill_def(MGTransDef& def) {
-  def.identifier = "axis2btns";
-  MGField field;
-  field.type = MG_KEY;
-  field.key = neg_btn;
-  def.fields.push_back(field);
-  field.type = MG_KEY;
-  field.key = pos_btn;
-  def.fields.push_back(field);
+  BEGIN_FILL_DEF("axis2btns");
+  FILL_DEF_KEY(neg_btn);
+  FILL_DEF_KEY(pos_btn);
 }
 const MGType redirect_trans::fields[] = { MG_TRANS, MG_SLOT, MG_NULL };
 redirect_trans::redirect_trans(std::vector<MGField>& fields) {
@@ -78,14 +70,9 @@ redirect_trans::redirect_trans(std::vector<MGField>& fields) {
     this->redirected = fields[1].slot;
 }
 void redirect_trans::fill_def(MGTransDef& def) {
-  def.identifier = "redirect";
-  MGField field;
-  field.type = MG_TRANS;
-  field.trans = trans;
-  def.fields.push_back(field);
-  field.type = MG_SLOT;
-  field.slot = redirected;
-  def.fields.push_back(field);
+  BEGIN_FILL_DEF("redirect");
+  FILL_DEF_TRANS(trans,MG_TRANS);
+  FILL_DEF_SLOT(redirected);
 }
 const MGType keyboard_redirect::fields[] = { MG_KEY, MG_KEYBOARD_SLOT, MG_NULL };
 keyboard_redirect::keyboard_redirect(std::vector<MGField>& fields)  : redirect_trans() {
@@ -97,14 +84,9 @@ keyboard_redirect::keyboard_redirect(std::vector<MGField>& fields)  : redirect_t
     this->redirected = fields[1].slot;
 }
 void keyboard_redirect::fill_def(MGTransDef& def) {
-  def.identifier = "key";
-  MGField field;
-  field.type = MG_TRANS;
-  field.trans = trans;
-  def.fields.push_back(field);
-  field.type = MG_KEYBOARD_SLOT;
-  field.slot = redirected;
-  def.fields.push_back(field);
+  BEGIN_FILL_DEF("key");
+  FILL_DEF_KEY(key_code);
+  FILL_DEF_KEYBOARD(redirected);
 }
 const MGType multitrans::fields[] = { MG_TRANS, MG_TRANS, MG_NULL };
 multitrans::multitrans(std::vector<MGField>& fields) {
@@ -116,12 +98,9 @@ multitrans::multitrans(std::vector<MGField>& fields) {
   }
 }
 void multitrans::fill_def(MGTransDef& def) {
-  def.identifier = "multi";
-  MGField field;
-  field.type = MG_TRANS;
+  BEGIN_FILL_DEF("multi");
   for (auto trans : translist) {
-    field.trans = trans;
-    def.fields.push_back(field);
+    FILL_DEF_TRANS(trans,MG_TRANS);
   }
 }
 
@@ -134,11 +113,8 @@ simple_chord::simple_chord(std::vector<std::string> event_names, std::vector<MGF
   this->event_names = event_names;
 }
 void simple_chord::fill_def(MGTransDef& def) {
-  def.identifier = "simple";
-  MGField field;
-  field.type = MG_KEY_TRANS;
-  field.trans = out_trans;
-  def.fields.push_back(field);
+  BEGIN_FILL_DEF("simple");
+  FILL_DEF_TRANS(out_trans,MG_KEY_TRANS);
 }
 
 void simple_chord::init(input_source* source) {
@@ -201,11 +177,8 @@ exclusive_chord::exclusive_chord(std::vector<std::string> event_names, std::vect
   this->event_names = event_names;
 }
 void exclusive_chord::fill_def(MGTransDef& def) {
-  def.identifier = "exclusive";
-  MGField field;
-  field.type = MG_KEY_TRANS;
-  field.trans = out_trans;
-  def.fields.push_back(field);
+  BEGIN_FILL_DEF("exclusive");
+  FILL_DEF_TRANS(out_trans,MG_KEY_TRANS);
 }
 
 bool exclusive_chord::claim_event(int id, mg_ev event) {
