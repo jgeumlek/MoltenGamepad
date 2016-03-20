@@ -7,6 +7,7 @@
 #include "uinput.h"
 #include "output_slot.h"
 #include "devices/device.h"
+#include "messages.h"
 
 class input_source;
 
@@ -33,12 +34,14 @@ public:
 private:
   virtpad_type padtype;
   void remove_from(output_slot* slot);
+  void move_device(input_source* dev, output_slot* target);
 
   bool slots_on_demand = false;
 
   uinput* ui;
   std::mutex lock;
   int num_slots = 2;
+  simple_messenger log;
 };
 
 #endif

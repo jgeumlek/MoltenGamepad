@@ -55,10 +55,9 @@ public:
 
   modes mode = NO_EXT;
 
-  char* nameptr;
   const char* descr = "unidentified Wii device";
 
-  wiimote(slot_manager* slot_man);
+  wiimote(slot_manager* slot_man, device_manager* manager);
 
   ~wiimote();
 
@@ -66,7 +65,7 @@ public:
   virtual void handle_event(struct udev_device* dev);
   virtual struct name_descr get_info() {
     struct name_descr desc;
-    desc.name = name;
+    desc.name = name.c_str();
     desc.descr = descr;
     return desc;
   }
@@ -76,7 +75,7 @@ public:
 
   void update_mode();
   void remove_extension() {
-    if (mode != NO_EXT) std::cout << name << " lost its extension." << std::endl;
+    if (mode != NO_EXT) manager->log.take_message(name + " lost its extension.");
     mode = NO_EXT;
     update_mode();
   }
@@ -156,9 +155,7 @@ public:
 
   void init_profile();
 
-  wiimote_manager(moltengamepad* mg) : device_manager(mg) {
-    name = "wiimote";
-    mapprofile.name = "wiimote";
+  wiimote_manager(moltengamepad* mg) : device_manager(mg,"wiimote") {
     init_profile();
   }
 

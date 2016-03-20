@@ -12,6 +12,7 @@
 #include "uinput.h"
 #include "udev.h"
 #include "signalflags.h"
+#include "messages.h"
 
 #define VERSION_STRING "alpha"
 
@@ -45,9 +46,12 @@ public:
   std::vector<std::shared_ptr<input_source>> devices;
   slot_manager* slots;
   udev_handler udev;
+  simple_messenger drivers;
+  simple_messenger plugs;
+  simple_messenger errors;
 
-  moltengamepad();
-  moltengamepad(moltengamepad::mg_options options) : options(options) {};
+  moltengamepad() : drivers("driver"), plugs("hotplug"), errors("error") {};
+  moltengamepad(moltengamepad::mg_options options) : drivers("driver"), plugs("hotplug"), errors("error"), options(options) {};
   ~moltengamepad();
   int init();
   int stop();

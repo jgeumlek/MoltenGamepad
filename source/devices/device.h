@@ -10,6 +10,7 @@
 #include "../event_change.h"
 #include "../moltengamepad.h"
 #include "../profile.h"
+#include "../messages.h"
 
 #define ABS_RANGE 32000
 
@@ -19,6 +20,8 @@ class moltengamepad;
 
 
 class slot_manager;
+
+class device_manager;
 
 
 typedef std::vector<struct name_descr> name_list;
@@ -58,9 +61,9 @@ struct adv_entry {
 class input_source {
 public:
   enum devtype { GAMEPAD, KEYBOARD, SPECIAL, UNKNOWN};
-  input_source(slot_manager* slot_man, devtype type);
+  input_source(slot_manager* slot_man, device_manager* manager, devtype type);
   virtual ~input_source();
-  const char* name = "unnamed";
+  std::string name = "unnamed";
   virtual int set_player(int player_num) {
   }
   virtual void list_events(cat_list& list) {
@@ -68,11 +71,6 @@ public:
   void list_options(std::vector<source_option>& list);
   virtual void set_slot(output_slot* outdev) {
     this->out_dev = outdev;
-    if (outdev)  {
-      std::cout << name << " assigned to slot " << outdev->name << std::endl;
-    } else {
-      std::cout << name << " not assigned to a slot" << std::endl;
-    }
   }
 
   void update_map(const char* evname, event_translator* trans);
@@ -120,6 +118,7 @@ protected:
   std::map<std::string, adv_entry> adv_trans;
   std::thread* thread = nullptr;
   volatile bool keep_looping = true;
+  device_manager* manager;
 
 
 
@@ -147,7 +146,9 @@ public:
   virtual void list_devs(name_list& list) {
   };
 
-  device_manager(moltengamepad* mg) : mg(mg) {
+  device_manager(moltengamepad* mg, std::string name) : mg(mg), name(name), log(name) {
+    mapprofile.name = name;
+    log.add_listener(1);
   }
 
   virtual ~device_manager() {
@@ -171,7 +172,8 @@ public:
   virtual enum entry_type entry_type(const char* name) {
   }
 
-  const char* name;
+  std::string name;
+  simple_messenger log;
   profile mapprofile;
 
 };

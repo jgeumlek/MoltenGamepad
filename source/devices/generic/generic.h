@@ -56,7 +56,7 @@ public:
   std::map<evcode, decodedevent> eventcodes;
   struct udev_device* node = nullptr;
 
-  generic_device(std::vector<gen_source_event>& events, int fd, bool watch, slot_manager* slot_man, input_source::devtype type);
+  generic_device(std::vector<gen_source_event>& events, int fd, bool watch, slot_manager* slot_man, device_manager* manager, input_source::devtype type);
   ~generic_device();
 
   virtual int set_player(int player_num);
@@ -239,7 +239,7 @@ public:
     for (auto file : openfiles) {
 
       for (auto it = file->devices.begin(); it != file->devices.end(); ++it) {
-        list.push_back({(*it)->name, (*it)->descr, 0});
+        list.push_back({(*it)->name.c_str(), (*it)->descr, 0});
       }
     }
   }

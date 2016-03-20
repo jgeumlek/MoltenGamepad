@@ -1,10 +1,8 @@
 #include "generic.h"
 #include <algorithm>
 
-generic_manager::generic_manager(moltengamepad* mg, generic_driver_info& descr) : device_manager(mg) {
-  this->name = descr.name.c_str();
+generic_manager::generic_manager(moltengamepad* mg, generic_driver_info& descr) : device_manager(mg,descr.name) {
   this->devname = descr.devname.c_str();
-  mapprofile.name = name;
 
   this->descr = &descr;
 
@@ -33,7 +31,7 @@ generic_manager::generic_manager(moltengamepad* mg, generic_driver_info& descr) 
     }
   }
 
-  std::cout << name << " driver initialized." << std::endl;
+  mg->drivers.take_message(std::string(name) + " driver initialized.");
 
 }
 
@@ -57,7 +55,6 @@ int generic_manager::accept_device(struct udev* udev, struct udev_device* dev) {
     for (auto it = openfiles.begin(); it != openfiles.end(); it++) {
       (*it)->close_node(dev, true);
       if ((*it)->nodes.empty()) {
-        std::cout << "Generic driver " << name << " lost a device." << std::endl;
         delete(*it);
         openfiles.erase(it);
         return 0;
@@ -110,11 +107,11 @@ int generic_manager::open_device(struct udev* udev, struct udev_device* dev) {
 
 void generic_manager::create_inputs(generic_file* opened_file, int fd, bool watch) {
   for (int i = 1; i <= split; i++) {
-    generic_device* gendev = new generic_device(splitevents.at(i - 1), fd, watch, mg->slots, descr->split_types[i-1]);
+    generic_device* gendev = new generic_device(splitevents.at(i - 1), fd, watch, mg->slots, this, descr->split_types[i-1]);
     char* newdevname = nullptr;
     asprintf(&newdevname, "%s%d", devname.c_str(), ++dev_counter);
-    gendev->nameptr = newdevname;
-    gendev->name = newdevname;
+    gendev->name = std::string(newdevname);
+    free(newdevname);
     opened_file->add_dev(gendev);
     mg->add_device(gendev);
     gendev->start_thread();
@@ -155,7 +152,7 @@ input_source* generic_manager::find_device(const char* name) {
 
   for (auto file : openfiles) {
     for (auto dev : file->devices) {
-      if (!strcmp(dev->name, name)) return dev;
+      if (!strcmp(dev->name.c_str(), name)) return dev;
     }
   }
   return nullptr;

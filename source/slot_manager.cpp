@@ -1,6 +1,6 @@
 #include "slot_manager.h"
 
-slot_manager::slot_manager(int num_pads, bool keys, const virtpad_settings& padstyle) {
+slot_manager::slot_manager(int num_pads, bool keys, const virtpad_settings& padstyle) : log("slot") {
   ui = new uinput();
   dummyslot = new output_slot("blank", "Dummy slot (ignores all events)");
   debugslot = new debug_device("debugslot", "Prints out all received events");
@@ -13,6 +13,7 @@ slot_manager::slot_manager(int num_pads, bool keys, const virtpad_settings& pads
   for (int i = 0; i < num_pads; i++) {
     slots.push_back(new virtual_gamepad("virtpad" + std::to_string(i + 1), "A virtual gamepad", padstyle, ui));
   }
+  log.add_listener(1);
 }
 
 slot_manager::~slot_manager() {
@@ -27,29 +28,33 @@ slot_manager::~slot_manager() {
 void slot_manager::request_slot(input_source* dev) {
   if (dev->getType() == input_source::KEYBOARD) {
     lock.lock();
-    dev->set_slot(keyboard);
-    keyboard->pad_count += 1;
+    move_device(dev,keyboard);
     lock.unlock();
     return;
   }
   lock.lock();
   for (int i = 0; i < slots.size(); i++) {
     if (slots[i]->accepting()) {
-      dev->set_slot(slots[i]);
-      slots[i]->pad_count += 1;
+      move_device(dev,slots[i]);
       lock.unlock();
       return;
     }
   }
-  dev->set_slot(dummyslot);
+  move_device(dev,dummyslot);
 
   lock.unlock();
 }
 
 void slot_manager::move_to_slot(input_source* dev, output_slot* target) {
+  lock.lock();
+  move_device(dev,target);
+  lock.unlock();
+}
+
+void slot_manager::move_device(input_source* dev, output_slot* target) {
+  //private, should only be called with lock acquired
   if (!dev) return;
   if (dev->out_dev == target) return;
-  lock.lock();
   if (dev->out_dev) {
     remove_from(dev->out_dev);
   }
@@ -57,7 +62,11 @@ void slot_manager::move_to_slot(input_source* dev, output_slot* target) {
     target->pad_count += 1;
   }
   dev->set_slot(target);
-  lock.unlock();
+  if (target) {
+    log.take_message(dev->name + " assigned to slot " + target->name);
+  } else {
+    log.take_message(dev->name + " not assigned to any slot");
+  }
 }
 
 void slot_manager::remove_from(output_slot* slot) {

@@ -52,6 +52,7 @@ private:
   event_translator* parse_trans_toplevel_quirks(enum entry_type intype, std::vector<token>& tokens, std::vector<token>::iterator& it);
   std::map<std::string,trans_generator<event_translator> > trans_gens;
   std::map<std::string,trans_generator<advanced_event_translator> > adv_trans_gens;
+  simple_messenger out;
 };
 
 

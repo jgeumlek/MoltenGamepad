@@ -7,8 +7,6 @@
 #include <devices/wiimote/wiimote.h>
 #include <devices/generic/generic.h>
 
-moltengamepad::moltengamepad() {
-}
 
 //FUTURE WORK: Make it easier to specify additional virtpad styles.
 const virtpad_settings default_padstyle = {
@@ -86,8 +84,13 @@ int moltengamepad::init() {
   padstyle.dpad_as_hat = options.dpad_as_hat;
   if (options.mimic_xpad) padstyle = xpad_padstyle;
   slots = new slot_manager(options.num_gamepads, options.make_keyboard, padstyle);
+  //add standard streams
+  drivers.add_listener(1);
+  plugs.add_listener(1);
+  errors.add_listener(2);
 
   managers.push_back(new wiimote_manager(this));
+  drivers.take_message("wiimote driver initialized.");
 
   if (options.config_dir.empty()) options.config_dir = find_config_folder();
 
@@ -109,7 +112,7 @@ int moltengamepad::init() {
 
     if (!file.fail()) {
       int ret = generic_config_loop(this, file);
-      if (ret) std::cerr << "Generic device config " << globbuffer.gl_pathv[i] << " failed.";
+      if (ret) errors.take_message("generic device config " + std::string(globbuffer.gl_pathv[i]) + " failed.");
     }
   }
 
@@ -124,7 +127,7 @@ int moltengamepad::init() {
       options.fifo_path = std::string(run_dir) + "/moltengamepad";
     }
     if (options.fifo_path.empty()) {
-      std::cerr << "Could not locate fifo path. Use the --fifo-path command line argument." << std::endl;
+      errors.take_message("Could not locate fifo path. Use the --fifo-path command line argument.");
       throw - 1;
     }
     int ret = mkfifo(options.fifo_path.c_str(), 0666);
@@ -143,7 +146,7 @@ int moltengamepad::init() {
 
 device_manager* moltengamepad::find_manager(const char* name) {
   for (auto it = managers.begin(); it != managers.end(); it++) {
-    if (!strcmp((*it)->name, name)) return (*it);
+    if (!strcmp((*it)->name.c_str(), name)) return (*it);
   }
   return nullptr;
 }
@@ -151,18 +154,20 @@ device_manager* moltengamepad::find_manager(const char* name) {
 std::shared_ptr<input_source> moltengamepad::find_device(const char* name) {
   for (auto it = devices.begin(); it != devices.end(); it++) {
 
-    if (!strcmp((*it)->name, name)) return (*it);
+    if (!strcmp((*it)->name.c_str(), name)) return (*it);
   }
   return nullptr;
 }
 void moltengamepad::add_device(input_source* source) {
   device_list_lock.lock();
   devices.push_back(std::shared_ptr<input_source>(source));
+  plugs.take_message("device " + source->name + " added.");
   device_list_lock.unlock();
 }
 
 void moltengamepad::remove_device(input_source* source) {
   device_list_lock.lock();
+  plugs.take_message("device " + source->name + " removed.");
   for (int i = 0; i < devices.size(); i++) {
     if (source == devices[i].get()) {
       devices.erase(devices.begin() + i);

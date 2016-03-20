@@ -72,7 +72,6 @@ int wiimote_manager::accept_device(struct udev* udev, struct udev_device* dev) {
         existing->handle_event(dev);
       } else {
         //exact path found, and destroyed.
-        std::cout << "Wii device removed." << std::endl;
       }
       return 0;
     }
@@ -97,12 +96,11 @@ int wiimote_manager::accept_device(struct udev* udev, struct udev_device* dev) {
 
   if (existing == nullptr) {
     //time to add a device;
-    std::cout << "Wiimote found." << std::endl;;
-    wiimote* wm = new wiimote(mg->slots);
+    wiimote* wm = new wiimote(mg->slots, this);
     char* devname;
     asprintf(&devname, "wm%d", ++dev_counter);
-    wm->name = devname;
-    wm->nameptr = devname;
+    wm->name = std::string(devname);
+    free(devname);
     wm->base.dev = udev_device_ref(parent);
     wm->handle_event(dev);
     wii_devs.push_back(wm);
@@ -138,7 +136,7 @@ void wiimote_manager::update_advanceds(const std::vector<std::string>& names, ad
 
 input_source* wiimote_manager::find_device(const char* name) {
   for (auto it = wii_devs.begin(); it != wii_devs.end(); it++) {
-    if (!strcmp((*it)->name, name)) return (*it);
+    if (!strcmp((*it)->name.c_str(), name)) return (*it);
   }
   return nullptr;
 }

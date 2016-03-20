@@ -25,7 +25,7 @@ struct trans_map {
 
 class profile {
 public:
-  const char* name;
+  std::string name;
   std::unordered_map<std::string, trans_map> mapping;
   std::unordered_map<std::string, std::string> options;
   std::unordered_map<std::string, std::string> aliases;
