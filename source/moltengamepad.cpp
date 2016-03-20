@@ -87,7 +87,7 @@ int moltengamepad::init() {
   if (options.mimic_xpad) padstyle = xpad_padstyle;
   slots = new slot_manager(options.num_gamepads, options.make_keyboard, padstyle);
 
-  managers.push_back(new wiimotes(this));
+  managers.push_back(new wiimote_manager(this));
 
   if (options.config_dir.empty()) options.config_dir = find_config_folder();
 

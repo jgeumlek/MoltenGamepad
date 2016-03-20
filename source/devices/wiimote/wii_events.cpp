@@ -6,6 +6,15 @@
 #define ABS DEV_AXIS,0,nullptr
 #define OPT DEV_OPTION
 
+int lookup_wii_event(const char* evname) {
+  if (evname == nullptr) return -1;
+  for (int i = 0; i < wii_event_max; i++) {
+    if (!strcmp(evname, wiimote_events[i].name))
+      return i;
+  }
+  return -1;
+}
+
 const source_event wiimote_events[] = {
   {EVNAME(wm_a), "Wiimote A button", BTN},
   {EVNAME(wm_b), "Wiimote B button", BTN},
@@ -151,7 +160,7 @@ void wiimote::process_core() {
 
 };
 
-#define CLASSIC_STICK_SCALE ABS_RANGE/22
+#define CLASSIC_STICK_SCALE ABS_RANGE/24
 void wiimote::process_classic(int fd) {
   struct input_event ev;
   int ret = read(fd, &ev, sizeof(ev));
@@ -227,7 +236,7 @@ void wiimote::process_classic(int fd) {
   }
 }
 
-#define NUNCHUK_STICK_SCALE ABS_RANGE/23
+#define NUNCHUK_STICK_SCALE ABS_RANGE/24
 #define NUNCHUK_ACCEL_SCALE ABS_RANGE/90
 void wiimote::process_nunchuk(int fd) {
   struct input_event ev;
@@ -236,18 +245,18 @@ void wiimote::process_nunchuk(int fd) {
 
     if (ev.type == EV_KEY) switch (ev.code) {
       case BTN_C:
-        process(EVENT_KEY, cc_left, ev.value);
+        process(EVENT_KEY, nk_c, ev.value);
         break;
       case BTN_Z:
-        process(EVENT_KEY, cc_right, ev.value);
+        process(EVENT_KEY, nk_z, ev.value);
         break;
       }
     else if (ev.type == EV_ABS) switch (ev.code) {
       case ABS_HAT0X:
         process(EVENT_AXIS, nk_stick_x, ev.value * NUNCHUK_STICK_SCALE);
         break;
-      case ABS_HAT1Y:
-        process(EVENT_AXIS, nk_stick_y, ev.value * NUNCHUK_STICK_SCALE);
+      case ABS_HAT0Y:
+        process(EVENT_AXIS, nk_stick_y, -ev.value * NUNCHUK_STICK_SCALE);
         break;
       case ABS_RX:
         process(EVENT_AXIS, nk_accel_x, ev.value * NUNCHUK_ACCEL_SCALE);

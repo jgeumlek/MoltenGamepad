@@ -135,7 +135,7 @@ private:
 
 
 
-class wiimotes : public device_manager {
+class wiimote_manager : public device_manager {
 public:
   std::vector<wiimote*> wii_devs;
 
@@ -156,13 +156,13 @@ public:
 
   void init_profile();
 
-  wiimotes(moltengamepad* mg) : device_manager(mg) {
+  wiimote_manager(moltengamepad* mg) : device_manager(mg) {
     name = "wiimote";
     mapprofile.name = "wiimote";
     init_profile();
   }
 
-  ~wiimotes() {
+  ~wiimote_manager() {
     for (auto it = wii_devs.begin(); it != wii_devs.end(); ++it) {
       mg->remove_device(*it);
     }

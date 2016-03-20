@@ -1,7 +1,7 @@
 #include "wiimote.h"
 #include "../../profile.h"
 
-void wiimotes::init_profile() {
+void wiimote_manager::init_profile() {
   //Init some event translators
   auto map = &mapprofile.mapping;
   (*map)["wm_a"] =    {new btn2btn(BTN_WEST), DEV_KEY};
@@ -27,8 +27,8 @@ void wiimotes::init_profile() {
   (*map)["nk_home"] = {new btn2btn(BTN_MODE), DEV_KEY};
   (*map)["nk_plus"] = {new btn2btn(BTN_START), DEV_KEY};
   (*map)["nk_minus"] = {new btn2btn(BTN_SELECT), DEV_KEY};
-  (*map)["nk_c"] =    {new btn2btn(BTN_NORTH), DEV_KEY};
-  (*map)["nk_z"] =    {new btn2btn(BTN_WEST), DEV_KEY};
+  (*map)["nk_c"] =    {new btn2btn(BTN_WEST), DEV_KEY};
+  (*map)["nk_z"] =    {new btn2btn(BTN_NORTH), DEV_KEY};
 
   (*map)["cc_a"] =    {new btn2btn(BTN_SOUTH), DEV_KEY};
   (*map)["cc_b"] =    {new btn2btn(BTN_EAST), DEV_KEY};
