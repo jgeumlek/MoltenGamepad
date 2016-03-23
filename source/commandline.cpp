@@ -21,7 +21,7 @@ int do_alterslot(moltengamepad* mg, std::vector<token>& command);
 "\tquit:\tquit this application\n"\
 "\t<profile>.<event> = <outevent>\n"\
 "\t\tchange the event mapping for <event> to <outevent> in the profile <profile>"
-int do_command(moltengamepad* mg, std::vector<token>& command) {
+int MGparser::do_command(moltengamepad* mg, std::vector<token>& command) {
   if (command.empty()) return 0;
   if (command.front().type == TK_ENDL) return 0;
   if (command.front().value == "print") {
@@ -37,23 +37,23 @@ int do_command(moltengamepad* mg, std::vector<token>& command) {
   if (command.front().value == "load") return do_load(mg, command);
   if (command.front().value == "alterslot") return do_alterslot(mg, command);
   if (command.front().value == "help") {
-    std::cout << HELP_TEXT << std::endl;
+    out.take_message(HELP_TEXT);
     return 0;
   };
   if (command.front().value == "quit") {
     return 0;
   };
-  std::cout << "Command not recognized. \"help\" for available commands" << std::endl;
+  out.take_message("Command not recognized. \"help\" for available commands");
   return 0;
 }
 
 
 
-int shell_loop(moltengamepad* mg, std::istream& in) {
+int shell_loop(moltengamepad* mg, std::istream& in, int out_fd, message_stream::listen_type type) {
   bool keep_looping = true;
   std::string header = "";
   char* buff = new char [1024];
-  MGparser parser(mg);
+  MGparser parser(mg, out_fd, type);
 
   while (!QUIT_APPLICATION && keep_looping) {
     in.getline(buff, 1024);

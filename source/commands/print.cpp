@@ -38,6 +38,7 @@ int do_print_profile(moltengamepad* mg, std::string name, std::ostream& out) {
       for (auto e : names)
         out << e.name << std::endl;
     }
+    return 0;
   }
 
   device_manager* man = mg->find_manager(name.c_str());
@@ -53,6 +54,8 @@ int do_print_profile(moltengamepad* mg, std::string name, std::ostream& out) {
       dev->export_profile(&profile);
       profile.name = dev->name;
       print_profile(profile, out);
+    } else {
+      out << "profile " << name << " not found." << std::endl;
     }
   }
   return -1;
@@ -119,6 +122,8 @@ int do_print_drivers(moltengamepad* mg, std::string name, std::ostream& out) {
   device_manager* man = mg->find_manager(name.c_str());
   if (man) {
     print_driver_dev_list(man, out);
+  } else {
+    out << "driver " << name << " not found." << std::endl;
   }
 
   return 0;
@@ -141,6 +146,8 @@ int do_print_slots(moltengamepad* mg, std::string name, std::ostream& out) {
     for (auto e : slot->options) {
       out << "\t" << e.first << " = " << e.second << std::endl;
     }
+  } else {
+    out << "slot " << name << " not found." << std::endl;
   }
 
   return 0;
@@ -152,18 +159,24 @@ int do_print_slots(moltengamepad* mg, std::string name, std::ostream& out) {
 "\ttypes recognized: drivers, devices, profiles, slots\n"\
 "\tprint <type> will list all elements of that type\n"\
 "\tprint <type> [element] will show detailed info on that element\n"
-int do_print(moltengamepad* mg, std::vector<token>& command) {
+int MGparser::do_print(moltengamepad* mg, std::vector<token>& command) {
   if (command.size() < 2) {
-    std::cout << PRINT_USAGE << std::endl;
+    out.take_message(PRINT_USAGE);
     return -1;
   }
+  std::stringstream ss;
   std::string arg = (command.size() >= 3 && command.at(2).type == TK_IDENT) ? command.at(2).value : "";
-  if (command.at(1).value.compare(0, 6, "driver") == 0) return do_print_drivers(mg, arg, std::cout);
-  if (command.at(1).value.compare(0, 6, "device") == 0) return do_print_devs(mg, arg, std::cout);
-  if (command.at(1).value.compare(0, 7, "profile") == 0) return do_print_profile(mg, arg, std::cout);
-  if (command.at(1).value.compare(0, 4, "slot") == 0) return do_print_slots(mg, arg, std::cout);
-
-  std::cout << PRINT_USAGE << std::endl;
+  if (command.at(1).value.compare(0, 6, "driver") == 0) do_print_drivers(mg, arg, ss);
+  if (command.at(1).value.compare(0, 6, "device") == 0) do_print_devs(mg, arg, ss);
+  if (command.at(1).value.compare(0, 7, "profile") == 0) do_print_profile(mg, arg, ss);
+  if (command.at(1).value.compare(0, 4, "slot") == 0) do_print_slots(mg, arg, ss);
+  
+  std::string text = ss.str();
+  if (!text.empty()) {
+    out.take_message(text);
+  } else {
+    out.take_message(PRINT_USAGE);
+  }
   return 0;
 }
 

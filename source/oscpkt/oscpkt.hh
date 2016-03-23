@@ -55,7 +55,7 @@
 
 #ifndef OSCPKT_HH
 #define OSCPKT_HH
-
+#define OSCPKT_OSTREAM_OUTPUT
 #ifndef _MSC_VER
 #include <stdint.h>
 #else

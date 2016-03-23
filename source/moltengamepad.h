@@ -28,6 +28,7 @@ public:
     bool look_for_devices = true;
     bool listen_for_devices = true;
     bool make_fifo = false;
+    bool make_socket = false;
     bool make_keyboard = true;
     bool make_mouse = false;
     bool make_pointer = false;
@@ -38,6 +39,7 @@ public:
     std::string profile_dir;
     std::string gendev_dir;
     std::string fifo_path;
+    std::string socket_path;
     std::string uinput_path;
 
   } options;
@@ -49,6 +51,7 @@ public:
   simple_messenger drivers;
   simple_messenger plugs;
   simple_messenger errors;
+  int sock; //socket fd
 
   moltengamepad() : drivers("driver"), plugs("hotplug"), errors("error") {};
   moltengamepad(moltengamepad::mg_options options) : drivers("driver"), plugs("hotplug"), errors("error"), options(options) {};
@@ -75,7 +78,7 @@ private:
 
 
 
-int shell_loop(moltengamepad* mg, std::istream& in);
+int shell_loop(moltengamepad* mg, std::istream& in, int out_fd, message_stream::listen_type type);
 
 
 #endif

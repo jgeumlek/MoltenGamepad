@@ -31,9 +31,11 @@ public:
   trans_generator<T>() : fields(nullptr) {};
 };
 
+
+
 class MGparser {
 public:
-  MGparser(moltengamepad* mg);
+  MGparser(moltengamepad* mg, int out_fd, message_stream::listen_type type);
   void exec_line(std::vector<token>& line, std::string& header);
   event_translator* parse_trans(enum entry_type intype, std::vector<token>& tokens, std::vector<token>::iterator& it);
   event_translator* parse_special_trans(enum entry_type intype, complex_expr* expr);
@@ -50,6 +52,13 @@ private:
   void do_assignment_line(std::vector<token>& line, std::string& header);
   void parse_line(std::vector<token>& line, std::string& header);
   event_translator* parse_trans_toplevel_quirks(enum entry_type intype, std::vector<token>& tokens, std::vector<token>::iterator& it);
+  int do_save(moltengamepad* mg, std::vector<token>& command);
+  int do_print(moltengamepad* mg, std::vector<token>& command);
+  int do_load(moltengamepad* mg, std::vector<token>& command);
+  int do_move(moltengamepad* mg, std::vector<token>& command);
+  int do_alterslot(moltengamepad* mg, std::vector<token>& command);
+  int do_command(moltengamepad* mg, std::vector<token>& command);
+
   std::map<std::string,trans_generator<event_translator> > trans_gens;
   std::map<std::string,trans_generator<advanced_event_translator> > adv_trans_gens;
   simple_messenger out;
@@ -64,7 +73,7 @@ void free_complex_expr(complex_expr* expr);
 
 int do_command(moltengamepad* mg, std::vector<token>& command);
 
-int shell_loop(moltengamepad* mg, std::istream& in);
+int shell_loop(moltengamepad* mg, std::istream& in, int out_fd, message_stream::listen_type type);
 
 bool find_token_type(enum tokentype type, std::vector<token>& tokens);
 

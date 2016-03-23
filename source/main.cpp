@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
 
     mg->init();
 
-    shell_loop(mg, std::cin);
+    shell_loop(mg, std::cin, 1, message_stream::PLAINTEXT);
     delete mg;
 
   } catch (int e) {
@@ -93,6 +93,12 @@ int print_usage(char* execname) {
                           "\n"\
                           "--fifo-path -f\n"\
                           "\tSet where the fifo command channel should be placed.\n"\
+                          "\n"\
+			  "--make-socket -s\n"\
+                          "\tCreate a UNIX socket, and exit if it can't be made.\n"\
+                          "\n"\
+                          "--socket-path -S\n"\
+                          "\tSet where the socket should be placed.\n"\
                           "\n"\
                           "--profiles-path -p\n"\
                           "\tSet where the profiles are located\n"\
@@ -142,6 +148,8 @@ int parse_opts(moltengamepad::mg_options& options, int argc, char* argv[]) {
     {"num-gamepads",  1,    0,  'n'},
     {"make-fifo",     0,    0,  'm'},
     {"fifo-path",     1,    0,  'f'},
+    {"make-socket",   0,    0,  's'},
+    {"socket-path",   1,    0,  'S'},
     {"no-make-keys",  0,    0,    0},
     {"no-enumerate",  0,    0,    0},
     {"no-monitor",    0,    0,    0},
@@ -152,22 +160,22 @@ int parse_opts(moltengamepad::mg_options& options, int argc, char* argv[]) {
   int long_index;
 
   while (c != -1) {
-    c = getopt_long(argc, argv, "u:p:g:n:c:f:mhv", long_options, &long_index);
+    c = getopt_long(argc, argv, "u:p:g:n:c:f:S:smhv", long_options, &long_index);
     switch (c) {
     case 0:
-      if (long_index == 9) {
+      if (long_index == 11) {
         options.make_keyboard = false;
       };
-      if (long_index == 10) {
+      if (long_index == 12) {
         options.look_for_devices = false;
       };
-      if (long_index == 11) {
+      if (long_index == 13) {
         options.listen_for_devices = false;
       };
-      if (long_index == 12) {
+      if (long_index == 14) {
         options.dpad_as_hat = true;
       };
-      if (long_index == 13) {
+      if (long_index == 15) {
         options.mimic_xpad = true;
       };
       break;
@@ -179,6 +187,12 @@ int parse_opts(moltengamepad::mg_options& options, int argc, char* argv[]) {
       break;
     case 'f':
       options.fifo_path = std::string(optarg);
+      break;
+    case 's':
+      options.make_socket = true;
+      break;
+    case 'S':
+      options.socket_path = std::string(optarg);
       break;
     case 'p':
       options.profile_dir = std::string(optarg);

@@ -145,7 +145,7 @@ void do_header_line(std::vector<token>& line, std::string& header) {
 
 #define TRANSGEN(X) trans_gens[#X] = trans_generator<event_translator>(X::fields,[] (std::vector<MGField>& fields) { return new X(fields);});
 #define RENAME_TRANSGEN(name,X) trans_gens[#name] = trans_generator<event_translator>(X::fields,[] (std::vector<MGField>& fields) { return new X(fields);});
-MGparser::MGparser(moltengamepad* mg) : mg(mg), out("parse") {
+MGparser::MGparser(moltengamepad* mg, int out_fd, message_stream::listen_type type) : mg(mg), out("parse") {
   TRANSGEN(btn2btn);
   TRANSGEN(btn2axis);
   TRANSGEN(axis2axis);
@@ -153,7 +153,7 @@ MGparser::MGparser(moltengamepad* mg) : mg(mg), out("parse") {
   RENAME_TRANSGEN(redirect,redirect_trans);
   RENAME_TRANSGEN(key,keyboard_redirect);
   RENAME_TRANSGEN(multi,multitrans);
-  out.add_listener(1);
+  out.add_listener(out_fd,type);
 }
 
 void MGparser::do_assignment(std::string header, std::string field, std::vector<token> rhs) {

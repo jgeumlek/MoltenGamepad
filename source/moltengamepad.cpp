@@ -4,8 +4,15 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <glob.h>
-#include <devices/wiimote/wiimote.h>
-#include <devices/generic/generic.h>
+#include <sys/socket.h>
+#include <linux/un.h>
+#include <sys/types.h>
+#include <unistd.h>
+#define OSCPKT_OSTREAM_OUTPUT
+#define OSCPKT_DEBUG
+#include "oscpkt/oscpkt.hh"
+#include "devices/wiimote/wiimote.h"
+#include "devices/generic/generic.h"
 
 
 //FUTURE WORK: Make it easier to specify additional virtpad styles.
@@ -39,7 +46,10 @@ moltengamepad::~moltengamepad() {
 
   std::ofstream fifo;
   fifo.open(options.fifo_path, std::ostream::out);
-  unlink(options.fifo_path.c_str());
+  if (!options.fifo_path.empty())
+    unlink(options.fifo_path.c_str());
+  if (!options.socket_path.empty())
+    unlink(options.socket_path.c_str());
   fifo << "quit" << std::endl;
   if (remote_handler) {
     remote_handler->join();
@@ -68,13 +78,34 @@ std::string find_config_folder() {
 
 int fifo_loop(moltengamepad* mg) {
   bool keep_looping = true;
-  while (keep_looping) {
+  while (keep_looping && !QUIT_APPLICATION) {
     std::ifstream file;
     file.open(mg->options.fifo_path, std::istream::in);
     if (file.fail()) break;
-    shell_loop(mg, file);
+    shell_loop(mg, file,  1, message_stream::PLAINTEXT);
     file.close();
   }
+  return 0;
+}
+
+int socket_connection_loop(moltengamepad* mg, int fd);
+
+int socket_server_loop(moltengamepad* mg, struct sockaddr_un* address) {
+  bool keep_looping = true;
+  socklen_t address_len;
+  struct sockaddr_un addr;
+  while (keep_looping && !QUIT_APPLICATION) {
+    int fd = accept(mg->sock, (struct sockaddr *) &addr, &address_len);
+    if (fd >= 0) {
+      std::thread* thread = new std::thread(socket_connection_loop, mg, fd);
+      thread->detach();
+      delete thread;
+    } else {
+      perror("accept:");
+      break;
+    }
+  }
+  return 0;
 }
 
 int moltengamepad::init() {
@@ -134,10 +165,44 @@ int moltengamepad::init() {
     if (ret < 0)  {
       perror("making fifo:");
       options.fifo_path = "";
-      throw - 1;
+      throw -1;
     } else {
       remote_handler = new std::thread(fifo_loop, this);
     }
+  }
+  if (options.make_socket) {
+    const char* run_dir = getenv("XDG_RUNTIME_DIR");
+    if (options.socket_path.empty() && run_dir) {
+      options.socket_path = std::string(run_dir) + "/moltengamepad.sock";
+    }
+    if (options.socket_path.empty()) {
+      errors.take_message("Could not locate socket path. Use the --socket-path command line argument.");
+      throw - 1;
+    }
+    struct sockaddr_un address;
+    sock = socket(PF_UNIX, SOCK_STREAM, 0);
+    if (sock < 0)  {
+      perror("making socket:");
+      options.socket_path = "";
+      throw -1;
+    }
+    memset(&address, 0, sizeof(address));
+    address.sun_family = AF_UNIX;
+    snprintf(address.sun_path, UNIX_PATH_MAX, options.socket_path.c_str());
+    if (bind(sock, (struct sockaddr *) &address, sizeof(address)) != 0) {
+      perror("binding socket:");
+      options.socket_path = "";
+      throw -1;
+    }
+    if (listen(sock, 5) != 0) {
+      perror("listening socket:");
+      options.socket_path = "";
+      throw -1;
+    }
+    std::thread* socket_listener = new std::thread(socket_server_loop, this, &address);
+    socket_listener->detach();
+    delete socket_listener;
+    
   }
 
 }
