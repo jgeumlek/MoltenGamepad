@@ -95,12 +95,12 @@ void generic_device::process(void* tag) {
       //currently ignoring old deadzone ("flat")
       input_absinfo info = decoded.second;
       int value = ev.value;
-      int oldscale = info.maximum - info.minimum;
+      long long int oldscale = info.maximum - info.minimum;
       if (oldscale == 0) {
         send_value(id, value);
         return;
       }
-      int newscale = 2 * ABS_RANGE;
+      long long int newscale = 2 * ABS_RANGE;
       long long int scaledvalue = -ABS_RANGE + (value - info.minimum) * newscale / oldscale;
       send_value(id, scaledvalue);
     }
