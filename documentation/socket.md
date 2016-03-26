@@ -10,7 +10,7 @@ At the moment, this API amounts to little more than just enabling a CLI session.
 
 ## Initializing the protocol version
 
-Every connection must start with the client sending an OSC method `/protocol/version' with a 32 bit integer argument. If the running instance agrees, then it will send back a matching OSC packet. Otherwise, it sends an error packet and closes the connection.
+Every connection must start with the client sending an OSC method `/protocol/version` with a 32 bit integer argument. If the running instance agrees, then it will send back a matching OSC packet. Otherwise, it sends an error packet and closes the connection.
 
 Only the value `1` is valid for the protocol version at this time.
 

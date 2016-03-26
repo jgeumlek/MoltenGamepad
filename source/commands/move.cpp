@@ -25,7 +25,7 @@ int MGparser::do_move(moltengamepad* mg, std::vector<token>& command) {
     return -1;
   };
   if (!slot && slotname != "nothing") {
-    out.take_message("slot " + devname + " not found.\n" + MOVE_USAGE);
+    out.take_message("slot " + slotname + " not found.\n" + MOVE_USAGE);
     return -1;
   };
   if (devname != "all") {
