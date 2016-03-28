@@ -1,6 +1,6 @@
 #include "messages.h"
 #include <unistd.h>
-void simple_messenger::text(const std::string& text) {
+void simple_messenger::text(const std::string& text) const {
   if (text.empty()) return;
   oscpkt::PacketWriter pw;
   std::stringstream buffer;
@@ -14,7 +14,7 @@ void simple_messenger::text(const std::string& text) {
   message(buffer.str(), pw);
 }
 
-void simple_messenger::message(const std::string& text, oscpkt::PacketWriter& packet) {
+void simple_messenger::message(const std::string& text, oscpkt::PacketWriter& packet) const {
   lock.lock();
   int len = text.size();
 

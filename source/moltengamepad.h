@@ -21,6 +21,17 @@ class device_manager;
 class udev_handler;
 class input_source;
 
+class driver_messenger : public simple_messenger {
+public:
+  void driver_message(const device_manager* man, const std::string& action);
+  driver_messenger() : simple_messenger("driver") {};
+};
+
+class hotplug_messenger : public simple_messenger {
+public:
+  void plug_event(const input_source* dev, const std::string& action);
+  hotplug_messenger() : simple_messenger("hotplug") {};
+};
 
 class moltengamepad {
 public:
@@ -48,13 +59,13 @@ public:
   std::vector<std::shared_ptr<input_source>> devices;
   slot_manager* slots;
   udev_handler udev;
-  simple_messenger drivers;
-  simple_messenger plugs;
+  driver_messenger drivers;
+  hotplug_messenger plugs;
   simple_messenger errors;
   int sock; //socket fd
 
-  moltengamepad() : drivers("driver"), plugs("hotplug"), errors("error") {};
-  moltengamepad(moltengamepad::mg_options options) : drivers("driver"), plugs("hotplug"), errors("error"), options(options) {};
+  moltengamepad() : errors("error") {};
+  moltengamepad(moltengamepad::mg_options options) : errors("error"), options(options) {};
   ~moltengamepad();
   int init();
   int stop();

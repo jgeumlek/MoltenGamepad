@@ -88,9 +88,39 @@ int handle_message(oscpkt::Message* msg, protocol_state& state) {
     if (msg->arg().popStr(text).isOkNoMoreArgs()) {
       auto tokens = tokenize(text);
       state.parse->exec_line(tokens, state.header);
-      } else {
-        bad_command(state);
-      }
+    } else {
+      bad_command(state);
+    }
+    return 0;
+  }
+  if (msg->match("/subscribe/slot")) {
+    bool subscription;
+    if (msg->arg().popBool(subscription).isOkNoMoreArgs()) {
+      if (subscription) state.mg->slots->subscribe(state.fd, message_stream::OSC);
+      if (!subscription) state.mg->slots->unsubscribe(state.fd);
+    } else {
+      bad_command(state);
+    }
+    return 0;
+  }
+  if (msg->match("/subscribe/driver")) {
+    bool subscription;
+    if (msg->arg().popBool(subscription).isOkNoMoreArgs()) {
+      if (subscription) state.mg->drivers.add_listener(state.fd, message_stream::OSC);
+      if (!subscription) state.mg->drivers.remove_listener(state.fd);
+    } else {
+      bad_command(state);
+    }
+    return 0;
+  }
+  if (msg->match("/subscribe/hotplug")) {
+    bool subscription;
+    if (msg->arg().popBool(subscription).isOkNoMoreArgs()) {
+      if (subscription) state.mg->plugs.add_listener(state.fd, message_stream::OSC);
+      if (!subscription) state.mg->plugs.remove_listener(state.fd);
+    } else {
+      bad_command(state);
+    }
     return 0;
   }
   
@@ -124,6 +154,9 @@ int socket_connection_loop(moltengamepad* mg, int fd) {
       handle_message(msg, state);
     }
   }
+  mg->slots->unsubscribe(fd);
+  mg->drivers.remove_listener(fd);
+  mg->plugs.remove_listener(fd);
   close(fd);
   delete state.parse;
   return 0;

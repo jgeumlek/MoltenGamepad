@@ -107,6 +107,7 @@ public:
   }
 
   output_slot* out_dev = nullptr;
+  const device_manager* manager;
 protected:
   slot_manager* slot_man;
   int epfd = 0;
@@ -118,7 +119,6 @@ protected:
   std::map<std::string, adv_entry> adv_trans;
   std::thread* thread = nullptr;
   volatile bool keep_looping = true;
-  device_manager* manager;
 
 
 

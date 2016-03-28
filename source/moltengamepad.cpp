@@ -121,7 +121,7 @@ int moltengamepad::init() {
   errors.add_listener(2);
 
   managers.push_back(new wiimote_manager(this));
-  drivers.text("wiimote driver initialized.");
+  drivers.driver_message(managers.front(),"init");
 
   if (options.config_dir.empty()) options.config_dir = find_config_folder();
 
@@ -226,13 +226,13 @@ std::shared_ptr<input_source> moltengamepad::find_device(const char* name) {
 void moltengamepad::add_device(input_source* source) {
   device_list_lock.lock();
   devices.push_back(std::shared_ptr<input_source>(source));
-  plugs.text("device " + source->name + " added.");
+  plugs.plug_event(source,"add");
   device_list_lock.unlock();
 }
 
 void moltengamepad::remove_device(input_source* source) {
   device_list_lock.lock();
-  plugs.text("device " + source->name + " removed.");
+  plugs.plug_event(source,"remove");
   for (int i = 0; i < devices.size(); i++) {
     if (source == devices[i].get()) {
       devices.erase(devices.begin() + i);
@@ -247,4 +247,40 @@ void moltengamepad::for_all_devices(std::function<void (std::shared_ptr<input_so
   for (auto dev : devices)
     func(dev);
   device_list_lock.unlock();
+}
+
+void hotplug_messenger::plug_event(const input_source* dev, const std::string& action) {
+  oscpkt::PacketWriter pw;
+  std::stringstream buffer;
+  buffer << name << ": device " << dev->name << " (" << dev->manager->name << ") ";
+  if (action == "add") {
+    buffer << "added" << std::endl;
+  } else if (action == "remove") {
+    buffer << "removed" << std::endl;
+  } else {
+    buffer << action << std::endl;
+  }
+
+  if (!osc_fds.empty()) {
+    oscpkt::Message msg;
+    msg.init("/plug_event").pushStr(dev->name).pushStr(dev->manager->name).pushStr(action);
+    pw.init().addMessage(msg);
+  }
+  message(buffer.str(), pw);
+}
+
+void driver_messenger::driver_message(const device_manager* man, const std::string& action) {
+  oscpkt::PacketWriter pw;
+  std::stringstream buffer;
+  buffer << name << ": " << man->name;
+  if (action == "init") {
+    buffer << " initialized" << std::endl;
+  }
+
+  if (!osc_fds.empty()) {
+    oscpkt::Message msg;
+    msg.init("/driver_event").pushStr(man->name).pushStr(action);
+    pw.init().addMessage(msg);
+  }
+  message(buffer.str(), pw);
 }

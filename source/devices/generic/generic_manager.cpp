@@ -31,7 +31,7 @@ generic_manager::generic_manager(moltengamepad* mg, generic_driver_info& descr) 
     }
   }
 
-  mg->drivers.text(std::string(name) + " driver initialized.");
+  mg->drivers.driver_message(this,"init");
 
 }
 

@@ -13,6 +13,13 @@ class input_source;
 
 enum virtpad_type { LINUX_PAD, DPAD_AS_HAT_PAD };
 
+class slot_messenger : public simple_messenger {
+public:
+  void slot_change(const input_source* dev, const output_slot* target);
+  
+  slot_messenger() : simple_messenger("slot") {};
+};
+
 class slot_manager {
 public:
 
@@ -24,6 +31,8 @@ public:
   void request_slot(input_source* dev);
   void move_to_slot(input_source* dev, output_slot* target);
   void remove(input_source* dev);
+  void subscribe(int fd, message_stream::listen_type type);
+  void unsubscribe(int fd);
 
 
   output_slot* find_slot(std::string name);
@@ -41,7 +50,7 @@ private:
   uinput* ui;
   std::mutex lock;
   int num_slots = 2;
-  simple_messenger log;
+  slot_messenger log;
 };
 
 #endif

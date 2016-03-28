@@ -1,6 +1,6 @@
 #include "slot_manager.h"
 
-slot_manager::slot_manager(int num_pads, bool keys, const virtpad_settings& padstyle) : log("slot") {
+slot_manager::slot_manager(int num_pads, bool keys, const virtpad_settings& padstyle) {
   ui = new uinput();
   dummyslot = new output_slot("blank", "Dummy slot (ignores all events)");
   debugslot = new debug_device("debugslot", "Prints out all received events");
@@ -62,11 +62,7 @@ void slot_manager::move_device(input_source* dev, output_slot* target) {
     target->pad_count += 1;
   }
   dev->set_slot(target);
-  if (target) {
-    log.text(dev->name + " assigned to slot " + target->name);
-  } else {
-    log.text(dev->name + " not assigned to any slot");
-  }
+  log.slot_change(dev,target);
 }
 
 void slot_manager::remove_from(output_slot* slot) {
@@ -93,4 +89,32 @@ output_slot* slot_manager::find_slot(std::string slotname) {
   if (slotname == dummyslot->name) return dummyslot;
   if (slotname == debugslot->name) return debugslot;
   return nullptr;
+}
+
+void slot_manager::subscribe(int fd, message_stream::listen_type type) {
+  log.add_listener(fd, type);
+}
+
+void slot_manager::unsubscribe(int fd) {
+  log.remove_listener(fd);
+}
+
+void slot_messenger::slot_change(const input_source* dev, const output_slot* target) {
+  std::string slotname;
+  oscpkt::PacketWriter pw;
+  std::stringstream buffer;
+  buffer << name << ": ";
+  if (target) {
+    buffer << dev->name << " assigned to slot " << target->name << std::endl;
+    slotname = target->name;
+  } else {
+    buffer << dev->name << " not assigned to any slot" << std::endl;
+  }
+
+  if (!osc_fds.empty()) {
+    oscpkt::Message msg;
+    msg.init("/slot_assignment").pushStr(dev->name).pushStr(slotname);
+    pw.init().addMessage(msg);
+  }
+  message(buffer.str(), pw);
 }
