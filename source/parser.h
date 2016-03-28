@@ -31,6 +31,23 @@ public:
   trans_generator<T>() : fields(nullptr) {};
 };
 
+class parse_messenger : public simple_messenger {
+public:
+  void print(const std::string& text) {
+    //avoid putting name in front of plaintext output.
+    if (text.empty()) return;
+    oscpkt::PacketWriter pw;
+
+    if (!osc_fds.empty()) {
+      oscpkt::Message msg;
+      msg.init("/text").pushStr("print").pushStr(text);
+      pw.init().addMessage(msg);
+    }
+    message(text, pw);
+  }
+  
+  parse_messenger() : simple_messenger("parse") {};
+};
 
 
 class MGparser {
@@ -61,7 +78,7 @@ private:
 
   std::map<std::string,trans_generator<event_translator> > trans_gens;
   std::map<std::string,trans_generator<advanced_event_translator> > adv_trans_gens;
-  simple_messenger out;
+  parse_messenger out;
 };
 
 

@@ -125,7 +125,6 @@ int socket_connection_loop(moltengamepad* mg, int fd) {
     }
   }
   close(fd);
-  std::cout << "client disconnected" << std::endl;
   delete state.parse;
   return 0;
 }

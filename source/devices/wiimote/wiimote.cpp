@@ -180,25 +180,25 @@ void wiimote::store_node(struct udev_device* dev, const char* name) {
   int node = name_to_node(name);
   switch (node) {
   case CORE:
-    manager->log.take_message(this->name + " core found.");
+    manager->log.text(this->name + " core found.");
 
     buttons.dev = udev_device_ref(dev);
     open_node(&buttons);
     break;
   case IR:
-    manager->log.take_message(this->name + " IR found.");
+    manager->log.text(this->name + " IR found.");
     ir.dev = udev_device_ref(dev);
     if ((mode == NO_EXT && wm_ir_active) || (mode == NUNCHUK_EXT && nk_ir_active))
       open_node(&ir);
     break;
   case ACCEL:
-    manager->log.take_message(this->name + " accelerometers found.");
+    manager->log.text(this->name + " accelerometers found.");
     accel.dev = udev_device_ref(dev);
     if ((mode == NO_EXT && wm_accel_active) || (mode == NUNCHUK_EXT && nk_accel_active))
       open_node(&ir);
     break;
   case MP:
-    manager->log.take_message(this->name + " motion+ found.");
+    manager->log.text(this->name + " motion+ found.");
     motionplus.dev = udev_device_ref(dev);
     break;
   case E_NK:
@@ -206,14 +206,14 @@ void wiimote::store_node(struct udev_device* dev, const char* name) {
     nunchuk.dev = udev_device_ref(dev);
     open_node(&nunchuk);
     update_mode();
-    manager->log.take_message(this->name + " gained a nunchuk.");
+    manager->log.text(this->name + " gained a nunchuk.");
     break;
   case E_CC:
     mode = CLASSIC_EXT;
     classic.dev = udev_device_ref(dev);
     open_node(&classic);
     update_mode();
-    manager->log.take_message(this->name + " gained a classic controller.");
+    manager->log.text(this->name + " gained a classic controller.");
     break;
   case BALANCE:
     balance.dev = udev_device_ref(dev);
@@ -264,7 +264,7 @@ void wiimote::remove_node(const char* name) {
     remove_extension();
   };
   if (node == MP) {
-    manager->log.take_message(this->name + " motion+ removed.");
+    manager->log.text(this->name + " motion+ removed.");
     clear_node(&motionplus);
   }
 }

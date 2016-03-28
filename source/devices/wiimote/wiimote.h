@@ -75,7 +75,7 @@ public:
 
   void update_mode();
   void remove_extension() {
-    if (mode != NO_EXT) manager->log.take_message(name + " lost its extension.");
+    if (mode != NO_EXT) manager->log.text(name + " lost its extension.");
     mode = NO_EXT;
     update_mode();
   }

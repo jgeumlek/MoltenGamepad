@@ -145,7 +145,7 @@ void do_header_line(std::vector<token>& line, std::string& header) {
 
 #define TRANSGEN(X) trans_gens[#X] = trans_generator<event_translator>(X::fields,[] (std::vector<MGField>& fields) { return new X(fields);});
 #define RENAME_TRANSGEN(name,X) trans_gens[#name] = trans_generator<event_translator>(X::fields,[] (std::vector<MGField>& fields) { return new X(fields);});
-MGparser::MGparser(moltengamepad* mg, int out_fd, message_stream::listen_type type) : mg(mg), out("parse") {
+MGparser::MGparser(moltengamepad* mg, int out_fd, message_stream::listen_type type) : mg(mg) {
   TRANSGEN(btn2btn);
   TRANSGEN(btn2axis);
   TRANSGEN(axis2axis);
@@ -170,7 +170,7 @@ void MGparser::do_assignment(std::string header, std::string field, std::vector<
     }
   }
   if (!dev && !man) {
-    out.take_message("could not locate profile " + header);
+    out.text("could not locate profile " + header);
     return;
   }
 
@@ -179,7 +179,7 @@ void MGparser::do_assignment(std::string header, std::string field, std::vector<
     event_translator* trans = parse_trans(left_type, rhs, it);
 
     if (!trans) {
-      out.take_message("Parsing the right-hand side failed.");
+      out.text("Parsing the right-hand side failed.");
       return; //abort
     }
 
@@ -192,7 +192,7 @@ void MGparser::do_assignment(std::string header, std::string field, std::vector<
       trans->fill_def(def);
       print_def(left_type, def, ss);
       delete trans;
-      out.take_message("setting " + header + "." + field + " = " + ss.str());
+      out.text("setting " + header + "." + field + " = " + ss.str());
       return;
     }
   }
@@ -206,7 +206,7 @@ void MGparser::do_assignment(std::string header, std::string field, std::vector<
     return;
   }
 
-  out.take_message("assignment failed for field " + field);
+  out.text("assignment failed for field " + field);
 }
 
 
@@ -217,7 +217,7 @@ void MGparser::do_adv_assignment(std::string header, const std::vector<std::stri
   std::shared_ptr<input_source> dev = (!man) ? mg->find_device(header.c_str()) : nullptr;
 
   if (!dev && !man) {
-    out.take_message("could not locate profile " + header);
+    out.text("could not locate profile " + header);
     return;
   }
 
@@ -228,14 +228,14 @@ void MGparser::do_adv_assignment(std::string header, const std::vector<std::stri
   }
   advanced_event_translator* trans = parse_adv_trans(fields, rhs);
   if (!trans) {
-    out.take_message("could not parse right hand side");
+    out.text("could not parse right hand side");
   }
   if (trans) {
     std::stringstream ss;
     MGTransDef def;
     trans->fill_def(def);
     print_def(DEV_KEY, def, ss);
-    out.take_message("setting advanced translator to " + ss.str());
+    out.text("setting advanced translator to " + ss.str());
   }
 
   if (dev.get()) dev->update_advanced(fields, trans);
@@ -343,7 +343,7 @@ void MGparser::parse_line(std::vector<token>& line, std::string& header) {
 
   if (find_token_type(TK_HEADER_OPEN, line)) {
     do_header_line(line, header);
-    out.take_message("header is " + header);
+    out.text("header is " + header);
     return;
   }
 

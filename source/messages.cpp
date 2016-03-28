@@ -1,28 +1,35 @@
 #include "messages.h"
 #include <unistd.h>
-void simple_messenger::take_message(std::string text) {
+void simple_messenger::text(const std::string& text) {
   if (text.empty()) return;
-  lock.lock();
+  oscpkt::PacketWriter pw;
+  std::stringstream buffer;
   buffer << name << ": " << text << std::endl;
-  std::string str = buffer.str();
-  int len = str.size();
-
-  for (int fd : text_fds) {
-    write(fd, str.c_str(), len);
-  }
 
   if (!osc_fds.empty()) {
-    oscpkt::PacketWriter pw;
     oscpkt::Message msg;
     msg.init("/text").pushStr(name).pushStr(text);
     pw.init().addMessage(msg);
-    uint32_t size = pw.packetSize();
+  }
+  message(buffer.str(), pw);
+}
+
+void simple_messenger::message(const std::string& text, oscpkt::PacketWriter& packet) {
+  lock.lock();
+  int len = text.size();
+
+  for (int fd : text_fds) {
+    write(fd, text.c_str(), len);
+  }
+
+  if (!osc_fds.empty() && packet.isOk()) {
+    uint32_t size = packet.packetSize();
     for (int fd : osc_fds) {
+      //TODO: Make this size+packet write atomic.
       write(fd,&size,sizeof(size));
-      write(fd,pw.packetData(),size);
+      write(fd,packet.packetData(),size);
     }
   }
-  buffer.str("");
   lock.unlock();
 }
 

@@ -20,7 +20,7 @@ int do_alterslot(moltengamepad* mg, std::vector<token>& command);
 "\tload:\tload profiles from a file\n"\
 "\tquit:\tquit this application\n"\
 "\t<profile>.<event> = <outevent>\n"\
-"\t\tchange the event mapping for <event> to <outevent> in the profile <profile>"
+"\t\tchange the event mapping for <event> to <outevent> in the profile <profile>\n"
 int MGparser::do_command(moltengamepad* mg, std::vector<token>& command) {
   if (command.empty()) return 0;
   if (command.front().type == TK_ENDL) return 0;
@@ -37,13 +37,13 @@ int MGparser::do_command(moltengamepad* mg, std::vector<token>& command) {
   if (command.front().value == "load") return do_load(mg, command);
   if (command.front().value == "alterslot") return do_alterslot(mg, command);
   if (command.front().value == "help") {
-    out.take_message(HELP_TEXT);
+    out.print(HELP_TEXT);
     return 0;
   };
   if (command.front().value == "quit") {
     return 0;
   };
-  out.take_message("Command not recognized. \"help\" for available commands");
+  out.text("Command not recognized. \"help\" for available commands");
   return 0;
 }
 

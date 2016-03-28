@@ -121,7 +121,7 @@ int moltengamepad::init() {
   errors.add_listener(2);
 
   managers.push_back(new wiimote_manager(this));
-  drivers.take_message("wiimote driver initialized.");
+  drivers.text("wiimote driver initialized.");
 
   if (options.config_dir.empty()) options.config_dir = find_config_folder();
 
@@ -143,7 +143,7 @@ int moltengamepad::init() {
 
     if (!file.fail()) {
       int ret = generic_config_loop(this, file);
-      if (ret) errors.take_message("generic device config " + std::string(globbuffer.gl_pathv[i]) + " failed.");
+      if (ret) errors.text("generic device config " + std::string(globbuffer.gl_pathv[i]) + " failed.");
     }
   }
 
@@ -158,7 +158,7 @@ int moltengamepad::init() {
       options.fifo_path = std::string(run_dir) + "/moltengamepad";
     }
     if (options.fifo_path.empty()) {
-      errors.take_message("Could not locate fifo path. Use the --fifo-path command line argument.");
+      errors.text("Could not locate fifo path. Use the --fifo-path command line argument.");
       throw - 1;
     }
     int ret = mkfifo(options.fifo_path.c_str(), 0666);
@@ -176,7 +176,7 @@ int moltengamepad::init() {
       options.socket_path = std::string(run_dir) + "/moltengamepad.sock";
     }
     if (options.socket_path.empty()) {
-      errors.take_message("Could not locate socket path. Use the --socket-path command line argument.");
+      errors.text("Could not locate socket path. Use the --socket-path command line argument.");
       throw - 1;
     }
     struct sockaddr_un address;
@@ -226,13 +226,13 @@ std::shared_ptr<input_source> moltengamepad::find_device(const char* name) {
 void moltengamepad::add_device(input_source* source) {
   device_list_lock.lock();
   devices.push_back(std::shared_ptr<input_source>(source));
-  plugs.take_message("device " + source->name + " added.");
+  plugs.text("device " + source->name + " added.");
   device_list_lock.unlock();
 }
 
 void moltengamepad::remove_device(input_source* source) {
   device_list_lock.lock();
-  plugs.take_message("device " + source->name + " removed.");
+  plugs.text("device " + source->name + " removed.");
   for (int i = 0; i < devices.size(); i++) {
     if (source == devices[i].get()) {
       devices.erase(devices.begin() + i);

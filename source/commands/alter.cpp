@@ -6,10 +6,10 @@
 #include "../parser.h"
 
 
-#define ALTERSLOT_USAGE "USAGE:\n\talterslot <slot> <setting> <value>\n\t\"allpads\" may be used as a slot name to refer to all gamepad slots"
+#define ALTERSLOT_USAGE "USAGE:\n\talterslot <slot> <setting> <value>\n\t\"allpads\" may be used as a slot name to refer to all gamepad slots\n"
 int MGparser::do_alterslot(moltengamepad* mg, std::vector<token>& command) {
   if (command.size() < 4) {
-    out.take_message(ALTERSLOT_USAGE);
+    out.print(ALTERSLOT_USAGE);
     return -1;
   }
   std::string slotname = command.at(1).value;
@@ -24,7 +24,7 @@ int MGparser::do_alterslot(moltengamepad* mg, std::vector<token>& command) {
   }
   output_slot* slot = mg->slots->find_slot(slotname);
   if (!slot) {
-    out.take_message("could not find slot " + slotname);
+    out.text("could not find slot " + slotname);
     return -1;
   }
   slot->update_option(setting, value);

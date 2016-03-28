@@ -11,20 +11,22 @@ public:
   enum listen_type {PLAINTEXT, OSC};
   std::string name;
   message_stream(std::string name) : name(name) {};
-  virtual void take_message(std::string text) = 0;
+  virtual void text(const std::string& text) = 0;
+  virtual void message(const std::string& text, oscpkt::PacketWriter& packet) = 0;
   virtual void add_listener(int fd) = 0;
   virtual void add_listener(int fd, listen_type type) = 0;
   virtual void remove_listener(int fd) = 0;
 };
 
-class simple_messenger : message_stream {
+class simple_messenger : public message_stream {
+protected:
   std::vector<int> text_fds;
   std::vector<int> osc_fds;
-  std::ostringstream buffer;
   std::mutex lock;
 public:
   simple_messenger(std::string name) : message_stream(name) {};
-  virtual void take_message(std::string text);
+  virtual void text(const std::string& text);
+  virtual void message(const std::string& text, oscpkt::PacketWriter& packet);
   virtual void add_listener(int fd);
   virtual void add_listener(int fd, listen_type type);
   

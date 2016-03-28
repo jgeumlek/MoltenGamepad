@@ -161,7 +161,7 @@ int do_print_slots(moltengamepad* mg, std::string name, std::ostream& out) {
 "\tprint <type> [element] will show detailed info on that element\n"
 int MGparser::do_print(moltengamepad* mg, std::vector<token>& command) {
   if (command.size() < 2) {
-    out.take_message(PRINT_USAGE);
+    out.print(PRINT_USAGE);
     return -1;
   }
   std::stringstream ss;
@@ -173,9 +173,9 @@ int MGparser::do_print(moltengamepad* mg, std::vector<token>& command) {
   
   std::string text = ss.str();
   if (!text.empty()) {
-    out.take_message(text);
+    out.print(text);
   } else {
-    out.take_message(PRINT_USAGE);
+    out.print(PRINT_USAGE);
   }
   return 0;
 }

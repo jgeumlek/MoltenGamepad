@@ -6,14 +6,14 @@
 #include "../parser.h"
 
 
-#define MOVE_USAGE "USAGE:\n\tmove <device> to <slot>\n\t\"all\" can be used to refer to all devices\n\t\"nothing\" can be used as a slot name to remove from all slots"
+#define MOVE_USAGE "USAGE:\n\tmove <device> to <slot>\n\t\"all\" can be used to refer to all devices\n\t\"nothing\" can be used as a slot name to remove from all slots\n"
 int MGparser::do_move(moltengamepad* mg, std::vector<token>& command) {
   if (command.size() < 4) {
-    out.take_message(MOVE_USAGE);
+    out.print(MOVE_USAGE);
     return -1;
   }
   if (command.at(2).value != "to") {
-    out.take_message(MOVE_USAGE);
+    out.print(MOVE_USAGE);
     return -1;
   }
   std::string devname = command.at(1).value;
@@ -21,11 +21,11 @@ int MGparser::do_move(moltengamepad* mg, std::vector<token>& command) {
   std::shared_ptr<input_source> dev = mg->find_device(devname.c_str());
   output_slot* slot = mg->slots->find_slot(slotname);
   if (!dev.get() && devname != "all") {
-    out.take_message("device " + devname + " not found.\n" + MOVE_USAGE);
+    out.text("device " + devname + " not found.\n" + MOVE_USAGE);
     return -1;
   };
   if (!slot && slotname != "nothing") {
-    out.take_message("slot " + slotname + " not found.\n" + MOVE_USAGE);
+    out.text("slot " + slotname + " not found.\n" + MOVE_USAGE);
     return -1;
   };
   if (devname != "all") {
