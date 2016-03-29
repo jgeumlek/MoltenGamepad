@@ -50,7 +50,7 @@ If multiple `[<device name string>]` declarations are in a row, they are presume
 The `evtest` utility (not included with MoltenGamepad) is incredibly useful for this. Run it to see all devices you currently have read access to. Select a device, and it will print out events as they happen. Interact with your input device, and make note of the events generated.
 
 
-#Example
+#Example 1
     
 Here is a short example using the split functionality:
 
@@ -68,3 +68,71 @@ Here is a short example using the split functionality:
 This creates a driver named `touchpad`. When an `AlpsPS/2 ALPS GlidePoint` device is found, two input sources are made, `pad1` and `pad2`. Each will have an event named `hit`, mappable directly (such as `pad1.hit = ...`) or via the driver profile to affect both (`touchpad.hit = ...`).
 
 Splitting is useful for arcade panels and some controller hubs, which can appear as a single event device.
+
+#Example 2
+
+Here is a longer file, showing a configuration for a Dualshock 4 controller.
+
+
+    ["Sony Computer Entertainment Wireless Controller"]
+    
+    name = "dualshock4"
+    devname = "ds_"
+    exclusive = "true"
+    #Reminder: change_permissions requires a udev rule to make the current user the owner of the device
+    change_permissions = "true"
+    flatten = "false"
+    
+    
+    btn_tl2 = "share", "Share Button"
+    btn_tr2 = "options", "Options Button"
+    
+    btn_thumbl = "touchpad_press", "Touchpad click action"
+    btn_select = "l3", "Left stick click"
+    btn_start = "r3", "Right stick click"
+
+    abs_hat0x = "leftright", "D-pad left/right axis"
+    abs_hat0y = "updown", "D-pad up/down axis"
+    
+    btn_east = "cross", "The cross (X) button"
+    btn_c = "circle", "The circle button"
+    btn_north = "triangle", "The triangle button"
+    btn_south = "square", "The square button"
+    
+    btn_west = "l1", "The left top trigger"
+    btn_z = "r1", "The right top trigger"
+    
+    btn_tl = "l2", "The left lower trigger"
+    abs_rx = "l2_axis", "The left lower trigger analog values"
+    
+    btn_tr = "r2", "The right lower trigger"
+    abs_ry = "r2_axis", "The right lower trigger analog values"
+    
+    abs_x = "left_x", "The left stick x axis"
+    abs_y = "left_y", "The left stick y axis"
+    
+    abs_z = "right_x", "The right stick x axis"
+    abs_rz = "right_y", "The right stick y axis"
+    
+    # ALIASING: a feature to allow referencing events through standardized names.
+    #           These special aliases also allow this driver to inherit
+    #           some default control mappings
+    
+    alias primary cross
+    alias secondary circle
+    alias third square
+    alias fourth triangle
+    
+    alias thumbl l3
+    alias thumbr r3
+    
+    alias start options
+    alias select share
+    
+    alias tr r1
+    alias tr2 r2
+    alias tl l1
+    alias tl2 l2
+    
+    alias tr2_axis r2_axis
+    alias tl2_axis l2_axis
