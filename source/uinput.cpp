@@ -19,6 +19,14 @@ const char* try_to_find_uinput() {
   return nullptr;
 }
 
+std::string uinput_devnode(int fd) {
+  char buffer[128];
+  buffer[0] = '\0';
+  ioctl(fd, UI_GET_SYSNAME(127), &buffer);
+  buffer[127] = '\0';
+  return std::string("/sys/devices/virtual/input/") + std::string(buffer);
+}
+
 void uinput_destroy(int fd) {
   ioctl(fd, UI_DEV_DESTROY);
 }
@@ -97,6 +105,11 @@ int uinput::make_gamepad(const uinput_ids& ids, bool dpad_as_hat, bool analog_tr
   write(fd, &uidev, sizeof(uidev));
   if (ioctl(fd, UI_DEV_CREATE) < 0)
     perror("uinput device creation");
+
+  lock.lock();
+  virtual_nodes.push_back(uinput_devnode(fd));
+  lock.unlock();
+
   return fd;
 }
 
@@ -137,10 +150,29 @@ int uinput::make_keyboard(const uinput_ids& ids) {
   write(fd, &uidev, sizeof(uidev));
   if (ioctl(fd, UI_DEV_CREATE) < 0)
     perror("uinput device creation");
+
+  lock.lock();
+  virtual_nodes.push_back(uinput_devnode(fd));
+  lock.unlock();
+
   return fd;
 }
 
 uinput::~uinput() {
+}
+
+bool uinput::node_owned(const std::string& path) const {
+  lock.lock();
+  for (auto node : virtual_nodes) {
+    //Check to see if node is a prefix of this path, if so the path belongs to us.
+    auto comp = std::mismatch(node.begin(),node.end(),path.begin());
+    if (comp.first == node.end()) {
+      lock.unlock();
+      return true;
+    }
+  }
+  lock.unlock();
+  return false;
 }
 
 

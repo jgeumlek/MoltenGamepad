@@ -4,17 +4,20 @@
 #include <cstring>
 #include <unistd.h>
 #include "devices/device.h"
+#include "uinput.h"
 
-void pass_along_device(std::vector<device_manager*>* managers, struct udev* ud, struct udev_device* new_dev) {
+void udev_handler::pass_along_device(struct udev_device* new_dev) {
   if (new_dev == nullptr) return;
+  std::string path(udev_device_get_syspath(new_dev));
+  if (ui && ui->node_owned(path))
+    return; //Skip virtual devices we made
   for (auto it = managers->begin(); it != managers->end(); ++it) {
     device_manager* man = *it;
-    int ret = man->accept_device(ud, new_dev);
+    int ret = man->accept_device(udev, new_dev);
     if (ret == 0) break;
   }
 }
 
-int reads_monitor(udev_handler* uh);
 
 
 udev_handler::udev_handler() {
@@ -37,6 +40,10 @@ udev_handler::~udev_handler() {
 
 void udev_handler::set_managers(std::vector<device_manager*>* managers) {
   this->managers = managers;
+}
+
+void udev_handler::set_uinput(const uinput* ui) {
+  this->ui = ui;
 }
 
 int udev_handler::start_monitor() {
@@ -63,7 +70,7 @@ int udev_handler::enumerate() {
   udev_list_entry_foreach(entry, devices) {
     const char* path = udev_list_entry_get_name(entry);
     struct udev_device* dev = udev_device_new_from_syspath(udev, path);
-    pass_along_device(managers, udev, dev);
+    pass_along_device(dev);
     udev_device_unref(dev);
   }
 
@@ -102,7 +109,7 @@ int udev_handler::read_monitor() {
     } else {
       struct udev_device* dev = udev_monitor_receive_device(monitor);
       if (dev) {
-        pass_along_device(managers, udev, dev);
+        pass_along_device(dev);
         udev_device_unref(dev);
       }
     }

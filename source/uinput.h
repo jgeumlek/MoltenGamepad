@@ -8,6 +8,8 @@
 #include <unistd.h>
 #include <string.h>
 #include <string>
+#include <vector>
+#include <mutex>
 #include <stdio.h>
 
 void uinput_destroy(int fd);
@@ -27,9 +29,14 @@ public:
   int make_keyboard(const uinput_ids& ids);
   int make_mouse(const uinput_ids& ids);
   int make_pointer(const uinput_ids& ids);
+  bool node_owned(const std::string& path) const;
 
 private:
   const char* filename;
+  std::vector<std::string> virtual_nodes;
+  mutable std::mutex lock;
 };
+
+std::string uinput_devnode(int fd);
 
 #endif

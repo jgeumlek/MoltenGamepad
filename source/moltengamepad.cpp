@@ -119,6 +119,7 @@ int moltengamepad::init() {
   globfree(&globbuffer);
 
   udev.set_managers(&managers);
+  udev.set_uinput(slots->get_uinput());
   if (options.listen_for_devices) udev.start_monitor();
   if (options.look_for_devices)   udev.enumerate();
   if (options.make_fifo) {
