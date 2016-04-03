@@ -35,7 +35,8 @@ moltengamepad::~moltengamepad() {
     delete udev.monitor_thread;
     udev.monitor_thread = nullptr;
   }
-  std::cout << "Shutting down." << std::endl;
+  if(!options.daemon)
+	  std::cout << "Shutting down." << std::endl;
 
   std::ofstream fifo;
   fifo.open(options.fifo_path, std::ostream::out);
