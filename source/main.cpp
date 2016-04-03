@@ -130,7 +130,7 @@ int print_usage(char* execname) {
 
 int parse_opts(moltengamepad::mg_options& options, int argc, char* argv[]) {
 
-  char c = 0;
+  int c = 0;
 
   static struct option long_options[] = {
     {"help",          0,    0,  'h'},
