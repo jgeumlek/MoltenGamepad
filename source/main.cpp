@@ -183,7 +183,7 @@ int parse_opts(moltengamepad::mg_options& options, int argc, char* argv[]) {
   int long_index;
 
   while (c != -1) {
-    c = getopt_long(argc, argv, "u:p:g:n:c:f:P:mhvdw", long_options, &long_index);
+    c = getopt_long(argc, argv, "u:p:g:n:c:f:P:mhvd", long_options, &long_index);
     switch (c) {
     case 0:
       if (long_index == 10) {
