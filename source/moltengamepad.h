@@ -33,12 +33,14 @@ public:
     bool make_pointer = false;
     bool dpad_as_hat = false;
     bool mimic_xpad = false;
+    bool daemon = false;
     int  num_gamepads = 4;
     std::string config_dir;
     std::string profile_dir;
     std::string gendev_dir;
     std::string fifo_path;
     std::string uinput_path;
+    std::string pidfile;
 
   } options;
 

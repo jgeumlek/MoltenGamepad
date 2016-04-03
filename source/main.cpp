@@ -4,6 +4,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <csignal>
+#include <fstream>
 
 
 int parse_opts(moltengamepad::mg_options& options, int argc, char* argv[]);
@@ -40,12 +41,14 @@ int main(int argc, char* argv[]) {
   options.make_pointer = false;
   options.dpad_as_hat = false;
   options.mimic_xpad = false;
+  options.daemon = false;
   options.num_gamepads = 4;
   options.config_dir = "";
   options.profile_dir = "";
   options.gendev_dir = "";
   options.fifo_path = "";
   options.uinput_path = "";
+  options.pidfile = "";
   int ret = parse_opts(options, argc, argv);
 
   if (ret > 0) return 0;
@@ -56,10 +59,32 @@ int main(int argc, char* argv[]) {
     moltengamepad* mg = new moltengamepad(options);
     app = mg;
 
-    mg->init();
+    if(options.daemon) {
+    	int pid = fork();
+    	if(pid == 0) {
 
-    shell_loop(mg, std::cin);
-    delete mg;
+   		    mg->init();
+
+    		while(!QUIT_APPLICATION)
+    			sleep(1);
+    	}
+    	else if(pid == -1) {
+    		std::cerr <<  "Failed to fork.\n";
+    	}
+    	else {
+    		if(options.pidfile.size() > 0) {
+				std::ofstream pf;
+				pf.open (options.pidfile);
+				pf << pid << "\n";
+				pf.close();
+    		}
+    	}
+    }
+    else {
+	    mg->init();
+		shell_loop(mg, std::cin);
+		delete mg;
+    }
 
   } catch (int e) {
     return e;
@@ -120,6 +145,10 @@ int print_usage(char* execname) {
                           "\n"\
                           "--mimic-xpad\n"\
                           "\tMake the virtual output devices appear as xpad-style XBox 360 devices\n"\
+						  "--daemon -d\n"\
+						  "\tFork and exit immediately, leaving the daemon running in the background.\n"\
+						  "--pidfile -P\n"\
+						  "\tOnly used for daemon, where store the PID of the process.\n"\
                           ;
 
   std::cout << help_text;
@@ -130,7 +159,7 @@ int print_usage(char* execname) {
 
 int parse_opts(moltengamepad::mg_options& options, int argc, char* argv[]) {
 
-  char c = 0;
+  int c = 0;
 
   static struct option long_options[] = {
     {"help",          0,    0,  'h'},
@@ -142,34 +171,39 @@ int parse_opts(moltengamepad::mg_options& options, int argc, char* argv[]) {
     {"num-gamepads",  1,    0,  'n'},
     {"make-fifo",     0,    0,  'm'},
     {"fifo-path",     1,    0,  'f'},
+    {"pidfile",       1,    0,  'P'},
     {"no-make-keys",  0,    0,    0},
     {"no-enumerate",  0,    0,    0},
     {"no-monitor",    0,    0,    0},
     {"dpad-as-hat",   0,    0,    0},
     {"mimic-xpad",    0,    0,    0},
+    {"daemon",        0,    0,  'd'},
     {0,               0,    0,    0},
   };
   int long_index;
 
   while (c != -1) {
-    c = getopt_long(argc, argv, "u:p:g:n:c:f:mhv", long_options, &long_index);
+    c = getopt_long(argc, argv, "u:p:g:n:c:f:P:mhvd", long_options, &long_index);
     switch (c) {
     case 0:
-      if (long_index == 9) {
+      if (long_index == 10) {
         options.make_keyboard = false;
       };
-      if (long_index == 10) {
+      if (long_index == 11) {
         options.look_for_devices = false;
       };
-      if (long_index == 11) {
+      if (long_index == 12) {
         options.listen_for_devices = false;
       };
-      if (long_index == 12) {
+      if (long_index == 13) {
         options.dpad_as_hat = true;
       };
-      if (long_index == 13) {
+      if (long_index == 14) {
         options.mimic_xpad = true;
       };
+      break;
+    case 'd':
+      options.daemon = true;
       break;
     case 'u':
       options.uinput_path = std::string(optarg);
@@ -182,6 +216,9 @@ int parse_opts(moltengamepad::mg_options& options, int argc, char* argv[]) {
       break;
     case 'p':
       options.profile_dir = std::string(optarg);
+      break;
+    case 'P':
+      options.pidfile = std::string(optarg);
       break;
     case 'g':
       options.gendev_dir = std::string(optarg);
