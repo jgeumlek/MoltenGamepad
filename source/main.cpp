@@ -59,31 +59,29 @@ int main(int argc, char* argv[]) {
     moltengamepad* mg = new moltengamepad(options);
     app = mg;
 
-    if(options.daemon) {
-    	int pid = fork();
-    	if(pid == 0) {
+    if (options.daemon) {
+      int pid = fork();
+      if(pid == 0) {
 
-   		    mg->init();
+        mg->init();
 
-    		while(!QUIT_APPLICATION)
-    			sleep(1);
-    	}
-    	else if(pid == -1) {
-    		std::cerr <<  "Failed to fork.\n";
-    	}
-    	else {
-    		if(options.pidfile.size() > 0) {
-				std::ofstream pf;
-				pf.open (options.pidfile);
-				pf << pid << "\n";
-				pf.close();
-    		}
-    	}
+        while(!QUIT_APPLICATION)
+          sleep(1);
+      } else if (pid == -1) {
+        std::cerr <<  "Failed to fork.\n";
+      } else {
+        if(options.pidfile.size() > 0) {
+          std::ofstream pf;
+          pf.open (options.pidfile);
+          pf << pid << "\n";
+          pf.close();
+        }
+      }
     }
     else {
-	    mg->init();
-		shell_loop(mg, std::cin);
-		delete mg;
+      mg->init();
+      shell_loop(mg, std::cin);
+      delete mg;
     }
 
   } catch (int e) {
@@ -145,10 +143,10 @@ int print_usage(char* execname) {
                           "\n"\
                           "--mimic-xpad\n"\
                           "\tMake the virtual output devices appear as xpad-style XBox 360 devices\n"\
-						  "--daemon -d\n"\
-						  "\tFork and exit immediately, leaving the daemon running in the background.\n"\
-						  "--pidfile -P\n"\
-						  "\tOnly used for daemon, where store the PID of the process.\n"\
+                          "--daemon -d\n"\
+                          "\tFork and exit immediately, leaving the daemon running in the background.\n"\
+                          "--pidfile -P\n"\
+                          "\tOnly used for daemon, where store the PID of the process.\n"\
                           ;
 
   std::cout << help_text;
