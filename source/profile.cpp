@@ -26,6 +26,8 @@ void profile::set_mapping(std::string in_event_name, event_translator* mapper, e
   if (oldmap.trans) delete oldmap.trans;
   mapping.erase(in_event_name);
   mapping[in_event_name] = {mapper, type};
+  for (auto prof : subscribers)
+    prof->set_mapping(in_event_name,mapper,type);
   lock.unlock();
 }
 
@@ -35,6 +37,8 @@ void profile::set_option(std::string opname, std::string value) {
   lock.lock();
   options.erase(opname);
   options[opname] = value;
+  for (auto prof : subscribers)
+    prof->set_option(opname, value);
   lock.unlock();
 }
 
@@ -65,6 +69,8 @@ void profile::set_advanced(const std::vector<std::string>& names, advanced_event
     entry.trans = trans;
     adv_trans[key] = entry;
   }
+  for (auto prof : subscribers)
+    prof->set_advanced(names,trans);
   lock.unlock();
 }
 
@@ -91,8 +97,49 @@ std::string profile::get_option(std::string opname) {
   return it->second;
 }
 
+void profile::subscribe_to(profile* parent) {
+  if (parent == this) return;
+  lock.lock();
+  subscriptions.push_back(parent->get_shared_ptr());
+  parent->add_listener(get_shared_ptr());
+  lock.unlock();
+}
+
+std::shared_ptr<profile> profile::get_shared_ptr() {
+  return shared_from_this();
+}
+
+void profile::add_listener(std::shared_ptr<profile> listener) {
+  lock.lock();
+  subscribers.push_back(listener);
+  lock.unlock();
+}
+
+void profile::remove_listener(std::shared_ptr<profile> listener) {
+  remove_listener(listener.get());
+}
+
+void profile::remove_listener(profile* listener) {
+  lock.lock();
+  for (auto it = subscribers.begin(); it != subscribers.end(); it++) {
+    if (it->get() == listener) {
+      subscribers.erase(it);
+      break;
+    }
+  }
+  lock.unlock();
+}
+
+
+profile::profile() {
+}
 
 profile::~profile() {
+  for (auto prof : subscriptions) {
+    if (auto profptr = prof.lock())
+      profptr->remove_listener(this);
+  }
+
   for (auto it = mapping.begin(); it != mapping.end(); it++) {
     if (it->second.trans) delete it->second.trans;
   }
@@ -103,6 +150,7 @@ profile::~profile() {
 
   mapping.clear();
 }
+
 
 void profile::build_default_gamepad_profile() {
   default_gamepad_profile.lock.lock();

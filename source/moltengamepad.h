@@ -13,6 +13,7 @@
 #include "udev.h"
 #include "signalflags.h"
 #include "messages.h"
+#include "profile.h"
 
 #define VERSION_STRING "alpha"
 
@@ -20,6 +21,7 @@ class slot_manager;
 class device_manager;
 class udev_handler;
 class input_source;
+class profile;
 
 
 class moltengamepad {
@@ -51,6 +53,7 @@ public:
   simple_messenger drivers;
   simple_messenger plugs;
   simple_messenger errors;
+  std::shared_ptr<profile> gamepad = std::make_shared<profile>();
 
   moltengamepad() : drivers("driver"), plugs("hotplug"), errors("error") {};
   moltengamepad(moltengamepad::mg_options options) : drivers("driver"), plugs("hotplug"), errors("error"), options(options) {};

@@ -40,7 +40,7 @@ int destroy_wii_dev_by_path(moltengamepad* mg, std::vector<wiimote*>* devs, cons
 
 
 enum entry_type wiimote_manager::entry_type(const char* name) {
-  auto alias = mapprofile.get_alias(std::string(name));
+  auto alias = mapprofile->get_alias(std::string(name));
   if (!alias.empty())
     name = alias.c_str();
   int ret = lookup_wii_event(name);
@@ -106,7 +106,7 @@ int wiimote_manager::accept_device(struct udev* udev, struct udev_device* dev) {
     wii_devs.push_back(wm);
     mg->add_device(wm);
     wm->start_thread();
-    wm->load_profile(&mapprofile);
+    wm->load_profile(mapprofile.get());
   } else {
     //pass this device to it for proper storage
     existing->handle_event(dev);
@@ -118,18 +118,18 @@ int wiimote_manager::accept_device(struct udev* udev, struct udev_device* dev) {
 
 void wiimote_manager::update_maps(const char* evname, event_translator* trans) {
   auto intype = entry_type(evname);
-  mapprofile.set_mapping(evname, trans->clone(), intype);
+  mapprofile->set_mapping(evname, trans->clone(), intype);
   for (auto it = wii_devs.begin(); it != wii_devs.end(); it++)
     (*it)->update_map(evname, trans);
 }
 
 void wiimote_manager::update_options(const char* opname, const char* value) {
-  mapprofile.set_option(opname, value);
+  mapprofile->set_option(opname, value);
   for (auto it = wii_devs.begin(); it != wii_devs.end(); it++)
     (*it)->update_option(opname, value);
 }
 void wiimote_manager::update_advanceds(const std::vector<std::string>& names, advanced_event_translator* trans) {
-  mapprofile.set_advanced(names, trans->clone());
+  mapprofile->set_advanced(names, trans->clone());
   for (auto it = wii_devs.begin(); it != wii_devs.end(); it++)
     (*it)->update_advanced(names, trans);
 }

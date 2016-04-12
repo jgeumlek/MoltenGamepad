@@ -5,6 +5,7 @@
 #include <map>
 #include <vector>
 #include <mutex>
+#include <memory>
 
 enum entry_type {DEV_OPTION, DEV_KEY, DEV_AXIS, DEV_REL, NO_ENTRY} ;
 
@@ -23,7 +24,7 @@ struct trans_map {
   entry_type type;
 };
 
-class profile {
+class profile : public std::enable_shared_from_this<profile> {
 public:
   std::string name;
   std::unordered_map<std::string, trans_map> mapping;
@@ -46,8 +47,15 @@ public:
   std::string get_alias(std::string name);
 
   std::string get_option(std::string opname);
+  
+  void subscribe_to(profile* parent);
+  void add_listener(std::shared_ptr<profile> listener);
+  void remove_listener(std::shared_ptr<profile> listener);
+  void remove_listener(profile* listener);
+  std::shared_ptr<profile> get_shared_ptr();
 
   ~profile();
+  profile();
 
   //Load up default gamepad event mappings onto this profile.
   void gamepad_defaults();
@@ -55,6 +63,8 @@ public:
 private:
   static profile default_gamepad_profile;
   static void build_default_gamepad_profile();
+  std::vector<std::weak_ptr<profile> > subscriptions;
+  std::vector<std::shared_ptr<profile> > subscribers;
 
 };
 

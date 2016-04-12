@@ -147,7 +147,7 @@ public:
   };
 
   device_manager(moltengamepad* mg, std::string name) : mg(mg), name(name), log(name) {
-    mapprofile.name = name;
+    mapprofile->name = name;
     log.add_listener(1);
   }
 
@@ -174,7 +174,7 @@ public:
 
   std::string name;
   simple_messenger log;
-  profile mapprofile;
+  std::shared_ptr<profile> mapprofile = std::make_shared<profile>();
 
 };
 

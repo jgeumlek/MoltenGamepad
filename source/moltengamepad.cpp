@@ -25,6 +25,7 @@ const virtpad_settings xpad_padstyle = {
 
 moltengamepad::~moltengamepad() {
 
+  gamepad = nullptr;
 
   udev.set_managers(nullptr);
   if (udev.monitor_thread) {
@@ -81,6 +82,8 @@ int fifo_loop(moltengamepad* mg) {
 int moltengamepad::init() {
   //This whole function is pretty bad in handling the config directories not being present.
   //But at least we aren't just spilling into the user's top level home directory.
+
+  gamepad->gamepad_defaults();
   virtpad_settings padstyle = default_padstyle;
   padstyle.dpad_as_hat = options.dpad_as_hat;
   if (options.mimic_xpad) padstyle = xpad_padstyle;

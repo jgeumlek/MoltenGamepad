@@ -20,13 +20,13 @@ generic_manager::generic_manager(moltengamepad* mg, generic_driver_info& descr) 
   }
 
   for (auto alias : descr.aliases) {
-    mapprofile.set_alias(alias.first,alias.second);
+    mapprofile->set_alias(alias.first,alias.second);
   }
 
   descr.split_types.resize(split,input_source::GAMEPAD);
   for (auto type : descr.split_types) {
     if (type == input_source::GAMEPAD) {
-      mapprofile.gamepad_defaults();
+      mapprofile->gamepad_defaults();
       break;
     }
   }
@@ -115,13 +115,13 @@ void generic_manager::create_inputs(generic_file* opened_file, int fd, bool watc
     opened_file->add_dev(gendev);
     mg->add_device(gendev);
     gendev->start_thread();
-    gendev->load_profile(&mapprofile);
+    gendev->load_profile(mapprofile.get());
   }
 }
 
 void generic_manager::update_maps(const char* evname, event_translator* trans) {
   auto type = entry_type(evname);
-  mapprofile.set_mapping(evname, trans->clone(), type);
+  mapprofile->set_mapping(evname, trans->clone(), type);
 
   for (auto file : openfiles) {
     for (auto dev : file->devices) {
@@ -137,9 +137,9 @@ void generic_manager::update_option(const char* opname, const char* value) {
 
 void generic_manager::update_advanceds(const std::vector<std::string>& names, advanced_event_translator* trans) {
   if (trans) {
-    mapprofile.set_advanced(names, trans->clone());
+    mapprofile->set_advanced(names, trans->clone());
   } else {
-    mapprofile.set_advanced(names, nullptr);
+    mapprofile->set_advanced(names, nullptr);
   }
   for (auto file : openfiles) {
     for (auto dev : file->devices) {
@@ -158,7 +158,7 @@ input_source* generic_manager::find_device(const char* name) {
   return nullptr;
 }
 enum entry_type generic_manager::entry_type(const char* name) {
-  auto alias = mapprofile.get_alias(std::string(name));
+  auto alias = mapprofile->get_alias(std::string(name));
   if (!alias.empty())
     name = alias.c_str();
   for (auto ev : descr->events) {

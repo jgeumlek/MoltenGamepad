@@ -42,7 +42,7 @@ int do_print_profile(moltengamepad* mg, std::string name, std::ostream& out) {
 
   device_manager* man = mg->find_manager(name.c_str());
   if (man) {
-    profile* profile = &(man->mapprofile);
+    profile* profile = man->mapprofile.get();
     print_profile(*profile, out);
 
     return 0;
