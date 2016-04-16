@@ -178,15 +178,39 @@ std::shared_ptr<input_source> moltengamepad::find_device(const char* name) {
   }
   return nullptr;
 }
-std::shared_ptr<input_source> moltengamepad::add_device(input_source* source) {
+std::shared_ptr<input_source> moltengamepad::add_device(input_source* source, device_manager* manager, std::string name_stem) {
   std::shared_ptr<input_source> ptr(source);
   device_list_lock.lock();
+  
+  //try to find an unused name. It is okay if this is slow.
+  std::string proposal;
+  bool available;
+  for (int i = 1; i < 64; i++) {
+    proposal = name_stem + std::to_string(i);
+    available = true;
+    for (auto dev : devices) {
+      if (dev->name == proposal) {
+        available = false;
+	break;
+      }
+    }
+    if (available) break;
+  }
+  
+  if (!available) {
+    errors.take_message("could not find available name for " + name_stem);
+    return ptr;
+  }
+  //Set the device and profile name, send a message, link the profile, and finally start the device thread.
+  ptr->name = proposal;
   devices.push_back(ptr);
   plugs.take_message("device " + source->name + " added.");
   auto devprof = source->get_profile();
   devprof->name = source->name;
   add_profile(devprof.get());
+  devprof->add_device(ptr);
   device_list_lock.unlock();
+  ptr->start_thread();
   return ptr;
 }
 

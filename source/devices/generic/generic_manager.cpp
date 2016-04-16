@@ -108,15 +108,9 @@ int generic_manager::open_device(struct udev* udev, struct udev_device* dev) {
 void generic_manager::create_inputs(generic_file* opened_file, int fd, bool watch) {
   for (int i = 1; i <= split; i++) {
     generic_device* gendev = new generic_device(splitevents.at(i - 1), fd, watch, mg->slots, this, descr->split_types[i-1]);
-    char* newdevname = nullptr;
-    asprintf(&newdevname, "%s%d", devname.c_str(), ++dev_counter);
-    gendev->name = std::string(newdevname);
-    free(newdevname);
     opened_file->add_dev(gendev);
-    auto ptr = mg->add_device(gendev);
+    mg->add_device(gendev, this, descr->devname);
     auto devprofile = gendev->get_profile();
-    devprofile->add_device(ptr);
-    gendev->start_thread();
     mapprofile->copy_into(devprofile,true);
   }
 }

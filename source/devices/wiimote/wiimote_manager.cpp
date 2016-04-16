@@ -97,18 +97,11 @@ int wiimote_manager::accept_device(struct udev* udev, struct udev_device* dev) {
   if (existing == nullptr) {
     //time to add a device;
     wiimote* wm = new wiimote(mg->slots, this);
-    char* devname;
-    asprintf(&devname, "wm%d", ++dev_counter);
-    wm->name = std::string(devname);
-    free(devname);
     wm->base.dev = udev_device_ref(parent);
     wm->handle_event(dev);
     wii_devs.push_back(wm);
-    std::shared_ptr<input_source> ptr = mg->add_device(wm);
+    mg->add_device(wm, this, "wm");
     std::shared_ptr<profile> devprofile = wm->get_profile();
-    devprofile->add_device(ptr);
-    
-    wm->start_thread();
     mapprofile->copy_into(devprofile,true);
   } else {
     //This is a subdevice of something we already track
