@@ -41,7 +41,7 @@ public:
 
   void set_mapping(std::string in_event_name, event_translator* mapper, entry_type type, bool add_new);
 
-  void set_advanced(const std::vector<std::string>& names, advanced_event_translator* trans);
+  void set_advanced(std::vector<std::string> names, advanced_event_translator* trans);
 
   void set_option(std::string opname, std::string value);
 

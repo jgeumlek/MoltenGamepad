@@ -201,7 +201,7 @@ void MGparser::do_assignment(std::string header, std::string field, std::vector<
 
 
 
-void MGparser::do_adv_assignment(std::string header, const std::vector<std::string>& fields, std::vector<token> rhs) {
+void MGparser::do_adv_assignment(std::string header, std::vector<std::string>& fields, std::vector<token> rhs) {
   if (rhs.empty()) return;
   auto prof = mg->find_profile(header);
   if (!prof) {

@@ -89,19 +89,20 @@ void profile::set_option(std::string opname, std::string value) {
   lock.unlock();
 }
 
-void profile::set_advanced(const std::vector<std::string>& names, advanced_event_translator* trans) {
+void profile::set_advanced(std::vector<std::string> names, advanced_event_translator* trans) {
   if (names.empty()) return;
   lock.lock();
+  for (int i = 0; i < names.size(); i++) {
+    auto alias = aliases.find(names[i]);
+    if (alias != aliases.end())
+      names[i] = alias->second;
+  }
   auto it = names.begin();
   //this key creation is not ideal.
   std::string key = *it;
   it++;
-  auto alias = aliases.find(key);
-  if (alias != aliases.end())
-    key = alias->second;
   for (; it != names.end(); it++) {
-    alias = aliases.find(*it);
-    key += "," + ((alias == aliases.end()) ? (*it) : alias->second);
+    key += "," + (*it);
   }
 
   auto stored = adv_trans.find(key);
@@ -210,14 +211,14 @@ void profile::remove_device(input_source* dev) {
 
 void profile::copy_into(std::shared_ptr<profile> target, bool add_subscription) {
   lock.lock();
+  for (auto entry : aliases)
+    target->set_alias(entry.first,entry.second);
   for (auto entry : mapping)
     target->set_mapping(entry.first, entry.second.trans->clone(), entry.second.type, true);
   for (auto entry : adv_trans)
     target->set_advanced(entry.second.fields, entry.second.trans->clone());
   for (auto entry : options)
     target->set_option(entry.first,entry.second);
-  for (auto entry : aliases)
-    target->set_alias(entry.first,entry.second);
   if (add_subscription) {
     subscribers.push_back(target);
     target->remember_subscription(this);

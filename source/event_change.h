@@ -236,7 +236,7 @@ public:
     this->trans = trans->clone();
   }
 
-  ~redirect_trans() {
+  virtual ~redirect_trans() {
     if (trans) delete trans;
   }
 
@@ -252,7 +252,7 @@ public:
   }
 
   virtual redirect_trans* clone() {
-    return new redirect_trans(trans->clone(), redirected);
+    return new redirect_trans(trans, redirected);
   }
 
   static const MGType fields[];
@@ -272,7 +272,7 @@ public:
   }
 
   virtual keyboard_redirect* clone() {
-    return new keyboard_redirect(key_code, this->trans->clone(), redirected);
+    return new keyboard_redirect(key_code, this->trans, redirected);
   }
 
   static const MGType fields[];
@@ -344,8 +344,6 @@ public:
 
   std::thread* thread = nullptr;
   std::vector<int> chord_hits;
-
-
 
   virtual void init(input_source* source);
   virtual bool claim_event(int id, mg_ev event);

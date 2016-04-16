@@ -137,9 +137,12 @@ void simple_chord::init(input_source* source) {
     event_ids.push_back(-1);
     event_vals.push_back(0);
   }
-  for (auto event : events) {
-    for (int i = 0; i < event_names.size(); i++) {
-      if (!strcmp(event.name, event_names[i].c_str())) {
+  for (int i = 0; i < event_names.size(); i++) {
+    std::string looking_for = event_names[i];
+    std::string alias = source->get_alias(looking_for);
+    if (!alias.empty()) looking_for = alias;
+    for (auto event : events) {
+      if (!strcmp(event.name, looking_for.c_str())) {
         event_ids[i] = event.id;
         event_vals[i] = event.value;
       }
@@ -253,9 +256,14 @@ void exclusive_chord::init(input_source* source) {
     event_vals.push_back(0);
     chord_hits.push_back(0);
   }
-  for (auto event : events) {
-    for (int i = 0; i < event_names.size(); i++) {
-      if (!strcmp(event.name, event_names[i].c_str())) {
+
+  for (int i = 0; i < event_names.size(); i++) {
+    std::string looking_for = event_names[i];
+    std::string alias = source->get_alias(looking_for);
+    if (!alias.empty()) looking_for = alias;
+
+    for (auto event : events) {
+      if (!strcmp(event.name, looking_for.c_str())) {
         event_ids[i] = event.id;
         event_vals[i] = event.value;
       }

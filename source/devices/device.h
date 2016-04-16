@@ -94,6 +94,7 @@ public:
   void remove_listener(int id, advanced_event_translator* trans);
   void force_value(int id, long long value);
   void send_value(int id, long long value);
+  std::string get_alias(std::string event_name);
   const devtype getType() {return type;};
   static std::string type_name(devtype type) {
     if (type == GAMEPAD)
@@ -157,7 +158,7 @@ public:
 
   virtual void update_maps(const char* evname, event_translator* trans);
   virtual void update_options(const char* opname, const char* value);
-  virtual void update_advanceds(const std::vector<std::string>& names, advanced_event_translator* trans);
+  virtual void update_advanceds(std::vector<std::string>& names, advanced_event_translator* trans);
 
   virtual input_source* find_device(const char* name) { return nullptr;};
 

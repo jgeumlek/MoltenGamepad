@@ -10,7 +10,7 @@ void device_manager::update_options(const char* opname, const char* value) {
   mapprofile->set_option(opname, value);
 }
 
-void device_manager::update_advanceds(const std::vector<std::string>& names, advanced_event_translator* trans) {
+void device_manager::update_advanceds(std::vector<std::string>& names, advanced_event_translator* trans) {
   if (trans) {
     mapprofile->set_advanced(names, trans->clone());
   } else {

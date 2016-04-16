@@ -280,7 +280,12 @@ void input_source::thread_loop() {
   }
 }
 
-
+std::string input_source::get_alias(std::string event_name) {
+  auto alias = devprofile->aliases.find(event_name);
+  if (alias != devprofile->aliases.end())
+    return alias->second;
+  return "";
+}
 
 void input_source::start_thread() {
   keep_looping = true;
