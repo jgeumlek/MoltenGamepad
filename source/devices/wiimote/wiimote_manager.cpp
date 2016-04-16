@@ -120,22 +120,6 @@ int wiimote_manager::accept_device(struct udev* udev, struct udev_device* dev) {
   return 0;
 }
 
-void wiimote_manager::update_maps(const char* evname, event_translator* trans) {
-  auto intype = entry_type(evname);
-  mapprofile->set_mapping(evname, trans->clone(), intype);
-}
-
-void wiimote_manager::update_options(const char* opname, const char* value) {
-  mapprofile->set_option(opname, value);
-}
-void wiimote_manager::update_advanceds(const std::vector<std::string>& names, advanced_event_translator* trans) {
-  if (trans) {
-    mapprofile->set_advanced(names, trans->clone());
-  } else {
-    mapprofile->set_advanced(names, nullptr);
-  }
-}
-
 input_source* wiimote_manager::find_device(const char* name) {
   for (auto it = wii_devs.begin(); it != wii_devs.end(); it++) {
     if (!strcmp((*it)->name.c_str(), name)) return (*it);

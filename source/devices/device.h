@@ -74,7 +74,6 @@ public:
   }
 
   void update_map(const char* evname, event_translator* trans);
-  void update_chord(const char* key1, const char* key2, event_translator* trans);
   void update_option(const char* opname, const char* value);
   void update_advanced(const std::vector<std::string>& evnames, advanced_event_translator* trans);
 
@@ -156,23 +155,13 @@ public:
   virtual ~device_manager() {
   };
 
+  virtual void update_maps(const char* evname, event_translator* trans);
+  virtual void update_options(const char* opname, const char* value);
+  virtual void update_advanceds(const std::vector<std::string>& names, advanced_event_translator* trans);
 
+  virtual input_source* find_device(const char* name) { return nullptr;};
 
-  virtual void update_maps(const char* evname, event_translator* trans) {
-  }
-
-
-  virtual void update_options(const char* opname, const char* value) {
-  }
-
-  virtual void update_advanceds(const std::vector<std::string>& names, advanced_event_translator* trans) {
-  }
-
-  virtual input_source* find_device(const char* name) {
-  }
-
-  virtual enum entry_type entry_type(const char* name) {
-  }
+  virtual enum entry_type entry_type(const char* name) { return NO_ENTRY;};
 
   std::string name;
   simple_messenger log;

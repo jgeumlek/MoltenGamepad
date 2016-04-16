@@ -121,24 +121,6 @@ void generic_manager::create_inputs(generic_file* opened_file, int fd, bool watc
   }
 }
 
-void generic_manager::update_maps(const char* evname, event_translator* trans) {
-  auto type = entry_type(evname);
-  mapprofile->set_mapping(evname, trans->clone(), type);
-}
-
-
-void generic_manager::update_option(const char* opname, const char* value) {
-  //Generic devices currently have no options.
-};
-
-void generic_manager::update_advanceds(const std::vector<std::string>& names, advanced_event_translator* trans) {
-  if (trans) {
-    mapprofile->set_advanced(names, trans->clone());
-  } else {
-    mapprofile->set_advanced(names, nullptr);
-  }
-}
-
 input_source* generic_manager::find_device(const char* name) {
 
   for (auto file : openfiles) {

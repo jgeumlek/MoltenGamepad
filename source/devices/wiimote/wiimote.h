@@ -146,10 +146,6 @@ public:
     }
   }
 
-  virtual void update_maps(const char* evname, event_translator* trans);
-  virtual void update_options(const char* evname, const char* value);
-  virtual void update_advanceds(const std::vector<std::string>& names, advanced_event_translator* trans);
-
   virtual input_source* find_device(const char* name);
   virtual enum entry_type entry_type(const char* name);
 

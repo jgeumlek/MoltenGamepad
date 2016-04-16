@@ -225,12 +225,6 @@ public:
 
   virtual int accept_device(struct udev* udev, struct udev_device* dev);
 
-  virtual void update_maps(const char* evname, event_translator* trans);
-
-  virtual void update_option(const char* opname, const char* value);
-
-  virtual void update_advanceds(const std::vector<std::string>& names, advanced_event_translator* trans);
-
   virtual input_source* find_device(const char* name);
   virtual enum entry_type entry_type(const char* name);
 
