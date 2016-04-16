@@ -1,5 +1,6 @@
 #include "uinput.h"
 #include "eventlists/eventlist.h"
+#include "string.h"
 
 
 const char* try_to_find_uinput() {
@@ -21,7 +22,7 @@ const char* try_to_find_uinput() {
 
 std::string uinput_devnode(int fd) {
   char buffer[128];
-  buffer[0] = '\0';
+  memset(buffer,0,sizeof(buffer));
   ioctl(fd, UI_GET_SYSNAME(127), &buffer);
   buffer[127] = '\0';
   return std::string("/sys/devices/virtual/input/") + std::string(buffer);
