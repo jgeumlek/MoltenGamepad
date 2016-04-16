@@ -1,6 +1,25 @@
 #include "profile.h"
 #include "event_change.h"
+#include "devices/device.h"
+profile::profile() {
+}
 
+profile::~profile() {
+  for (auto prof : subscriptions) {
+    if (auto profptr = prof.lock())
+      profptr->remove_listener(this);
+  }
+
+  for (auto it = mapping.begin(); it != mapping.end(); it++) {
+    if (it->second.trans) delete it->second.trans;
+  }
+
+  for (auto e : adv_trans) {
+    if (e.second.trans) delete e.second.trans;
+  }
+
+  mapping.clear();
+}
 
 trans_map profile::get_mapping(std::string in_event_name) {
   auto it = mapping.find(in_event_name);
@@ -26,8 +45,14 @@ void profile::set_mapping(std::string in_event_name, event_translator* mapper, e
   if (oldmap.trans) delete oldmap.trans;
   mapping.erase(in_event_name);
   mapping[in_event_name] = {mapper, type};
-  for (auto prof : subscribers)
-    prof->set_mapping(in_event_name,mapper,type);
+  for (auto prof : subscribers) {
+    auto ptr = prof.lock();
+    if (ptr) ptr->set_mapping(in_event_name,mapper->clone(),type);
+  }
+  for (auto dev : devices) {
+    auto ptr = dev.lock();
+    if (ptr) ptr->update_map(in_event_name.c_str(),mapper);
+  }
   lock.unlock();
 }
 
@@ -37,8 +62,14 @@ void profile::set_option(std::string opname, std::string value) {
   lock.lock();
   options.erase(opname);
   options[opname] = value;
-  for (auto prof : subscribers)
-    prof->set_option(opname, value);
+  for (auto prof : subscribers) {
+    auto ptr = prof.lock();
+    if (ptr) ptr->set_option(opname, value);
+  }
+  for (auto dev : devices) {
+    auto ptr = dev.lock();
+    if (ptr) ptr->update_option(opname.c_str(),value.c_str());
+  }
   lock.unlock();
 }
 
@@ -69,8 +100,14 @@ void profile::set_advanced(const std::vector<std::string>& names, advanced_event
     entry.trans = trans;
     adv_trans[key] = entry;
   }
-  for (auto prof : subscribers)
-    prof->set_advanced(names,trans);
+  for (auto prof : subscribers) {
+    auto ptr = prof.lock();
+    if (ptr) ptr->set_advanced(names,trans->clone());
+  }
+  for (auto dev : devices) {
+    auto ptr = dev.lock();
+    if (ptr) ptr->update_advanced(names,trans);
+  }
   lock.unlock();
 }
 
@@ -104,6 +141,12 @@ void profile::subscribe_to(profile* parent) {
   parent->add_listener(get_shared_ptr());
   lock.unlock();
 }
+void profile::remember_subscription(profile* parent) {
+  if (parent == this) return;
+  lock.lock();
+  subscriptions.push_back(parent->get_shared_ptr());
+  lock.unlock();
+}
 
 std::shared_ptr<profile> profile::get_shared_ptr() {
   return shared_from_this();
@@ -122,7 +165,8 @@ void profile::remove_listener(std::shared_ptr<profile> listener) {
 void profile::remove_listener(profile* listener) {
   lock.lock();
   for (auto it = subscribers.begin(); it != subscribers.end(); it++) {
-    if (it->get() == listener) {
+    std::shared_ptr<profile> ptr = it->lock();
+    if (ptr.get() == listener) {
       subscribers.erase(it);
       break;
     }
@@ -130,27 +174,40 @@ void profile::remove_listener(profile* listener) {
   lock.unlock();
 }
 
-
-profile::profile() {
+void profile::add_device(std::shared_ptr<input_source> device) {
+  lock.lock();
+  devices.push_back(device);
+  lock.unlock();
 }
 
-profile::~profile() {
-  for (auto prof : subscriptions) {
-    if (auto profptr = prof.lock())
-      profptr->remove_listener(this);
+void profile::remove_device(input_source* dev) {
+  lock.lock();
+  for (auto it = devices.begin(); it != devices.end(); it++) {
+    std::shared_ptr<input_source> ptr = it->lock();
+    if (ptr.get() == dev) {
+      devices.erase(it);
+      break;
+    }
   }
-
-  for (auto it = mapping.begin(); it != mapping.end(); it++) {
-    if (it->second.trans) delete it->second.trans;
-  }
-
-  for (auto e : adv_trans) {
-    if (e.second.trans) delete e.second.trans;
-  }
-
-  mapping.clear();
+  lock.unlock();
 }
 
+void profile::copy_into(std::shared_ptr<profile> target, bool add_subscription) {
+  lock.lock();
+  for (auto entry : mapping)
+    target->set_mapping(entry.first, entry.second.trans->clone(), entry.second.type);
+  for (auto entry : adv_trans)
+    target->set_advanced(entry.second.fields, entry.second.trans->clone());
+  for (auto entry : options)
+    target->set_option(entry.first,entry.second);
+  for (auto entry : aliases)
+    target->set_alias(entry.first,entry.second);
+  if (add_subscription) {
+    subscribers.push_back(target);
+  }
+    target->remember_subscription(this);
+  lock.unlock();
+}
 
 void profile::build_default_gamepad_profile() {
   default_gamepad_profile.lock.lock();

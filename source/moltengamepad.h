@@ -63,7 +63,7 @@ public:
 
   device_manager* find_manager(const char* name);
   std::shared_ptr<input_source> find_device(const char* name);
-  void add_device(input_source* source);
+  std::shared_ptr<input_source> add_device(input_source* source);
   void remove_device(input_source* source);
   void for_all_devices(std::function<void (std::shared_ptr<input_source>&)> func);
 

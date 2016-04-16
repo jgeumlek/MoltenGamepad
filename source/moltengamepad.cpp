@@ -163,11 +163,13 @@ std::shared_ptr<input_source> moltengamepad::find_device(const char* name) {
   }
   return nullptr;
 }
-void moltengamepad::add_device(input_source* source) {
+std::shared_ptr<input_source> moltengamepad::add_device(input_source* source) {
+  std::shared_ptr<input_source> ptr(source);
   device_list_lock.lock();
-  devices.push_back(std::shared_ptr<input_source>(source));
+  devices.push_back(ptr);
   plugs.take_message("device " + source->name + " added.");
   device_list_lock.unlock();
+  return ptr;
 }
 
 void moltengamepad::remove_device(input_source* source) {

@@ -13,6 +13,7 @@ typedef std::pair<std::string, std::string> str_pair;
 
 class event_translator;
 class advanced_event_translator;
+class input_source;
 
 struct adv_map {
   std::vector<std::string> fields;
@@ -49,9 +50,13 @@ public:
   std::string get_option(std::string opname);
   
   void subscribe_to(profile* parent);
+  void remember_subscription(profile* parent); //similar to above, but we don't try to add ourselves to the parent.
   void add_listener(std::shared_ptr<profile> listener);
   void remove_listener(std::shared_ptr<profile> listener);
   void remove_listener(profile* listener);
+  void add_device(std::shared_ptr<input_source> dev);
+  void remove_device(input_source* dev);
+  void copy_into(std::shared_ptr<profile> target, bool add_subscription);
   std::shared_ptr<profile> get_shared_ptr();
 
   ~profile();
@@ -64,7 +69,8 @@ private:
   static profile default_gamepad_profile;
   static void build_default_gamepad_profile();
   std::vector<std::weak_ptr<profile> > subscriptions;
-  std::vector<std::shared_ptr<profile> > subscribers;
+  std::vector<std::weak_ptr<profile> > subscribers;
+  std::vector<std::weak_ptr<input_source> > devices;
 
 };
 

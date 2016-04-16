@@ -105,6 +105,7 @@ public:
       return "special";
     return "unknown";
   }
+  std::shared_ptr<profile> get_profile() { return devprofile; };
 
   output_slot* out_dev = nullptr;
 protected:
@@ -135,6 +136,7 @@ protected:
     return 0;
   };
   devtype type = UNKNOWN;
+  std::shared_ptr<profile> devprofile = std::make_shared<profile>();
 };
 
 class device_manager {

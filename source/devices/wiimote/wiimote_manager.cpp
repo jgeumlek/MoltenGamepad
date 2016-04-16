@@ -104,11 +104,15 @@ int wiimote_manager::accept_device(struct udev* udev, struct udev_device* dev) {
     wm->base.dev = udev_device_ref(parent);
     wm->handle_event(dev);
     wii_devs.push_back(wm);
-    mg->add_device(wm);
+    std::shared_ptr<input_source> ptr = mg->add_device(wm);
+    std::shared_ptr<profile> devprofile = wm->get_profile();
+    devprofile->add_device(ptr);
+    
     wm->start_thread();
-    wm->load_profile(mapprofile.get());
+    mapprofile->copy_into(devprofile,true);
   } else {
-    //pass this device to it for proper storage
+    //This is a subdevice of something we already track
+    //pass this subdevice to it for proper storage
     existing->handle_event(dev);
   }
 
@@ -119,19 +123,17 @@ int wiimote_manager::accept_device(struct udev* udev, struct udev_device* dev) {
 void wiimote_manager::update_maps(const char* evname, event_translator* trans) {
   auto intype = entry_type(evname);
   mapprofile->set_mapping(evname, trans->clone(), intype);
-  for (auto it = wii_devs.begin(); it != wii_devs.end(); it++)
-    (*it)->update_map(evname, trans);
 }
 
 void wiimote_manager::update_options(const char* opname, const char* value) {
   mapprofile->set_option(opname, value);
-  for (auto it = wii_devs.begin(); it != wii_devs.end(); it++)
-    (*it)->update_option(opname, value);
 }
 void wiimote_manager::update_advanceds(const std::vector<std::string>& names, advanced_event_translator* trans) {
-  mapprofile->set_advanced(names, trans->clone());
-  for (auto it = wii_devs.begin(); it != wii_devs.end(); it++)
-    (*it)->update_advanced(names, trans);
+  if (trans) {
+    mapprofile->set_advanced(names, trans->clone());
+  } else {
+    mapprofile->set_advanced(names, nullptr);
+  }
 }
 
 input_source* wiimote_manager::find_device(const char* name) {

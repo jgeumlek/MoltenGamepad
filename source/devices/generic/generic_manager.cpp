@@ -113,21 +113,17 @@ void generic_manager::create_inputs(generic_file* opened_file, int fd, bool watc
     gendev->name = std::string(newdevname);
     free(newdevname);
     opened_file->add_dev(gendev);
-    mg->add_device(gendev);
+    auto ptr = mg->add_device(gendev);
+    auto devprofile = gendev->get_profile();
+    devprofile->add_device(ptr);
     gendev->start_thread();
-    gendev->load_profile(mapprofile.get());
+    mapprofile->copy_into(devprofile,true);
   }
 }
 
 void generic_manager::update_maps(const char* evname, event_translator* trans) {
   auto type = entry_type(evname);
   mapprofile->set_mapping(evname, trans->clone(), type);
-
-  for (auto file : openfiles) {
-    for (auto dev : file->devices) {
-      dev->update_map(evname, trans);
-    }
-  }
 }
 
 
@@ -140,11 +136,6 @@ void generic_manager::update_advanceds(const std::vector<std::string>& names, ad
     mapprofile->set_advanced(names, trans->clone());
   } else {
     mapprofile->set_advanced(names, nullptr);
-  }
-  for (auto file : openfiles) {
-    for (auto dev : file->devices) {
-      dev->update_advanced(names, trans);
-    }
   }
 }
 
