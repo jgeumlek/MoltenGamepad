@@ -57,6 +57,25 @@ void wiimote_manager::init_profile() {
   (*map)["cc_right_x"] = {new axis2axis(ABS_RX, 1), DEV_AXIS};
   (*map)["cc_right_y"] = {new axis2axis(ABS_RY, 1), DEV_AXIS};
 
+  (*map)["wm_accel_x"] = {new event_translator, DEV_AXIS};
+  (*map)["wm_accel_y"] = {new event_translator, DEV_AXIS};
+  (*map)["wm_accel_z"] = {new event_translator, DEV_AXIS};
+  (*map)["wm_ir_x"] = {new event_translator, DEV_AXIS};
+  (*map)["wm_ir_y"] = {new event_translator, DEV_AXIS};
+
+  (*map)["nk_wm_accel_x"] = {new event_translator, DEV_AXIS};
+  (*map)["nk_wm_accel_y"] = {new event_translator, DEV_AXIS};
+  (*map)["nk_wm_accel_z"] = {new event_translator, DEV_AXIS};
+  (*map)["nk_ir_x"] = {new event_translator, DEV_AXIS};
+  (*map)["nk_ir_y"] = {new event_translator, DEV_AXIS};
+
+  (*map)["nk_accel_x"] = {new event_translator, DEV_AXIS};
+  (*map)["nk_accel_y"] = {new event_translator, DEV_AXIS};
+  (*map)["nk_accel_z"] = {new event_translator, DEV_AXIS};
+  
+  (*map)["bal_x"] = {new event_translator, DEV_AXIS};
+  (*map)["bal_y"] = {new event_translator, DEV_AXIS};
+
   //Init some aliases to act like a standardized game pad
   mapprofile->set_alias("primary","cc_a");
   mapprofile->set_alias("secondary","cc_b");
@@ -80,7 +99,7 @@ void wiimote_manager::init_profile() {
   mapprofile->set_alias("right_x","cc_right_x");
   mapprofile->set_alias("right_y","cc_right_y");
   
-  mapprofile->subscribe_to(mg->gamepad.get());
+  mg->gamepad->copy_into(mapprofile, true);
 
 };
 

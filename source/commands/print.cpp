@@ -31,29 +31,14 @@ void print_profile(profile& profile, std::ostream& out) {
 
 int do_print_profile(moltengamepad* mg, std::string name, std::ostream& out) {
   if (name.empty()) {
-    for (auto man : mg->managers) {
-      out << man->name << std::endl;
-      name_list names;
-      man->list_devs(names);
-      for (auto e : names)
-        out << e.name << std::endl;
-    }
+    mg->for_all_profiles([&out] (auto prof) { out << prof->name << std::endl; });
+    return 0;
   }
 
-  device_manager* man = mg->find_manager(name.c_str());
-  if (man) {
-    profile* profile = man->mapprofile.get();
-    print_profile(*profile, out);
-
+  auto prof = mg->find_profile(name);
+  if (prof) {
+    print_profile(*(prof.get()), out);
     return 0;
-  } else {
-    std::shared_ptr<input_source> dev = mg->find_device(name.c_str());
-    if (dev.get()) {
-      profile profile;
-      dev->export_profile(&profile);
-      profile.name = dev->name;
-      print_profile(profile, out);
-    }
   }
   return -1;
 

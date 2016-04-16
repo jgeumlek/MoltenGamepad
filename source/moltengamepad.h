@@ -48,6 +48,7 @@ public:
 
   std::vector<device_manager*> managers;
   std::vector<std::shared_ptr<input_source>> devices;
+  std::vector<std::weak_ptr<profile>> profiles;
   slot_manager* slots;
   udev_handler udev;
   simple_messenger drivers;
@@ -61,11 +62,17 @@ public:
   int init();
   int stop();
 
+
   device_manager* find_manager(const char* name);
   std::shared_ptr<input_source> find_device(const char* name);
   std::shared_ptr<input_source> add_device(input_source* source);
   void remove_device(input_source* source);
   void for_all_devices(std::function<void (std::shared_ptr<input_source>&)> func);
+
+  std::shared_ptr<profile> find_profile(const std::string& name);
+  void add_profile(profile* profile);
+  void remove_profile(profile* source);
+  void for_all_profiles(std::function<void (std::shared_ptr<profile>&)> func);
 
 private:
   bool udev_loop = true;
@@ -74,6 +81,7 @@ private:
   std::thread* udev_thread;
   std::thread* remote_handler = nullptr;
   std::mutex  device_list_lock;
+  std::mutex  profile_list_lock;
 
 
 };

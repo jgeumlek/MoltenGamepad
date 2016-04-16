@@ -16,7 +16,7 @@ generic_manager::generic_manager(moltengamepad* mg, generic_driver_info& descr) 
   for (auto gen_ev : descr.events) {
     if (gen_ev.split_id < 1 || gen_ev.split_id > split) continue;
     splitevents.at(gen_ev.split_id - 1).push_back(gen_ev);
-
+    mapprofile->set_mapping(gen_ev.name, new event_translator(), gen_ev.type, true);
   }
 
   for (auto alias : descr.aliases) {
@@ -26,7 +26,7 @@ generic_manager::generic_manager(moltengamepad* mg, generic_driver_info& descr) 
   descr.split_types.resize(split,input_source::GAMEPAD);
   for (auto type : descr.split_types) {
     if (type == input_source::GAMEPAD) {
-      mapprofile->gamepad_defaults();
+      mg->gamepad->copy_into(mapprofile, true);
       break;
     }
   }

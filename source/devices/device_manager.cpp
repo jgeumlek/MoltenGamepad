@@ -3,7 +3,7 @@
 
 void device_manager::update_maps(const char* evname, event_translator* trans) {
   auto intype = entry_type(evname);
-  mapprofile->set_mapping(evname, trans->clone(), intype);
+  mapprofile->set_mapping(evname, trans->clone(), intype, false);
 }
 
 void device_manager::update_options(const char* opname, const char* value) {

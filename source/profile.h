@@ -34,11 +34,12 @@ public:
   std::map<std::string, adv_map> adv_trans;
   std::mutex lock;
 
-  trans_map get_mapping(std::string in_event_name);
+
+  entry_type get_entry_type(std::string in_event_name);
 
   event_translator* copy_mapping(std::string in_event_name);
 
-  void set_mapping(std::string in_event_name, event_translator* mapper, entry_type type);
+  void set_mapping(std::string in_event_name, event_translator* mapper, entry_type type, bool add_new);
 
   void set_advanced(const std::vector<std::string>& names, advanced_event_translator* trans);
 
@@ -68,9 +69,11 @@ public:
 private:
   static profile default_gamepad_profile;
   static void build_default_gamepad_profile();
-  std::vector<std::weak_ptr<profile> > subscriptions;
-  std::vector<std::weak_ptr<profile> > subscribers;
-  std::vector<std::weak_ptr<input_source> > devices;
+  std::vector<std::weak_ptr<profile>> subscriptions;
+  std::vector<std::weak_ptr<profile>> subscribers;
+  std::vector<std::weak_ptr<input_source>> devices;
+
+  trans_map get_mapping(std::string in_event_name);
 
 };
 

@@ -158,21 +158,14 @@ MGparser::MGparser(moltengamepad* mg) : mg(mg), out("parse") {
 
 void MGparser::do_assignment(std::string header, std::string field, std::vector<token> rhs) {
   enum entry_type left_type = NO_ENTRY;
-  const char* entry = field.c_str();
-  device_manager* man = mg->find_manager(header.c_str());
-  std::shared_ptr<input_source> dev = nullptr;
-  if (man != nullptr) {
-    left_type = man->entry_type(entry);
-  } else {
-    dev = mg->find_device(header.c_str());
-    if (dev.get() != nullptr) {
-      left_type = dev->entry_type(entry);
-    }
-  }
-  if (!dev && !man) {
+  
+  auto prof = mg->find_profile(header);
+  if (!prof) {
     out.take_message("could not locate profile " + header);
     return;
   }
+  
+  left_type = prof->get_entry_type(field);
 
   if (left_type == DEV_KEY || left_type == DEV_AXIS) {
     auto it = rhs.begin();
@@ -183,10 +176,8 @@ void MGparser::do_assignment(std::string header, std::string field, std::vector<
       return; //abort
     }
 
-    if (man) man->update_maps(entry, trans);
-    if (dev.get()) dev->update_map(entry, trans);
-
     if (trans)  {
+      prof->set_mapping(field, trans->clone(), left_type, false);
       std::stringstream ss;
       MGTransDef def;
       trans->fill_def(def);
@@ -199,10 +190,9 @@ void MGparser::do_assignment(std::string header, std::string field, std::vector<
 
   if (rhs.empty()) return;
 
-  if (!field.empty() && field.front() == '?') {
+  if (!field.empty() && field.front() == '?' && rhs.size() > 0) {
     field.erase(field.begin());
-    if (man) man->update_options(field.c_str(), rhs.front().value.c_str());
-    if (dev.get()) dev->update_option(field.c_str(), rhs.front().value.c_str());
+    prof->set_option(field, rhs.front().value);
     return;
   }
 
@@ -213,17 +203,14 @@ void MGparser::do_assignment(std::string header, std::string field, std::vector<
 
 void MGparser::do_adv_assignment(std::string header, const std::vector<std::string>& fields, std::vector<token> rhs) {
   if (rhs.empty()) return;
-  device_manager* man = mg->find_manager(header.c_str());
-  std::shared_ptr<input_source> dev = (!man) ? mg->find_device(header.c_str()) : nullptr;
-
-  if (!dev && !man) {
+  auto prof = mg->find_profile(header);
+  if (!prof) {
     out.take_message("could not locate profile " + header);
     return;
   }
 
   if (rhs.front().value == "nothing") {
-    if (dev.get()) dev->update_advanced(fields, nullptr);
-    if (man) man->update_advanceds(fields, nullptr);
+    prof->set_advanced(fields, nullptr);
     return;
   }
   advanced_event_translator* trans = parse_adv_trans(fields, rhs);
@@ -231,15 +218,13 @@ void MGparser::do_adv_assignment(std::string header, const std::vector<std::stri
     out.take_message("could not parse right hand side");
   }
   if (trans) {
+    prof->set_advanced(fields, trans->clone());
     std::stringstream ss;
     MGTransDef def;
     trans->fill_def(def);
     print_def(DEV_KEY, def, ss);
     out.take_message("setting advanced translator to " + ss.str());
   }
-
-  if (dev.get()) dev->update_advanced(fields, trans);
-  if (man) man->update_advanceds(fields, trans);
 
   if (trans) delete trans;
 

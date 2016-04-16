@@ -83,7 +83,11 @@ int moltengamepad::init() {
   //This whole function is pretty bad in handling the config directories not being present.
   //But at least we aren't just spilling into the user's top level home directory.
 
+  //build the gamepad profile
   gamepad->gamepad_defaults();
+  gamepad->name = "gamepad";
+  add_profile(gamepad.get());
+  //set up our padstyles and our slot manager
   virtpad_settings padstyle = default_padstyle;
   padstyle.dpad_as_hat = options.dpad_as_hat;
   if (options.mimic_xpad) padstyle = xpad_padstyle;
@@ -93,9 +97,11 @@ int moltengamepad::init() {
   plugs.add_listener(1);
   errors.add_listener(2);
 
+  //add built in drivers
   managers.push_back(new wiimote_manager(this));
   drivers.take_message("wiimote driver initialized.");
 
+  //figure out config folders
   if (options.config_dir.empty()) options.config_dir = find_config_folder();
 
   mkdir(options.config_dir.c_str(), 0770);
@@ -106,6 +112,7 @@ int moltengamepad::init() {
   if (options.gendev_dir.empty()) options.gendev_dir = options.config_dir + "/gendevices/";
   mkdir((options.gendev_dir).c_str(), 0770);
 
+  //file glob the gendev .cfg files to add more drivers
   glob_t globbuffer;
   std::string fileglob = options.gendev_dir + "/*.cfg";
   glob(fileglob.c_str(), 0, nullptr, &globbuffer);
@@ -122,10 +129,17 @@ int moltengamepad::init() {
 
   globfree(&globbuffer);
 
+  //add driver profiles
+  for (auto man : managers)
+    add_profile(man->mapprofile.get());
+
+  //start the udev thread
   udev.set_managers(&managers);
   udev.set_uinput(slots->get_uinput());
   if (options.listen_for_devices) udev.start_monitor();
   if (options.look_for_devices)   udev.enumerate();
+
+  //start listening on FIFO if needed.
   if (options.make_fifo) {
     const char* run_dir = getenv("XDG_RUNTIME_DIR");
     if (options.fifo_path.empty() && run_dir) {
@@ -157,6 +171,7 @@ device_manager* moltengamepad::find_manager(const char* name) {
 }
 
 std::shared_ptr<input_source> moltengamepad::find_device(const char* name) {
+  std::lock_guard<std::mutex> guard(device_list_lock);
   for (auto it = devices.begin(); it != devices.end(); it++) {
 
     if (!strcmp((*it)->name.c_str(), name)) return (*it);
@@ -168,6 +183,9 @@ std::shared_ptr<input_source> moltengamepad::add_device(input_source* source) {
   device_list_lock.lock();
   devices.push_back(ptr);
   plugs.take_message("device " + source->name + " added.");
+  auto devprof = source->get_profile();
+  devprof->name = source->name;
+  add_profile(devprof.get());
   device_list_lock.unlock();
   return ptr;
 }
@@ -177,6 +195,7 @@ void moltengamepad::remove_device(input_source* source) {
   plugs.take_message("device " + source->name + " removed.");
   for (int i = 0; i < devices.size(); i++) {
     if (source == devices[i].get()) {
+      remove_profile(devices[i]->get_profile().get());
       devices.erase(devices.begin() + i);
       i--;
     }
@@ -189,4 +208,39 @@ void moltengamepad::for_all_devices(std::function<void (std::shared_ptr<input_so
   for (auto dev : devices)
     func(dev);
   device_list_lock.unlock();
+}
+
+std::shared_ptr<profile> moltengamepad::find_profile(const std::string& name) {
+  std::lock_guard<std::mutex> guard(profile_list_lock);
+  for (auto it = profiles.begin(); it != profiles.end(); it++) {
+    auto ptr = it->lock();
+    if (name == ptr->name) return ptr;
+  }
+  return nullptr;
+}
+
+void moltengamepad::add_profile(profile* profile) {
+  profile_list_lock.lock();
+  profiles.push_back(profile->get_shared_ptr());
+  profile_list_lock.unlock();
+}
+
+void moltengamepad::remove_profile(profile* profile) {
+  profile_list_lock.lock();
+  for (int i = 0; i < profiles.size(); i++) {
+    if (profile == profiles[i].lock().get()) {
+      profiles.erase(profiles.begin() + i);
+      i--;
+    }
+  }
+  profile_list_lock.unlock();
+}
+
+void moltengamepad::for_all_profiles(std::function<void (std::shared_ptr<profile>&)> func) {
+  profile_list_lock.lock();
+  for (auto prof : profiles) {
+    auto ptr = prof.lock();
+    if (ptr) func(ptr);
+  }
+  profile_list_lock.unlock();
 }

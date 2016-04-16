@@ -21,10 +21,21 @@ profile::~profile() {
   mapping.clear();
 }
 
+//This is private, called only while locked.
 trans_map profile::get_mapping(std::string in_event_name) {
   auto it = mapping.find(in_event_name);
   if (it == mapping.end()) return {nullptr, NO_ENTRY};
   return (it->second);
+}
+
+entry_type profile::get_entry_type(std::string in_event_name) {
+  std::lock_guard<std::mutex> guard(lock);
+  auto alias = aliases.find(in_event_name);
+  if (alias != aliases.end())
+    in_event_name = alias->second;
+  auto it = mapping.find(in_event_name);
+  if (it == mapping.end()) return NO_ENTRY;
+  return (it->second.type);
 }
 
 event_translator* profile::copy_mapping(std::string in_event_name) {
@@ -36,24 +47,29 @@ event_translator* profile::copy_mapping(std::string in_event_name) {
   return (it->second.trans->clone());
 }
 
-void profile::set_mapping(std::string in_event_name, event_translator* mapper, entry_type type) {
-  lock.lock();
+void profile::set_mapping(std::string in_event_name, event_translator* mapper, entry_type type, bool add_new) {
+  std::lock_guard<std::mutex> guard(lock);
   auto alias = aliases.find(in_event_name);
   if (alias != aliases.end())
     in_event_name = alias->second;
   trans_map oldmap = get_mapping(in_event_name);
+
+  if (!add_new && oldmap.type == NO_ENTRY) {
+    delete mapper;
+    return; //We don't recognize this event, and we don't want to!
+  }
+
   if (oldmap.trans) delete oldmap.trans;
   mapping.erase(in_event_name);
   mapping[in_event_name] = {mapper, type};
   for (auto prof : subscribers) {
     auto ptr = prof.lock();
-    if (ptr) ptr->set_mapping(in_event_name,mapper->clone(),type);
+    if (ptr) ptr->set_mapping(in_event_name,mapper->clone(), type, add_new);
   }
   for (auto dev : devices) {
     auto ptr = dev.lock();
     if (ptr) ptr->update_map(in_event_name.c_str(),mapper);
   }
-  lock.unlock();
 }
 
 
@@ -195,7 +211,7 @@ void profile::remove_device(input_source* dev) {
 void profile::copy_into(std::shared_ptr<profile> target, bool add_subscription) {
   lock.lock();
   for (auto entry : mapping)
-    target->set_mapping(entry.first, entry.second.trans->clone(), entry.second.type);
+    target->set_mapping(entry.first, entry.second.trans->clone(), entry.second.type, true);
   for (auto entry : adv_trans)
     target->set_advanced(entry.second.fields, entry.second.trans->clone());
   for (auto entry : options)
@@ -204,8 +220,9 @@ void profile::copy_into(std::shared_ptr<profile> target, bool add_subscription) 
     target->set_alias(entry.first,entry.second);
   if (add_subscription) {
     subscribers.push_back(target);
-  }
     target->remember_subscription(this);
+  }
+
   lock.unlock();
 }
 

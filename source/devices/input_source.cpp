@@ -207,10 +207,11 @@ void input_source::load_profile(profile* profile) {
 
 }
 
+//TODO: Get rid of this once we are confident the device profile stays in sync with the device
 void input_source::export_profile(profile* profile) {
   for (auto ev : events) {
     event_translator* trans = ev.trans->clone();
-    profile->set_mapping(ev.name, trans, ev.type);
+    profile->set_mapping(ev.name, trans, ev.type, true);
   }
 
   for (auto opt : options) {
