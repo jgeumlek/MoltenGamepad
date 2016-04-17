@@ -95,13 +95,13 @@ In addition, the full range of evdev events (of type KEY or ABS) are also availa
 * key_previoussong
 * key_volumeup
 
-#Mapping a button to a button
+##Mapping a button to a button
 
     wiimote.wm_a = primary
 
 That's it.
 
-#Mapping an axis to an axis
+##Mapping an axis to an axis
 
     wiimote.cc_left_x = left_x
     wiimote.cc_left_x = +left_x
@@ -109,18 +109,30 @@ That's it.
 
 The first two are equivalent. The last one inverts the axis direction.
 
-#Mapping a button to an axis
+##Mapping a button to an axis
 
     wiimote.wm_a = +left_x
     wiimote.wm_a = -left_x
 
 The +/- represents whether the button should output in the positive or negative direction. When pressed, the button maxes out that axis in that direction. When not released, the button sets that axis to zero.
 
-#Mapping an axis to buttons
+##Mapping an axis to buttons
 
     wiimote.cc_left_x = left,right
 
 The first output button is pressed when the axis gets sufficiently negative. The second output button is pressed when the axis gets sufficently positive. When the axis is not at either extreme, both buttons are released.
+
+##The Gamepad profile
+
+There is a special profile named `gamepad`. Drivers can subscribe to this profile, such that any changes to the gamepad profile apply to the driver (and thus the driver's devices as well).
+
+For example
+
+    gamepad.select = start
+
+This sets the select button of all game pad devices to send start-button events. This is achieved by each driver internally having a table of aliases, mapping the gamepad event names to the event names of the driver. There is a limitation here, in that the mapping can only have one result (e.g. each driver has at most one "select" event).
+
+For Wii devices, all such mappings affect only the classic controller control scheme.
 
 ##Extra Details
 
@@ -147,6 +159,8 @@ The following are available:
 Will save all currently used driver profiles (not device profiles!) to the specified file, placed in the `profiles` config directory.
 
 You'll likely want to put your filename in quotes.
+
+You'll also likely want to open up this file later in your favorite text editor and clean it up.
 
 ##Loading
 
@@ -176,6 +190,12 @@ These features are in development, and the syntax is subject to change, and full
     wiimote.wm_a = key(key_a)
     
 This maps the wiimote a button to `key_a` on the keyboard slot, regardless of what slot the wiimote is currently in.
+
+###Multi event
+
+    wiimote.wm_a = multi(primary,third)
+
+This takes two event translators, and performs both of them.
 
 ###Chords
 
