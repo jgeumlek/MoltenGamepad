@@ -8,8 +8,9 @@ steam_controller_manager::steam_controller_manager(moltengamepad* mg) : device_m
   keep_scanning = true;
 
   sc_context_thread = new std::thread([this] () {
-    while (keep_scanning)
-    sc_context.handle_events(1000);
+    while (keep_scanning) {
+      sc_context.handle_events(1000);
+    }
   });
 
 }
