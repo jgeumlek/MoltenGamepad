@@ -38,6 +38,12 @@ If you get undefined KEY_* errors, you'll need to remove those lines from the ev
 
 It requires udev and uinput.
 
+If you also have the [scraw](https://gitlab.com/dennis-hamester/scraw) and [scrawpp](https://gitlab.com/dennis-hamester/scrawpp) libraries installed, there is some steam controller support available, but it is not included in the default make target.
+
+    make steam
+    
+This make target will build and include the steam controller support.
+
 ##Running
 
     ./moltengamepad

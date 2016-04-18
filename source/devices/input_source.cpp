@@ -23,6 +23,9 @@ input_source::input_source(slot_manager* slot_man, device_manager* manager, devt
 
 input_source::~input_source() {
   end_thread();
+  close(internalpipe);
+  close(priv_pipe);
+  close(epfd);
   for (int i = 0; i < events.size(); i++) {
     if (events[i].trans) delete events[i].trans;
   }

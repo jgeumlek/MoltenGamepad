@@ -201,7 +201,7 @@ public:
     memset(&out_ev, 0, sizeof(out_ev));
     out_ev.type = EV_KEY;
     out_ev.code = neg_btn;
-    out_ev.value = ev.value < -.3 * RANGE;
+    out_ev.value = ev.value < -.5 * RANGE;
     if (out_ev.value != neg_cache) {
       write_out(out_ev, out);
       neg_cache = out_ev.value;
@@ -209,7 +209,7 @@ public:
 
     out_ev.type = EV_KEY;
     out_ev.code = pos_btn;
-    out_ev.value = ev.value > .3 * RANGE;
+    out_ev.value = ev.value > .5 * RANGE;
     if (out_ev.value != pos_cache) {
       write_out(out_ev, out);
       pos_cache = out_ev.value;

@@ -4,9 +4,12 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <glob.h>
-#include <devices/wiimote/wiimote.h>
-#include <devices/generic/generic.h>
+#include "devices/wiimote/wiimote.h"
+#include "devices/generic/generic.h"
 
+#ifdef BUILD_STEAM_CONTROLLER_DRIVER
+#include "devices/steamcontroller/steam_controller.h"
+#endif
 
 //FUTURE WORK: Make it easier to specify additional virtpad styles.
 const virtpad_settings default_padstyle = {
@@ -100,6 +103,10 @@ int moltengamepad::init() {
   //add built in drivers
   managers.push_back(new wiimote_manager(this));
   drivers.take_message("wiimote driver initialized.");
+#ifdef BUILD_STEAM_CONTROLLER_DRIVER
+  managers.push_back(new steam_controller_manager(this));
+  drivers.take_message("steamcontroller driver initialized.");
+#endif
 
   //figure out config folders
   if (options.config_dir.empty()) options.config_dir = find_config_folder();
