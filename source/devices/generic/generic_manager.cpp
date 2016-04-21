@@ -115,21 +115,3 @@ void generic_manager::create_inputs(generic_file* opened_file, int fd, bool watc
   }
 }
 
-input_source* generic_manager::find_device(const char* name) {
-
-  for (auto file : openfiles) {
-    for (auto dev : file->devices) {
-      if (!strcmp(dev->name.c_str(), name)) return dev;
-    }
-  }
-  return nullptr;
-}
-enum entry_type generic_manager::entry_type(const char* name) {
-  auto alias = mapprofile->get_alias(std::string(name));
-  if (!alias.empty())
-    name = alias.c_str();
-  for (auto ev : descr->events) {
-    if (!strcmp(ev.name.c_str(), name)) return ev.type;
-  }
-  return NO_ENTRY;
-}

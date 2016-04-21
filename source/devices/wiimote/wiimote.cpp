@@ -357,22 +357,6 @@ void wiimote::grab_ioctl(bool grab) {
   grab_ioctl_node(&balance, grab);
 }
 
-
-enum entry_type wiimote::entry_type(const char* name) {
-  auto alias = aliases.find(std::string(name));
-  if (alias != aliases.end())
-    name = alias->second.c_str();
-  int ret = lookup_wii_event(name);
-  if (ret != -1) {
-    return events[ret].type;
-  }
-
-  return NO_ENTRY;
-}
-
-
-
-
 void wiimote::process(void* tag) {
   int type = CORE;
   if (tag == &classic) type = E_CC;

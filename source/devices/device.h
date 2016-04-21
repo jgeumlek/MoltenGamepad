@@ -83,9 +83,6 @@ public:
   void start_thread();
   void end_thread();
 
-  void load_profile(profile* profile);
-  void export_profile(profile* profile);
-
   const std::vector<source_event>& get_events() {
     return events;
   };
@@ -115,7 +112,6 @@ protected:
   int internalpipe = 0;
   std::vector<source_event> events;
   std::map<std::string, source_option> options;
-  std::unordered_map<std::string, std::string> aliases;
   std::map<std::string, adv_entry> adv_trans;
   std::thread* thread = nullptr;
   volatile bool keep_looping = true;
@@ -155,14 +151,6 @@ public:
 
   virtual ~device_manager() {
   };
-
-  virtual void update_maps(const char* evname, event_translator* trans);
-  virtual void update_options(const char* opname, const char* value);
-  virtual void update_advanceds(std::vector<std::string>& names, advanced_event_translator* trans);
-
-  virtual input_source* find_device(const char* name) { return nullptr;};
-
-  virtual enum entry_type entry_type(const char* name) { return NO_ENTRY;};
 
   std::string name;
   simple_messenger log;

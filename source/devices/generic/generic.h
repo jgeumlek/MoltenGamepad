@@ -66,8 +66,6 @@ public:
 
   virtual void update_option(const char* opname, const char* value);
 
-  virtual enum entry_type entry_type(const char* name);
-
   virtual void process(void*);
 
   int get_pipe();
@@ -225,8 +223,6 @@ public:
 
   virtual int accept_device(struct udev* udev, struct udev_device* dev);
 
-  virtual input_source* find_device(const char* name);
-  virtual enum entry_type entry_type(const char* name);
 
 
   virtual void list_devs(name_list& list) {

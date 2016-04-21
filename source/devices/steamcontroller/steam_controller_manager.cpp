@@ -15,27 +15,6 @@ steam_controller_manager::steam_controller_manager(moltengamepad* mg) : device_m
 
 }
 
-input_source* steam_controller_manager::find_device(const char* name) {
-  for (auto dev : sc_devs) {
-    if (!strcmp(dev.second->name.c_str(), name)) return dev.second;
-  }
-  return nullptr;
-}
-
-
-
-enum entry_type steam_controller_manager::entry_type(const char* name) {
-  auto alias = mapprofile->get_alias(std::string(name));
-  if (!alias.empty())
-    name = alias.c_str();
-  int ret = lookup_steamcont_event(name);
-  if (ret != -1) {
-    return steamcont_events[ret].type;
-  }
-
-  return NO_ENTRY;
-}
-
 void steam_controller_manager::on_controller_gained(scraw::controller sc) {
   scraw::controller* ref = new scraw::controller(sc);
   steam_controller* steamcont = new steam_controller(ref, mg->slots, this);

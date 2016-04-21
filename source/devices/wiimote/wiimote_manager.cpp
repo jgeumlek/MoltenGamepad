@@ -38,21 +38,6 @@ int destroy_wii_dev_by_path(moltengamepad* mg, std::vector<wiimote*>* devs, cons
   return -1;
 }
 
-
-enum entry_type wiimote_manager::entry_type(const char* name) {
-  auto alias = mapprofile->get_alias(std::string(name));
-  if (!alias.empty())
-    name = alias.c_str();
-  int ret = lookup_wii_event(name);
-  if (ret != -1) {
-    return wiimote_events[ret].type;
-  }
-
-  return NO_ENTRY;
-}
-
-
-
 int wiimote_manager::accept_device(struct udev* udev, struct udev_device* dev) {
   const char* path = udev_device_get_syspath(dev);
   const char* subsystem = udev_device_get_subsystem(dev);
@@ -112,11 +97,3 @@ int wiimote_manager::accept_device(struct udev* udev, struct udev_device* dev) {
 
   return 0;
 }
-
-input_source* wiimote_manager::find_device(const char* name) {
-  for (auto it = wii_devs.begin(); it != wii_devs.end(); it++) {
-    if (!strcmp((*it)->name.c_str(), name)) return (*it);
-  }
-  return nullptr;
-}
-

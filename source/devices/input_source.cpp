@@ -68,8 +68,8 @@ void input_source::watch_file(int fd, void* tag) {
 
 void input_source::update_map(const char* evname, event_translator* trans) {
   std::string name(evname);
-  auto alias = aliases.find(name);
-  if (alias != aliases.end())
+  auto alias = devprofile->aliases.find(name);
+  if (alias != devprofile->aliases.end())
     evname = alias->second.c_str();
 
   for (int i = 0; i < events.size(); i++) {
@@ -114,8 +114,8 @@ void input_source::update_advanced(const std::vector<std::string>& evnames, adva
   msg.adv.fields = new std::vector<std::string>();
   *msg.adv.fields = evnames;
   for (int i = 0; i < msg.adv.fields->size(); i++) {
-    auto alias = aliases.find(std::string(evnames.at(i)));
-    if (alias != aliases.end())
+    auto alias = devprofile->aliases.find(std::string(evnames.at(i)));
+    if (alias != devprofile->aliases.end())
       (*msg.adv.fields)[i] = alias->second.c_str();
   }
   for (std::string name : *msg.adv.fields) {
@@ -186,45 +186,7 @@ void input_source::force_value(int id, long long value) {
 
 }
 
-void input_source::load_profile(profile* profile) {
-  for (auto ev : events) {
-    int id = ev.id;
-    event_translator* trans = profile->copy_mapping(ev.name);
-    if (trans) {
-      set_trans(id, trans);
-    }
-  }
 
-  for (auto opt : options) {
-    std::string value = profile->get_option(opt.first);
-    if (!value.empty()) {
-      update_option(opt.first.c_str(), value.c_str());
-    }
-  }
-  for (auto entry : profile->adv_trans) {
-    update_advanced(entry.second.fields, entry.second.trans);
-  }
-  for (auto entry : profile->aliases) {
-    aliases[entry.first] = entry.second;
-  }
-
-}
-
-//TODO: Get rid of this once we are confident the device profile stays in sync with the device
-void input_source::export_profile(profile* profile) {
-  for (auto ev : events) {
-    event_translator* trans = ev.trans->clone();
-    profile->set_mapping(ev.name, trans, ev.type, true);
-  }
-
-  for (auto opt : options) {
-    profile->set_option(opt.first, opt.second.value);
-  }
-
-  for (auto entry : adv_trans) {
-    profile->set_advanced(*entry.second.fields, entry.second.trans->clone());
-  }
-}
 
 
 void input_source::thread_loop() {

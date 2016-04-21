@@ -86,8 +86,6 @@ public:
   void remove_node(const char* name);
 
 
-  virtual enum entry_type entry_type(const char* name);
-
   void read_wiimote();
 protected:
   void process(void*);
@@ -145,9 +143,6 @@ public:
       list.push_back((*it)->get_info());
     }
   }
-
-  virtual input_source* find_device(const char* name);
-  virtual enum entry_type entry_type(const char* name);
 
   void init_profile();
 

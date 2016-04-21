@@ -87,20 +87,6 @@ void steam_controller::list_events(cat_list& list) {
   cat.entries.clear();
 }
 
-
-
-enum entry_type steam_controller::entry_type(const char* name) {
-  auto alias = aliases.find(std::string(name));
-  if (alias != aliases.end())
-    name = alias->second.c_str();
-  int ret = lookup_steamcont_event(name);
-  if (ret != -1) {
-    return events[ret].type;
-  }
-
-  return NO_ENTRY;
-}
-
 void steam_controller::on_state_change(const scraw_controller_state_t& state) {
   //turn this call back into an epoll event.
   write(statepipe[1], &state, sizeof(state));

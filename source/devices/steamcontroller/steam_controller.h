@@ -64,10 +64,6 @@ public:
     desc.descr = descr;
     return desc;
   }
-  
-  virtual enum entry_type entry_type(const char* name);
-
-
 protected:
   void process(void*);
   virtual int process_option(const char* opname, const char* value) { return -1; }; //TODO: options
@@ -93,8 +89,6 @@ public:
     }
   }
 
-  virtual input_source* find_device(const char* name);
-  virtual enum entry_type entry_type(const char* name);
 
   void init_profile();
 
