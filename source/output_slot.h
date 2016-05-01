@@ -6,9 +6,11 @@
 #include <iostream>
 #include <string>
 #include <map>
+#include <memory>
 
 #define OPTION_ACCEPTED 0
 
+class input_source;
 
 class output_slot {
 public:
@@ -20,7 +22,9 @@ public:
   virtual void take_event(struct input_event in) {
   }
 
-  virtual bool accepting() {return true;};
+  virtual bool accept_device(std::shared_ptr<input_source> dev);
+  virtual bool add_device(std::shared_ptr<input_source> dev);
+  virtual bool remove_device(input_source* dev);
 
   void update_option(std::string option, std::string value) {
     if (options.find(option) == options.end()) return;
@@ -32,6 +36,8 @@ public:
   std::map<std::string, std::string> options;
 protected:
   int uinput_fd = -1;
+  std::vector<std::weak_ptr<input_source>> devices;
+  std::mutex lock;
 
   virtual int process_option(std::string name, std::string value) {
     return -1;
@@ -53,7 +59,7 @@ public:
   bool analog_triggers = false;
   virtual_gamepad(std::string name, std::string descr, virtpad_settings settings, uinput* ui);
   virtual void take_event(struct input_event in);
-  virtual bool accepting();
+  virtual bool accept_device(std::shared_ptr<input_source> dev);
 protected:
   virtual int process_option(std::string name, std::string value);
 

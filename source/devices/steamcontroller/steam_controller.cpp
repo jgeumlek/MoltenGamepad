@@ -51,7 +51,7 @@ int lookup_steamcont_event(const char* evname) {
   return -1;
 }
 
-steam_controller::steam_controller(scraw::controller* sc, slot_manager* slot_man, device_manager* manager) : sc(sc), input_source(slot_man, manager, input_source::GAMEPAD) {
+steam_controller::steam_controller(scraw::controller* sc, slot_manager* slot_man, device_manager* manager) : sc(sc), input_source(slot_man, manager, "gamepad") {
   for (int i = 0; i < steamcont_event_max; i++) {
     register_event(steamcont_events[i]);
   }

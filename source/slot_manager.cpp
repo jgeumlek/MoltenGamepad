@@ -26,23 +26,18 @@ slot_manager::~slot_manager() {
 }
 
 void slot_manager::request_slot(input_source* dev) {
-  if (dev->getType() == input_source::KEYBOARD) {
-    lock.lock();
+  std::lock_guard<std::mutex> guard(lock);
+  if (dev->device_type == "keyboard") {
     move_device(dev,keyboard);
-    lock.unlock();
     return;
   }
-  lock.lock();
   for (int i = 0; i < slots.size(); i++) {
-    if (slots[i]->accepting()) {
-      move_device(dev,slots[i]);
-      lock.unlock();
+    if (slots[i]->accept_device(dev->shared_from_this())) {
+      move_device(dev, slots[i]);
       return;
     }
   }
   move_device(dev,dummyslot);
-
-  lock.unlock();
 }
 
 void slot_manager::move_to_slot(input_source* dev, output_slot* target) {
@@ -56,10 +51,10 @@ void slot_manager::move_device(input_source* dev, output_slot* target) {
   if (!dev) return;
   if (dev->out_dev == target) return;
   if (dev->out_dev) {
-    remove_from(dev->out_dev);
+    dev->out_dev->remove_device(dev);
   }
   if (target) {
-    target->pad_count += 1;
+    target->add_device(dev->shared_from_this());
   }
   dev->set_slot(target);
   if (target) {
@@ -69,17 +64,11 @@ void slot_manager::move_device(input_source* dev, output_slot* target) {
   }
 }
 
-void slot_manager::remove_from(output_slot* slot) {
-  //private, should only be called with lock acquired
-  slot->pad_count -= 1;
-
-}
 
 void slot_manager::remove(input_source* dev) {
+  std::lock_guard<std::mutex> guard(lock);
   if (!dev || !dev->out_dev) return;
-  lock.lock();
-  remove_from(dev->out_dev);
-  lock.unlock();
+  dev->out_dev->remove_device(dev);
 }
 
 

@@ -58,12 +58,12 @@ struct adv_entry {
   advanced_event_translator* trans;
 };
 
-class input_source {
+class input_source : public std::enable_shared_from_this<input_source> {
 public:
-  enum devtype { GAMEPAD, KEYBOARD, SPECIAL, UNKNOWN};
-  input_source(slot_manager* slot_man, device_manager* manager, devtype type);
+  input_source(slot_manager* slot_man, device_manager* manager, std::string type);
   virtual ~input_source();
   std::string name = "unnamed";
+  std::string device_type = "gamepad";
   virtual int set_player(int player_num) {
   }
   virtual void list_events(cat_list& list) {
@@ -92,16 +92,6 @@ public:
   void force_value(int id, long long value);
   void send_value(int id, long long value);
   std::string get_alias(std::string event_name);
-  const devtype getType() {return type;};
-  static std::string type_name(devtype type) {
-    if (type == GAMEPAD)
-      return "gamepad";
-    if (type == KEYBOARD)
-      return "keyboard";
-    if (type == SPECIAL)
-      return "special";
-    return "unknown";
-  }
   std::shared_ptr<profile> get_profile() { return devprofile; };
 
   output_slot* out_dev = nullptr;
@@ -131,7 +121,6 @@ protected:
   virtual int process_option(const char* opname, const char* value) {
     return 0;
   };
-  devtype type = UNKNOWN;
   std::shared_ptr<profile> devprofile = std::make_shared<profile>();
 };
 

@@ -1,8 +1,36 @@
 #include "output_slot.h"
 #include "uinput.h"
+#include "devices/device.h"
 
 output_slot::~output_slot() {
   if (uinput_fd >= 0) uinput_destroy(uinput_fd);
+}
+
+bool output_slot::remove_device(input_source* dev) {
+  std::lock_guard<std::mutex> guard(lock);
+  for (auto it = devices.begin(); it != devices.end(); it++) {
+    auto ptr = it->lock();
+    while (!ptr) {
+      it = devices.erase(it);
+      if (it == devices.end()) return false;
+      ptr = it->lock();
+    }
+    if (ptr.get() == dev) {
+      devices.erase(it);
+      return true;
+    }
+  }
+  return false;
+}
+
+bool output_slot::accept_device(std::shared_ptr<input_source> dev) {
+  return true;
+}
+
+bool output_slot::add_device(std::shared_ptr<input_source> dev) {
+  std::lock_guard<std::mutex> guard(lock);
+  devices.push_back(dev);
+  return true;
 }
 
 static std::string boolstrings[2] = {"false", "true"};
@@ -66,12 +94,22 @@ void virtual_gamepad::take_event(struct input_event in) {
   write(uinput_fd, &in, sizeof(in));
 };
 
-bool virtual_gamepad::accepting() {
+bool virtual_gamepad::accept_device(std::shared_ptr<input_source> dev) {
+  std::lock_guard<std::mutex> guard(lock);
   if (acceptance == NONE)
     return false;
-  if (acceptance == GREEDY)
+  if (acceptance == GREEDY) {
     return true;
-  return (pad_count == 0);
+  }
+  //SINGULAR / default
+  //Accept unless we already have a device of this type.
+  for (auto it = devices.begin(); it != devices.end(); it++) {
+    auto ptr = it->lock();
+    if (ptr && ptr->device_type == dev->device_type) {
+      return false;
+    }
+  }
+  return true;
 }
 
 void virtual_gamepad::set_face_map(std::string map) {

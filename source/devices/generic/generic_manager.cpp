@@ -23,9 +23,9 @@ generic_manager::generic_manager(moltengamepad* mg, generic_driver_info& descr) 
     mapprofile->set_alias(alias.first,alias.second);
   }
 
-  descr.split_types.resize(split,input_source::GAMEPAD);
+  descr.split_types.resize(split,"gamepad");
   for (auto type : descr.split_types) {
-    if (type == input_source::GAMEPAD) {
+    if (type == "gamepad") {
       mg->gamepad->copy_into(mapprofile, true);
       break;
     }

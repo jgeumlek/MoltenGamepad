@@ -36,7 +36,7 @@ struct generic_driver_info {
   bool flatten = false;
   std::vector<std::pair<std::string,std::string>> aliases;
   int split = 1;
-  std::vector<input_source::devtype> split_types;
+  std::vector<std::string> split_types;
 };
 
 int generic_config_loop(moltengamepad* mg, std::istream& in);
@@ -56,7 +56,7 @@ public:
   std::map<evcode, decodedevent> eventcodes;
   struct udev_device* node = nullptr;
 
-  generic_device(std::vector<gen_source_event>& events, int fd, bool watch, slot_manager* slot_man, device_manager* manager, input_source::devtype type);
+  generic_device(std::vector<gen_source_event>& events, int fd, bool watch, slot_manager* slot_man, device_manager* manager, std::string type);
   ~generic_device();
 
   virtual int set_player(int player_num);
