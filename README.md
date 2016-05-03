@@ -94,7 +94,7 @@ The command FIFO is placed at `$XDG_RUNTIME_DIR/moltengamepad` by default.
 
 * Changing input mappings does not clear out previous values, potentially leading to stuck inputs.
 * Multiple inputs mapped to the same output event clobber each other. Desired behavior uncertain.
-* Framework needs some clean up before it can truely be called "extendable".
+* Framework needs some clean up before it can truly be called "extendable".
 * Software may attempt to read both the virtual and original devices, leading to duplicated events.
 * No rumble support.
 * Will likely add some amount of input latency, though it hasn't been measured beyond playtests.
