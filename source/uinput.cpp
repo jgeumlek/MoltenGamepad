@@ -142,7 +142,7 @@ int uinput::make_keyboard(const uinput_ids& ids) {
   for (i = KEY_ESC; i < BTN_MISC; i++) {
     ioctl(fd, UI_SET_KEYBIT, i);
   }
-  for (i = KEY_OK; i < KEY_MAX; i++) {
+  for (i = KEY_OK; i < KEY_KBDINPUTASSIST_CANCEL; i++) {
     ioctl(fd, UI_SET_KEYBIT, i);
   }
 
