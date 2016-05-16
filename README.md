@@ -64,7 +64,7 @@ You might need to use `--uinput-path` to tell MoltenGamepad where the uinput dev
 
 When started, MoltenGamepad will create its virtual outputs, wait for input sources it recognizes, and will assign them to a slot upon their first key press.
 
-WARNING: Out of the box, MoltenGamepad will only have the included wiimote driver. Unless you are using wiimotes, you'll need to create some config files describing a generic driver for your device before MoltenGamepad will do anything useful. (See `documentation/gendev.md` for details.)
+WARNING: Out of the box, MoltenGamepad will only have the included wiimote driver. Unless you are using wiimotes, you'll need to create some config files describing a generic driver for your device before MoltenGamepad will do anything useful. (See `documentation/gendev.md` for details.) Community contributed configuration files can be found in the [MG-Files repo](https://github.com/jgeumlek/MG-Files).
 
 MoltenGamepad will also listen on stdin for user commands, such as changing a mapping or moving an input source to a different virtual output.
 
