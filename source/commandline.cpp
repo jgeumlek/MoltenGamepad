@@ -26,6 +26,7 @@ int do_clear(moltengamepad* mg, std::vector<token>& command);
 int do_command(moltengamepad* mg, std::vector<token>& command) {
   if (command.empty()) return 0;
   if (command.front().type == TK_ENDL) return 0;
+  if (command.back().type == TK_ENDL) command.pop_back();
   if (command.front().value == "print") {
     do_print(mg, command);
     return 0;
