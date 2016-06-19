@@ -10,5 +10,5 @@ const event_listing rel_list[] = {
   {REL_DIAL, "rel_dial", ""},
   {REL_WHEEL, "rel_wheel", ""},
   {REL_MISC, "rel_misc", ""},
-  { -1, nullptr, nullptr},
+  {-1, nullptr, nullptr},
 };

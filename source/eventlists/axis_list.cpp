@@ -41,5 +41,5 @@ const event_listing axis_list[] = {
   {ABS_MT_DISTANCE, "abs_mt_distance", ""},
   {ABS_MT_TOOL_X, "abs_mt_tool_x", ""},
   {ABS_MT_TOOL_Y, "abs_mt_tool_y", ""},
-  { -1, nullptr, nullptr},
+  {-1, nullptr, nullptr},
 };
