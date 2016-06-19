@@ -89,10 +89,11 @@ class debug_device : public output_slot {
 public:
   debug_device(std::string name, std::string descr) : output_slot(name, descr) {};
   virtual void take_event(struct input_event in) {
-    const char* event_name;
+    const char* event_name = nullptr;
     if (in.type == EV_KEY) event_name = get_key_name(in.code);
     if (in.type == EV_ABS) event_name = get_axis_name(in.code);
     if (in.type == EV_REL) event_name = get_rel_name(in.code);
+    if (in.type == EV_SYN) return; //Don't print anything, just a SYN_REPORT.
     if (!event_name) event_name = "???";
     std::cout << name << ": " << in.code << " " << in.value << "(" << event_name << ")" << std::endl;
   };
