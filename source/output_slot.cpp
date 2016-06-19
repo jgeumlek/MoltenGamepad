@@ -33,6 +33,25 @@ bool output_slot::add_device(std::shared_ptr<input_source> dev) {
   return true;
 }
 
+void output_slot::clear_outputs() {
+  //Could be optimized to only send events relevant to a device.
+  //This would require devices to keep lists of their relevant events.
+  struct input_event out_ev;
+  memset(&out_ev, 0, sizeof(out_ev));
+  out_ev.type = EV_KEY;
+  out_ev.value = 0;
+  for (out_ev.code = 0; out_ev.code < KEY_MAX; out_ev.code++)
+    take_event(out_ev);
+
+  out_ev.type = EV_ABS;
+  for (out_ev.code = 0; out_ev.code < ABS_MAX; out_ev.code++)
+    take_event(out_ev);
+
+  out_ev.type = EV_REL;
+  for (out_ev.code = 0; out_ev.code < REL_MAX; out_ev.code++)
+    take_event(out_ev);
+}
+
 static std::string boolstrings[2] = {"false", "true"};
 virtual_gamepad::virtual_gamepad(std::string name, std::string descr, virtpad_settings settings, uinput* ui) : output_slot(name, descr) {
   this->dpad_as_hat = settings.dpad_as_hat;

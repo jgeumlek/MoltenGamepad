@@ -32,6 +32,8 @@ public:
       options[option] = value;
   }
 
+  virtual void clear_outputs();
+
   int pad_count = 0;
   std::map<std::string, std::string> options;
 protected:
@@ -87,9 +89,12 @@ class debug_device : public output_slot {
 public:
   debug_device(std::string name, std::string descr) : output_slot(name, descr) {};
   virtual void take_event(struct input_event in) {
-    if (in.type == EV_KEY) std::cout << name << ": " << in.code << " " << in.value << "(" << get_key_name(in.code) << ")" << std::endl;
-    if (in.type == EV_ABS) std::cout << name << ": " << in.code << " " << in.value << "(" << get_axis_name(in.code) << ")" << std::endl;
-    if (in.type == EV_REL) std::cout << name << ": " << in.code << " " << in.value << "(" << get_rel_name(in.code) << ")" << std::endl;
+    const char* event_name;
+    if (in.type == EV_KEY) event_name = get_key_name(in.code);
+    if (in.type == EV_ABS) event_name = get_axis_name(in.code);
+    if (in.type == EV_REL) event_name = get_rel_name(in.code);
+    if (!event_name) event_name = "???";
+    std::cout << name << ": " << in.code << " " << in.value << "(" << event_name << ")" << std::endl;
   };
 };
 
