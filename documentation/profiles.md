@@ -120,7 +120,7 @@ The +/- represents whether the button should output in the positive or negative 
 
     wiimote.cc_left_x = left,right
 
-The first output button is pressed when the axis gets sufficiently negative. The second output button is pressed when the axis gets sufficently positive. When the axis is not at either extreme, both buttons are released.
+The first output button is pressed when the axis gets sufficiently negative. The second output button is pressed when the axis gets sufficiently positive. When the axis is not at either extreme, both buttons are released.
 
 ##The Gamepad profile
 

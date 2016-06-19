@@ -64,7 +64,7 @@ You might need to use `--uinput-path` to tell MoltenGamepad where the uinput dev
 
 When started, MoltenGamepad will create its virtual outputs, wait for input sources it recognizes, and will assign them to a slot upon their first key press.
 
-WARNING: Out of the box, MoltenGamepad will only have the included wiimote driver. Unless you are using wiimotes, you'll need to create some config files describing a generic driver for your device before MoltenGamepad will do anything useful. (See `documentation/gendev.md` for details.)
+WARNING: Out of the box, MoltenGamepad will only have the included wiimote driver. Unless you are using wiimotes, you'll need to create some config files describing a generic driver for your device before MoltenGamepad will do anything useful. (See `documentation/gendev.md` for details.) Community contributed configuration files can be found in the [MG-Files repo](https://github.com/jgeumlek/MG-Files).
 
 MoltenGamepad will also listen on stdin for user commands, such as changing a mapping or moving an input source to a different virtual output.
 
@@ -94,7 +94,7 @@ The command FIFO is placed at `$XDG_RUNTIME_DIR/moltengamepad` by default.
 
 * Changing input mappings does not clear out previous values, potentially leading to stuck inputs.
 * Multiple inputs mapped to the same output event clobber each other. Desired behavior uncertain.
-* Framework needs some clean up before it can truely be called "extendable".
+* Framework needs some clean up before it can truly be called "extendable".
 * Software may attempt to read both the virtual and original devices, leading to duplicated events.
 * No rumble support.
 * Will likely add some amount of input latency, though it hasn't been measured beyond playtests.
