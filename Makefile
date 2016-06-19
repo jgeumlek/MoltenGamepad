@@ -27,7 +27,8 @@ source/%.o : source/%.cpp $(DEPDIR)/%.d
 $(DEPDIR)/%.d: ;
 .PRECIOUS: $(DEPDIR)/%.d
 
--include $(patsubst %,$(DEPDIR)/%.d,$(basename $(SRCS)))
+.SECONDEXPANSION:
+-include $(patsubst %,.d/%.d,$(basename $(SRCS)))
 
 
 all : moltengamepad
