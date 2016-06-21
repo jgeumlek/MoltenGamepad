@@ -27,7 +27,8 @@ POSTCOMPILE = mv -f $(DEPDIR)/$*.Td $(DEPDIR)/$*.d
 .SECONDEXPANSION:
 %.o : %.cpp
 source/%.o : source/%.cpp $(DEPDIR)/%.d
-	$(COMPILE.cpp) $(OUTPUT_OPTION) $<
+	@echo "compiling $<..."
+	@$(COMPILE.cpp) $(OUTPUT_OPTION) $<
 	$(POSTCOMPILE)
 
 $(DEPDIR)/%.d: ;
