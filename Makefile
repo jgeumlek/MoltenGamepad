@@ -1,3 +1,13 @@
+all : moltengamepad
+
+LDLIBS=-ludev -lpthread
+CPPFLAGS+=-std=c++14
+
+SRCS=$(shell echo source/*.cpp source/*/*.cpp source/*/*/*.cpp)
+OBJS=$(subst .cpp,.o,$(SRCS))
+
+#Borrowed magic to handle using gcc to generate build dependencies.
+
 DEPDIR := .d/source
 $(shell mkdir -p $(DEPDIR) >/dev/null)
 $(shell find source -type d -exec mkdir -p .d/{} \;)
@@ -6,11 +16,7 @@ DEPFLAGS = -MT $@ -MMD -MP -MF $(DEPDIR)/$*.Td
 COMPILE.c = $(CC) $(DEPFLAGS) $(CFLAGS) $(CPPFLAGS) $(TARGET_ARCH) -c
 COMPILE.cpp = $(CXX) $(DEPFLAGS) $(CXXFLAGS) $(CPPFLAGS) $(TARGET_ARCH) -c
 POSTCOMPILE = mv -f $(DEPDIR)/$*.Td $(DEPDIR)/$*.d
-LDLIBS =-ludev -lpthread
-SRCS=$(shell echo source/*.cpp source/*/*.cpp source/*/*/*.cpp)
-OBJS=$(subst .cpp,.o,$(SRCS))
 
-CPPFLAGS+=-std=c++14
 
 .SECONDEXPANSION:
 %.o : %.c
@@ -31,7 +37,6 @@ $(DEPDIR)/%.d: ;
 -include $(patsubst %,.d/%.d,$(basename $(SRCS)))
 
 
-all : moltengamepad
 
 moltengamepad : $(OBJS)
 	$(CXX) $(LDFLAGS) -o moltengamepad $(OBJS) $(LDLIBS)
