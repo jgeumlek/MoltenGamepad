@@ -1,6 +1,7 @@
 
 #include "parser.h"
-#include "event_change.h"
+#include "event_translators/event_change.h"
+#include "event_translators/translators.h"
 
 /*Want a modified INI syntax.
  * Three main line formats.

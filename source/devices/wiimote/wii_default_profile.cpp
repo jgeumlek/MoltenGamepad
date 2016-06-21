@@ -1,5 +1,6 @@
 #include "wiimote.h"
 #include "../../profile.h"
+#include "../../event_translators/translators.h"
 
 void wiimote_manager::init_profile() {
   //Init some event translators

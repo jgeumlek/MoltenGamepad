@@ -1,5 +1,6 @@
 #ifdef BUILD_STEAM_CONTROLLER_DRIVER
 #include "steam_controller.h"
+#include "../../event_translators/translators.h"
 
 steam_controller_manager::steam_controller_manager(moltengamepad* mg) : device_manager(mg,"steamcontroller"), sc_context(std::bind(&steam_controller_manager::on_controller_gained, this, std::placeholders::_1), std::bind(&steam_controller_manager::on_controller_lost, this, std::placeholders::_1)) {
 

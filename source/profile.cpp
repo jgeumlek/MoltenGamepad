@@ -1,5 +1,6 @@
 #include "profile.h"
-#include "event_change.h"
+#include "event_translators/event_change.h"
+#include "event_translators/translators.h"
 #include "devices/device.h"
 profile::profile() {
 }

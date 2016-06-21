@@ -7,7 +7,7 @@
 #include <thread>
 #include <map>
 #include <mutex>
-#include "../event_change.h"
+#include "../event_translators/event_change.h"
 #include "../moltengamepad.h"
 #include "../profile.h"
 #include "../messages.h"
