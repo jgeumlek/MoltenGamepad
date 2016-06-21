@@ -18,11 +18,11 @@ In order to create virtual devices, MoltenGamepad requires write access to `uinp
 
 In order to read events from an event device, MoltenGamepad requires read access to the event device. Devices resembling a joystick/game pad are automatically tagged, and this tag is later used to ensure the current active user has access to these devices. Other devices, such as mice, keyboards, or Wii remotes (since they do not resemble game pads as far as the kernel knows), will not have the appropriate read permissions.
 
-Tagging a device as a joystick when it is not is not recommended, as some software might search for these tags and get confused.
+It is not recommended to forcefully tag a device as a joystick when it is not, as some software might search for these tags and get confused.
 
 Below is an example udev rule that makes all Wii devices world-readable.
 
-    DRIVERS=="wiimote", MODE="666"
+    DRIVERS=="wiimote", MODE="0666"
 
 # Advanced Requirements
 
@@ -30,19 +30,30 @@ Below is an example udev rule that makes all Wii devices world-readable.
 
 Should MG ever support rumble, write permissions will be needed on the event devices. (and read permission on uninput)
 
-## Allow MoltenGamepad to change permissions
+## Allow MoltenGamepad to change permissions (Hide the original device)
 
-This requires MoltenGamepad to be the owner of the device node. The following rule does this for all joystick-like devices, and the above wiimote rule can be updated with its own `OWNER=` clause.
+The `change_permissions` feature of MoltenGamepad is designed to achieve the following:
 
-    SUBSYSTEM=="input", ENV{ID_INPUT_JOYSTICK}=="?*", OWNER="<username>", MODE="660"
+1. allow MoltenGamepad to read the event device
+2. prevent all other programs from reading this event device
+
+Accomplishing this can be done by setting up MoltenGamepad as a separate user with unique privileges to read these devices, but this is cumbersome both in setting up this new user and removing the existing uaccess granting permission to the current user.
+
+As a slightly simpler method, the `change_permissions` feature removes all file permissions after opening the device, thereby preventing all other software from opening the original device. This requires MoltenGamepad to be the owner of the device node. The following rule does this for all joystick-like devices, and the above wiimote rule can be updated with its own `OWNER=` clause.
+
+    SUBSYSTEM=="input", ENV{ID_INPUT_JOYSTICK}=="?*", OWNER="<username>", MODE="0660"
 
 Note the need to specify a user. If you are the sole user on your computer, you can just set this to your user account. If you have multiple users, this may require a specific moltengamepad user to be created (which will need access to its own configuration files)
 
-Why would one want MoltenGamepad to have owner rights? It allows for the device to have its permissions changed. This allows MoltenGamepad to open the device, and then remove all permissions, preventing other applications from opening this device. This can prevent software from seeing both the original device and the translated virtual device. Software that already does hotplugging might be able to open the original device before MoltenGamepad gets a chance to change the permissions.
+Why would one want MoltenGamepad to have owner rights? It allows for the device to have its permissions changed. This allows MoltenGamepad to open the device, and then remove all permissions, preventing other applications from opening this device. This can prevent software from seeing both the original device. Software that already does hotplugging might be able to open the original device before MoltenGamepad gets a chance to change the permissions.
 
 ### Aside: uaccess
 
-Many distros have game pads owned by root, yet user software needs to read them. The devices resembling joysticks get tagged with uaccess, which later creates file access controls such that the current user (the one logged into the display server) inherits all permissions of the owner of the device. This means only the active seated user can read these game pads. This is pretty slick, but gets in our way. MoltenGamepad needs read permissions to read the device, but the owner can't have read permissions else uaccess will pass this permission along.
+Most are familiar with file permissions where read/write/execute permission is specified separately for users who own the file, users in the file's group, and all other users. File access control lists further refine this, allowing more complicated ways of granting permissions to specific users.
+
+Many distros want input devices to be owned by root, and the display server is trusted to handle reading mice and keyboards. But what about gamepads? They are owned by root, but games wish to read them without super-user privileges. The uaccess tag uses file access control lists to grant permissions to the current "active" user (the one logged into the display server). This means a user physically at the machine can run games and can read these devices, but other users logged in remotely cannot. Pretty reasonable.
+
+
 
 ## LEDs and sysfs attributes
 

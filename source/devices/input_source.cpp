@@ -263,7 +263,7 @@ void input_source::handle_internal_message(input_internal_msg &msg) {
     return;
   }
   if (msg.type == input_internal_msg::IN_TRANS_MSG) {
-    //Is it a event_translator message?
+    //Is it an event_translator message?
     if (msg.id < 0) return;
 
     //Assumption: Every registered event must have an
@@ -275,7 +275,7 @@ void input_source::handle_internal_message(input_internal_msg &msg) {
     *(trans) = msg.trans;
   }
   if (msg.type == input_internal_msg::IN_EVENT_MSG) {
-    //Is it a event_translator message?
+    //Is it an event injection message?
 
     if (msg.id < 0) return;
 

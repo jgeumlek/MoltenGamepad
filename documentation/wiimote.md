@@ -79,3 +79,5 @@ Instead of the "modes" of WiimoteGlue, MoltenGamepad has the slightly less flexi
 A Wii U Pro controller will use the "cc_" events like a classic controller.
 
 Connecting a wiimote is done outside of MoltenGamepad.
+
+A wiimote, if initially paired/connected/trusted in quick succession, can be set to automatically connect to one's PC whenever a button is pressed.

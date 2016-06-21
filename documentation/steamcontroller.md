@@ -8,6 +8,8 @@ Steam and MoltenGamepad cannot both be in control of the device. Whichever one c
 
 Hot plug detection and wired vs. wireless support are not fully understood by this author, likely as a result of not fully understanding the scraw library.
 
+The `scraw_info` utility is useful here. MoltenGamepad can see the device if and only if `scraw_info` can see the device.
+
 As of now, the built in keyboard / mouse emulation (the so-called "lizard" mode) is not supported. The gyroscope motion controls are also not yet supported.
 
 The default mappings are subject to change.

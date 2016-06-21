@@ -14,7 +14,9 @@ Possible use cases include:
 * Handling combined event devices, allowing a single input device to appear as multiple input sources.
 * Empowering unorthodox input solutions and behaviors, such as for an art installation.
 
-For example, perhaps you have a Wii remote and you want to play some games. Unfortunately, the games expect to see controllers that look like an XBox 360 controller, not the multitude of separate event devices created by the Wii remote driver in the linux kernel. MoltenGamepad can translate that Wii remote's events, making it work. By using a special MoltenGamepad driver, the translation can better utilize the wiimote features, such as extensions.
+For example, perhaps you have a Wii remote and you want to play some games. Unfortunately, the games expect to see controllers that look like an XBox 360 controller, not the multitude of separate event devices created by the Wii remote driver in the linux kernel. MoltenGamepad can translate that Wii remote's events and present a virtual controller to the games. 
+
+Specialized drivers can be made for certain input devices enabling smarter features than just plain event translation. For example, the included wiimote driver handles extensions being inserted or removed, and can change event mappings dependent on the current extension.
 
 
 ##Features
@@ -25,7 +27,7 @@ For example, perhaps you have a Wii remote and you want to play some games. Unfo
 * Flexible generic device driver for translating most input devices, with very easy configuration.
 * All configuration files are designed to be human-readable and editable.
 * Easy loading and saving of event mapping profiles.
-* Profiles are changeable at run time, of course.
+* Profiles can be changed at run time, of course.
 * Supports a command FIFO for controlling a running instance of MoltenGamepad via scripting.
 
 MoltenGamepad targets a set-it-and-forget-it daemon-like usage pattern,  where devices can connect or disconnect freely. Its main purpose is letting a user "standardize" their software to expect just one type of controller, and then automagically transform connected input devices to match that standardized abstraction. 
@@ -34,15 +36,15 @@ MoltenGamepad targets a set-it-and-forget-it daemon-like usage pattern,  where d
 
     make
 
-If you get undefined KEY_* errors, you'll need to remove those lines from the eventlists. (Sorry, no script to generate these just yet)
+If you get undefined KEY_* errors, you'll need to remove those lines from the eventlists. There is a script `source/eventlists/generate_key_codes` designed to build these eventlists, but it has not been extensively tested. 
 
-It requires udev and uinput.
+The only linked libraries under this default target are libudev and libpthread.
 
 If you also have the [scraw](https://gitlab.com/dennis-hamester/scraw) and [scrawpp](https://gitlab.com/dennis-hamester/scrawpp) libraries installed, there is some steam controller support available, but it is not included in the default make target.
 
     make steam
     
-This make target will build and include the steam controller support.
+This make target will build and include the steam controller support. When changing between building with or without this support, a `make clean` is recommended.
 
 ##Running
 
