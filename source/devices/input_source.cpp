@@ -99,16 +99,10 @@ void input_source::list_options(std::vector<source_option>& list) {
   }
 }
 
-struct pass_trans {
-  int id;
-  event_translator* trans;
-  adv_entry adv;
-};
-
 
 
 void input_source::update_advanced(const std::vector<std::string>& evnames, advanced_event_translator* trans) {
-  struct pass_trans msg;
+  struct input_internal_msg msg;
   memset(&msg, 0, sizeof(msg));
 
   msg.adv.fields = new std::vector<std::string>();
@@ -149,7 +143,7 @@ void input_source::update_advanced(const std::vector<std::string>& evnames, adva
 void input_source::set_trans(int id, event_translator* trans) {
   if (id < 0 || id >= events.size()) return;
 
-  struct pass_trans msg;
+  struct input_internal_msg msg;
   memset(&msg, 0, sizeof(msg));
   msg.id = id;
   msg.trans = trans;
@@ -204,45 +198,57 @@ void input_source::thread_loop() {
       break;
     }
     if (events[0].data.ptr == this) {
-      struct pass_trans msg;
+      struct input_internal_msg msg;
       int ret = 1;
       ret = read(internalpipe, &msg, sizeof(msg));
       if (ret == sizeof(msg)) {
-        if (msg.adv.fields && !msg.adv.fields->empty()) {
-          auto its = msg.adv.fields->begin();
-          std::string adv_name = *its;
-          its++;
-          for (; its != msg.adv.fields->end(); its++) {
-            adv_name += "," + (*its);
-          }
-
-
-          auto it = adv_trans.find(adv_name);
-          if (it != adv_trans.end()) {
-            delete it->second.fields;
-            delete it->second.trans;
-            adv_trans.erase(it);
-          }
-          if (msg.adv.trans) {
-            msg.adv.trans->attach(this);
-            adv_trans[adv_name] = {msg.adv.fields, msg.adv.trans};
-          } else {
-            delete msg.adv.fields;
-          }
-
-          continue;
-        }
-        if (msg.id < 0) continue;
-
-        event_translator** trans = &(this->events.at(msg.id).trans);
-        delete *trans;
-        *(trans) = msg.trans;
-
+        handle_internal_message(msg);
       }
     } else {
       process(events[0].data.ptr);
     }
   }
+}
+
+void input_source::handle_internal_message(input_internal_msg &msg) {
+  //Is it an advanced_event_translator message?
+  if (msg.adv.fields && !msg.adv.fields->empty()) {
+    //First, build the key to store this under.
+    auto its = msg.adv.fields->begin();
+    std::string adv_name = *its;
+    its++;
+    for (; its != msg.adv.fields->end(); its++) {
+      adv_name += "," + (*its);
+    }
+
+    //If needed, erase the previous adv. trans. with this key.
+    auto it = adv_trans.find(adv_name);
+    if (it != adv_trans.end()) {
+      delete it->second.fields;
+      delete it->second.trans;
+      adv_trans.erase(it);
+    }
+    //Attach and store the new one.
+    if (msg.adv.trans) {
+      msg.adv.trans->attach(this);
+      adv_trans[adv_name] = {msg.adv.fields, msg.adv.trans};
+    } else {
+      delete msg.adv.fields;
+    }
+
+    return;
+  }
+  
+  //Is it a event_translator message?
+  if (msg.id < 0) return;
+
+  //Assumption: Every registered event must have an
+  //an event_translator at all times.
+  //Assumption: This is called only from the unique thread
+  //handling this device's events.
+  event_translator** trans = &(this->events.at(msg.id).trans);
+  delete *trans;
+  *(trans) = msg.trans;
 }
 
 std::string input_source::get_alias(std::string event_name) {

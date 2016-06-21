@@ -58,6 +58,12 @@ struct adv_entry {
   advanced_event_translator* trans;
 };
 
+struct input_internal_msg {
+  int id;
+  event_translator* trans;
+  adv_entry adv;
+};
+
 class input_source : public std::enable_shared_from_this<input_source> {
 public:
   input_source(slot_manager* slot_man, device_manager* manager, std::string type);
@@ -122,6 +128,8 @@ protected:
     return 0;
   };
   std::shared_ptr<profile> devprofile = std::make_shared<profile>();
+  
+  void handle_internal_message(input_internal_msg &msg);
 };
 
 class device_manager {
