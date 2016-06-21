@@ -98,7 +98,7 @@ void virtual_gamepad::take_event(struct input_event in) {
     in.code = face_1234[in.code - BTN_SOUTH];
   }
   if (in.type == EV_ABS && (in.code == ABS_Z || in.code == ABS_RZ)) {
-    long long value = (in.value + 32768) * 255;
+    int64_t value = (in.value + 32768) * 255;
     value /= 2 * 32768l;
     in.value = value;
   }

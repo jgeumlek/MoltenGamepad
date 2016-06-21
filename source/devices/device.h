@@ -12,7 +12,7 @@
 #include "../profile.h"
 #include "../messages.h"
 
-#define ABS_RANGE 32000
+
 
 class event_translator;
 class advanced_event_translator;
@@ -42,7 +42,7 @@ struct source_event {
   const char* name;
   const char* descr;
   enum entry_type type;
-  long long value;
+  int64_t value;
   event_translator* trans;
   std::vector<advanced_event_translator*> attached;
 };
@@ -58,10 +58,14 @@ struct adv_entry {
   advanced_event_translator* trans;
 };
 
+//Struct used internally, not designed for public consumption.
 struct input_internal_msg {
+  enum input_msg_type { IN_TRANS_MSG, IN_ADV_TRANS_MSG, IN_EVENT_MSG } type;
   int id;
   event_translator* trans;
   adv_entry adv;
+  int64_t value;
+  bool skip_adv_trans;
 };
 
 class input_source : public std::enable_shared_from_this<input_source> {
@@ -92,11 +96,12 @@ public:
   const std::vector<source_event>& get_events() {
     return events;
   };
+  
+  void inject_event(int id, int64_t value, bool skip_adv_trans);
 
   void add_listener(int id, advanced_event_translator* trans);
   void remove_listener(int id, advanced_event_translator* trans);
-  void force_value(int id, long long value);
-  void send_value(int id, long long value);
+
   std::string get_alias(std::string event_name);
   std::shared_ptr<profile> get_profile() { return devprofile; };
 
@@ -119,7 +124,8 @@ protected:
   void register_option(source_option ev);
   void watch_file(int fd, void* tag);
   void set_trans(int id, event_translator* trans);
-
+  void force_value(int id, int64_t value);
+  void send_value(int id, int64_t value);
 
   void thread_loop();
 

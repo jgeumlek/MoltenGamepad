@@ -121,7 +121,7 @@ private:
   void process_balance(int fd);
   void compute_ir();
   void compute_balance();
-  void process(int type, int event_id, long long value);
+  void process(int type, int event_id, int64_t value);
 
   void clear_node(struct dev_node* node);
 

@@ -11,9 +11,10 @@
 #define EVENT_AXIS 1
 
 #define RANGE 32768
+#define ABS_RANGE RANGE
 
 struct mg_ev {
-  long long value;
+  int64_t value;
 };
 
 class input_source;
@@ -342,7 +343,7 @@ public:
 
   exclusive_chord(std::vector<std::string> event_names, event_translator* trans) : simple_chord(event_names, trans) {};
 
-  std::thread* thread = nullptr;
+  volatile std::thread* thread = nullptr;
   std::vector<int> chord_hits;
 
   virtual void init(input_source* source);

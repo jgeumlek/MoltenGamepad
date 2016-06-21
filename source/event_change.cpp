@@ -178,7 +178,8 @@ bool simple_chord::claim_event(int id, mg_ev event) {
     output = output && (event_vals[i]);
   }
   if (output != output_cache) {
-    out_trans->process({output}, *out_dev_ptr);
+    output_slot* out_dev = *out_dev_ptr;
+    if (out_dev) out_trans->process({output}, out_dev);
     output_cache = output;
   }
 
@@ -202,38 +203,42 @@ bool exclusive_chord::claim_event(int id, mg_ev event) {
   int index;
   int old_val;
 
-
   for (int i = 0; i < event_ids.size(); i++) {
     if (id == event_ids[i]) {
       index = i;
       old_val = event_vals[i];
       event_vals[i] = event.value;
-      chord_hits[i] = event.value;
+      if (event.value != old_val) chord_hits[i] = event.value;
+      
     }
     output = output && (chord_hits[i]);
   }
 
   //if not thread, start thread.
   if (!thread && event.value && !old_val) {
+
     thread_active = true;
     for (int i = 0; i < event_vals.size(); i++) {
       chord_hits[i] = 0;
     }
     chord_hits[index] = event.value;
     thread = new std::thread(&exclusive_chord::thread_func, this);
-    thread->detach();
   }
 
   if (output && output != output_cache) {
     //chord succeeded. Send event only if thread hasn't timed out.
+
     thread_active = false;
-    if (thread) out_trans->process({output}, *out_dev_ptr);
+    output_slot* out_dev = *out_dev_ptr;
+    if (out_dev && thread) out_trans->process({output}, out_dev);
 
     output_cache = output;
   }
   if (!output && output != output_cache) {
+
     //chord released. clear out everything.
-    out_trans->process({output}, *out_dev_ptr);
+    output_slot* out_dev = *out_dev_ptr;
+    if (out_dev) out_trans->process({output}, out_dev);
     for (int i = 0; i < event_vals.size(); i++) {
       chord_hits[i] = 0;
     }
@@ -241,6 +246,7 @@ bool exclusive_chord::claim_event(int id, mg_ev event) {
   }
   //If key up, let it pass.
   //If we have no thread and our output says we failed, let it pass.
+
   if (!event.value || (!output_cache && !thread_active)) return false; //Pass along key up events.
 
   //We have a thread still going, or we hit a chord claiming this event.
@@ -276,14 +282,17 @@ void exclusive_chord::init(input_source* source) {
 void exclusive_chord::thread_func() {
   //sleep
   usleep(20000);
+  std::thread* this_thread = (std::thread*) thread;
+  this_thread->detach();
   //If we are still active, fire the event.
   if (thread_active) {
     //send out events
-    thread_active = false;
+    
     for (int i = 0; i < event_ids.size(); i++) {
-      if (chord_hits[i]) source->send_value(event_ids[i], event_vals[i]);
+      if (chord_hits[i]) source->inject_event(event_ids[i], event_vals[i], false);
       chord_hits[i] = 0;
     }
+    thread_active = false;
   }
   delete thread;
   thread = nullptr;

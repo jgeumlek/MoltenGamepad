@@ -102,7 +102,7 @@ const source_option wiimote_options[] = {
 };
 
 
-void wiimote::process(int type, int event_id, long long value) {
+void wiimote::process(int type, int event_id, int64_t value) {
 
   send_value(event_id, value);
 
