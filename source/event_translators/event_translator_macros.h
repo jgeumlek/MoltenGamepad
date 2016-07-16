@@ -13,11 +13,13 @@
 #define FILL_DEF_SLOT(X) FILL_DEF(X,MG_SLOT,slot)
 #define FILL_DEF_KEYBOARD(X) FILL_DEF(X,MG_KEYBOARD_SLOT,slot)
 
-//TODO: TRANS_FAIL doesn't clean up any cloned translators.
-//      potential memory leak, but low priority
-//      since the parser should be preventing any of these exceptions.
-#define BEGIN_READ_DEF int __index = 0;
-#define TRANS_FAIL throw -5;
+// BEGIN declares some local variables to allow the other macro magic.
+#define BEGIN_READ_DEF int __index = 0; std::vector<event_translator*> __localclones;
+// On failure we need to destroy our local event_translator clones.
+#define TRANS_FAIL \
+  for (auto trans : __localclones) { delete trans; };\
+  throw -5;
+
 #define READ_DEF(X,TYPE,LOC)  \
   if (fields.size() > __index && fields.at(__index).type == TYPE) { \
     X = fields.at(__index).LOC; \
@@ -29,6 +31,6 @@
 #define READ_AXIS(X) READ_DEF(X,MG_AXIS,axis)
 #define READ_REL(X) READ_DEF(X,MG_REL,rel)
 #define READ_INT(X) READ_DEF(X,MG_INT,integer)
-#define READ_TRANS(X,TYPE) READ_DEF(X,TYPE,trans); X = X->clone();
+#define READ_TRANS(X,TYPE) READ_DEF(X,TYPE,trans); if (!X) { TRANS_FAIL }; X = X->clone(); __localclones.push_back(X);
 #define READ_SLOT(X) READ_DEF(X,MG_SLOT,slot)
 #define READ_KEYBOARD(X) READ_DEF(X,MG_KEYBOARD_SLOT,slot)

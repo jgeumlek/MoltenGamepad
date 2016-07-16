@@ -136,17 +136,27 @@ int uinput::make_keyboard(const uinput_ids& ids) {
 
 
 
-  /*Just set all possible keys that come before BTN_MISC
-   * This should cover all reasonable keyboard keys.*/
+  /*Just set all possible keys up to BTN_TASK
+   * This should cover all reasonable keyboard and mouse keys.*/
   ioctl(fd, UI_SET_EVBIT, EV_KEY);
-  for (i = KEY_ESC; i < BTN_MISC; i++) {
+  for (i = KEY_ESC; i <= BTN_TASK; i++) {
     ioctl(fd, UI_SET_KEYBIT, i);
   }
   for (i = KEY_OK; i < KEY_KBDINPUTASSIST_CANCEL; i++) {
     ioctl(fd, UI_SET_KEYBIT, i);
   }
 
+  /*Set basic mouse events*/
+  static int abs[] = { ABS_X, ABS_Y};
 
+  ioctl(fd, UI_SET_EVBIT, EV_ABS);
+  for (i = 0; i < 2; i++) {
+    ioctl(fd, UI_SET_ABSBIT, abs[i]);
+    uidev.absmin[abs[i]] = -32768;
+    uidev.absmax[abs[i]] = 32767;
+  }
+
+  ioctl(fd, UI_SET_PROPBIT, INPUT_PROP_DIRECT);
 
   write(fd, &uidev, sizeof(uidev));
   if (ioctl(fd, UI_DEV_CREATE) < 0)

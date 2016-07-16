@@ -429,7 +429,11 @@ event_translator* MGparser::parse_trans_expr(enum entry_type intype, complex_exp
 
 
   //still need to build it!
-  trans = generator->second.generate(def.fields);
+  try {
+    trans = generator->second.generate(def.fields);
+  } catch (...) {
+    trans = nullptr;
+  }
   release_def(def);
   return trans;
 }
