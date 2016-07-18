@@ -151,6 +151,7 @@ MGparser::MGparser(moltengamepad* mg) : mg(mg), out("parse") {
   TRANSGEN(btn2axis);
   TRANSGEN(axis2axis);
   TRANSGEN(axis2btns);
+  TRANSGEN(btn2rel);
   RENAME_TRANSGEN(redirect,redirect_trans);
   RENAME_TRANSGEN(key,keyboard_redirect);
   RENAME_TRANSGEN(multi,multitrans);

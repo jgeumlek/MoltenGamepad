@@ -120,7 +120,7 @@ int uinput::make_keyboard(const uinput_ids& ids) {
   int fd;
   int i;
 
-  //TODO: Read from uinput for rumble events?
+
   fd = open(filename, O_WRONLY | O_NONBLOCK);
   if (fd < 0) {
     perror("\nopen uinput");
@@ -157,6 +157,54 @@ int uinput::make_keyboard(const uinput_ids& ids) {
   }
 
   ioctl(fd, UI_SET_PROPBIT, INPUT_PROP_DIRECT);
+
+  write(fd, &uidev, sizeof(uidev));
+  if (ioctl(fd, UI_DEV_CREATE) < 0)
+    perror("uinput device creation");
+
+  lock.lock();
+  virtual_nodes.push_back(uinput_devnode(fd));
+  lock.unlock();
+
+  return fd;
+}
+
+int uinput::make_mouse(const uinput_ids& ids) {
+  struct uinput_user_dev uidev;
+  int fd;
+  int i;
+
+
+  fd = open(filename, O_WRONLY | O_NONBLOCK);
+  if (fd < 0) {
+    perror("\nopen uinput");
+    return -1;
+  }
+  memset(&uidev, 0, sizeof(uidev));
+  snprintf(uidev.name, UINPUT_MAX_NAME_SIZE, ids.device_string.c_str());
+  uidev.id.bustype = BUS_USB;
+  uidev.id.vendor = ids.vendor_id;
+  uidev.id.product = ids.product_id;
+  uidev.id.version = ids.version_id;
+
+
+
+
+  //Set Mouse buttons
+  ioctl(fd, UI_SET_EVBIT, EV_KEY);
+  for (i = BTN_MOUSE; i <= BTN_MIDDLE; i++) {
+    ioctl(fd, UI_SET_KEYBIT, i);
+  }
+
+  /*Set basic mouse events*/
+  static int rel[] = { REL_X, REL_Y};
+
+  ioctl(fd, UI_SET_EVBIT, EV_REL);
+  for (i = 0; i < 2; i++) {
+    ioctl(fd, UI_SET_RELBIT, rel[i]);
+  }
+
+  ioctl(fd, UI_SET_PROPBIT, INPUT_PROP_POINTER);
 
   write(fd, &uidev, sizeof(uidev));
   if (ioctl(fd, UI_DEV_CREATE) < 0)

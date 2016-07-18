@@ -12,6 +12,11 @@ void redirect_trans::process(struct mg_ev ev, output_slot* out) {
 
 }
 
+void redirect_trans::attach(input_source* source) {
+  trans->attach(source);
+
+}
+
 const MGType redirect_trans::fields[] = { MG_TRANS, MG_SLOT, MG_NULL };
 redirect_trans::redirect_trans(std::vector<MGField>& fields) {
   BEGIN_READ_DEF;

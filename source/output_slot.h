@@ -75,13 +75,13 @@ protected:
 
 class virtual_keyboard : public output_slot {
 public:
-  virtual_keyboard(std::string name, std::string descr, uinput_ids u_ids, uinput* ui);
-  virtual void take_event(struct input_event in) {
-    write(uinput_fd, &in, sizeof(in));
-  };
+  virtual_keyboard(std::string name, std::string descr, uinput_ids keyboard_ids, uinput_ids mouse_ids, uinput* ui);
+  virtual void take_event(struct input_event in);
+
 protected:
 
   uinput_ids u_ids;
+  int mouse_fd = -1;
   virtual int process_option(std::string name, std::string value);
 };
 

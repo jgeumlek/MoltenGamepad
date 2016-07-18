@@ -15,6 +15,7 @@ public:
   }
 
   virtual void process(struct mg_ev ev, output_slot* out);
+  virtual void attach(input_source* source);
 
   virtual redirect_trans* clone() {
     return new redirect_trans(trans, redirected);

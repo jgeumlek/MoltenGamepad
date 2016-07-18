@@ -64,8 +64,11 @@ class event_translator {
 public:
   virtual void process(struct mg_ev ev, output_slot* out) {
   }
+  
+  virtual void process_recurring(output_slot* out) const {
+  }
 
-  void write_out(struct input_event ev, output_slot* out) {
+  void write_out(struct input_event ev, output_slot* out) const {
     out->take_event(ev);
   }
 
@@ -75,6 +78,9 @@ public:
   virtual event_translator* clone() {
     return new event_translator(*this);
   }
+  
+  //Called when the device's thread is ready for attaching.
+  virtual void attach(input_source* source) {};
 
   virtual ~event_translator() {};
 

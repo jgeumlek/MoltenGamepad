@@ -6,6 +6,11 @@ void multitrans::process(struct mg_ev ev, output_slot* out) {
     trans->process(ev, out);
 }
 
+void multitrans::attach(input_source* source) {
+  for (auto trans : translist)
+    trans->attach(source);
+}
+
 const MGType multitrans::fields[] = { MG_TRANS, MG_TRANS, MG_NULL };
 multitrans::multitrans(std::vector<MGField>& fields) {
   BEGIN_READ_DEF;

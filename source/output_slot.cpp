@@ -70,15 +70,29 @@ virtual_gamepad::virtual_gamepad(std::string name, std::string descr, virtpad_se
   this->padstyle = settings;
 }
 
-virtual_keyboard::virtual_keyboard(std::string name, std::string descr, uinput_ids u_ids, uinput* ui) : output_slot(name, descr) {
-  uinput_fd = ui->make_keyboard(u_ids);
-  if (uinput_fd < 0) throw - 5;
-  options["device_string"] = u_ids.device_string;
-  options["vendor_id"] = std::to_string(u_ids.vendor_id);
-  options["product_id"] = std::to_string(u_ids.product_id);
-  options["version_id"] = std::to_string(u_ids.version_id);
-  this->u_ids = u_ids;
+virtual_keyboard::virtual_keyboard(std::string name, std::string descr, uinput_ids keyboard_ids, uinput_ids mouse_ids, uinput* ui) : output_slot(name, descr) {
+  uinput_fd = ui->make_keyboard(keyboard_ids);
+  if (uinput_fd < 0) throw -5;
+  options["device_string"] = keyboard_ids.device_string;
+  options["vendor_id"] = std::to_string(keyboard_ids.vendor_id);
+  options["product_id"] = std::to_string(keyboard_ids.product_id);
+  options["version_id"] = std::to_string(keyboard_ids.version_id);
+  
+  mouse_fd = ui->make_mouse(mouse_ids);
+  if (mouse_fd < 0) throw -5;
+  
+  this->u_ids = keyboard_ids;
 }
+
+void virtual_keyboard::take_event(struct input_event in) {
+  //Relative events go to a separate mouse device.
+  //SYN events should go to both!
+  if (in.type == EV_REL || in.type == EV_SYN) {
+    write(mouse_fd, &in, sizeof(in));
+    if (in.type == EV_REL) return;
+  }
+  write(uinput_fd, &in, sizeof(in));
+};
 
 
 

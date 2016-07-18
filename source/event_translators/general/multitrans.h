@@ -13,6 +13,7 @@ public:
       delete trans;
   }
   virtual void process(struct mg_ev ev, output_slot* out);
+  virtual void attach(input_source* source);
 
   virtual multitrans* clone() {
     return new multitrans(translist);

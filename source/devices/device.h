@@ -101,6 +101,9 @@ public:
 
   void add_listener(int id, advanced_event_translator* trans);
   void remove_listener(int id, advanced_event_translator* trans);
+  
+  void add_recurring_event(const event_translator* trans);
+  void remove_recurring_event(const event_translator* trans);
 
   std::string get_alias(std::string event_name);
   std::shared_ptr<profile> get_profile() { return devprofile; };
@@ -114,9 +117,13 @@ protected:
   std::vector<source_event> events;
   std::map<std::string, source_option> options;
   std::map<std::string, adv_entry> adv_trans;
+  std::shared_ptr<profile> devprofile = std::make_shared<profile>();
   std::thread* thread = nullptr;
   volatile bool keep_looping = true;
   device_manager* manager;
+  
+  std::mutex recurring_event_lock;
+  std::vector<const event_translator*> recurring_events;
 
 
 
@@ -133,9 +140,11 @@ protected:
   virtual int process_option(const char* opname, const char* value) {
     return 0;
   };
-  std::shared_ptr<profile> devprofile = std::make_shared<profile>();
+  
   
   void handle_internal_message(input_internal_msg &msg);
+
+  void process_recurring_events();
 };
 
 class device_manager {
