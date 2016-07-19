@@ -62,9 +62,11 @@ struct MGTransDef {
 //A simple event translator. Takes one input event, and translates it. Essentially just a "pipe".
 class event_translator {
 public:
+  //called on a device event, such as a button or axis movement
   virtual void process(struct mg_ev ev, output_slot* out) {
   }
   
+  //called regularly on a tick event; a certain amount of time has elapsed.
   virtual void process_recurring(output_slot* out) const {
   }
 
@@ -81,6 +83,9 @@ public:
   
   //Called when the device's thread is ready for attaching.
   virtual void attach(input_source* source) {};
+  
+  //Do we want the input_source to send recurring "ticks" for processing?
+  virtual bool wants_recurring_events() { return false; };
 
   virtual ~event_translator() {};
 

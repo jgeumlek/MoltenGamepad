@@ -102,8 +102,6 @@ public:
   void add_listener(int id, advanced_event_translator* trans);
   void remove_listener(int id, advanced_event_translator* trans);
   
-  void add_recurring_event(const event_translator* trans);
-  void remove_recurring_event(const event_translator* trans);
 
   std::string get_alias(std::string event_name);
   std::shared_ptr<profile> get_profile() { return devprofile; };
@@ -122,7 +120,6 @@ protected:
   volatile bool keep_looping = true;
   device_manager* manager;
   
-  std::mutex recurring_event_lock;
   std::vector<const event_translator*> recurring_events;
 
 
@@ -143,6 +140,9 @@ protected:
   
   
   void handle_internal_message(input_internal_msg &msg);
+
+  void add_recurring_event(const event_translator* trans);
+  void remove_recurring_event(const event_translator* trans);
 
   void process_recurring_events();
 };

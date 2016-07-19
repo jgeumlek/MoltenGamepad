@@ -270,14 +270,18 @@ void input_source::handle_internal_message(input_internal_msg &msg) {
     //Is it an event_translator message?
     if (msg.id < 0 || !msg.trans) return;
 
-    //Assumption: Every registered event must have an
-    //an event_translator at all times.
+    //Assumption: Every registered event must have a
+    //valid event_translator at all times.
     //Assumption: This is called only from the unique thread
     //handling this device's events.
     event_translator** trans = &(this->events.at(msg.id).trans);
+    remove_recurring_event(*trans);
     delete *trans;
     *(trans) = msg.trans;
     msg.trans->attach(this);
+    if (msg.trans->wants_recurring_events()) {
+      add_recurring_event(msg.trans);
+    }
   }
   if (msg.type == input_internal_msg::IN_EVENT_MSG) {
     //Is it an event injection message?
@@ -293,7 +297,6 @@ void input_source::handle_internal_message(input_internal_msg &msg) {
 }
 
 void input_source::process_recurring_events() {
-  std::lock_guard<std::mutex> guard(recurring_event_lock);
   for (auto trans : recurring_events) {
     if (out_dev) {
       trans->process_recurring(out_dev);
@@ -349,12 +352,10 @@ void input_source::remove_listener(int id, advanced_event_translator* trans) {
 
 
 void input_source::add_recurring_event(const event_translator* trans) {
-  std::lock_guard<std::mutex> guard(recurring_event_lock);
   recurring_events.push_back(trans);
 }
 
 void input_source::remove_recurring_event(const event_translator* trans) {
-  std::lock_guard<std::mutex> guard(recurring_event_lock);
   for (auto it = recurring_events.begin(); it != recurring_events.end(); it++) {
     if (*it == trans) {
       recurring_events.erase(it);

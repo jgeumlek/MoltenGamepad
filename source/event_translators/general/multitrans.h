@@ -13,7 +13,9 @@ public:
       delete trans;
   }
   virtual void process(struct mg_ev ev, output_slot* out);
+  virtual void process_recurring(output_slot* out) const;
   virtual void attach(input_source* source);
+  virtual bool wants_recurring_events();
 
   virtual multitrans* clone() {
     return new multitrans(translist);

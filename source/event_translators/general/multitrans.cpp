@@ -6,9 +6,22 @@ void multitrans::process(struct mg_ev ev, output_slot* out) {
     trans->process(ev, out);
 }
 
+void multitrans::process_recurring(output_slot* out) const {
+  for (auto trans : translist)
+    trans->process_recurring(out);
+}
+
 void multitrans::attach(input_source* source) {
   for (auto trans : translist)
     trans->attach(source);
+}
+
+bool multitrans::wants_recurring_events() {
+  for (auto trans : translist)
+    if (trans->wants_recurring_events())
+      return true;
+
+  return false;
 }
 
 const MGType multitrans::fields[] = { MG_TRANS, MG_TRANS, MG_NULL };

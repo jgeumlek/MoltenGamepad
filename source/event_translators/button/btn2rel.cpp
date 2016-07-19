@@ -1,14 +1,11 @@
 #include "btn2rel.h"
 #include "../event_translator_macros.h"
 
-void btn2rel::attach(input_source* source) {
-  this->source = source;
-  source->add_recurring_event(this);
+bool btn2rel::wants_recurring_events() {
+  return true;
 }
 
-btn2rel::~btn2rel() {
-  if (source) source->remove_recurring_event(this);
-}
+
 
 void btn2rel::process(struct mg_ev ev, output_slot* out) {
   value = ev.value ? speed : 0;
