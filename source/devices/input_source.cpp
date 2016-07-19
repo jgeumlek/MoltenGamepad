@@ -210,8 +210,17 @@ void input_source::thread_loop() {
   struct epoll_event events[1];
   memset(&event, 0, sizeof(event));
 
+  memset(&last_recurring_update,0,sizeof(timespec));
+
   while ((keep_looping)) {
-    int n = epoll_wait(epfd, events, 1, 10);
+    int timeout = -1;
+    if (do_recurring_events) {
+      //try to set epoll_wait to timeout at the next 10ms interval.
+      timeout = 10 - ms_since_last_recurring_update();
+      timeout = timeout < 0 ? 0 : timeout;
+    }
+
+    int n = epoll_wait(epfd, events, 1, timeout);
     if (n < 0 && errno == EINTR) {
       continue;
     }
@@ -219,7 +228,7 @@ void input_source::thread_loop() {
       perror("epoll wait:");
       break;
     }
-    if (n == 0) {
+    if (do_recurring_events && (n == 0 || timeout == 0)) {
       process_recurring_events();
       continue;
     }
@@ -282,6 +291,7 @@ void input_source::handle_internal_message(input_internal_msg &msg) {
     if (msg.trans->wants_recurring_events()) {
       add_recurring_event(msg.trans);
     }
+    do_recurring_events = recurring_events.size() > 0;
   }
   if (msg.type == input_internal_msg::IN_EVENT_MSG) {
     //Is it an event injection message?
@@ -309,6 +319,7 @@ void input_source::process_recurring_events() {
     ev.code = SYN_REPORT;
     out_dev->take_event(ev);
   }
+  clock_gettime(CLOCK_MONOTONIC, &last_recurring_update);
 }
 
 std::string input_source::get_alias(std::string event_name) {
@@ -362,4 +373,12 @@ void input_source::remove_recurring_event(const event_translator* trans) {
       return;
     }
   }
+}
+
+int64_t input_source::ms_since_last_recurring_update() {
+  timespec now;
+  clock_gettime(CLOCK_MONOTONIC, &now);
+  int64_t delta_sec = now.tv_sec - last_recurring_update.tv_sec;
+  int64_t delta_nsec = now.tv_nsec - last_recurring_update.tv_nsec;
+  return delta_sec*1000 + delta_nsec/1000000;
 }

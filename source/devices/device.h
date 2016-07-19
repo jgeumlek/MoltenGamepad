@@ -7,6 +7,7 @@
 #include <thread>
 #include <map>
 #include <mutex>
+#include <time.h>
 #include "../event_translators/event_change.h"
 #include "../moltengamepad.h"
 #include "../profile.h"
@@ -121,7 +122,8 @@ protected:
   device_manager* manager;
   
   std::vector<const event_translator*> recurring_events;
-
+  bool do_recurring_events = false;
+  timespec last_recurring_update;
 
 
   void register_event(source_event ev);
@@ -145,6 +147,7 @@ protected:
   void remove_recurring_event(const event_translator* trans);
 
   void process_recurring_events();
+  int64_t ms_since_last_recurring_update();
 };
 
 class device_manager {
