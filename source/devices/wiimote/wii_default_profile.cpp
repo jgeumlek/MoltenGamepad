@@ -99,6 +99,11 @@ void wiimote_manager::init_profile() {
   mapprofile->set_alias("left_y","cc_left_y");
   mapprofile->set_alias("right_x","cc_right_x");
   mapprofile->set_alias("right_y","cc_right_y");
+
+  const source_option* opt = &wiimote_options[0];
+  for (int i = 0; !opt->name.empty(); opt = &wiimote_options[++i]) {
+    mapprofile->set_option(opt->name, opt->value);
+  }
   
   mg->gamepad->copy_into(mapprofile, true);
 

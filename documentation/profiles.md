@@ -116,11 +116,34 @@ The first two are equivalent. The last one inverts the axis direction.
 
 The +/- represents whether the button should output in the positive or negative direction. When pressed, the button maxes out that axis in that direction. When not released, the button sets that axis to zero.
 
+##Mapping a button to a relative event
+
+Unlike an axis that represents absolute values, relative events express only changes. They are seen from mice, which have no idea where the mouse is, only how fast it is moving.
+
+    wiimote.wm_a = +rel_x
+    wiimote.wm_a = -rel_x
+
+The +/- represents whether the button should output in the positive or negative direction. 
+
+While pressed, a relative event will be generate at a regular rate.
+
+
 ##Mapping an axis to buttons
 
     wiimote.cc_left_x = left,right
 
 The first output button is pressed when the axis gets sufficiently negative. The second output button is pressed when the axis gets sufficiently positive. When the axis is not at either extreme, both buttons are released.
+
+##Mapping an axis to a relative event.
+
+    wiimote.cc_left_x = rel_x
+    wiimote.cc_left_x = +rel_x
+    wiimote.cc_left_x = -rel_x
+
+The first two are equivalent. The last one inverts the direction.
+
+Similar to the button-to-relative mapping, these events are generated at a fixed rate. Unlike the button mapping, an axis can express a range of speeds for smoother control.
+
 
 ##The Gamepad profile
 
@@ -136,7 +159,7 @@ For Wii devices, all such mappings affect only the classic controller control sc
 
 ##Extra Details
 
-MoltenGamepad keeps track of whether a input event is a key/button (0 or 1), or an axis/absolute (range of values). Similarly, MoltenGamepad uses output event names rather than numeric codes to know whether the output is a key or axis. Then an appropriate event translator is chosen to make this match. In general, MoltenGamepad attempts to do "the right thing".
+MoltenGamepad keeps track of whether a input event is a key/button (has only two values: pressed or not), or an axis/absolute (range of values). Similarly, MoltenGamepad uses output event names rather than numeric codes to know whether the output is a key or axis. Then an appropriate event translator is chosen to make this match. In general, MoltenGamepad attempts to do "the right thing".
 
 These event translators can be specified directly.
 
@@ -150,6 +173,8 @@ The following are available:
 * axis2axis(event code, direction) maps an axis to the specified event code, where direction is +1 or -1
 * axis2btns(neg event code, pos event code) maps an axis to the two specified buttons
 * btn2axis(event code, direction) maps a button to the specified event code, where direction is +1 or -1
+* btn2rel(event code, speed) maps a button to a relative event, generating events periodically while held
+* axis2rel(event code, speed) maps an axis to a relative event, generating events periodically
 
 
 ##Saving

@@ -92,6 +92,9 @@ void steam_controller::on_state_change(const scraw_controller_state_t& state) {
   write(statepipe[1], &state, sizeof(state));
 }
 
+//A lot of boiler plate if-statements to check each event one-by-one.
+//So let's make some macros to give clearer semantics.
+
 #define CHECK_BTN(SCRAW_ID,MG_ID) if (!!(buttons & SCRAW_ID) != events[MG_ID].value) send_value(MG_ID,!!(buttons & SCRAW_ID));
 #define CHECK_AXIS(SCRAW_ID,MG_ID) if (state.SCRAW_ID != events[MG_ID].value) send_value(MG_ID,state.SCRAW_ID);
 
@@ -114,7 +117,7 @@ void steam_controller::process(void* tag) {
   int ret = read(statepipe[0],&state,sizeof(state));
   if (ret < sizeof(state))
     return; //abort.
-  //start checking buttons...
+  //start checking events for new values to report...
   auto buttons = state.buttons;
   CHECK_BTN(SCRAW_BTN_A,sc_a);
   CHECK_BTN(SCRAW_BTN_B,sc_b);
