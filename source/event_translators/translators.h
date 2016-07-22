@@ -7,6 +7,8 @@
 
 #include "axis/axis2axis.h"
 #include "axis/axis2btns.h"
+#include "axis/axis2rel.h"
+
 
 #include "general/multitrans.h"
 #include "general/redirect_trans.h"

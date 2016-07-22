@@ -144,14 +144,20 @@ void do_header_line(std::vector<token>& line, std::string& header) {
   }
 }
 
+//Some lazy macros to build some function pointers with associated name strings.
+//TRANSGEN just associates an event_translator with its name.
+//RENAME_TRANSGEN instead supplies a different name for the parser's sake.
+
 #define TRANSGEN(X) trans_gens[#X] = trans_generator<event_translator>(X::fields,[] (std::vector<MGField>& fields) { return new X(fields);});
 #define RENAME_TRANSGEN(name,X) trans_gens[#name] = trans_generator<event_translator>(X::fields,[] (std::vector<MGField>& fields) { return new X(fields);});
+
 MGparser::MGparser(moltengamepad* mg) : mg(mg), out("parse") {
   TRANSGEN(btn2btn);
   TRANSGEN(btn2axis);
   TRANSGEN(axis2axis);
   TRANSGEN(axis2btns);
   TRANSGEN(btn2rel);
+  TRANSGEN(axis2rel);
   RENAME_TRANSGEN(redirect,redirect_trans);
   RENAME_TRANSGEN(key,keyboard_redirect);
   RENAME_TRANSGEN(multi,multitrans);
@@ -459,29 +465,36 @@ event_translator* MGparser::parse_special_trans(enum entry_type intype, complex_
 
   if (expr->ident == "nothing") return new event_translator();
 
-  //Key for a key.
+  //Key to a key.
   if (intype == DEV_KEY && expr->params.size() == 0) {
     int out_button = read_ev_code(expr->ident, OUT_KEY);
     if (out_button >= 0) return new btn2btn(out_button);
   }
 
-  //Axis for an axis or key.
+  //Axis or key to an axis or rel. (Detect +/- directions)
   if ((intype == DEV_AXIS || intype == DEV_KEY) && expr->params.size() == 0) {
-    std::string axisname = expr->ident;
+    std::string outevent = expr->ident;
     int direction = 1;
-    if (axisname.size() > 0) {
-      if (axisname[0] == '+') {
-        axisname.erase(axisname.begin());
+    if (outevent.size() > 0) {
+      if (outevent[0] == '+') {
+        outevent.erase(outevent.begin());
       }
-      if (axisname[0] == '-') {
-        axisname.erase(axisname.begin());
+      if (outevent[0] == '-') {
+        outevent.erase(outevent.begin());
         direction = -1;
       }
-      int out_axis = read_ev_code(axisname, OUT_ABS);
+      //Check for it being an axis
+      int out_axis = read_ev_code(outevent, OUT_ABS);
       if (out_axis >= 0 && intype == DEV_AXIS) return new axis2axis(out_axis, direction);
-      if (out_axis >= 0 && intype == DEV_KEY) return new btn2axis(out_axis, direction);
+      if (out_axis >= 0 && intype == DEV_KEY)  return new btn2axis(out_axis, direction);
+
+      //Check for it being a rel
+      int out_rel = read_ev_code(outevent, OUT_REL);
+      if (out_rel >= 0 && intype == DEV_AXIS) return new axis2rel(out_rel, 10*direction);
+      if (out_rel >= 0 && intype == DEV_KEY)  return new btn2rel(out_rel, 3*direction);
     }
   }
+
 
   //Axis to buttons.
   if ((intype == DEV_AXIS) && expr->ident.empty() && expr->params.size() == 2) {
