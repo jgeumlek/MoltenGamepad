@@ -39,7 +39,7 @@ struct generic_driver_info {
   std::vector<std::string> split_types;
 };
 
-int generic_config_loop(moltengamepad* mg, std::istream& in);
+int generic_config_loop(moltengamepad* mg, std::istream& in, std::string& path);
 
 
 typedef std::pair<int, int> evcode;

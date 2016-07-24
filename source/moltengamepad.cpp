@@ -200,8 +200,7 @@ int moltengamepad::init() {
     file.open(path, std::istream::in);
     //If we can read it, feed it to our gendev parser
     if (!file.fail()) {
-      int ret = generic_config_loop(this, file);
-      if (ret) errors.take_message("generic device config " + path + " failed.");
+      int ret = generic_config_loop(this, file, path);
     }
   }
 
