@@ -263,6 +263,7 @@ moltengamepad::~moltengamepad() {
   }
 
   //remove devices
+  //done first to protect from devices assuming their manager exists.
   devices.clear();
 
   //delete managers
@@ -329,9 +330,10 @@ std::shared_ptr<input_source> moltengamepad::add_device(input_source* source, de
 
 void moltengamepad::remove_device(input_source* source) {
   device_list_lock.lock();
-  plugs.take_message("device " + source->name + " removed.");
+  
   for (int i = 0; i < devices.size(); i++) {
     if (source == devices[i].get()) {
+      plugs.take_message("device " + source->name + " removed.");
       remove_profile(devices[i]->get_profile().get());
       devices.erase(devices.begin() + i);
       i--;

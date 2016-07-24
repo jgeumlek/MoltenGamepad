@@ -79,6 +79,15 @@ struct generic_node {
   mode_t orig_mode;
 };
 
+
+//Class to handle opening/closing/reading files.
+//Because this driver handles splitting and flattening,
+//it gets a bit more complicated.
+//For example, if we want to EVIOCGRAB, 
+//we need to have exactly one open fd for that node
+
+//So here we are:
+//a separate layer that can open the file and mux the events appropriately.
 class generic_file {
 public:
   int epfd = 0;

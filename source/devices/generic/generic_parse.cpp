@@ -158,7 +158,7 @@ int generic_config_loop(moltengamepad* mg, std::istream& in) {
   bool keep_looping = true;
   std::string header = "";
   char* buff = new char [1024];
-  bool failed = false;
+  bool need_to_free_info = true;
   struct generic_driver_info* info = new generic_driver_info;
   while (keep_looping) {
     in.getline(buff, 1024);
@@ -178,13 +178,17 @@ int generic_config_loop(moltengamepad* mg, std::istream& in) {
   }
 
   if (info->events.size() > 0 && !info->name.empty() && !info->devname.empty()) {
-    if (!mg->find_manager(info->name.c_str())) mg->managers.push_back(new generic_manager(mg, *info));
-  } else {
+    if (!mg->find_manager(info->name.c_str()))  {
+      mg->managers.push_back(new generic_manager(mg, *info));
+      need_to_free_info = false;
+    } 
+  } 
+  
+  if (need_to_free_info) {
     delete info;
-    failed = true;
   }
 
   delete[] buff;
-  return -failed;
+  return -need_to_free_info;
 }
 
