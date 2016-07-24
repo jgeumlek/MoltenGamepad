@@ -17,10 +17,11 @@ int do_save(moltengamepad* mg, std::vector<token>& command) {
     std::cout << SAVE_USAGE << std::endl;
     return -1;
   };
-  std::string filename = mg->options.profile_dir + "/" + command.at(3).value;
+  std::string filename = command.at(3).value;
   for (int i = 4; i < command.size(); i++) {
     if (command.at(i).type != TK_ENDL) filename += command.at(i).value;
   }
+  filename = mg->locate(FILE_PROFILE,"") + "/" + filename;
   std::cout << "attempting to save to " << filename << std::endl;
   std::ofstream file;
   file.open(filename, std::ofstream::out);

@@ -3,6 +3,7 @@
 #include <libudev.h>
 #include <vector>
 #include <thread>
+#include <mutex>
 
 
 class device_manager;
@@ -29,6 +30,7 @@ public:
   int read_monitor();
 private:
   void pass_along_device(struct udev_device* new_dev);
+  std::mutex manager_lock;
 };
 
 

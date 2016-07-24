@@ -12,6 +12,7 @@
 #endif
 
 //FUTURE WORK: Make it easier to specify additional virtpad styles.
+
 const virtpad_settings default_padstyle = {
   {"Virtual Gamepad (MoltenGamepad)", 1, 1, 1}, //u_ids
   false, //dpad_as_hat
@@ -26,48 +27,118 @@ const virtpad_settings xpad_padstyle = {
   "SEWN", //facemap_1234
 };
 
-moltengamepad::~moltengamepad() {
 
-  gamepad = nullptr;
 
-  udev.set_managers(nullptr);
-  if (udev.monitor_thread) {
-    udev.stop_thread = true;
-    int signal = 0;
-    write(udev.pipe_fd, &signal, sizeof(signal));
-    udev.monitor_thread->join();
-    delete udev.monitor_thread;
-    udev.monitor_thread = nullptr;
+std::vector<std::string> find_xdg_config_dirs(std::string commandline_override) {
+  std::vector<std::string> dirs;
+  //First check for XDG_CONFIG_HOME or use the override instead.
+  //The override is a bit redundant, but backwards compatibility is good for now.
+  if (!commandline_override.empty()) {
+    dirs.push_back(commandline_override);
+  } else {
+    const char* config_home = getenv("XDG_CONFIG_HOME");
+    std::string confdir;
+    if (config_home && config_home[0] != '\0') {
+      confdir = std::string(confdir);
+    } else {
+      //It was unset, so try its specified default
+      if (getenv("HOME")) {
+        confdir = std::string(getenv("HOME")) + "/.config/";
+      }
+    }
+    if (!confdir.empty()) {
+      mkdir(confdir.c_str(), 0755);
+      dirs.push_back(confdir + "/moltengamepad/");
+      mkdir(dirs.front().c_str(), 0755);
+    }
   }
-  if(!options.daemon)
-    std::cout << "Shutting down." << std::endl;
-
-  std::ofstream fifo;
-  fifo.open(options.fifo_path, std::ostream::out);
-  unlink(options.fifo_path.c_str());
-  fifo << "quit" << std::endl;
-  if (remote_handler) {
-    remote_handler->join();
-    delete remote_handler;
+  
+  //Now check XDG_CONFIG_DIRS
+  const char* config_dirs = getenv("XDG_CONFIG_DIRS");
+  if (config_dirs && config_dirs[0] != '\0') {
+    std::string confdirs = std::string(config_dirs);
+    //have to split on colons
+    std::stringstream stream(confdirs);
+    std::string dir;
+    while (getline(stream, dir, ':')) {
+        dirs.push_back(dir + "/moltengamepad/");
+    }
+  } else {
+    //It was unset, so try its specified default
+    dirs.push_back("/etc/xdg/moltengamepad/");
   }
-
-  for (auto it = managers.begin(); it != managers.end(); ++it) {
-    delete(*it);
-  }
-
-
-  devices.clear();
-
-  delete slots;
+  
+  return dirs;
 }
 
-std::string find_config_folder() {
-  const char* config_home = getenv("XDG_CONFIG_HOME");
-  if (!config_home || config_home[0] == '\0') {
-    return (std::string(getenv("HOME")) + std::string("/.config/moltengamepad"));
+std::string moltengamepad::locate(file_category cat, std::string path) {
+  std::string commandline_override = "";
+  std::string category_prefix = "";
+  
+  switch (cat) {
+    case FILE_CONFIG:
+      break; //the override handled elsewhere to affect all categories
+    case FILE_PROFILE:
+      commandline_override = options.profile_dir;
+      category_prefix = "/profiles/";
+      break;
+    case FILE_GENDEV:
+      commandline_override = options.gendev_dir;
+      category_prefix = "/gendevices/";
+      break;
   }
-  return std::string(config_home) + "/moltengamepad";
-};
+
+  std::vector<std::string> dirs = xdg_config_dirs;
+  if (!commandline_override.empty())
+    dirs.insert(dirs.begin(),commandline_override);
+
+  for (auto dir : dirs) {
+    std::string fullpath = dir + category_prefix + path;
+    if (access((fullpath).c_str(), R_OK) != -1) {
+      return fullpath;
+    }
+  }
+
+  return "";
+}
+
+std::vector<std::string> moltengamepad::locate_glob(file_category cat, std::string pathglob) {
+  std::string commandline_override = "";
+  std::string category_prefix = "";
+  
+  switch (cat) {
+    case FILE_CONFIG:
+      break; //the override handled elsewhere to affect all categories
+    case FILE_PROFILE:
+      commandline_override = options.profile_dir;
+      category_prefix = "/profiles/";
+      break;
+    case FILE_GENDEV:
+      commandline_override = options.gendev_dir;
+      category_prefix = "/gendevices/";
+      break;
+  }
+  
+  std::vector<std::string> files;
+  std::vector<std::string> dirs;
+  dirs.insert(dirs.begin(),xdg_config_dirs.begin(),xdg_config_dirs.end());
+  if (!commandline_override.empty())
+    dirs.insert(dirs.begin(),commandline_override);
+
+  for (auto dir : dirs) {
+    std::string fullpath = dir + category_prefix + pathglob;
+    glob_t globbuffer;
+    glob(fullpath.c_str(), 0, nullptr, &globbuffer);
+
+    for (int i = 0; i < globbuffer.gl_pathc; i++) {
+      files.push_back(std::string(globbuffer.gl_pathv[i]));
+    }
+
+    globfree(&globbuffer);
+  }
+
+  return files;
+}
 
 
 
@@ -85,7 +156,9 @@ int fifo_loop(moltengamepad* mg) {
 int moltengamepad::init() {
   //This whole function is pretty bad in handling the config directories not being present.
   //But at least we aren't just spilling into the user's top level home directory.
-
+  
+  //load config dirs from environment variables
+  xdg_config_dirs = find_xdg_config_dirs(options.config_dir);
   //build the gamepad profile
   gamepad->gamepad_defaults();
   gamepad->name = "gamepad";
@@ -108,33 +181,30 @@ int moltengamepad::init() {
   drivers.take_message("steamcontroller driver initialized.");
 #endif
 
-  //figure out config folders
-  if (options.config_dir.empty()) options.config_dir = find_config_folder();
+  
 
-  mkdir(options.config_dir.c_str(), 0770);
+  std::string confdir = locate(FILE_CONFIG,"");
+  if (!confdir.empty()) {
+    if (options.profile_dir.empty()) mkdir((confdir + "/profiles/").c_str(), 0755);
+    if (options.gendev_dir.empty()) mkdir((confdir + "/gendevices/").c_str(), 0755);
+  }
 
-  if (options.profile_dir.empty()) options.profile_dir = options.config_dir + "/profiles/";
-  mkdir((options.profile_dir).c_str(), 0770);
-
-  if (options.gendev_dir.empty()) options.gendev_dir = options.config_dir + "/gendevices/";
-  mkdir((options.gendev_dir).c_str(), 0770);
+  
+ 
 
   //file glob the gendev .cfg files to add more drivers
-  glob_t globbuffer;
-  std::string fileglob = options.gendev_dir + "/*.cfg";
-  glob(fileglob.c_str(), 0, nullptr, &globbuffer);
+  auto gendev_files = locate_glob(FILE_GENDEV,"*.cfg");
 
-  for (int i = 0; i < globbuffer.gl_pathc; i++) {
+  for (auto path : gendev_files) {
     std::ifstream file;
-    file.open(globbuffer.gl_pathv[i], std::istream::in);
-
+    file.open(path, std::istream::in);
+    //If we can read it, feed it to our gendev parser
     if (!file.fail()) {
       int ret = generic_config_loop(this, file);
-      if (ret) errors.take_message("generic device config " + std::string(globbuffer.gl_pathv[i]) + " failed.");
+      if (ret) errors.take_message("generic device config " + path + " failed.");
     }
   }
 
-  globfree(&globbuffer);
 
   //add driver profiles
   for (auto man : managers)
@@ -148,24 +218,60 @@ int moltengamepad::init() {
 
   //start listening on FIFO if needed.
   if (options.make_fifo) {
+    //try to use $XDG_RUNTIME_DIR, only if set.
     const char* run_dir = getenv("XDG_RUNTIME_DIR");
     if (options.fifo_path.empty() && run_dir) {
       options.fifo_path = std::string(run_dir) + "/moltengamepad";
     }
     if (options.fifo_path.empty()) {
       errors.take_message("Could not locate fifo path. Use the --fifo-path command line argument.");
-      throw - 1;
+      throw - 1; //Abort so we don't accidentally run without a means of control.
     }
-    int ret = mkfifo(options.fifo_path.c_str(), 0666);
+    int ret = mkfifo(options.fifo_path.c_str(), 0660);
     if (ret < 0)  {
       perror("making fifo:");
       options.fifo_path = "";
-      throw - 1;
+      throw -1;
     } else {
       remote_handler = new std::thread(fifo_loop, this);
     }
   }
 
+}
+
+moltengamepad::~moltengamepad() {
+
+  //drop a shared ptr, let it clean up
+  gamepad = nullptr;
+
+  udev.set_managers(nullptr);
+
+  //No need to print into the void...
+  if(!options.daemon)
+    std::cout << "Shutting down." << std::endl;
+
+  //Clean up our fifo + send a message to ensure the thread clears out.
+  if (options.make_fifo) {
+    std::ofstream fifo;
+    fifo.open(options.fifo_path, std::ostream::out);
+    unlink(options.fifo_path.c_str());
+    fifo << "quit" << std::endl;
+    if (remote_handler) {
+      remote_handler->join();
+      delete remote_handler;
+    }
+  }
+
+  //remove devices
+  devices.clear();
+
+  //delete managers
+  for (auto it = managers.begin(); it != managers.end(); ++it) {
+    delete(*it);
+  }
+
+  //delete output slots
+  delete slots;
 }
 
 

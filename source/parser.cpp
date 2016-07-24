@@ -148,8 +148,8 @@ void do_header_line(std::vector<token>& line, std::string& header) {
 //TRANSGEN just associates an event_translator with its name.
 //RENAME_TRANSGEN instead supplies a different name for the parser's sake.
 
-#define TRANSGEN(X) trans_gens[#X] = trans_generator<event_translator>(X::fields,[] (std::vector<MGField>& fields) { return new X(fields);});
-#define RENAME_TRANSGEN(name,X) trans_gens[#name] = trans_generator<event_translator>(X::fields,[] (std::vector<MGField>& fields) { return new X(fields);});
+#define TRANSGEN(X) trans_gens[#X] = trans_generator(X::fields,[] (std::vector<MGField>& fields) { return new X(fields);});
+#define RENAME_TRANSGEN(name,X) trans_gens[#name] = trans_generator(X::fields,[] (std::vector<MGField>& fields) { return new X(fields);});
 
 MGparser::MGparser(moltengamepad* mg) : mg(mg), out("parse") {
   TRANSGEN(btn2btn);

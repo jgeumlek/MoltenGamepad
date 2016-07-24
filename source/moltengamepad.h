@@ -23,6 +23,18 @@ class udev_handler;
 class input_source;
 class profile;
 
+//We have a few different file types, each in their own dirs.
+//need to handle handles:
+//  -following XDG spec, including systemwide fallback folders (/etc/xdg/moltengamepad)
+//  -overrides given via commandline
+enum file_category {
+  FILE_CONFIG,       //The root config folder
+  FILE_PROFILE,      //Profiles, aka mappings.
+  FILE_GENDEV,       //Generic driver descriptors
+  FILE_DRIVER_SET,   //Driver-specific settings (FUTURE)
+  FILE_DEVICE_SET,   //Device-specific settings (FUTURE)
+};
+
 
 class moltengamepad {
 public:
@@ -62,6 +74,10 @@ public:
   int init();
   int stop();
 
+  //simply report the location of a file to be read
+  //Use an empty path to get the appropriate directory to create a file in.
+  std::string locate(file_category cat, std::string path);
+  std::vector<std::string> locate_glob(file_category cat, std::string pathglob);
 
   device_manager* find_manager(const char* name);
   std::shared_ptr<input_source> find_device(const char* name);
@@ -75,13 +91,11 @@ public:
   void for_all_profiles(std::function<void (std::shared_ptr<profile>&)> func);
 
 private:
-  bool udev_loop = true;
-
-  void udev_run();
-  std::thread* udev_thread;
+  
   std::thread* remote_handler = nullptr;
   std::mutex  device_list_lock;
   std::mutex  profile_list_lock;
+  std::vector<std::string> xdg_config_dirs;
 
 
 };

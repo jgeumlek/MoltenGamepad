@@ -117,14 +117,15 @@ int print_usage(char* execname) {
                           "--fifo-path -f\n"\
                           "\tSet where the fifo command channel should be placed.\n"\
                           "\n"\
+                          "--config-path -c\n"\
+                          "\tSet a path for config files instead of $XDG_CONFIG_HOME/moltengamepad\n"\
+                          "\t$XDG_CONFIG_DIRS is still respected.\n"\
+                          "\n"\
                           "--profiles-path -p\n"\
-                          "\tSet where the profiles are located\n"\
+                          "\tSet a path to find profiles before checking config directories\n"\
                           "\n"\
                           "--gendev-path -g\n"\
-                          "\tSet where the generic device descriptions are located\n"\
-                          "\n"\
-                          "--config-path -c\n"\
-                          "\tSet where the general config files are located\n"\
+                          "\tSet a path to find generic driver descriptions before checking config directories\n"\
                           "\n"\
                           "--num-gamepads -n\n"\
                           "\tSet how many virtual gamepads will be created\n"\

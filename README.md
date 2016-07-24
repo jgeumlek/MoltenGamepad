@@ -61,6 +61,20 @@ You'll need appropriate permissions on the uinput device node, as well as any de
 
 You might need to use `--uinput-path` to tell MoltenGamepad where the uinput device is on your system. (You might even need to modprobe uinput)
 
+##Configuration Locations
+
+Configuration files follow the XDG specification.  `$XDG_CONFIG_HOME` is checked first before falling back to check the listed directories in `$XDG_CONFIG_DIRS`. A `moltengamepad` folder is used within these directories.
+ 
+With the default values for these XDG variables the following behavior applies:
+
+* User specific files are located in `~/.config/moltengamepad/`
+* Systemwide files are located in `/etc/xdg/moltengamepad/`
+
+Profiles are located in a `profiles` subdirectory of a configuration directory. 
+
+Generic driver specifications are in a `gendevices` subdirectory of a configuration directory.
+
+
 
 ##Getting Started
 
@@ -76,21 +90,14 @@ For use with most games, use the `--mimic-xpad` option to make the virtual outpu
 
 Another useful option is `--make-fifo`, which creates a named pipe so that the running instance can be controlled from scripts and such.
 
+The command FIFO is placed at `$XDG_RUNTIME_DIR/moltengamepad` by default, and can be set with `--fifo-path`.
 
 
 ##Additional Documentation
 
 See this README, the various files in the `documentation` folder, the output of `./moltengamepad --help`, and the output of the `help` command while running MoltenGamepad.
 
-##Default Locations
 
-By default, configuration files are placed in `$XDG_CONFIG_HOME/moltengamepad`, defaulting to `$HOME/.config/moltengamepad`
-
-Profiles are located in a `profiles` subdirectory of the configuration directory.
-
-Generic driver specifications are in a `gendevices` subdirectory of the configuration directory.
-
-The command FIFO is placed at `$XDG_RUNTIME_DIR/moltengamepad` by default.
 
 ##Known Issues
 

@@ -1,6 +1,6 @@
 #MoltenGamepad Generic Device Driver Documentation
 
-A generic driver can be specified by creating a `<filename>.cfg` file in the `gendevices` config directory.
+A generic driver can be specified by creating a `<filename>.cfg` file in a `gendevices` config directory.
 
 Such a file has the following form, where `#` starts comments. All `<values>` MUST be placed in quotes when spaces/punctuation are present. (Limited escaping applies, `\"` for a literal quote, `\\` for a literal backslash)
 

@@ -8,6 +8,9 @@
 
 void udev_handler::pass_along_device(struct udev_device* new_dev) {
   if (new_dev == nullptr) return;
+  std::lock_guard<std::mutex> lock(manager_lock);
+  if (managers == nullptr) return;
+
   std::string path(udev_device_get_syspath(new_dev));
   if (ui && ui->node_owned(path))
     return; //Skip virtual devices we made
@@ -31,6 +34,8 @@ udev_handler::udev_handler() {
 udev_handler::~udev_handler() {
   if (monitor_thread) {
     stop_thread = true;
+    int signal = 0;
+    write(pipe_fd, &signal, sizeof(signal));
     monitor_thread->join();
     delete monitor_thread;
   }
@@ -39,6 +44,7 @@ udev_handler::~udev_handler() {
 }
 
 void udev_handler::set_managers(std::vector<device_manager*>* managers) {
+  std::lock_guard<std::mutex> lock(manager_lock);
   this->managers = managers;
 }
 

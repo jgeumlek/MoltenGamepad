@@ -16,10 +16,11 @@ int do_load(moltengamepad* mg, std::vector<token>& command) {
     std::cout << LOAD_USAGE << std::endl;
     return -1;
   }
-  std::string filename = mg->options.profile_dir + "/" + command.at(3).value;
+  std::string filename = command.at(3).value;
   for (int i = 4; i < command.size(); i++) {
     if (command.at(i).type != TK_ENDL) filename += command.at(i).value;
   }
+  filename = mg->locate(FILE_PROFILE,filename);
   std::cout << "attempting to load from " << filename << std::endl;
   std::ifstream file;
   file.open(filename, std::ifstream::in);

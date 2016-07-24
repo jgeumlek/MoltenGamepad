@@ -22,13 +22,13 @@ struct complex_expr {
   std::vector<complex_expr*> params;
 };
 
-template<typename T>
+
 class trans_generator {
 public:
   const MGType* fields;
-  std::function<T* (std::vector<MGField>&)> generate;
-  trans_generator<T>( const MGType* fields, std::function<T* (std::vector<MGField>&)> generate) : fields(fields), generate(generate) {};
-  trans_generator<T>() : fields(nullptr) {};
+  std::function<event_translator* (std::vector<MGField>&)> generate;
+  trans_generator(const MGType* fields, std::function<event_translator* (std::vector<MGField>&)> generate) : fields(fields), generate(generate) {};
+  trans_generator() : fields(nullptr) {};
 };
 
 class MGparser {
@@ -50,8 +50,7 @@ private:
   void do_assignment_line(std::vector<token>& line, std::string& header);
   void parse_line(std::vector<token>& line, std::string& header);
   event_translator* parse_trans_toplevel_quirks(enum entry_type intype, std::vector<token>& tokens, std::vector<token>::iterator& it);
-  std::map<std::string,trans_generator<event_translator> > trans_gens;
-  std::map<std::string,trans_generator<advanced_event_translator> > adv_trans_gens;
+  std::map<std::string,trans_generator> trans_gens;
   simple_messenger out;
 };
 
