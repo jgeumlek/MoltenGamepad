@@ -69,6 +69,8 @@ steam_controller::steam_controller(scraw::controller* sc, slot_manager* slot_man
 }
 steam_controller::~steam_controller() {
  delete sc;
+ close(statepipe[0]);
+ close(statepipe[1]);
 }
 
 void steam_controller::list_events(cat_list& list) {
