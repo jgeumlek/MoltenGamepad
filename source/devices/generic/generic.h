@@ -99,6 +99,7 @@ public:
   bool grab_chmod = false;
   bool keep_looping = true;
   moltengamepad* mg;
+  int internal_pipe[2];
 
   generic_file(struct udev_device* node, bool grab_ioctl, bool grab_chmod) {
     epfd = epoll_create(1);
@@ -106,28 +107,40 @@ public:
     this->grab_ioctl = grab_ioctl;
     this->grab_chmod = grab_chmod;
     open_node(node);
-
+    //set up a pipe so we can talk to out own thread.
+    pipe(internal_pipe);
+    
+    struct epoll_event event;
+    memset(&event, 0, sizeof(event));
+    event.events = EPOLLIN | EPOLLPRI | EPOLLERR | EPOLLHUP;
+    event.data.u32 = internal_pipe[0];
+    int ret = epoll_ctl(epfd, EPOLL_CTL_ADD, internal_pipe[0], &event);
+    if (ret < 0) perror("epoll add");
+    
     if (fds.empty()) throw - 1;
 
     thread = new std::thread(&generic_file::thread_loop, this);
   }
 
-  generic_file() {
-
-  }
 
   ~generic_file() {
     keep_looping = false;
     for (auto node_it : nodes) {
       close_node(node_it.first, false); //TODO: Fix this repeated map look up...
     }
-    for (auto dev : devices) {
-      mg->remove_device(dev);
-    }
     if (thread) {
+      int beep = 0;
+      write(internal_pipe[1],&beep,sizeof(beep));
       thread->join();
       delete thread;
     }
+    for (auto dev : devices) {
+      mg->remove_device(dev);
+    }
+    close(epfd);
+    close(internal_pipe[0]);
+    close(internal_pipe[1]);
+
   }
 
 
@@ -192,7 +205,7 @@ public:
     struct epoll_event events[1];
     memset(&event, 0, sizeof(event));
     while ((keep_looping)) {
-      int n = epoll_wait(epfd, events, 1, 5);
+      int n = epoll_wait(epfd, events, 1, -1);
       if (n < 0 && errno == EINTR) {
         continue;
       }
@@ -201,10 +214,14 @@ public:
         break;
       }
       if (n == 0) continue;
+      
       struct input_event ev;
       int file = events[0].data.u32;
       int ret = read(file, &ev, sizeof(ev));
-      if (ret > 0) {
+      if (file == internal_pipe[0]) {
+        continue; //Just a quick ping to ensure we aren't stuck in epoll_wait
+      }
+      if (ret == sizeof(ev)) {
         for (auto dev : devices) {
           write(dev->get_pipe(), &ev, sizeof(ev));
         }
@@ -228,7 +245,7 @@ public:
 
   generic_manager(moltengamepad* mg, generic_driver_info& descr);
 
-  ~generic_manager();
+  virtual ~generic_manager();
 
   virtual int accept_device(struct udev* udev, struct udev_device* dev);
 
