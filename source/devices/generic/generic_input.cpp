@@ -33,29 +33,9 @@ generic_device::generic_device(std::vector<gen_source_event>& inevents, int fd, 
 
 generic_device::~generic_device() {
   if (node) udev_device_unref(node);
-  free(nameptr);
 }
 
 int generic_device::set_player(int player_num) {};
-
-
-void generic_device::list_events(cat_list& list) {
-  struct category cat;
-  struct name_descr info;
-
-  cat.name = "Generic";
-  for (int i = 0; i < events.size(); i++) {
-    info.name = events[i].name;
-    info.descr = events[i].descr;
-    info.data = events[i].type;
-    cat.entries.push_back(info);
-  }
-
-  list.push_back(cat);
-  cat.entries.clear();
-}
-
-void generic_device::list_options(name_list& list) {};
 
 
 void generic_device::update_option(const char* opname, const char* value) {};

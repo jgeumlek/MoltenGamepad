@@ -93,7 +93,7 @@ void input_source::update_option(const char* name, const char* value) {
   }
 }
 
-void input_source::list_options(std::vector<source_option>& list) {
+void input_source::list_options(std::vector<source_option>& list) const {
   for (auto e : options) {
     list.push_back(e.second);
   }
@@ -322,7 +322,7 @@ void input_source::process_recurring_events() {
   clock_gettime(CLOCK_MONOTONIC, &last_recurring_update);
 }
 
-std::string input_source::get_alias(std::string event_name) {
+std::string input_source::get_alias(std::string event_name) const {
   auto alias = devprofile->aliases.find(event_name);
   if (alias != devprofile->aliases.end())
     return alias->second;

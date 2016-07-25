@@ -52,18 +52,9 @@ int lookup_steamcont_event(const char* evname);
 
 class steam_controller : public input_source {
 public:
-  const char* descr = "Steam Controller";
-
   steam_controller(scraw::controller* sc, slot_manager* slot_man, device_manager* manager);
   ~steam_controller();
 
-  virtual void list_events(cat_list& list);
-  virtual struct name_descr get_info() {
-    struct name_descr desc;
-    desc.name = name.c_str();
-    desc.descr = descr;
-    return desc;
-  }
 protected:
   void process(void*);
   virtual int process_option(const char* opname, const char* value) { return -1; }; //TODO: options
@@ -83,12 +74,11 @@ public:
   //We don't handle any udev events at all!
   virtual int accept_device(struct udev* udev, struct udev_device* dev) { return -2;};
 
-  virtual void list_devs(name_list& list) {
-    for (auto dev : sc_devs) {
-      list.push_back(dev.second->get_info());
-    }
-  }
-
+  virtual void for_each_dev(std::function<void (const input_source*)> func) {
+    std::lock_guard<std::mutex> lock(devlistlock);
+    for (auto pair : sc_devs)
+      func(pair->second);
+  };
 
   void init_profile();
 
@@ -103,6 +93,7 @@ private:
   scraw::context sc_context;
   std::thread* sc_context_thread;
   volatile bool keep_scanning;
+  std::mutex devlistlock;
 
   void on_controller_gained(scraw::controller sc);
   void on_controller_lost(scraw::controller sc);

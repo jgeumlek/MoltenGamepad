@@ -45,30 +45,32 @@ int do_print_profile(moltengamepad* mg, std::string name, std::ostream& out) {
 }
 
 void print_driver_dev_list(device_manager* man, std::ostream& out) {
-  name_list list;
-  man->list_devs(list);
+  if (!man) return;
   out << "(" << man->name << ")\n";
-  if (list.empty()) {
+  bool has_dev = false;
+  auto print_dev = [&out, &has_dev] (const input_source* dev) {
+    out << dev->get_name() << ":\t" << dev->get_description() << std::endl;
+    has_dev = true;
+  };
+
+  man->for_each_dev(print_dev);
+
+  if (!has_dev) {
     out << "  no devices" << std::endl;
   }
-  for (auto e : list) {
-    out << e.name << ":\t" << e.descr << std::endl;
-  }
+  
 }
 
 int do_print_devs(moltengamepad* mg, std::string name, std::ostream& out) {
   if (!name.empty()) {
     std::shared_ptr<input_source> dev = mg->find_device(name.c_str());
     if (dev.get()) {
-      out << dev->name << " (type: " << dev->device_type << ")" << std::endl;
+      out << dev->get_name() << " (type: " << dev->get_type() << ")" << std::endl;
       out << " events:" << std::endl;
-      cat_list cats;
-      dev->list_events(cats);
-      for (auto v : cats) {
-        out << "[" << v.name << "]" << std::endl;
-        for (auto e : v.entries) {
-          out << e.name << ":\t" << e.descr << std::endl;
-        }
+      
+      const std::vector<source_event>& events = dev->get_events();
+      for (auto v : events) {
+        out << v.name << ":\t" << v.descr << std::endl;
       }
 
       std::vector<source_option> list;

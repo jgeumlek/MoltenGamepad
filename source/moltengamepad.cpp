@@ -287,7 +287,7 @@ std::shared_ptr<input_source> moltengamepad::find_device(const char* name) {
   std::lock_guard<std::mutex> guard(device_list_lock);
   for (auto it = devices.begin(); it != devices.end(); it++) {
 
-    if (!strcmp((*it)->name.c_str(), name)) return (*it);
+    if (!strcmp((*it)->get_name().c_str(), name)) return (*it);
   }
   return nullptr;
 }
@@ -302,7 +302,7 @@ std::shared_ptr<input_source> moltengamepad::add_device(input_source* source, de
     proposal = name_stem + std::to_string(i);
     available = true;
     for (auto dev : devices) {
-      if (dev->name == proposal) {
+      if (dev->get_name() == proposal) {
         available = false;
 	break;
       }
@@ -315,11 +315,11 @@ std::shared_ptr<input_source> moltengamepad::add_device(input_source* source, de
     return ptr;
   }
   //Set the device and profile name, send a message, link the profile, and finally start the device thread.
-  ptr->name = proposal;
+  ptr->set_name(proposal);
   devices.push_back(ptr);
-  plugs.take_message("device " + source->name + " added.");
+  plugs.take_message("device " + source->get_name() + " added.");
   auto devprof = source->get_profile();
-  devprof->name = source->name;
+  devprof->name = source->get_name();
   add_profile(devprof.get());
   devprof->add_device(ptr);
   device_list_lock.unlock();
@@ -332,7 +332,7 @@ void moltengamepad::remove_device(input_source* source) {
   
   for (int i = 0; i < devices.size(); i++) {
     if (source == devices[i].get()) {
-      plugs.take_message("device " + source->name + " removed.");
+      plugs.take_message("device " + source->get_name() + " removed.");
       remove_profile(devices[i]->get_profile().get());
       devices.erase(devices.begin() + i);
       i--;

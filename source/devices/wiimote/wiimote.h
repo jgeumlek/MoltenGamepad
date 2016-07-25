@@ -55,20 +55,12 @@ public:
 
   modes mode = NO_EXT;
 
-  const char* descr = "unidentified Wii device";
-
   wiimote(slot_manager* slot_man, device_manager* manager);
 
   ~wiimote();
-
-  virtual void list_events(cat_list& list);
+  
   virtual void handle_event(struct udev_device* dev);
-  virtual struct name_descr get_info() {
-    struct name_descr desc;
-    desc.name = name.c_str();
-    desc.descr = descr;
-    return desc;
-  }
+
   void enable_ir(bool enable);
   void enable_accel(bool enable);
   void enable_motionplus(bool enable);
@@ -138,11 +130,11 @@ public:
 
   virtual int accept_device(struct udev* udev, struct udev_device* dev);
 
-  virtual void list_devs(name_list& list) {
-    for (auto it = wii_devs.begin(); it != wii_devs.end(); ++it) {
-      list.push_back((*it)->get_info());
-    }
-  }
+  virtual void for_each_dev(std::function<void (const input_source*)> func) {
+    std::lock_guard<std::mutex> lock(devlistlock);
+    for (auto wm : wii_devs)
+      func(wm);
+  };
 
   void init_profile();
 
@@ -157,6 +149,7 @@ public:
   }
 private:
   int dev_counter = 0;
+  std::mutex devlistlock;
 };
 
 #endif

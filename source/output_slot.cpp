@@ -138,7 +138,7 @@ bool virtual_gamepad::accept_device(std::shared_ptr<input_source> dev) {
   //Accept unless we already have a device of this type.
   for (auto it = devices.begin(); it != devices.end(); it++) {
     auto ptr = it->lock();
-    if (ptr && ptr->device_type == dev->device_type) {
+    if (ptr && ptr->get_type() == dev->get_type()) {
       return false;
     }
   }

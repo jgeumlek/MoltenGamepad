@@ -25,19 +25,6 @@ class slot_manager;
 class device_manager;
 
 
-typedef std::vector<struct name_descr> name_list;
-struct category {
-  const char* name;
-  name_list entries;
-};
-typedef std::vector<category> cat_list;
-
-struct name_descr {
-  const char* name;
-  const char* descr;
-  int data;
-};
-
 struct source_event {
   int id;
   const char* name;
@@ -73,13 +60,13 @@ class input_source : public std::enable_shared_from_this<input_source> {
 public:
   input_source(slot_manager* slot_man, device_manager* manager, std::string type);
   virtual ~input_source();
-  std::string name = "unnamed";
-  std::string device_type = "gamepad";
+  
+  
   virtual int set_player(int player_num) {
   }
-  virtual void list_events(cat_list& list) {
-  }
-  void list_options(std::vector<source_option>& list);
+  
+  void list_options(std::vector<source_option>& list) const;
+  
   virtual void set_slot(output_slot* outdev) {
     this->out_dev = outdev;
   }
@@ -94,7 +81,7 @@ public:
   void start_thread();
   void end_thread();
 
-  const std::vector<source_event>& get_events() {
+  const std::vector<source_event>& get_events() const {
     return events;
   };
   
@@ -104,8 +91,12 @@ public:
   void remove_listener(int id, advanced_event_translator* trans);
   
 
-  std::string get_alias(std::string event_name);
-  std::shared_ptr<profile> get_profile() { return devprofile; };
+  std::string get_name() const { return name; };
+  void set_name(std::string name) { this->name = name; };
+  std::string get_description() const { return descr; };
+  std::string get_type() const { return descr; };
+  std::string get_alias(std::string event_name) const;
+  std::shared_ptr<profile> get_profile() const { return devprofile; };
 
   output_slot* out_dev = nullptr;
 protected:
@@ -113,6 +104,9 @@ protected:
   int epfd = 0;
   int priv_pipe = 0;
   int internalpipe = 0;
+  std::string name = "unnamed";
+  std::string descr = "No description available";
+  std::string device_type = "gamepad";
   std::vector<source_event> events;
   std::map<std::string, source_option> options;
   std::map<std::string, adv_entry> adv_trans;
@@ -156,8 +150,6 @@ public:
   virtual int accept_device(struct udev* udev, struct udev_device* dev) {
     return -1;
   }
-  virtual void list_devs(name_list& list) {
-  };
 
   device_manager(moltengamepad* mg, std::string name) : mg(mg), name(name), log(name) {
     mapprofile->name = name;
@@ -166,10 +158,14 @@ public:
 
   virtual ~device_manager() {
   };
+  
+  virtual void for_each_dev(std::function<void (const input_source*)> func) {};
 
   std::string name;
   simple_messenger log;
   std::shared_ptr<profile> mapprofile = std::make_shared<profile>();
+
+  
 
 };
 

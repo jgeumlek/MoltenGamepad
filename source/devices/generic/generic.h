@@ -47,8 +47,6 @@ typedef std::pair<int, input_absinfo> decodedevent;
 
 class generic_device : public input_source {
 public:
-  char* nameptr = nullptr;
-  const char* descr = "input device";
   int fd = -1;
   int pipe_read = -1;
   int pipe_write = -1;
@@ -60,9 +58,6 @@ public:
   ~generic_device();
 
   virtual int set_player(int player_num);
-  virtual void list_events(cat_list& list);
-  virtual void list_options(name_list& list);
-
 
   virtual void update_option(const char* opname, const char* value);
 
@@ -242,26 +237,21 @@ public:
   int split = 1;
   bool flatten = false;
 
-
   generic_manager(moltengamepad* mg, generic_driver_info& descr);
+
+  virtual void for_each_dev(std::function<void (const input_source*)> func) {
+    std::lock_guard<std::mutex> lock(devlistlock);
+    for (auto file : openfiles)
+      for (auto dev : file->devices)
+        func(dev);
+  };
 
   virtual ~generic_manager();
 
   virtual int accept_device(struct udev* udev, struct udev_device* dev);
 
-
-
-  virtual void list_devs(name_list& list) {
-    for (auto file : openfiles) {
-
-      for (auto it = file->devices.begin(); it != file->devices.end(); ++it) {
-        list.push_back({(*it)->name.c_str(), (*it)->descr, 0});
-      }
-    }
-  }
-
-
 protected:
+  std::mutex devlistlock;
   std::vector<generic_file*> openfiles;
   std::vector<std::vector<gen_source_event>> splitevents;
   int dev_counter = 0;

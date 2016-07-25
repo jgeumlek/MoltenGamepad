@@ -73,21 +73,6 @@ steam_controller::~steam_controller() {
  close(statepipe[1]);
 }
 
-void steam_controller::list_events(cat_list& list) {
-  struct category cat;
-  struct name_descr info;
-
-  cat.name = "Steam Controller";
-
-  for (int i = 0; i < steamcont_event_max; i++) {
-    info.name = steamcont_events[i].name;
-    info.descr = steamcont_events[i].descr;
-    info.data = steamcont_events[i].type;
-    cat.entries.push_back(info);
-  }
-  list.push_back(cat);
-  cat.entries.clear();
-}
 
 void steam_controller::on_state_change(const scraw_controller_state_t& state) {
   //turn this call back into an epoll event.

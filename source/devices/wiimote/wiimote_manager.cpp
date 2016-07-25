@@ -39,6 +39,7 @@ int destroy_wii_dev_by_path(moltengamepad* mg, std::vector<wiimote*>* devs, cons
 }
 
 int wiimote_manager::accept_device(struct udev* udev, struct udev_device* dev) {
+  std::lock_guard<std::mutex> lock(devlistlock);
   const char* path = udev_device_get_syspath(dev);
   const char* subsystem = udev_device_get_subsystem(dev);
 

@@ -27,7 +27,7 @@ slot_manager::~slot_manager() {
 
 void slot_manager::request_slot(input_source* dev) {
   std::lock_guard<std::mutex> guard(lock);
-  if (dev->device_type == "keyboard") {
+  if (dev->get_type() == "keyboard") {
     move_device(dev,keyboard);
     return;
   }
@@ -58,9 +58,9 @@ void slot_manager::move_device(input_source* dev, output_slot* target) {
   }
   dev->set_slot(target);
   if (target) {
-    log.take_message(dev->name + " assigned to slot " + target->name);
+    log.take_message(dev->get_name() + " assigned to slot " + target->name);
   } else {
-    log.take_message(dev->name + " not assigned to any slot");
+    log.take_message(dev->get_name() + " not assigned to any slot");
   }
 }
 

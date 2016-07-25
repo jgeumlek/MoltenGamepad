@@ -13,7 +13,7 @@ wiimote::wiimote(slot_manager* slot_man, device_manager* manager) : input_source
   for (int i = 0; !wiimote_options[i].name.empty(); i++) {
     register_option(wiimote_options[i]);
   }
-
+  descr = "Wii remote";
 }
 
 wiimote::~wiimote() {
@@ -269,14 +269,14 @@ void wiimote::remove_node(const char* name) {
   }
 }
 
-void wiimote::list_events(cat_list& list) {
+/*void wiimote::list_events(cat_list& list) {
   struct category cat;
   struct name_descr info;
 
   cat.name = "Wiimote";
   int minevent = 0;
   int maxevent = cc_right_y;
-  /*Going to assume we'll never see a combination of a wiimote with the two devices below..*/
+  //Going to assume we'll never see a combination of a wiimote with the two devices below..
   if (pro.dev) {
     cat.name = "Wii U Pro Controller";
     minevent = cc_a;
@@ -298,7 +298,7 @@ void wiimote::list_events(cat_list& list) {
 
   list.push_back(cat);
   cat.entries.clear();
-}
+}*/
 
 void wiimote::open_node(struct dev_node* node) {
   node->fd = open(udev_device_get_devnode(node->dev), O_RDONLY | O_NONBLOCK | O_CLOEXEC);
