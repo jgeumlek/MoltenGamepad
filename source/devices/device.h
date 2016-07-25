@@ -84,8 +84,8 @@ public:
 
   std::string get_name() const { return name; };
   void set_name(std::string name) { this->name = name; };
-  std::string get_description() const { return descr; };
-  std::string get_type() const { return device_type; };
+  virtual std::string get_description() const { return descr; };
+  virtual std::string get_type() const { return device_type; };
   std::string get_alias(std::string event_name) const;
   std::shared_ptr<profile> get_profile() const { return devprofile; };
 

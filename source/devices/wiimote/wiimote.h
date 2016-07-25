@@ -72,7 +72,8 @@ public:
     update_mode();
   }
 
-
+  virtual std::string get_description() const;
+  virtual std::string get_type() const;
 
   void store_node(struct udev_device* dev, const char* name);
   void remove_node(const char* name);

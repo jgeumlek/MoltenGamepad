@@ -119,7 +119,19 @@ void wiimote::clear_node(struct dev_node* node) {
   if (node->fd >= 0) close(node->fd);
 }
 
+std::string wiimote::get_description() const {
+  if (pro.fd > 0) return "Wii U Pro Controller";
+  if (classic.fd > 0) return "Wii Remote with Classic Controller";
+  if (nunchuk.fd > 0) return "Wii Remote with Nunchuk Controller";
+  if (balance.fd > 0) return "Wii Balance Board";
+  if (buttons.fd > 0) return "Wii Remote";
+  return "Wii device (???)";
+}
 
+std::string wiimote::get_type() const {
+  if (balance.fd > 0) return "balance";
+  return "gamepad";
+}
 
 
 void add_led(struct wii_leds* leds, struct udev_device* dev) {
@@ -218,12 +230,10 @@ void wiimote::store_node(struct udev_device* dev, const char* name) {
   case BALANCE:
     balance.dev = udev_device_ref(dev);
     open_node(&balance);
-    descr = "Wii Balance Board";
     break;
   case WII_U_PRO:
     pro.dev = udev_device_ref(dev);
     open_node(&pro);
-    descr = "Wii U Pro Controller";
     break;
 
   }
