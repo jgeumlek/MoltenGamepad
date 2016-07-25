@@ -74,7 +74,9 @@ std::vector<std::string> find_xdg_config_dirs(std::string commandline_override) 
 std::string moltengamepad::locate(file_category cat, std::string path) {
   std::string commandline_override = "";
   std::string category_prefix = "";
-  
+  if (!path.empty() && path.front() == '/')
+    return path; //this is an absolute path.
+
   switch (cat) {
     case FILE_CONFIG:
       break; //the override handled elsewhere to affect all categories
