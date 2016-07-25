@@ -22,7 +22,7 @@ void steam_controller_manager::on_controller_gained(scraw::controller sc) {
   sc_devs[sc] = steamcont;
   mg->add_device(steamcont, this, "sc");
   std::shared_ptr<profile> devprofile = steamcont->get_profile();
-  mapprofile->copy_into(devprofile,true);
+  mapprofile->copy_into(devprofile,true,true);
 }
 void steam_controller_manager::on_controller_lost(scraw::controller sc) {
   auto dev = sc_devs.find(sc);
@@ -89,7 +89,7 @@ void steam_controller_manager::init_profile() {
   mapprofile->set_alias("right_x","right_pad_x");
   mapprofile->set_alias("right_y","right_pad_y");
   
-  mg->gamepad->copy_into(mapprofile, true);
+  mg->gamepad->copy_into(mapprofile, true, false);
 
 };
 #endif

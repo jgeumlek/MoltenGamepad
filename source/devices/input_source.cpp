@@ -48,9 +48,9 @@ void input_source::register_event(source_event ev) {
   events.push_back(ev);
 }
 
-void input_source::register_option(source_option opt) {
+void input_source::register_option(option_info opt) {
 
-  options.insert(std::pair<std::string, source_option>(opt.name, opt));
+  options.insert(std::pair<std::string, option_info>(opt.name, opt));
 }
 
 
@@ -93,7 +93,7 @@ void input_source::update_option(const char* name, const char* value) {
   }
 }
 
-void input_source::list_options(std::vector<source_option>& list) const {
+void input_source::list_options(std::vector<option_info>& list) const {
   for (auto e : options) {
     list.push_back(e.second);
   }

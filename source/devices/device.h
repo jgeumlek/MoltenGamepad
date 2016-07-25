@@ -35,12 +35,6 @@ struct source_event {
   std::vector<advanced_event_translator*> attached;
 };
 
-struct source_option {
-  std::string name;
-  std::string descr;
-  std::string value;
-};
-
 struct adv_entry {
   std::vector<std::string>* fields;
   advanced_event_translator* trans;
@@ -65,7 +59,7 @@ public:
   virtual int set_player(int player_num) {
   }
   
-  void list_options(std::vector<source_option>& list) const;
+  void list_options(std::vector<option_info>& list) const;
   
   virtual void set_slot(output_slot* outdev) {
     this->out_dev = outdev;
@@ -74,9 +68,6 @@ public:
   void update_map(const char* evname, event_translator* trans);
   void update_option(const char* opname, const char* value);
   void update_advanced(const std::vector<std::string>& evnames, advanced_event_translator* trans);
-
-  virtual enum entry_type entry_type(const char* name) {
-  }
 
   void start_thread();
   void end_thread();
@@ -108,7 +99,7 @@ protected:
   std::string descr = "No description available";
   std::string device_type = "gamepad";
   std::vector<source_event> events;
-  std::map<std::string, source_option> options;
+  std::map<std::string, option_info> options;
   std::map<std::string, adv_entry> adv_trans;
   std::shared_ptr<profile> devprofile = std::make_shared<profile>();
   std::thread* thread = nullptr;
@@ -121,7 +112,7 @@ protected:
 
 
   void register_event(source_event ev);
-  void register_option(source_option ev);
+  void register_option(option_info ev);
   void watch_file(int fd, void* tag);
   void set_trans(int id, event_translator* trans);
   void force_value(int id, int64_t value);

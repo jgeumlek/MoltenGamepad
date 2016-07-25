@@ -26,7 +26,7 @@ generic_manager::generic_manager(moltengamepad* mg, generic_driver_info& descr) 
   descr.split_types.resize(split,"gamepad");
   for (auto type : descr.split_types) {
     if (type == "gamepad") {
-      mg->gamepad->copy_into(mapprofile, true);
+      mg->gamepad->copy_into(mapprofile, true, false);
       break;
     }
   }
@@ -112,7 +112,7 @@ void generic_manager::create_inputs(generic_file* opened_file, int fd, bool watc
     opened_file->add_dev(gendev);
     mg->add_device(gendev, this, descr->devname);
     auto devprofile = gendev->get_profile();
-    mapprofile->copy_into(devprofile,true);
+    mapprofile->copy_into(devprofile,true, true);
   }
 }
 

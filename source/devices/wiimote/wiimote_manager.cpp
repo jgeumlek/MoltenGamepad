@@ -88,7 +88,7 @@ int wiimote_manager::accept_device(struct udev* udev, struct udev_device* dev) {
     wii_devs.push_back(wm);
     mg->add_device(wm, this, "wm");
     std::shared_ptr<profile> devprofile = wm->get_profile();
-    mapprofile->copy_into(devprofile,true);
+    mapprofile->copy_into(devprofile,true,true);
   } else {
     //This is a subdevice of something we already track
     //pass this subdevice to it for proper storage

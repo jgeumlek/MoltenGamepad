@@ -74,11 +74,28 @@ void profile::set_mapping(std::string in_event_name, event_translator* mapper, e
 }
 
 
+void profile::register_option(const option_info opt) {
+  std::lock_guard<std::mutex> guard(lock);
+  options.erase(opt.name);
+  options[opt.name] = opt;
+
+  for (auto prof : subscribers) {
+    auto ptr = prof.lock();
+    if (ptr) ptr->register_option(opt);
+  }
+  for (auto dev : devices) {
+    auto ptr = dev.lock();
+    if (ptr) ptr->update_option(opt.name.c_str(),opt.value.c_str());
+  }
+}
 
 void profile::set_option(std::string opname, std::string value) {
-  lock.lock();
+  std::lock_guard<std::mutex> guard(lock);
+  if (options.find(opname) == options.end()) 
+    return; //This option was not registered, ignore it.
+
   options.erase(opname);
-  options[opname] = value;
+  options[opname].value = value;
   for (auto prof : subscribers) {
     auto ptr = prof.lock();
     if (ptr) ptr->set_option(opname, value);
@@ -87,12 +104,11 @@ void profile::set_option(std::string opname, std::string value) {
     auto ptr = dev.lock();
     if (ptr) ptr->update_option(opname.c_str(),value.c_str());
   }
-  lock.unlock();
 }
 
 void profile::set_advanced(std::vector<std::string> names, advanced_event_translator* trans) {
   if (names.empty()) return;
-  lock.lock();
+  std::lock_guard<std::mutex> guard(lock);
   for (int i = 0; i < names.size(); i++) {
     auto alias = aliases.find(names[i]);
     if (alias != aliases.end())
@@ -126,17 +142,15 @@ void profile::set_advanced(std::vector<std::string> names, advanced_event_transl
     auto ptr = dev.lock();
     if (ptr) ptr->update_advanced(names,trans);
   }
-  lock.unlock();
 }
 
 void profile::set_alias(std::string external, std::string local) {
-  lock.lock();
+  std::lock_guard<std::mutex> guard(lock);
   if (local.empty()) {
     aliases.erase(external);
   } else {
-  aliases[external] = local;
+    aliases[external] = local;
   }
-  lock.unlock();
 }
 
 std::string profile::get_alias(std::string name) {
@@ -146,24 +160,23 @@ std::string profile::get_alias(std::string name) {
   return "";
 }
 
-std::string profile::get_option(std::string opname) {
+option_info profile::get_option(std::string opname) {
+  std::lock_guard<std::mutex> guard(lock);
   auto it = options.find(opname);
-  if (it == options.end()) return "";
+  if (it == options.end()) return {"","",""};
   return it->second;
 }
 
 void profile::subscribe_to(profile* parent) {
   if (parent == this) return;
-  lock.lock();
+  std::lock_guard<std::mutex> guard(lock);
   subscriptions.push_back(parent->get_shared_ptr());
   parent->add_listener(get_shared_ptr());
-  lock.unlock();
 }
 void profile::remember_subscription(profile* parent) {
   if (parent == this) return;
-  lock.lock();
+  std::lock_guard<std::mutex> guard(lock);
   subscriptions.push_back(parent->get_shared_ptr());
-  lock.unlock();
 }
 
 std::shared_ptr<profile> profile::get_shared_ptr() {
@@ -171,9 +184,8 @@ std::shared_ptr<profile> profile::get_shared_ptr() {
 }
 
 void profile::add_listener(std::shared_ptr<profile> listener) {
-  lock.lock();
+  std::lock_guard<std::mutex> guard(lock);
   subscribers.push_back(listener);
-  lock.unlock();
 }
 
 void profile::remove_listener(std::shared_ptr<profile> listener) {
@@ -181,7 +193,7 @@ void profile::remove_listener(std::shared_ptr<profile> listener) {
 }
 
 void profile::remove_listener(profile* listener) {
-  lock.lock();
+  std::lock_guard<std::mutex> guard(lock);
   for (auto it = subscribers.begin(); it != subscribers.end(); it++) {
     std::shared_ptr<profile> ptr = it->lock();
     if (ptr.get() == listener) {
@@ -189,17 +201,15 @@ void profile::remove_listener(profile* listener) {
       break;
     }
   }
-  lock.unlock();
 }
 
 void profile::add_device(std::shared_ptr<input_source> device) {
-  lock.lock();
+  std::lock_guard<std::mutex> guard(lock);
   devices.push_back(device);
-  lock.unlock();
 }
 
 void profile::remove_device(input_source* dev) {
-  lock.lock();
+  std::lock_guard<std::mutex> guard(lock);
   for (auto it = devices.begin(); it != devices.end(); it++) {
     std::shared_ptr<input_source> ptr = it->lock();
     if (ptr.get() == dev) {
@@ -207,25 +217,24 @@ void profile::remove_device(input_source* dev) {
       break;
     }
   }
-  lock.unlock();
 }
 
-void profile::copy_into(std::shared_ptr<profile> target, bool add_subscription) {
-  lock.lock();
+void profile::copy_into(std::shared_ptr<profile> target, bool add_subscription, bool add_new) {
+  std::lock_guard<std::mutex> guard(lock);
   for (auto entry : aliases)
     target->set_alias(entry.first,entry.second);
   for (auto entry : mapping)
-    target->set_mapping(entry.first, entry.second.trans->clone(), entry.second.type, true);
+    target->set_mapping(entry.first, entry.second.trans->clone(), entry.second.type, add_new);
   for (auto entry : adv_trans)
     target->set_advanced(entry.second.fields, entry.second.trans->clone());
-  for (auto entry : options)
-    target->set_option(entry.first,entry.second);
+  for (auto entry : options) {
+    if (add_new)  target->register_option(entry.second);
+    if (!add_new) target->set_option(entry.first,entry.second.value);
+  }
   if (add_subscription) {
     subscribers.push_back(target);
     target->remember_subscription(this);
   }
-
-  lock.unlock();
 }
 
 void profile::build_default_gamepad_profile() {

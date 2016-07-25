@@ -45,7 +45,7 @@ enum sc_keys {
 
 extern const source_event steamcont_events[];
 
-extern const source_option steamcont_options[];
+extern const option_info steamcont_options[];
 
 int lookup_steamcont_event(const char* evname);
 

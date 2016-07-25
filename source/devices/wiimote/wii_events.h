@@ -83,7 +83,7 @@ extern const source_event wiimote_events[];
 
 
 
-extern const source_option wiimote_options[];
+extern const option_info wiimote_options[];
 
 int lookup_wii_event(const char* evname);
 

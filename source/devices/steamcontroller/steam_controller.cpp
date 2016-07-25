@@ -36,7 +36,7 @@ const source_event steamcont_events[] = {
   { -1, nullptr, nullptr, NO_ENTRY, 0, nullptr}
 };
 
-const source_option steamcont_options[] = {
+const option_info steamcont_options[] = {
   {"automouse", "Enable built in mouse movement emulation (\"Lizard\" mode)", "false"},
   {"autobuttons", "Enable built in keyboard/mouse button emulation (\"Lizard\" mode)", "false"},
   {"", "", ""},

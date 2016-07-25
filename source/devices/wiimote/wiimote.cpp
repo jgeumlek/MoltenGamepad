@@ -269,37 +269,6 @@ void wiimote::remove_node(const char* name) {
   }
 }
 
-/*void wiimote::list_events(cat_list& list) {
-  struct category cat;
-  struct name_descr info;
-
-  cat.name = "Wiimote";
-  int minevent = 0;
-  int maxevent = cc_right_y;
-  //Going to assume we'll never see a combination of a wiimote with the two devices below..
-  if (pro.dev) {
-    cat.name = "Wii U Pro Controller";
-    minevent = cc_a;
-    maxevent = cc_thumbr;
-  }
-  if (balance.dev) {
-    cat.name = "Wii Balance Board";
-    minevent = bal_x;
-    maxevent = bal_y;
-  }
-
-
-  for (int i = minevent; i <= maxevent; i++) {
-    info.name = wiimote_events[i].name;
-    info.descr = wiimote_events[i].descr;
-    info.data = wiimote_events[i].type;
-    cat.entries.push_back(info);
-  }
-
-  list.push_back(cat);
-  cat.entries.clear();
-}*/
-
 void wiimote::open_node(struct dev_node* node) {
   node->fd = open(udev_device_get_devnode(node->dev), O_RDONLY | O_NONBLOCK | O_CLOEXEC);
   if (node->fd < 0)

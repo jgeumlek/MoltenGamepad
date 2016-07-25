@@ -25,11 +25,17 @@ struct trans_map {
   entry_type type;
 };
 
+struct option_info {
+  std::string name;
+  std::string descr;
+  std::string value;
+};
+
 class profile : public std::enable_shared_from_this<profile> {
 public:
   std::string name;
   std::unordered_map<std::string, trans_map> mapping;
-  std::unordered_map<std::string, std::string> options;
+  std::unordered_map<std::string, option_info> options;
   std::unordered_map<std::string, std::string> aliases;
   std::map<std::string, adv_map> adv_trans;
   std::mutex lock;
@@ -43,12 +49,13 @@ public:
 
   void set_advanced(std::vector<std::string> names, advanced_event_translator* trans);
 
+  void register_option(const option_info opt);
   void set_option(std::string opname, std::string value);
 
   void set_alias(std::string external, std::string local);
   std::string get_alias(std::string name);
 
-  std::string get_option(std::string opname);
+  option_info get_option(std::string opname);
   
   void subscribe_to(profile* parent);
   void remember_subscription(profile* parent); //similar to above, but we don't try to add ourselves to the parent.
@@ -57,7 +64,7 @@ public:
   void remove_listener(profile* listener);
   void add_device(std::shared_ptr<input_source> dev);
   void remove_device(input_source* dev);
-  void copy_into(std::shared_ptr<profile> target, bool add_subscription);
+  void copy_into(std::shared_ptr<profile> target, bool add_subscription,  bool add_new);
   std::shared_ptr<profile> get_shared_ptr();
 
   ~profile();

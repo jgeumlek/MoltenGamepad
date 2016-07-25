@@ -91,7 +91,7 @@ const source_event wiimote_events[] = {
   { -1, nullptr, nullptr, NO_ENTRY, 0, nullptr}
 };
 
-const source_option wiimote_options[] = {
+const option_info wiimote_options[] = {
   {"wm_accel_active", "Enable accelerometers when no extension", "false"},
   {"nk_accel_active", "Enable accelerometers when nunchuk is present", "false"},
   {"wm_ir_active", "Enable IR data when no extension", "false"},
