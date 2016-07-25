@@ -156,7 +156,7 @@ public:
   simple_messenger log;
   std::shared_ptr<profile> mapprofile = std::make_shared<profile>();
 
-  
+
 
 };
 

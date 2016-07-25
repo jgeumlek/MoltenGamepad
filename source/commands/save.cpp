@@ -7,19 +7,33 @@
 
 int do_print_profile(moltengamepad* mg, std::string name, std::ostream& out);
 
-#define SAVE_USAGE "USAGE:\n\tsave profiles to <filename>\n\tFile will be placed in the profile directory"
+#define SAVE_USAGE "USAGE:\n\tsave profiles [profile name, ...] to <filename>\n\tFile will be placed in the profile directory"
 int do_save(moltengamepad* mg, std::vector<token>& command) {
   if (command.size() < 4) {
     std::cout << SAVE_USAGE << std::endl;
     return -1;
   };
-  if (command.at(1).value != "profiles" || command.at(2).value != "to") {
+  if (command.at(1).value != "profiles" && command.at(1).value != "profile") {
     std::cout << SAVE_USAGE << std::endl;
     return -1;
   };
 
-  std::string filename = command.at(3).value;
-  for (int i = 4; i < command.size(); i++) {
+  std::vector<std::string> profiles_to_save;
+  int i = 2;
+  for (i = 2; i < command.size() && command.at(i).value != "to"; i++) {
+    if (command.at(i).type == TK_IDENT)
+      profiles_to_save.push_back(command.at(i).value);
+  }
+
+  if (i >= command.size() - 1) {
+    std::cout << SAVE_USAGE << std::endl;
+    return -1; //Ran out of tokens before getting to the filename
+  }
+  i++;
+  
+  std::string filename = command.at(i).value;
+  i++;
+  for ( ; i < command.size(); i++) {
     if (command.at(i).type != TK_ENDL) filename += command.at(i).value;
   }
   //If it is not an absolute path, place it relative the profile directory
@@ -33,10 +47,20 @@ int do_save(moltengamepad* mg, std::vector<token>& command) {
     std::cout << "could not open file" << std::endl;
     return -2;
   }
-  for (auto it = mg->managers.begin(); it != mg->managers.end(); it++) {
-    file << "[" << (*it)->name << "]" << std::endl;
-    do_print_profile(mg, (*it)->name, file);
+
+  if (profiles_to_save.empty()) {
+    //Just save the various manager profiles, ignore the transient device profiles.
+    for (auto it = mg->managers.begin(); it != mg->managers.end(); it++)
+      profiles_to_save.push_back((*it)->name);
+  } 
+
+  for (auto prof : profiles_to_save) {
+    //TODO: Refactor so we can detect a profile doesn't exist earlier.
+    std::cout << "saving profile " << prof << std::endl;
+    file << "[" << prof << "]" << std::endl;
+    do_print_profile(mg, prof, file);
   }
+
   file.close();
   return 0;
 }

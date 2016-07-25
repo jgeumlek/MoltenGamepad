@@ -94,7 +94,6 @@ void profile::set_option(std::string opname, std::string value) {
   if (options.find(opname) == options.end()) 
     return; //This option was not registered, ignore it.
 
-  options.erase(opname);
   options[opname].value = value;
   for (auto prof : subscribers) {
     auto ptr = prof.lock();
