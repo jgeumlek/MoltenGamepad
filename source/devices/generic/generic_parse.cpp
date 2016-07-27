@@ -62,41 +62,26 @@ void generic_assignment_line(std::vector<token>& line, generic_driver_info*& inf
   }
 
   if (field == "exclusive") {
-    if (value == "true") {
-      info->grab_ioctl = true;
-      return;
-    }
-    if (value == "false") {
-      info->grab_ioctl = false;
-      return;
-    }
-    context.errors->take_message("\""+value + "\" was not recognized as true or false. ("+context.path+":"+std::to_string(context.line_number)+")");
+    int ret = read_bool(value, [&info] (bool val) {
+      info->grab_ioctl = val;
+    });
+    if (ret) context.errors->take_message("\""+value + "\" was not recognized as true or false. ("+context.path+":"+std::to_string(context.line_number)+")");
     return;
   }
 
   if (field == "change_permissions") {
-    if (value == "true") {
-      info->grab_chmod = true;
-      return;
-    }
-    if (value == "false") {
-      info->grab_chmod = false;
-      return;
-    }
-    context.errors->take_message("\""+value + "\" was not recognized as true or false. ("+context.path+":"+std::to_string(context.line_number)+")");
+    int ret = read_bool(value, [&info] (bool val) {
+      info->grab_chmod = val;
+    });
+    if (ret) context.errors->take_message("\""+value + "\" was not recognized as true or false. ("+context.path+":"+std::to_string(context.line_number)+")");
     return;
   }
 
   if (field == "flatten") {
-    if (value == "true") {
-      info->flatten = true;
-      return;
-    }
-    if (value == "false") {
-      info->flatten = false;
-      return;
-    }
-    context.errors->take_message("\""+value + "\" was not recognized as true or false. ("+context.path+":"+std::to_string(context.line_number)+")");
+    int ret = read_bool(value, [&info] (bool val) {
+      info->flatten = val;
+    });
+    if (ret) context.errors->take_message("\""+value + "\" was not recognized as true or false. ("+context.path+":"+std::to_string(context.line_number)+")");
     return;
   }
 

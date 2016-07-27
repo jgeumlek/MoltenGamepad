@@ -30,81 +30,40 @@ wiimote::~wiimote() {
 
 int wiimote::process_option(const char* name, const char* value) {
   if (!strcmp(name, "wm_accel_active")) {
-    if (!strcmp(value, "true")) {
-      wm_accel_active = true;
+    return read_bool(std::string(value), [&] (bool val) {
+      this->wm_accel_active = val;
       update_mode();
-      return 0;
-    };
-    if (!strcmp(value, "false")) {
-      wm_accel_active = false;
-      update_mode();
-      return 0;
-    };
-    return -1;
+    });
   }
   if (!strcmp(name, "nk_accel_active")) {
-    if (!strcmp(value, "true")) {
-      nk_accel_active = true;
+    return read_bool(std::string(value), [&] (bool val) {
+      this->nk_accel_active = val;
       update_mode();
-      return 0;
-    };
-    if (!strcmp(value, "false")) {
-      nk_accel_active = false;
-      update_mode();
-      return 0;
-    };
-    return -1;
+    });
   }
   if (!strcmp(name, "wm_ir_active")) {
-    if (!strcmp(value, "true")) {
-      wm_ir_active = true;
+    return read_bool(std::string(value), [&] (bool val) {
+      this->wm_ir_active = val;
       update_mode();
-      return 0;
-    };
-    if (!strcmp(value, "false")) {
-      wm_ir_active = false;
-      update_mode();
-      return 0;
-    };
-    return -1;
+    });
   }
   if (!strcmp(name, "nk_ir_active")) {
-    if (!strcmp(value, "true")) {
-      nk_ir_active = true;
+    return read_bool(std::string(value), [&] (bool val) {
+      this->nk_ir_active = val;
       update_mode();
-      return 0;
-    };
-    if (!strcmp(value, "false")) {
-      nk_ir_active = false;
-      update_mode();
-      return 0;
-    };
-    return -1;
+    });
   }
   if (!strcmp(name, "grab_exclusive")) {
-    if (!strcmp(value, "true")) {
-      grab_exclusive = true;
-      grab_ioctl(true);
-      return 0;
-    };
-    if (!strcmp(value, "false")) {
-      grab_exclusive = false;
-      grab_ioctl(false);
-      return 0;
-    };
-    return -1;
+    return read_bool(std::string(value), [&] (bool val) {
+      this->grab_exclusive = val;
+      grab_ioctl(val);
+    });
   }
   if (!strcmp(name, "grab_permissions")) {
-    if (!strcmp(value, "true")) {
-      grab_permissions = true;
-      grab_chmod(true);
-      return 0;
-    };
-    if (!strcmp(value, "false")) {
-      grab_permissions = false;
-      grab_chmod(false);
-      return 0;
-    };
+    return read_bool(std::string(value), [&] (bool val) {
+      this->grab_permissions = val;
+      grab_chmod(val);
+    });
     return -1;
   }
 

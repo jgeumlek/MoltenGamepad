@@ -203,7 +203,9 @@ void MGparser::do_assignment(std::string header, std::string field, std::vector<
 
   if (!field.empty() && field.front() == '?' && rhs.size() > 0) {
     field.erase(field.begin());
-    prof->set_option(field, rhs.front().value);
+    int ret = prof->set_option(field, rhs.front().value);
+    if (ret)
+      out.take_message(field + " is not a registered option");
     return;
   }
 

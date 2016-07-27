@@ -384,3 +384,15 @@ void moltengamepad::for_all_profiles(std::function<void (std::shared_ptr<profile
   }
   profile_list_lock.unlock();
 }
+
+int read_bool(const std::string value, std::function<void (bool)> process) {
+  if (value == "true") {
+    process(true);
+    return 0;
+  }
+  if (value == "false") {
+    process(false);
+    return 0;
+  }
+  return -1;
+}

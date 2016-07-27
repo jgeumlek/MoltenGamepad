@@ -104,5 +104,7 @@ private:
 
 int shell_loop(moltengamepad* mg, std::istream& in);
 
+int read_bool(const std::string value, std::function<void (bool)> process);
+
 
 #endif

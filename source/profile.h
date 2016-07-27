@@ -50,7 +50,7 @@ public:
   void set_advanced(std::vector<std::string> names, advanced_event_translator* trans);
 
   void register_option(const option_info opt);
-  void set_option(std::string opname, std::string value);
+  int set_option(std::string opname, std::string value);
 
   void set_alias(std::string external, std::string local);
   std::string get_alias(std::string name);

@@ -89,10 +89,10 @@ void profile::register_option(const option_info opt) {
   }
 }
 
-void profile::set_option(std::string opname, std::string value) {
+int profile::set_option(std::string opname, std::string value) {
   std::lock_guard<std::mutex> guard(lock);
   if (options.find(opname) == options.end()) 
-    return; //This option was not registered, ignore it.
+    return -1; //This option was not registered, ignore it.
 
   options[opname].value = value;
   for (auto prof : subscribers) {
@@ -103,6 +103,7 @@ void profile::set_option(std::string opname, std::string value) {
     auto ptr = dev.lock();
     if (ptr) ptr->update_option(opname.c_str(),value.c_str());
   }
+  return 0;
 }
 
 void profile::set_advanced(std::vector<std::string> names, advanced_event_translator* trans) {
