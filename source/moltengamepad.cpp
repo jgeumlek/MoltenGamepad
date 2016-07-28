@@ -151,7 +151,7 @@ int fifo_loop(moltengamepad* mg) {
   while (keep_looping) {
     std::ifstream file;
     std::string path;
-    mg->opts->get_option<std::string>("fifo_path",path);
+    mg->opts->get<std::string>("fifo_path",path);
     file.open(path, std::istream::in);
     if (file.fail()) break;
     shell_loop(mg, file);
@@ -206,7 +206,7 @@ int moltengamepad::init() {
   add_profile(gamepad.get());
   //set up our padstyles and our slot manager
   virtpad_settings padstyle = default_padstyle;
-  opts->get_option<bool>("dpad_as_hat",padstyle.dpad_as_hat);
+  opts->get<bool>("dpad_as_hat",padstyle.dpad_as_hat);
   if (opts->get<bool>("mimic_xpad")) padstyle = xpad_padstyle;
   slots = new slot_manager(opts->get<int>("num_gamepads"), opts->get<bool>("make_keyboard"), padstyle);
   //add standard streams
@@ -258,6 +258,7 @@ int moltengamepad::init() {
 
   //start listening on FIFO if needed.
   if (opts->get<bool>("make_fifo")) {
+    //unlock option so we can set/clear it if needed.
     opts->lock("fifo_path",false);
     //try to use $XDG_RUNTIME_DIR, only if set.
     const char* run_dir = getenv("XDG_RUNTIME_DIR");
@@ -295,7 +296,7 @@ moltengamepad::~moltengamepad() {
   if (opts->get<bool>("make_fifo")) {
     std::ofstream fifo;
     std::string path;
-    opts->get_option("fifo_path",path);
+    opts->get("fifo_path",path);
     fifo.open(path, std::ostream::out);
     unlink(path.c_str());
     fifo << "quit" << std::endl;

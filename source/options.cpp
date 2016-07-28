@@ -64,7 +64,7 @@ void options::lock(std::string opname, bool locked) {
 }
 
 template<>
-int options::get_option(std::string opname, bool& target) {
+int options::get(std::string opname, bool& target) {
   std::lock_guard<std::mutex> guard(optlock);
   if (options.find(opname) == options.end()) 
     return -1;
@@ -84,7 +84,7 @@ bool options::get(std::string opname) {
 }
 
 template<>
-int options::get_option<int>(std::string opname, int& target) {
+int options::get<int>(std::string opname, int& target) {
   std::lock_guard<std::mutex> guard(optlock);
   if (options.find(opname) == options.end()) 
     return -1;
@@ -111,7 +111,7 @@ int options::get<int>(std::string opname) {
 }
 
 template<>
-int options::get_option<std::string>(std::string opname, std::string& target) {
+int options::get<std::string>(std::string opname, std::string& target) {
   std::lock_guard<std::mutex> guard(optlock);
   if (options.find(opname) == options.end()) 
     return -1;

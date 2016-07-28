@@ -19,7 +19,7 @@ public:
   int set(std::string opname, std::string value);
   void lock(std::string opname, bool locked);
   option_info get_option(std::string opname);
-  template<typename T> int get_option(std::string opname, T& target);
+  template<typename T> int get(std::string opname, T& target);
   template<typename T> T get(std::string opname);
 
 protected:

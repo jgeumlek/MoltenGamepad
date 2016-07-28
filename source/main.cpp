@@ -47,9 +47,8 @@ int main(int argc, char* argv[]) {
 
     moltengamepad* mg = new moltengamepad(&options);
     app = mg;
-    bool daemon;
-    options.get_option<bool>("daemon", daemon);
-    if (daemon) {
+    
+    if (options.get<bool>("daemon")) {
       int pid = fork();
       if(pid == 0) {
 
@@ -61,7 +60,7 @@ int main(int argc, char* argv[]) {
         std::cerr <<  "Failed to fork.\n";
       } else {
         std::string pidfile;
-        options.get_option<std::string>("pidfile",pidfile);
+        options.get<std::string>("pidfile",pidfile);
         if(pidfile.size() > 0) {
           std::ofstream pf;
           pf.open (pidfile);
