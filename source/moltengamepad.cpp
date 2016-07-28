@@ -11,6 +11,8 @@
 #include "devices/steamcontroller/steam_controller.h"
 #endif
 
+#include "parser.h"
+
 //FUTURE WORK: Make it easier to specify additional virtpad styles.
 
 const virtpad_settings default_padstyle = {
@@ -81,11 +83,11 @@ std::string moltengamepad::locate(file_category cat, std::string path) {
     case FILE_CONFIG:
       break; //the override handled elsewhere to affect all categories
     case FILE_PROFILE:
-      commandline_override = options.profile_dir;
+      commandline_override = opts->get<std::string>("profile_dir");
       category_prefix = "/profiles/";
       break;
     case FILE_GENDEV:
-      commandline_override = options.gendev_dir;
+      commandline_override = opts->get<std::string>("gendev_dir");
       category_prefix = "/gendevices/";
       break;
   }
@@ -112,11 +114,11 @@ std::vector<std::string> moltengamepad::locate_glob(file_category cat, std::stri
     case FILE_CONFIG:
       break; //the override handled elsewhere to affect all categories
     case FILE_PROFILE:
-      commandline_override = options.profile_dir;
+      commandline_override = opts->get<std::string>("profile_dir");
       category_prefix = "/profiles/";
       break;
     case FILE_GENDEV:
-      commandline_override = options.gendev_dir;
+      commandline_override = opts->get<std::string>("gendev_dir");
       category_prefix = "/gendevices/";
       break;
   }
@@ -148,28 +150,65 @@ int fifo_loop(moltengamepad* mg) {
   bool keep_looping = true;
   while (keep_looping) {
     std::ifstream file;
-    file.open(mg->options.fifo_path, std::istream::in);
+    std::string path;
+    mg->opts->get_option<std::string>("fifo_path",path);
+    file.open(path, std::istream::in);
     if (file.fail()) break;
     shell_loop(mg, file);
     file.close();
   }
 }
 
+
+const option_info general_options[] = {
+
+  {"num_gamepads", "Number of virtual gamepads to create", "4", MG_INT},
+  {"dpad_as_hat", "Use a hat to represent the dpad, instead of 4 separate buttons", "false", MG_BOOL},
+  {"mimic_xpad", "Set virtual devices to match a wired Xbox 360 controller", "false", MG_BOOL},
+  {"make_keyboard", "Make a virtual keyboard/mouse device", "true", MG_BOOL},
+  {"config_dir", "A directory to use instead of $XDG_CONFIG_HOME/moltengamepad", "", MG_STRING},
+  {"profile_dir", "A directory to check for profiles before the config directories", "", MG_STRING},
+  {"gendev_dir", "A directory to check for generic driver descriptions before the config directories", "", MG_STRING},
+  {"make_fifo", "Make a FIFO that processes any commands written to it", "false", MG_BOOL},
+  {"fifo_path", "Location to create the FIFO", "", MG_STRING},
+  {"uinput_path", "Location of the uinput node", "", MG_STRING},
+  {"daemon", "Run in daemon mode", "false", MG_BOOL},
+  {"pidfile", "Location to write the PID when in daemon mode", "", MG_STRING},
+  {"enumerate", "Check for already connected devices", "true", MG_BOOL},
+  {"monitor", "Listen for device connections/disconnections", "true", MG_BOOL},
+  {"", "", ""},
+};
+
+int config_parse_line(moltengamepad* mg, std::vector<token>& line, context context, options& opt);
+
 int moltengamepad::init() {
   //This whole function is pretty bad in handling the config directories not being present.
   //But at least we aren't just spilling into the user's top level home directory.
   
   //load config dirs from environment variables
-  xdg_config_dirs = find_xdg_config_dirs(options.config_dir);
+  xdg_config_dirs = find_xdg_config_dirs(opts->get<std::string>("config_dir"));
+  
+  //Load moltengamepad.cfg if it exists
+  //First, lock some options that can't be changed at this point.
+  opts->lock("daemon",true);
+  opts->lock("pidfile",true);
+  opts->lock("config_dir",true);
+  std::string cfgfile = locate(FILE_CONFIG,"moltengamepad.cfg");
+  std::cout << "loading " << cfgfile << std::endl;
+  loop_file(cfgfile, [this] (std::vector<token>& tokens, context ctx) {
+    config_parse_line(this, tokens, ctx, *(this->opts));
+    return 0;
+  });
+
   //build the gamepad profile
   gamepad->gamepad_defaults();
   gamepad->name = "gamepad";
   add_profile(gamepad.get());
   //set up our padstyles and our slot manager
   virtpad_settings padstyle = default_padstyle;
-  padstyle.dpad_as_hat = options.dpad_as_hat;
-  if (options.mimic_xpad) padstyle = xpad_padstyle;
-  slots = new slot_manager(options.num_gamepads, options.make_keyboard, padstyle);
+  opts->get_option<bool>("dpad_as_hat",padstyle.dpad_as_hat);
+  if (opts->get<bool>("mimic_xpad")) padstyle = xpad_padstyle;
+  slots = new slot_manager(opts->get<int>("num_gamepads"), opts->get<bool>("make_keyboard"), padstyle);
   //add standard streams
   drivers.add_listener(1);
   plugs.add_listener(1);
@@ -187,8 +226,8 @@ int moltengamepad::init() {
 
   std::string confdir = locate(FILE_CONFIG,"");
   if (!confdir.empty()) {
-    if (options.profile_dir.empty()) mkdir((confdir + "/profiles/").c_str(), 0755);
-    if (options.gendev_dir.empty()) mkdir((confdir + "/gendevices/").c_str(), 0755);
+    if (opts->get<std::string>("profile_dir").empty()) mkdir((confdir + "/profiles/").c_str(), 0755);
+    if (opts->get<std::string>("gendev_dir").empty()) mkdir((confdir + "/gendevices/").c_str(), 0755);
   }
 
   
@@ -214,24 +253,25 @@ int moltengamepad::init() {
   //start the udev thread
   udev.set_managers(&managers);
   udev.set_uinput(slots->get_uinput());
-  if (options.listen_for_devices) udev.start_monitor();
-  if (options.look_for_devices)   udev.enumerate();
+  if (opts->get<bool>("monitor")) udev.start_monitor();
+  if (opts->get<bool>("enumerate"))   udev.enumerate();
 
   //start listening on FIFO if needed.
-  if (options.make_fifo) {
+  if (opts->get<bool>("make_fifo")) {
+    opts->lock("fifo_path",false);
     //try to use $XDG_RUNTIME_DIR, only if set.
     const char* run_dir = getenv("XDG_RUNTIME_DIR");
-    if (options.fifo_path.empty() && run_dir) {
-      options.fifo_path = std::string(run_dir) + "/moltengamepad";
+    if (opts->get<std::string>("fifo_path").empty() && run_dir) {
+      opts->set("fifo_path", std::string(run_dir) + "/moltengamepad");
     }
-    if (options.fifo_path.empty()) {
+    if (opts->get<std::string>("fifo_path").empty()) {
       errors.take_message("Could not locate fifo path. Use the --fifo-path command line argument.");
       throw - 1; //Abort so we don't accidentally run without a means of control.
     }
-    int ret = mkfifo(options.fifo_path.c_str(), 0660);
+    int ret = mkfifo(opts->get<std::string>("fifo_path").c_str(), 0660);
     if (ret < 0)  {
       perror("making fifo:");
-      options.fifo_path = "";
+      opts->set("fifo_path","");
       throw -1;
     } else {
       remote_handler = new std::thread(fifo_loop, this);
@@ -248,14 +288,16 @@ moltengamepad::~moltengamepad() {
   udev.set_managers(nullptr);
 
   //No need to print into the void...
-  if(!options.daemon)
+  if(!opts->get<bool>("daemon"))
     std::cout << "Shutting down." << std::endl;
 
   //Clean up our fifo + send a message to ensure the thread clears out.
-  if (options.make_fifo) {
+  if (opts->get<bool>("make_fifo")) {
     std::ofstream fifo;
-    fifo.open(options.fifo_path, std::ostream::out);
-    unlink(options.fifo_path.c_str());
+    std::string path;
+    opts->get_option("fifo_path",path);
+    fifo.open(path, std::ostream::out);
+    unlink(path.c_str());
     fifo << "quit" << std::endl;
     if (remote_handler) {
       remote_handler->join();
@@ -385,14 +427,24 @@ void moltengamepad::for_all_profiles(std::function<void (std::shared_ptr<profile
   profile_list_lock.unlock();
 }
 
-int read_bool(const std::string value, std::function<void (bool)> process) {
-  if (value == "true") {
-    process(true);
-    return 0;
+
+int loop_file(const std::string path, std::function<int (std::vector<token>&, context)> func) {
+  if (path.empty()) return -1;
+  char* buff = new char [1024];
+  context context = {1, path};
+  std::ifstream file;
+  file.open(path, std::istream::in);
+  if (file.fail()) return -5;
+  while (!QUIT_APPLICATION) {
+    file.getline(buff, 1024);
+    auto tokens = tokenize(std::string(buff));
+    int ret = func(tokens, context);
+    if (ret) break;
+    if (file.eof()) break;
+    context.line_number++;
+
   }
-  if (value == "false") {
-    process(false);
-    return 0;
-  }
-  return -1;
+
+  delete[] buff;
+  return 0;
 }

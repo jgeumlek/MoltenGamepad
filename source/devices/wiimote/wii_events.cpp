@@ -92,12 +92,12 @@ const source_event wiimote_events[] = {
 };
 
 const option_info wiimote_options[] = {
-  {"wm_accel_active", "Enable accelerometers when no extension", "false"},
-  {"nk_accel_active", "Enable accelerometers when nunchuk is present", "false"},
-  {"wm_ir_active", "Enable IR data when no extension", "false"},
-  {"nk_ir_active", "Enable IR data when nunchuk is present", "false"},
-  {"grab_exclusive", "Grab device events via ioctl EVIOCGRAB", "true"},
-  {"grab_permissions", "Grab device via blocking all read permissions", "false"},
+  {"wm_accel_active", "Enable accelerometers when no extension", "false", MG_BOOL},
+  {"nk_accel_active", "Enable accelerometers when nunchuk is present", "false", MG_BOOL},
+  {"wm_ir_active", "Enable IR data when no extension", "false", MG_BOOL},
+  {"nk_ir_active", "Enable IR data when nunchuk is present", "false", MG_BOOL},
+  {"grab_exclusive", "Grab device events via ioctl EVIOCGRAB", "true", MG_BOOL},
+  {"grab_permissions", "Grab device via blocking all read permissions", "false", MG_BOOL},
   {"", "", ""},
 };
 

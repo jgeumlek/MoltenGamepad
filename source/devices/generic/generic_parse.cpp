@@ -5,11 +5,7 @@
 #include "../../moltengamepad.h"
 #include "../../eventlists/eventlist.h"
 
-struct context {
-  int line_number;
-  std::string path;
-  simple_messenger* errors;
-};
+
 
 void generic_assignment_line(std::vector<token>& line, generic_driver_info*& info, moltengamepad* mg, context context) {
 
@@ -65,7 +61,7 @@ void generic_assignment_line(std::vector<token>& line, generic_driver_info*& inf
     int ret = read_bool(value, [&info] (bool val) {
       info->grab_ioctl = val;
     });
-    if (ret) context.errors->take_message("\""+value + "\" was not recognized as true or false. ("+context.path+":"+std::to_string(context.line_number)+")");
+    if (ret) mg->errors.take_message("\""+value + "\" was not recognized as true or false. ("+context.path+":"+std::to_string(context.line_number)+")");
     return;
   }
 
@@ -73,7 +69,7 @@ void generic_assignment_line(std::vector<token>& line, generic_driver_info*& inf
     int ret = read_bool(value, [&info] (bool val) {
       info->grab_chmod = val;
     });
-    if (ret) context.errors->take_message("\""+value + "\" was not recognized as true or false. ("+context.path+":"+std::to_string(context.line_number)+")");
+    if (ret) mg->errors.take_message("\""+value + "\" was not recognized as true or false. ("+context.path+":"+std::to_string(context.line_number)+")");
     return;
   }
 
@@ -81,7 +77,7 @@ void generic_assignment_line(std::vector<token>& line, generic_driver_info*& inf
     int ret = read_bool(value, [&info] (bool val) {
       info->flatten = val;
     });
-    if (ret) context.errors->take_message("\""+value + "\" was not recognized as true or false. ("+context.path+":"+std::to_string(context.line_number)+")");
+    if (ret) mg->errors.take_message("\""+value + "\" was not recognized as true or false. ("+context.path+":"+std::to_string(context.line_number)+")");
     return;
   }
 
@@ -92,7 +88,7 @@ void generic_assignment_line(std::vector<token>& line, generic_driver_info*& inf
       info->split_types.clear();
       info->split_types.assign(split_count,"gamepad");
     } catch (...) {
-      context.errors->take_message("split value invalid ("+context.path+":"+std::to_string(context.line_number)+")");
+      mg->errors.take_message("split value invalid ("+context.path+":"+std::to_string(context.line_number)+")");
     }
     return;
   }
@@ -104,7 +100,7 @@ void generic_assignment_line(std::vector<token>& line, generic_driver_info*& inf
       if (split_id <= 0 || split_id > info->split)
         throw -1;
     } catch (...) {
-      context.errors->take_message("split value invalid ("+context.path+":"+std::to_string(context.line_number)+")");
+      mg->errors.take_message("split value invalid ("+context.path+":"+std::to_string(context.line_number)+")");
     }
   }
 
@@ -137,7 +133,7 @@ void generic_assignment_line(std::vector<token>& line, generic_driver_info*& inf
     info->events.push_back(ev);
     return;
   }
-  context.errors->take_message(field + " was not recognized as an option or event. ("+context.path+":"+std::to_string(context.line_number)+")");
+  mg->errors.take_message(field + " was not recognized as an option or event. ("+context.path+":"+std::to_string(context.line_number)+")");
 }
 
 void generic_parse_line(std::vector<token>& line, generic_driver_info*& info, moltengamepad* mg, context context) {
@@ -154,7 +150,7 @@ void generic_parse_line(std::vector<token>& line, generic_driver_info*& info, mo
         if (!mg->find_manager(info->name.c_str())) {
           mg->managers.push_back(new generic_manager(mg, *info));
         } else {
-          context.errors->take_message("redundant driver \""+info->name+"\" ignored");
+          mg->errors.take_message("redundant driver \""+info->name+"\" ignored");
           delete info;
         }
         info = new generic_driver_info;
@@ -183,7 +179,6 @@ int generic_config_loop(moltengamepad* mg, std::istream& in, std::string& path) 
   struct generic_driver_info* info = new generic_driver_info;
   context context;
   context.line_number = 1;
-  context.errors = &mg->errors;
   context.path = path;
 
   while (keep_looping) {
@@ -209,10 +204,10 @@ int generic_config_loop(moltengamepad* mg, std::istream& in, std::string& path) 
       mg->managers.push_back(new generic_manager(mg, *info));
       need_to_free_info = false;
     } else {
-      context.errors->take_message("redundant driver \""+info->name+"\" ignored");
+      mg->errors.take_message("redundant driver \""+info->name+"\" ignored");
     }
   } else {
-    context.errors->take_message("missing name, devname, or events ("+path+")");
+    mg->errors.take_message("missing name, devname, or events ("+path+")");
   }
   
   if (need_to_free_info) {

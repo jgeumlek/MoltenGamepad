@@ -538,6 +538,12 @@ bool MGparser::parse_def(enum entry_type intype, MGTransDef& def, complex_expr* 
       if (!slot) return false;
       def.fields[i].slot = slot;
     }
+    if (type == MG_BOOL) {
+      def.fields[i].integer = 0;
+      read_bool(expr->params[j]->ident, [&def, i] (bool val) {
+        def.fields[i].integer = val ? 1 : 0;
+      });
+    }
     if (type == MG_STRING) def.fields[i].string = new std::string(expr->params[j]->ident);
     //TODO: float
     j++;
@@ -582,8 +588,9 @@ void MGparser::print_def(entry_type intype, MGTransDef& def, std::ostream& outpu
     }
     if (type == MG_INT) output << field.integer;
     if (type == MG_FLOAT) output << field.real;
-    if (type == MG_STRING) output << *(field.string);
+    if (type == MG_STRING) output << "\""<<*(field.string)<<"\"";
     if (type == MG_SLOT) output << field.slot->name;
+    if (type == MG_BOOL) output << (field.integer ? "true":"false");
     if (type == MG_TRANS || type == MG_KEY_TRANS || type == MG_AXIS_TRANS || type == MG_REL_TRANS) {
       MGTransDef innerdef;
       entry_type context = intype;

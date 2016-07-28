@@ -5,6 +5,8 @@
 #include <string>
 #include "../eventlists/eventlist.h"
 #include "../devices/device.h"
+#include "../moltengamepad.h"
+#include "../mg_types.h"
 
 
 #define EVENT_KEY 0
@@ -21,22 +23,7 @@ class input_source;
 class event_translator;
 class advanced_event_translator;
 
-enum MGType {
-  MG_KEY_TRANS,
-  MG_REL_TRANS,
-  MG_AXIS_TRANS,
-  MG_TRANS,
-  MG_ADVANCED_TRANS,
-  MG_KEY,
-  MG_AXIS,
-  MG_REL,
-  MG_STRING,
-  MG_INT,
-  MG_FLOAT, //Not implemented...
-  MG_SLOT,
-  MG_KEYBOARD_SLOT,
-  MG_NULL,
-};
+
 //Maybe add a varargs or tuple type?
 
 struct MGField {

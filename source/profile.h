@@ -6,6 +6,7 @@
 #include <vector>
 #include <mutex>
 #include <memory>
+#include "options.h"
 
 enum entry_type {DEV_OPTION, DEV_KEY, DEV_AXIS, DEV_REL, NO_ENTRY} ;
 
@@ -25,11 +26,6 @@ struct trans_map {
   entry_type type;
 };
 
-struct option_info {
-  std::string name;
-  std::string descr;
-  std::string value;
-};
 
 class profile : public std::enable_shared_from_this<profile> {
 public:

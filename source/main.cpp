@@ -7,7 +7,7 @@
 #include <fstream>
 
 
-int parse_opts(moltengamepad::mg_options& options, int argc, char* argv[]);
+int parse_opts(options& options, int argc, char* argv[]);
 volatile bool STOP_WORKING = true;
 volatile bool QUIT_APPLICATION = false;
 moltengamepad* app;
@@ -33,22 +33,11 @@ int main(int argc, char* argv[]) {
   signal(SIGTERM, signal_handler);
   //signal(SIGHUP, signal_handler);
 
-  moltengamepad::mg_options options;
-  options.look_for_devices = true;
-  options.listen_for_devices = true;
-  options.make_keyboard = true;
-  options.make_mouse = false;
-  options.make_pointer = false;
-  options.dpad_as_hat = false;
-  options.mimic_xpad = false;
-  options.daemon = false;
-  options.num_gamepads = 4;
-  options.config_dir = "";
-  options.profile_dir = "";
-  options.gendev_dir = "";
-  options.fifo_path = "";
-  options.uinput_path = "";
-  options.pidfile = "";
+  options options;
+  const option_info* opt = &general_options[0];
+  for (int i = 0; !opt->name.empty(); opt = &general_options[++i]) {
+    options.register_option(*opt);
+  }
   int ret = parse_opts(options, argc, argv);
 
   if (ret > 0) return 0;
@@ -56,10 +45,11 @@ int main(int argc, char* argv[]) {
 
   try {
 
-    moltengamepad* mg = new moltengamepad(options);
+    moltengamepad* mg = new moltengamepad(&options);
     app = mg;
-
-    if (options.daemon) {
+    bool daemon;
+    options.get_option<bool>("daemon", daemon);
+    if (daemon) {
       int pid = fork();
       if(pid == 0) {
 
@@ -70,9 +60,11 @@ int main(int argc, char* argv[]) {
       } else if (pid == -1) {
         std::cerr <<  "Failed to fork.\n";
       } else {
-        if(options.pidfile.size() > 0) {
+        std::string pidfile;
+        options.get_option<std::string>("pidfile",pidfile);
+        if(pidfile.size() > 0) {
           std::ofstream pf;
-          pf.open (options.pidfile);
+          pf.open (pidfile);
           pf << pid << "\n";
           pf.close();
         }
@@ -156,7 +148,7 @@ int print_usage(char* execname) {
 
 
 
-int parse_opts(moltengamepad::mg_options& options, int argc, char* argv[]) {
+int parse_opts(options& options, int argc, char* argv[]) {
 
   int c = 0;
 
@@ -181,49 +173,64 @@ int parse_opts(moltengamepad::mg_options& options, int argc, char* argv[]) {
   };
   int long_index;
 
+  //We lock the settings so that way command line args
+  //take precedence over settings later read from files.
   while (c != -1) {
     c = getopt_long(argc, argv, "u:p:g:n:c:f:P:mhvd", long_options, &long_index);
     switch (c) {
     case 0:
       if (long_index == 10) {
-        options.make_keyboard = false;
+        options.set("make_keyboard","false");
+        options.lock("make_keyboard", true);
       };
       if (long_index == 11) {
-        options.look_for_devices = false;
+        options.set("enumerate","false");
+        options.lock("enumerate", true);
       };
       if (long_index == 12) {
-        options.listen_for_devices = false;
+        options.set("monitor","false");
+        options.lock("monitor", true);
       };
       if (long_index == 13) {
-        options.dpad_as_hat = true;
+        options.set("dpad_as_hat","false");
+        options.lock("dpad_as_hat", true);
       };
       if (long_index == 14) {
-        options.mimic_xpad = true;
+        options.set("mimic_xpad","true");
+        options.lock("mimic_xpad", true);
       };
       break;
     case 'd':
-      options.daemon = true;
+      options.set("daemon","true");
+      options.lock("daemon", true);
       break;
     case 'u':
-      options.uinput_path = std::string(optarg);
+      options.set("uinput_path",std::string(optarg));
+      options.lock("uinput_path", true);
       break;
     case 'm':
-      options.make_fifo = true;
+      options.set("make_fifo","true");
+      options.lock("make_fifo", true);
       break;
     case 'f':
-      options.fifo_path = std::string(optarg);
+      options.set("fifo_path",std::string(optarg));
+      options.lock("fifo_path", true);
       break;
     case 'p':
-      options.profile_dir = std::string(optarg);
+      options.set("profile_dir",std::string(optarg));
+      options.lock("profile_dir", true);
       break;
     case 'P':
-      options.pidfile = std::string(optarg);
+      options.set("pidfile",std::string(optarg));
+      options.lock("pidfile", true);
       break;
     case 'g':
-      options.gendev_dir = std::string(optarg);
+      options.set("gendev_dir",std::string(optarg));
+      options.lock("gendev_dir", true);
       break;
     case 'c':
-      options.config_dir = std::string(optarg);
+      options.set("config_dir",std::string(optarg));
+      options.lock("config_dir", true);
       break;
     case 'h':
       print_usage(argv[0]);
@@ -234,14 +241,8 @@ int parse_opts(moltengamepad::mg_options& options, int argc, char* argv[]) {
       return 10;
       break;
     case 'n':
-      try {
-        options.num_gamepads = std::stoi(optarg);
-        if (options.num_gamepads < 0) throw - 3;
-      } catch (...) {
-        std::cerr << "could not parse numeric value for number of gamepads." << std::endl;
-        return -5;
-
-      }
+      options.set("num_gamepads",std::string(optarg));
+      options.lock("num_gamepads", true);
       break;
     }
 

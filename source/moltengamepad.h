@@ -22,6 +22,7 @@ class device_manager;
 class udev_handler;
 class input_source;
 class profile;
+class options;
 
 //We have a few different file types, each in their own dirs.
 //need to handle handles:
@@ -36,28 +37,12 @@ enum file_category {
 };
 
 
+
+extern const option_info general_options[];
+
 class moltengamepad {
 public:
-  struct mg_options {
-    bool look_for_devices = true;
-    bool listen_for_devices = true;
-    bool make_fifo = false;
-    bool make_keyboard = true;
-    bool make_mouse = false;
-    bool make_pointer = false;
-    bool dpad_as_hat = false;
-    bool mimic_xpad = false;
-    bool daemon = false;
-    int  num_gamepads = 4;
-    std::string config_dir;
-    std::string profile_dir;
-    std::string gendev_dir;
-    std::string fifo_path;
-    std::string uinput_path;
-    std::string pidfile;
-
-  } options;
-
+  
   std::vector<device_manager*> managers;
   std::vector<std::shared_ptr<input_source>> devices;
   std::vector<std::weak_ptr<profile>> profiles;
@@ -66,10 +51,10 @@ public:
   simple_messenger drivers;
   simple_messenger plugs;
   simple_messenger errors;
+  options* opts;
   std::shared_ptr<profile> gamepad = std::make_shared<profile>();
 
-  moltengamepad() : drivers("driver"), plugs("hotplug"), errors("error") {};
-  moltengamepad(moltengamepad::mg_options options) : drivers("driver"), plugs("hotplug"), errors("error"), options(options) {};
+  moltengamepad(options* opts) : drivers("driver"), plugs("hotplug"), errors("error"), opts(opts) {};
   ~moltengamepad();
   int init();
   int stop();
@@ -100,11 +85,18 @@ private:
 
 };
 
+struct context {
+  int line_number;
+  std::string path;
+};
 
 
 int shell_loop(moltengamepad* mg, std::istream& in);
 
-int read_bool(const std::string value, std::function<void (bool)> process);
 
+
+struct token;
+
+int loop_file(const std::string path, std::function<int (std::vector<token>&, context)>);
 
 #endif
