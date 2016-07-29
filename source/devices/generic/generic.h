@@ -12,10 +12,15 @@
 class moltengamepad;
 
 struct device_match {
-  int vendor;
-  int product;
+  int vendor = -1;
+  int product = -1;
   std::string name;
+  std::string uniq;
+  std::string phys;
 };
+
+int parse_hex(const std::string& text);
+
 struct gen_source_event {
   int id;
   int split_id = 1;

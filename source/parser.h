@@ -8,7 +8,7 @@
 #include <functional>
 #include "moltengamepad.h"
 
-enum tokentype { TK_IDENT, TK_DOT, TK_EQUAL, TK_HEADER_OPEN, TK_HEADER_CLOSE, TK_LPAREN, TK_RPAREN, TK_COMMA, TK_SLASH, TK_VALUE, TK_ENDL};
+enum tokentype { TK_IDENT, TK_DOT, TK_EQUAL, TK_HEADER_OPEN, TK_HEADER_CLOSE, TK_LPAREN, TK_RPAREN, TK_COMMA, TK_SLASH, TK_COLON, TK_VALUE, TK_ENDL};
 
 struct token {
   enum tokentype type;

@@ -99,6 +99,9 @@ std::vector<token> tokenize(std::string line) {
     if (c == ',') {
       tokens.push_back({TK_COMMA, ","});
     }
+    if (c == ':') {
+      tokens.push_back({TK_COLON, ":"});
+    }
     if (c == '/') {
       tokens.push_back({TK_SLASH, "/"});
     }

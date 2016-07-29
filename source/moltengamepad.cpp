@@ -62,7 +62,7 @@ std::vector<std::string> find_xdg_config_dirs(std::string commandline_override) 
     //have to split on colons
     std::stringstream stream(confdirs);
     std::string dir;
-    while (getline(stream, dir, ':')) {
+    while (std::getline(stream, dir, ':')) {
         dirs.push_back(dir + "/moltengamepad/");
     }
   } else {

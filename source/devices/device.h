@@ -24,7 +24,6 @@ class slot_manager;
 
 class device_manager;
 
-
 struct source_event {
   int id;
   const char* name;
