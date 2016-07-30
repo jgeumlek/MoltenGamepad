@@ -4,10 +4,11 @@ A generic driver can be specified by creating a `<filename>.cfg` file in a `gend
 
 Such a file has the following form, where `#` starts comments. All `<values>` MUST be placed in quotes when spaces/punctuation are present. (Limited escaping applies, `\"` for a literal quote, `\\` for a literal backslash)
 
-    #specify device name strings to match against. If any match, the device will be claimed by this driver.
-    [<Device Name String>]
-    [<Additional Device Name>]
-    [<Additional Device Name>]
+    #specify devices details to match against. If any match, the device will be claimed by this driver.
+    #see the section "Matching Devices" for more details
+    [<Device Match>]
+    [<Additional Device Match>]
+    [<Additional Device Match>]
     
     name= <driver name> #set the name of this driver seen in MoltenGamepad
     devname= <device name prefix> #set the name assigned to identified devices
@@ -43,11 +44,36 @@ Such a file has the following form, where `#` starts comments. All `<values>` MU
     1.<event code name> = <name>,<description>
     
 
-If multiple `[<device name string>]` declarations are in a row, they are presumed to be alternative names that should be grouped under the same driver. If they are not in a row, it is assumed that the user is beginning a new generic driver specification. (Yes, multiple generic drivers can be specified in one file.)
+If multiple `[<Device Match>]` declarations are in a row, they are presumed to be alternative devices that should be grouped under the same driver. If they are not in a row, it is assumed that the user is beginning a new generic driver specification. (Yes, multiple generic drivers can be specified in one file.)
+
+#Matching Devices
+
+The most basic way to match a device is via it's reported name string. Putting it in quotes is recommended.
+
+    ["Sony Computer Entertainment Wireless Controller"]
+
+Other traits can be specified in match declaration using `<field>=` notation. Available fields to match against are 
+
+* `name` : the reported name string
+* `vendor` : the hexadecimal vendor id
+* `product` : the hexadecimal product id
+* `uniq` : a (potentially missing) uniquely identifying string for the device
+
+Putting this together results in a match line that may resemble the following.
+
+    [name="Microsoft X-Box 360 pad" vendor=045e product=028e]
+
+The first field is assumed to be the nameg. Thus the following is valid as long as ambiguity is avoided.
+
+    ["Microsoft X-Box 360 pad" vendor=045e product=028e]
+
+When a match line specifies multiple fields, a device is considered a match only if ALL specified fields are matched.
 
 #Finding Event Codes and Name Strings
 
 The `evtest` utility (not included with MoltenGamepad) is incredibly useful for this. Run it to see all devices you currently have read access to. Select a device, and it will print out events as they happen. Interact with your input device, and make note of the events generated.
+
+Near the top of the `evtest` output will be the vendor and product ids as well.
 
 
 #Example 1
