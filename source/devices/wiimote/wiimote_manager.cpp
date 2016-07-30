@@ -77,12 +77,12 @@ int wiimote_manager::accept_device(struct udev* udev, struct udev_device* dev) {
   if (!driver || strcmp(driver, "wiimote")) return -2;
 
   const char* parentpath = udev_device_get_syspath(parent);
-
+  const char* uniq = udev_device_get_property_value(parent, "HID_UNIQ");
   wiimote* existing = find_wii_dev_by_path(&wii_devs, parentpath);
 
   if (existing == nullptr) {
     //time to add a device;
-    wiimote* wm = new wiimote(mg->slots, this);
+    wiimote* wm = new wiimote(mg->slots, this, uniq ? std::string(uniq) : "");
     wm->base.dev = udev_device_ref(parent);
     wm->handle_event(dev);
     wii_devs.push_back(wm);

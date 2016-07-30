@@ -84,6 +84,7 @@ public:
   std::string get_name() const { return name; };
   void set_name(std::string name) { this->name = name; };
   virtual std::string get_description() const { return descr; };
+  virtual std::string get_uniq() const { return uniq; };
   virtual std::string get_type() const { return device_type; };
   std::string get_alias(std::string event_name) const;
   std::shared_ptr<profile> get_profile() const { return devprofile; };
@@ -97,6 +98,7 @@ protected:
   std::string name = "unnamed";
   std::string descr = "No description available";
   std::string device_type = "gamepad";
+  std::string uniq = ""; //A unique string for this input_source, if available
   std::vector<source_event> events;
   std::map<std::string, option_info> options;
   std::map<std::string, adv_entry> adv_trans;

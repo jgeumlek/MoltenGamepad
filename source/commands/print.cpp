@@ -66,7 +66,12 @@ int do_print_devs(moltengamepad* mg, std::string name, std::ostream& out) {
   if (!name.empty()) {
     std::shared_ptr<input_source> dev = mg->find_device(name.c_str());
     if (dev.get()) {
-      out << dev->get_name() << " (type: " << dev->get_type() << ")" << std::endl;
+      out << dev->get_name() <<std::endl;
+      out << " \"" << dev->get_description() << "\"" << std::endl;
+      out << " type: " << dev->get_type() << std::endl;
+      auto uniq = dev->get_uniq();
+      if (!uniq.empty()) out << " uniq: \"" << uniq << "\"" << std::endl;
+
       out << " events:" << std::endl;
       
       const std::vector<source_event>& events = dev->get_events();

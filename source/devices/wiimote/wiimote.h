@@ -55,7 +55,7 @@ public:
 
   modes mode = NO_EXT;
 
-  wiimote(slot_manager* slot_man, device_manager* manager);
+  wiimote(slot_manager* slot_man, device_manager* manager, const std::string& uniq);
 
   ~wiimote();
   

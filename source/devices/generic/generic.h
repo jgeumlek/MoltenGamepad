@@ -59,7 +59,7 @@ public:
   std::map<evcode, decodedevent> eventcodes;
   struct udev_device* node = nullptr;
 
-  generic_device(std::vector<gen_source_event>& events, int fd, bool watch, slot_manager* slot_man, device_manager* manager, std::string type);
+  generic_device(std::vector<gen_source_event>& events, int fd, bool watch, slot_manager* slot_man, device_manager* manager, std::string type, const std::string& uniq);
   ~generic_device();
 
   virtual int set_player(int player_num);
@@ -95,6 +95,7 @@ public:
   std::vector<generic_device*> devices;
   std::vector<int> fds;
   std::map<std::string, generic_node> nodes;
+  std::string uniq;
   bool grab_ioctl = false;
   bool grab_chmod = false;
   bool keep_looping = true;
@@ -102,6 +103,12 @@ public:
   int internal_pipe[2];
 
   generic_file(struct udev_device* node, bool grab_ioctl, bool grab_chmod) {
+    struct udev_device* hidparent = udev_device_get_parent_with_subsystem_devtype(node,"hid",NULL);
+    if (hidparent) {
+      const char* uniq_id = udev_device_get_property_value(hidparent, "HID_UNIQ");
+      if (uniq_id) 
+        uniq = std::string(uniq_id);
+    }
     epfd = epoll_create(1);
     if (epfd < 1) perror("epoll create");
     this->grab_ioctl = grab_ioctl;
