@@ -85,6 +85,11 @@ private:
 
 };
 
+//non-options that are also read from the config file
+struct config_extras {
+  std::vector<std::string> startup_profiles; //profiles to load at start up
+};
+
 struct context {
   int line_number;
   std::string path;

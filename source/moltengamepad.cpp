@@ -179,7 +179,9 @@ const option_info general_options[] = {
   {"", "", ""},
 };
 
-int config_parse_line(moltengamepad* mg, std::vector<token>& line, context context, options& opt);
+
+
+int config_parse_line(moltengamepad* mg, std::vector<token>& line, context context, options& opt, config_extras& extra);
 
 int moltengamepad::init() {
   //This whole function is pretty bad in handling the config directories not being present.
@@ -189,14 +191,15 @@ int moltengamepad::init() {
   xdg_config_dirs = find_xdg_config_dirs(opts->get<std::string>("config_dir"));
   
   //Load moltengamepad.cfg if it exists
+  config_extras cfg;
   //First, lock some options that can't be changed at this point.
   opts->lock("daemon",true);
   opts->lock("pidfile",true);
   opts->lock("config_dir",true);
   std::string cfgfile = locate(FILE_CONFIG,"moltengamepad.cfg");
   std::cout << "loading " << cfgfile << std::endl;
-  loop_file(cfgfile, [this] (std::vector<token>& tokens, context ctx) {
-    config_parse_line(this, tokens, ctx, *(this->opts));
+  loop_file(cfgfile, [this, &cfg] (std::vector<token>& tokens, context ctx) {
+    config_parse_line(this, tokens, ctx, *(this->opts), cfg);
     return 0;
   });
 
@@ -249,6 +252,20 @@ int moltengamepad::init() {
   //add driver profiles
   for (auto man : managers)
     add_profile(man->mapprofile.get());
+
+  //Run any startup profiles before beginning the udev searches
+  for (auto profile_path : cfg.startup_profiles) {
+    std::string fullpath = locate(FILE_PROFILE,profile_path);
+    std::ifstream file;
+    if (!fullpath.empty()) {
+      file.open(fullpath, std::ifstream::in);
+      if (!file.fail()) {
+        std::cout << "Loading profiles from " << fullpath << std::endl;
+        shell_loop(this, file);
+      }
+       file.close();
+    }
+  }
 
   //start the udev thread
   udev.set_managers(&managers);
