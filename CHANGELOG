@@ -1,0 +1,19 @@
+
+---------------------------
+0.1.1-beta
+2016-07-30
+---------------------------
+
+The first notable release. It follows an extended period in "alpha".
+
+This project is not yet stable. Large features are still subject to changes.
+
+Highlights:
+
+* Mouse movements can now be generated as "rel_x" and "rel_y". Requires being assigned to the keyboard slot.
+* XDG_CONFIG_DIRS support. Now system-wide files can be placed in /etc/xdg/moltengamepad/
+* Global options like "mimic_xpad" can be specified in "moltengamepad.cfg"
+* Generic devices can be matched by vendor:product ids
+* When saving profiles, the profiles to be saved can be specified
+* General behind-the-scenes code cleaning
+* Small bug fixes and improvements

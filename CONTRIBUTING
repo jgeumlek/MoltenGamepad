@@ -1,0 +1,38 @@
+There are four main ways to contribute at this point in time:
+
+---------------------------
+1. Bug reports
+---------------------------
+
+Always helpful. There's a lot of flexibility here, and it can be tought to test everything.
+
+---------------------------
+2. Coding
+---------------------------
+
+Pull requests are welcomed openly. 
+
+---------------------------
+3. Shaping the future
+---------------------------
+
+This project is mainly driven to scratch the itches of the primary author, but this is a very limited perspective.
+
+Do you have a use case for this software? Can it be made better for this purpose?
+
+User experience improvements are a significant area. Is there a little annoyance that could be smoothed?
+
+Suggestions can be made via GitHub issues.
+
+Obviously no promises can be made, but input on where this software should go is quite appreciated.
+
+NOTE: Keep MoltenGamepad text-based! A GUI is not yet feasible at this time. That's on a distant horizon.
+
+---------------------------
+4. Writing configurations
+---------------------------
+
+Got an interesting profile or a device spec for a generic driver?
+
+Contribute to https://github.com/jgeumlek/MG-Files
+
