@@ -40,6 +40,11 @@ int do_save(moltengamepad* mg, std::vector<token>& command) {
   if (!filename.empty() && filename.front() != '/')
     filename = mg->locate(FILE_PROFILE,"") + "/" + filename;
 
+  char* resolved = realpath(filename.c_str(), nullptr);
+  if (resolved) {
+    filename = std::string(resolved);
+    free(resolved);
+  }
   std::cout << "attempting to save to " << filename << std::endl;
   std::ofstream file;
   file.open(filename, std::ofstream::out);

@@ -99,6 +99,11 @@ std::string moltengamepad::locate(file_category cat, std::string path) {
   for (auto dir : dirs) {
     std::string fullpath = dir + category_prefix + path;
     if (access((fullpath).c_str(), R_OK) != -1) {
+      char* resolved = realpath(fullpath.c_str(), nullptr);
+      if (resolved) {
+        fullpath = std::string(resolved);
+        free(resolved);
+      }
       return fullpath;
     }
   }
@@ -135,7 +140,11 @@ std::vector<std::string> moltengamepad::locate_glob(file_category cat, std::stri
     glob(fullpath.c_str(), 0, nullptr, &globbuffer);
 
     for (int i = 0; i < globbuffer.gl_pathc; i++) {
-      files.push_back(std::string(globbuffer.gl_pathv[i]));
+      char* resolved = realpath(globbuffer.gl_pathv[i], nullptr);
+      if (resolved) {
+        files.push_back(std::string(resolved));
+        free(resolved);
+      }
     }
 
     globfree(&globbuffer);
