@@ -146,6 +146,9 @@ int uinput::make_keyboard(const uinput_ids& ids) {
     ioctl(fd, UI_SET_KEYBIT, i);
   }
 
+  //Set BTN_TOUCH so joydev thinks this a touchscreen.
+  ioctl(fd, UI_SET_KEYBIT, BTN_TOUCH);
+
   /*Set basic mouse events*/
   static int abs[] = { ABS_X, ABS_Y};
 
