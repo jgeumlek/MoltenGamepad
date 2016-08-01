@@ -157,6 +157,9 @@ void do_header_line(std::vector<token>& line, std::string& header) {
 #define TRANSGEN(X) trans_gens[#X] = trans_generator(X::fields,[] (std::vector<MGField>& fields) { return new X(fields);});
 #define RENAME_TRANSGEN(name,X) trans_gens[#name] = trans_generator(X::fields,[] (std::vector<MGField>& fields) { return new X(fields);});
 
+//Need a static location for this array
+MGType mouse_fields[] = {MG_TRANS, MG_NULL};
+
 MGparser::MGparser(moltengamepad* mg) : mg(mg), out("parse") {
   TRANSGEN(btn2btn);
   TRANSGEN(btn2axis);
@@ -165,8 +168,19 @@ MGparser::MGparser(moltengamepad* mg) : mg(mg), out("parse") {
   TRANSGEN(btn2rel);
   TRANSGEN(axis2rel);
   RENAME_TRANSGEN(redirect,redirect_trans);
-  RENAME_TRANSGEN(key,keyboard_redirect);
+  //RENAME_TRANSGEN(key,keyboard_redirect);
   RENAME_TRANSGEN(multi,multitrans);
+  //add a quick mouse redirect
+  trans_gens["mouse"] = trans_generator( mouse_fields, [mg] (std::vector<MGField>& fields) {
+    //Need to tack on a field with the keyboard slot
+    MGField keyboard_slot;
+    keyboard_slot.type = MG_SLOT;
+    keyboard_slot.slot = mg->slots->keyboard;
+    fields.push_back(keyboard_slot);
+    return new redirect_trans(fields);
+  });
+  //key is just a synonym to the above. It redirects events to the keyboard slot.
+  trans_gens["key"] = trans_gens["mouse"];
   out.add_listener(1);
 }
 
@@ -468,6 +482,8 @@ int read_ev_code(std::string& code, out_type type) {
 }
 
 //Handles those automagic simple cases.
+#define SPEC_REL_BTN 3
+#define SPEC_REL_AXIS 10
 event_translator* MGparser::parse_special_trans(enum entry_type intype, complex_expr* expr) {
   if (!expr) return nullptr;
 
@@ -498,8 +514,8 @@ event_translator* MGparser::parse_special_trans(enum entry_type intype, complex_
 
       //Check for it being a rel
       int out_rel = read_ev_code(outevent, OUT_REL);
-      if (out_rel >= 0 && intype == DEV_AXIS) return new axis2rel(out_rel, 10*direction);
-      if (out_rel >= 0 && intype == DEV_KEY)  return new btn2rel(out_rel, 3*direction);
+      if (out_rel >= 0 && intype == DEV_AXIS) return new axis2rel(out_rel, SPEC_REL_AXIS*direction);
+      if (out_rel >= 0 && intype == DEV_KEY)  return new btn2rel(out_rel, SPEC_REL_BTN*direction);
     }
   }
 
@@ -610,6 +626,10 @@ void MGparser::print_def(entry_type intype, MGTransDef& def, std::ostream& outpu
 
 bool MGparser::print_special_def(entry_type intype, MGTransDef& def, std::ostream& output) {
   //Check if we are in a setting where some magic can be applied.
+  //e.g. print "primary" instead of "btn2btn(primary)" where sensible.
+  //This method is essentially a lot of code checking for special cases.
+
+  //Check for btn2btn on a button
   if (intype == DEV_KEY) {
     if (def.identifier == "btn2btn" && def.fields.size() > 0 && def.fields[0].type == MG_KEY) {
       const char* name = get_key_name(def.fields[0].key);
@@ -621,22 +641,41 @@ bool MGparser::print_special_def(entry_type intype, MGTransDef& def, std::ostrea
       return true;
     }
   }
-  if ((intype == DEV_KEY && def.identifier == "btn2axis") || (intype == DEV_AXIS && def.identifier == "axis2axis")) {
-    if (def.fields.size() >= 2 && def.fields[0].type == MG_AXIS && def.fields[1].type == MG_INT) {
-      const char* name = get_axis_name(def.fields[0].axis);
+
+  //check for being simply mapped to an axis or rel
+  if ((intype == DEV_KEY && (def.identifier == "btn2axis" || def.identifier == "btn2rel"))
+    || (intype == DEV_AXIS && (def.identifier == "axis2axis" || def.identifier == "axis2rel"))) {
+    if (def.fields.size() >= 2 &&  def.fields[1].type == MG_INT) {
+      const char* name = nullptr;
       const char* prefix = "";
-      if (def.fields[1].integer == -1) {
-        prefix = "-";
+      //Axis: get axis name and check for default speeds of +/- one.
+      if (def.fields[0].type == MG_AXIS) {
+        name = get_axis_name(def.fields[0].axis);
+        if (def.fields[1].integer == -1) {
+          prefix = "-";
+        }
+        if (def.fields[1].integer == +1) {
+          prefix = "+";
+        }
+      } else if (def.fields[0].type == MG_REL) {
+        //Rel: default speeds depend on the intype as well!
+        name = get_rel_name(def.fields[0].axis);
+        int speed = def.fields[1].integer;
+        if ((intype == DEV_KEY && speed == -SPEC_REL_BTN) || (intype == DEV_AXIS && speed == -SPEC_REL_AXIS)) {
+          prefix = "-";
+        }
+        if ((intype == DEV_KEY && speed == SPEC_REL_BTN) || (intype == DEV_AXIS && speed == SPEC_REL_AXIS)) {
+          prefix = "+";
+        }
       }
-      if (def.fields[1].integer == +1) {
-        prefix = "+";
-      }
+      
       if (!prefix) return false;
       if (!name) return false;
       output << prefix << name;
       return true;
     }
   }
+  //Check for simple mappings of an axis to two buttons
   if (intype == DEV_AXIS && def.identifier == "axis2btns" && def.fields.size() >= 2 && def.fields[0].type == MG_KEY && def.fields[1].type == MG_KEY) {
     const char* nameneg = get_key_name(def.fields[0].key);
     const char* namepos = get_key_name(def.fields[1].key);
@@ -648,6 +687,24 @@ bool MGparser::print_special_def(entry_type intype, MGTransDef& def, std::ostrea
     if (!namepos) output << def.fields[1].key;
     output << ")";
     return true;
+  }
+
+  //Check for redirecting to the keyboard_slot
+  if (def.identifier == "redirect" && def.fields.size() >= 2 && def.fields[1].type == MG_SLOT) {
+    if (def.fields[1].slot && def.fields[1].slot->name == "keyboard") {
+      MGTransDef innerdef;
+      entry_type context = intype;
+      def.fields[0].trans->fill_def(innerdef);
+      //Quick heuristic: if it is a "2rel" translation, it is a mouse movement.
+      if (innerdef.identifier == "btn2rel" || innerdef.identifier == "axis2rel") {
+        output << "mouse(";
+      } else {
+        output << "key(";
+      }
+      print_def(context, innerdef, output);
+      output << ")";
+      return true;
+    }
   }
 
   return false;

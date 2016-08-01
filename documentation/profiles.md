@@ -216,6 +216,14 @@ These features are in development, and the syntax is subject to change, and full
     
 This maps the wiimote a button to `key_a` on the keyboard slot, regardless of what slot the wiimote is currently in.
 
+The device still must be assigned to slot for these events to occur.
+
+###Mouse Redirect
+
+    wiimote.cc_left_x = mouse(rel_x)
+    
+Similar to the above.
+
 ###Multi event
 
     wiimote.wm_a = multi(primary,third)
