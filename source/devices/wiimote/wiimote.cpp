@@ -8,12 +8,6 @@
 
 wiimote::wiimote(slot_manager* slot_man, device_manager* manager, const std::string& uniq) : input_source(slot_man, manager, "gamepad") {
   this->uniq = uniq;
-  for (int i = 0; i < wii_event_max; i++) {
-    register_event(wiimote_events[i]);
-  }
-  for (int i = 0; !wiimote_options[i].name.empty(); i++) {
-    register_option(wiimote_options[i]);
-  }
   descr = "Wii remote";
 }
 

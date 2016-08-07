@@ -1,9 +1,9 @@
 #include "wiimote.h"
 
 
-#define EVNAME(X) X,#X
-#define BTN DEV_KEY,0,nullptr
-#define ABS DEV_AXIS,0,nullptr
+#define EVNAME(X) #X
+#define BTN DEV_KEY
+#define ABS DEV_AXIS
 #define OPT DEV_OPTION
 
 int lookup_wii_event(const char* evname) {
@@ -15,51 +15,51 @@ int lookup_wii_event(const char* evname) {
   return -1;
 }
 
-const source_event wiimote_events[] = {
-  {EVNAME(wm_a), "Wiimote A button", BTN},
-  {EVNAME(wm_b), "Wiimote B button", BTN},
-  {EVNAME(wm_plus), "Wiimote + button", BTN},
-  {EVNAME(wm_minus), "Wiimote - button", BTN},
-  {EVNAME(wm_1), "Wiimote 1 button", BTN},
-  {EVNAME(wm_2), "Wiimote 2 button", BTN},
-  {EVNAME(wm_home), "Wiimote home button", BTN},
-  {EVNAME(wm_left), "Wiimote Dpad left", BTN},
-  {EVNAME(wm_right), "Wiimote Dpad right", BTN},
-  {EVNAME(wm_up), "Wiimote Dpad up", BTN},
-  {EVNAME(wm_down), "Wiimote Dpad down", BTN},
+const event_decl wiimote_events[] = {
+  {EVNAME(wm_a), "Wiimote A button", BTN, "third"},
+  {EVNAME(wm_b), "Wiimote B button", BTN, "fourth"},
+  {EVNAME(wm_plus), "Wiimote + button", BTN, "start"},
+  {EVNAME(wm_minus), "Wiimote - button", BTN, "select"},
+  {EVNAME(wm_1), "Wiimote 1 button", BTN, "secondary"},
+  {EVNAME(wm_2), "Wiimote 2 button", BTN, "primary"},
+  {EVNAME(wm_home), "Wiimote home button", BTN, "mode"},
+  {EVNAME(wm_left), "Wiimote Dpad left", BTN, "down"}, //default mapping assumes wiimote is horizontal
+  {EVNAME(wm_right), "Wiimote Dpad right", BTN, "up"}, //like a NES pad
+  {EVNAME(wm_up), "Wiimote Dpad up", BTN, "left"},
+  {EVNAME(wm_down), "Wiimote Dpad down", BTN, "right"},
 
-  {EVNAME(nk_a), "Wiimote A button with Nunchuk", BTN},
-  {EVNAME(nk_b), "Wiimote B button with Nunchuk", BTN},
-  {EVNAME(nk_plus), "Wiimote + button with Nunchuk", BTN},
-  {EVNAME(nk_minus), "Wiimote - button with Nunchuk", BTN},
-  {EVNAME(nk_1), "Wiimote 1 button with Nunchuk", BTN},
-  {EVNAME(nk_2), "Wiimote 2 button with Nunchuk", BTN},
-  {EVNAME(nk_home), "Wiimote home button with Nunchuk", BTN},
-  {EVNAME(nk_left), "Wiimote Dpad left with Nunchuk", BTN},
-  {EVNAME(nk_right), "Wiimote Dpad right with Nunchuk", BTN},
-  {EVNAME(nk_up), "Wiimote Dpad up with Nunchuk", BTN},
-  {EVNAME(nk_down), "Wiimote Dpad down with Nunchuk", BTN},
-  {EVNAME(nk_c), "Nunchuk C button", BTN},
-  {EVNAME(nk_z), "Nunchuk Z button", BTN},
+  {EVNAME(nk_a), "Wiimote A button with Nunchuk", BTN, "primary"},
+  {EVNAME(nk_b), "Wiimote B button with Nunchuk", BTN, "secondary"},
+  {EVNAME(nk_plus), "Wiimote + button with Nunchuk", BTN, "start"},
+  {EVNAME(nk_minus), "Wiimote - button with Nunchuk", BTN, "select"},
+  {EVNAME(nk_1), "Wiimote 1 button with Nunchuk", BTN, "tl"},
+  {EVNAME(nk_2), "Wiimote 2 button with Nunchuk", BTN, "tr"},
+  {EVNAME(nk_home), "Wiimote home button with Nunchuk", BTN, "mode"},
+  {EVNAME(nk_left), "Wiimote Dpad left with Nunchuk", BTN, "left"},
+  {EVNAME(nk_right), "Wiimote Dpad right with Nunchuk", BTN, "right"},
+  {EVNAME(nk_up), "Wiimote Dpad up with Nunchuk", BTN, "up"},
+  {EVNAME(nk_down), "Wiimote Dpad down with Nunchuk", BTN, "down"},
+  {EVNAME(nk_c), "Nunchuk C button", BTN, "third"},
+  {EVNAME(nk_z), "Nunchuk Z button", BTN, "fourth"},
 
-  {EVNAME(cc_a), "Classic Controller A button", BTN},
-  {EVNAME(cc_b), "Classic Controller B button", BTN},
-  {EVNAME(cc_x), "Classic Controller X button", BTN},
-  {EVNAME(cc_y), "Classic Controller Y button", BTN},
-  {EVNAME(cc_plus), "Classic Controller + button", BTN},
-  {EVNAME(cc_minus), "Classic Controller - button", BTN},
-  {EVNAME(cc_home), "Classic Controller Home button", BTN},
-  {EVNAME(cc_left), "Classic Controller Dpad left", BTN},
-  {EVNAME(cc_right), "Classic Controller Dpad right", BTN},
-  {EVNAME(cc_up), "Classic Controller Dpad up", BTN},
-  {EVNAME(cc_down), "Classic Controller Dpad down", BTN},
-  {EVNAME(cc_l), "Classic Controller L button", BTN},
-  {EVNAME(cc_zl), "Classic Controller ZL button", BTN},
-  {EVNAME(cc_r), "Classic Controller R button", BTN},
-  {EVNAME(cc_zr), "Classic Controller ZR button", BTN},
+  {EVNAME(cc_a), "Classic Controller A button", BTN, "primary"},
+  {EVNAME(cc_b), "Classic Controller B button", BTN, "secondary"},
+  {EVNAME(cc_x), "Classic Controller X button", BTN, "third"},
+  {EVNAME(cc_y), "Classic Controller Y button", BTN, "fourth"},
+  {EVNAME(cc_plus), "Classic Controller + button", BTN, "start"},
+  {EVNAME(cc_minus), "Classic Controller - button", BTN, "select"},
+  {EVNAME(cc_home), "Classic Controller Home button", BTN, "mode"},
+  {EVNAME(cc_left), "Classic Controller Dpad left", BTN, "left"},
+  {EVNAME(cc_right), "Classic Controller Dpad right", BTN, "right"},
+  {EVNAME(cc_up), "Classic Controller Dpad up", BTN, "up"},
+  {EVNAME(cc_down), "Classic Controller Dpad down", BTN, "down"},
+  {EVNAME(cc_l), "Classic Controller L button", BTN, "tl"},
+  {EVNAME(cc_zl), "Classic Controller ZL button", BTN, "tl2"},
+  {EVNAME(cc_r), "Classic Controller R button", BTN, "tr"},
+  {EVNAME(cc_zr), "Classic Controller ZR button", BTN, "tr2"},
 
-  {EVNAME(cc_thumbl), "Classic Controller Left Stick Click (Wii U Pro only)", BTN},
-  {EVNAME(cc_thumbr), "Classic Controller Right Stick Click  (Wii U Pro only)", BTN},
+  {EVNAME(cc_thumbl), "Classic Controller Left Stick Click (Wii U Pro only)", BTN, "thumbl"},
+  {EVNAME(cc_thumbr), "Classic Controller Right Stick Click  (Wii U Pro only)", BTN, "thumbr"},
 
   {EVNAME(wm_accel_x), "Wiimote X acceleration ((-) <--> (+) axis)", ABS},
   {EVNAME(wm_accel_y), "Wiimote Y acceleration (plug <--> pointer axis)", ABS},
@@ -76,37 +76,32 @@ const source_event wiimote_events[] = {
   {EVNAME(nk_accel_x), "Nunchuk X acceleration", ABS},
   {EVNAME(nk_accel_y), "Nunchuk Y acceleration", ABS},
   {EVNAME(nk_accel_z), "Nunchuk Z acceleration", ABS},
-  {EVNAME(nk_stick_x), "Nunchuk stick X", ABS},
-  {EVNAME(nk_stick_y), "Nunchuk stick Y", ABS},
+  {EVNAME(nk_stick_x), "Nunchuk stick X", ABS, "+left_x"},
+  {EVNAME(nk_stick_y), "Nunchuk stick Y", ABS, "+left_y"},
 
-  {EVNAME(cc_left_x), "Classic Controller Left Stick X", ABS},
-  {EVNAME(cc_left_y), "Classic Controller Left Stick Y", ABS},
-  {EVNAME(cc_right_x), "Classic Controller Right Stick X", ABS},
-  {EVNAME(cc_right_y), "Classic Controller Right Stick Y", ABS},
+  {EVNAME(cc_left_x), "Classic Controller Left Stick X", ABS, "+left_x"},
+  {EVNAME(cc_left_y), "Classic Controller Left Stick Y", ABS, "+left_y"},
+  {EVNAME(cc_right_x), "Classic Controller Right Stick X", ABS, "+right_x"},
+  {EVNAME(cc_right_y), "Classic Controller Right Stick Y", ABS, "+right_y"},
 
   {EVNAME(bal_x), "Balance Board Center of Gravity X", ABS},
   {EVNAME(bal_y), "Balance Board Center of Gravity Y", ABS},
 
 
-  { -1, nullptr, nullptr, NO_ENTRY, 0, nullptr}
+  {nullptr, nullptr, NO_ENTRY, nullptr}
 };
 
-const option_info wiimote_options[] = {
+const option_decl wiimote_options[] = {
   {"wm_accel_active", "Enable accelerometers when no extension", "false", MG_BOOL},
   {"nk_accel_active", "Enable accelerometers when nunchuk is present", "false", MG_BOOL},
   {"wm_ir_active", "Enable IR data when no extension", "false", MG_BOOL},
   {"nk_ir_active", "Enable IR data when nunchuk is present", "false", MG_BOOL},
   {"grab_exclusive", "Grab device events via ioctl EVIOCGRAB", "true", MG_BOOL},
   {"grab_permissions", "Grab device via blocking all read permissions", "false", MG_BOOL},
-  {"", "", ""},
+  {nullptr, nullptr, nullptr},
 };
 
 
-void wiimote::process(int type, int event_id, int64_t value) {
-
-  send_value(event_id, value);
-
-}
 
 
 void wiimote::process_core() {
@@ -119,37 +114,37 @@ void wiimote::process_core() {
     if (ret > 0) {
       switch (ev.code) {
       case KEY_LEFT:
-        process(EVENT_KEY, offset + wm_left, ev.value);
+        send_value(offset + wm_left, ev.value);
         break;
       case KEY_RIGHT:
-        process(EVENT_KEY, offset + wm_right, ev.value);
+        send_value(offset + wm_right, ev.value);
         break;
       case KEY_UP:
-        process(EVENT_KEY, offset + wm_up, ev.value);
+        send_value(offset + wm_up, ev.value);
         break;
       case KEY_DOWN:
-        process(EVENT_KEY, offset + wm_down, ev.value);
+        send_value(offset + wm_down, ev.value);
         break;
       case BTN_A:
-        process(EVENT_KEY, offset + wm_a, ev.value);
+        send_value(offset + wm_a, ev.value);
         break;
       case BTN_B:
-        process(EVENT_KEY, offset + wm_b, ev.value);
+        send_value(offset + wm_b, ev.value);
         break;
       case BTN_1:
-        process(EVENT_KEY, offset + wm_1, ev.value);
+        send_value(offset + wm_1, ev.value);
         break;
       case BTN_2:
-        process(EVENT_KEY, offset + wm_2, ev.value);
+        send_value(offset + wm_2, ev.value);
         break;
       case KEY_PREVIOUS:
-        process(EVENT_KEY, offset + wm_minus, ev.value);
+        send_value(offset + wm_minus, ev.value);
         break;
       case KEY_NEXT:
-        process(EVENT_KEY, offset + wm_plus, ev.value);
+        send_value(offset + wm_plus, ev.value);
         break;
       case BTN_MODE:
-        process(EVENT_KEY, offset + wm_home, ev.value);
+        send_value(offset + wm_home, ev.value);
         break;
       case SYN_REPORT:
         if (out_dev) out_dev->take_event(ev);
@@ -168,63 +163,63 @@ void wiimote::process_classic(int fd) {
 
     if (ev.type == EV_KEY) switch (ev.code) {
       case KEY_LEFT:
-        process(EVENT_KEY, cc_left, ev.value);
+        send_value(cc_left, ev.value);
         break;
       case KEY_RIGHT:
-        process(EVENT_KEY, cc_right, ev.value);
+        send_value(cc_right, ev.value);
         break;
       case KEY_UP:
-        process(EVENT_KEY, cc_up, ev.value);
+        send_value(cc_up, ev.value);
         break;
       case KEY_DOWN:
-        process(EVENT_KEY, cc_down, ev.value);
+        send_value(cc_down, ev.value);
         break;
       case BTN_A:
-        process(EVENT_KEY, cc_a, ev.value);
+        send_value(cc_a, ev.value);
         break;
       case BTN_B:
-        process(EVENT_KEY, cc_b, ev.value);
+        send_value(cc_b, ev.value);
         break;
       case BTN_X:
-        process(EVENT_KEY, cc_x, ev.value);
+        send_value(cc_x, ev.value);
         break;
       case BTN_Y:
-        process(EVENT_KEY, cc_y, ev.value);
+        send_value(cc_y, ev.value);
         break;
       case KEY_PREVIOUS:
-        process(EVENT_KEY, cc_minus, ev.value);
+        send_value(cc_minus, ev.value);
         break;
       case KEY_NEXT:
-        process(EVENT_KEY, cc_plus, ev.value);
+        send_value(cc_plus, ev.value);
         break;
       case BTN_MODE:
-        process(EVENT_KEY, cc_home, ev.value);
+        send_value(cc_home, ev.value);
         break;
       case BTN_TL:
-        process(EVENT_KEY, cc_l, ev.value);
+        send_value(cc_l, ev.value);
         break;
       case BTN_TR:
-        process(EVENT_KEY, cc_r, ev.value);
+        send_value(cc_r, ev.value);
         break;
       case BTN_TL2:
-        process(EVENT_KEY, cc_zl, ev.value);
+        send_value(cc_zl, ev.value);
         break;
       case BTN_TR2:
-        process(EVENT_KEY, cc_zr, ev.value);
+        send_value(cc_zr, ev.value);
         break;
       }
     else if (ev.type == EV_ABS) switch (ev.code) {
       case ABS_HAT1X:
-        process(EVENT_AXIS, cc_left_x, ev.value * CLASSIC_STICK_SCALE);
+        send_value(cc_left_x, ev.value * CLASSIC_STICK_SCALE);
         break;
       case ABS_HAT1Y:
-        process(EVENT_AXIS, cc_left_y, -ev.value * CLASSIC_STICK_SCALE);
+        send_value(cc_left_y, -ev.value * CLASSIC_STICK_SCALE);
         break;
       case ABS_HAT2X:
-        process(EVENT_AXIS, cc_right_x, ev.value * CLASSIC_STICK_SCALE);
+        send_value(cc_right_x, ev.value * CLASSIC_STICK_SCALE);
         break;
       case ABS_HAT2Y:
-        process(EVENT_AXIS, cc_right_y, -ev.value * CLASSIC_STICK_SCALE);
+        send_value(cc_right_y, -ev.value * CLASSIC_STICK_SCALE);
         break;
       }
     else {
@@ -245,27 +240,27 @@ void wiimote::process_nunchuk(int fd) {
 
     if (ev.type == EV_KEY) switch (ev.code) {
       case BTN_C:
-        process(EVENT_KEY, nk_c, ev.value);
+        send_value(nk_c, ev.value);
         break;
       case BTN_Z:
-        process(EVENT_KEY, nk_z, ev.value);
+        send_value(nk_z, ev.value);
         break;
       }
     else if (ev.type == EV_ABS) switch (ev.code) {
       case ABS_HAT0X:
-        process(EVENT_AXIS, nk_stick_x, ev.value * NUNCHUK_STICK_SCALE);
+        send_value(nk_stick_x, ev.value * NUNCHUK_STICK_SCALE);
         break;
       case ABS_HAT0Y:
-        process(EVENT_AXIS, nk_stick_y, -ev.value * NUNCHUK_STICK_SCALE);
+        send_value(nk_stick_y, -ev.value * NUNCHUK_STICK_SCALE);
         break;
       case ABS_RX:
-        process(EVENT_AXIS, nk_accel_x, ev.value * NUNCHUK_ACCEL_SCALE);
+        send_value(nk_accel_x, ev.value * NUNCHUK_ACCEL_SCALE);
         break;
       case ABS_RY:
-        process(EVENT_AXIS, nk_accel_y, ev.value * NUNCHUK_ACCEL_SCALE);
+        send_value(nk_accel_y, ev.value * NUNCHUK_ACCEL_SCALE);
         break;
       case ABS_RZ:
-        process(EVENT_AXIS, nk_accel_z, ev.value * NUNCHUK_ACCEL_SCALE);
+        send_value(nk_accel_z, ev.value * NUNCHUK_ACCEL_SCALE);
         break;
       }
     else {
@@ -290,13 +285,13 @@ void wiimote::process_accel(int fd) {
     if (ret > 0) {
       switch (ev.code) {
       case ABS_RX:
-        process(EVENT_AXIS, offset + 0, ev.value * WIIMOTE_ACCEL_SCALE);
+        send_value(offset + 0, ev.value * WIIMOTE_ACCEL_SCALE);
         break;
       case ABS_RY:
-        process(EVENT_AXIS, offset + 1, ev.value * WIIMOTE_ACCEL_SCALE);
+        send_value(offset + 1, ev.value * WIIMOTE_ACCEL_SCALE);
         break;
       case ABS_RZ:
-        process(EVENT_AXIS, offset + 2, ev.value * WIIMOTE_ACCEL_SCALE);
+        send_value(offset + 2, ev.value * WIIMOTE_ACCEL_SCALE);
         break;
       case SYN_REPORT:
         if (out_dev) out_dev->take_event(ev);
@@ -370,8 +365,8 @@ void wiimote::compute_ir() {
     }
   }
   if (num != 0) {
-    process(EVENT_AXIS, offset + 0, x * IR_X_SCALE);
-    process(EVENT_AXIS, offset + 1, y * IR_Y_SCALE);
+    send_value(offset + 0, x * IR_X_SCALE);
+    send_value(offset + 1, y * IR_Y_SCALE);
   }
 
 }
@@ -421,8 +416,8 @@ void wiimote::compute_balance() {
     y = 0;
   }
 
-  process(EVENT_AXIS, bal_x, (int)(x * BAL_X_SCALE));
-  process(EVENT_AXIS, bal_y, (int)(y * BAL_Y_SCALE));
+  send_value(bal_x, (int)(x * BAL_X_SCALE));
+  send_value(bal_y, (int)(y * BAL_Y_SCALE));
 
 }
 
@@ -434,69 +429,69 @@ void wiimote::process_pro(int fd) {
 
     if (ev.type == EV_KEY) switch (ev.code) {
       case BTN_DPAD_LEFT:
-        process(EVENT_KEY, cc_left, ev.value);
+        send_value(cc_left, ev.value);
         break;
       case BTN_DPAD_RIGHT:
-        process(EVENT_KEY, cc_right, ev.value);
+        send_value(cc_right, ev.value);
         break;
       case BTN_DPAD_UP:
-        process(EVENT_KEY, cc_up, ev.value);
+        send_value(cc_up, ev.value);
         break;
       case BTN_DPAD_DOWN:
-        process(EVENT_KEY, cc_down, ev.value);
+        send_value(cc_down, ev.value);
         break;
       case BTN_EAST:
-        process(EVENT_KEY, cc_a, ev.value);
+        send_value(cc_a, ev.value);
         break;
       case BTN_SOUTH:
-        process(EVENT_KEY, cc_b, ev.value);
+        send_value(cc_b, ev.value);
         break;
       case BTN_NORTH:
-        process(EVENT_KEY, cc_x, ev.value);
+        send_value(cc_x, ev.value);
         break;
       case BTN_WEST:
-        process(EVENT_KEY, cc_y, ev.value);
+        send_value(cc_y, ev.value);
         break;
       case BTN_SELECT:
-        process(EVENT_KEY, cc_minus, ev.value);
+        send_value(cc_minus, ev.value);
         break;
       case BTN_START:
-        process(EVENT_KEY, cc_plus, ev.value);
+        send_value(cc_plus, ev.value);
         break;
       case BTN_MODE:
-        process(EVENT_KEY, cc_home, ev.value);
+        send_value(cc_home, ev.value);
         break;
       case BTN_TL:
-        process(EVENT_KEY, cc_l, ev.value);
+        send_value(cc_l, ev.value);
         break;
       case BTN_TR:
-        process(EVENT_KEY, cc_r, ev.value);
+        send_value(cc_r, ev.value);
         break;
       case BTN_TL2:
-        process(EVENT_KEY, cc_zl, ev.value);
+        send_value(cc_zl, ev.value);
         break;
       case BTN_TR2:
-        process(EVENT_KEY, cc_zr, ev.value);
+        send_value(cc_zr, ev.value);
         break;
       case BTN_THUMBL:
-        process(EVENT_KEY, cc_thumbl, ev.value);
+        send_value(cc_thumbl, ev.value);
         break;
       case BTN_THUMBR:
-        process(EVENT_KEY, cc_thumbr, ev.value);
+        send_value(cc_thumbr, ev.value);
         break;
       }
     else if (ev.type == EV_ABS) switch (ev.code) {
       case ABS_X:
-        process(EVENT_AXIS, cc_left_x, ev.value * PRO_STICK_SCALE);
+        send_value(cc_left_x, ev.value * PRO_STICK_SCALE);
         break;
       case ABS_Y:
-        process(EVENT_AXIS, cc_left_y, ev.value * PRO_STICK_SCALE);
+        send_value(cc_left_y, ev.value * PRO_STICK_SCALE);
         break;
       case ABS_RX:
-        process(EVENT_AXIS, cc_right_x, ev.value * PRO_STICK_SCALE);
+        send_value(cc_right_x, ev.value * PRO_STICK_SCALE);
         break;
       case ABS_RY:
-        process(EVENT_AXIS, cc_right_y, ev.value * PRO_STICK_SCALE);
+        send_value(cc_right_y, ev.value * PRO_STICK_SCALE);
         break;
       }
     else {

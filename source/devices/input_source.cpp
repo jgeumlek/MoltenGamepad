@@ -9,6 +9,9 @@
 
 
 input_source::input_source(slot_manager* slot_man, device_manager* manager, std::string type) : slot_man(slot_man), manager(manager), device_type(type) {
+  for (auto ev : manager->get_events())
+    register_event(ev);
+
   epfd = epoll_create(1);
   if (epfd < 1) perror("epoll create");
 
@@ -26,8 +29,8 @@ input_source::~input_source() {
   close(internalpipe);
   close(priv_pipe);
   close(epfd);
-  for (int i = 0; i < events.size(); i++) {
-    if (events[i].trans) delete events[i].trans;
+  for (int i = 0; i < ev_map.size(); i++) {
+    if (ev_map[i].trans) delete ev_map[i].trans;
   }
 
 
@@ -43,9 +46,24 @@ input_source::~input_source() {
 }
 
 
-void input_source::register_event(source_event ev) {
-  if (!ev.trans) ev.trans = new event_translator();
-  events.push_back(ev);
+void input_source::register_event(event_decl ev) {
+  source_event event = {
+    .id = 0,
+    .name = ev.name,
+    .descr = ev.descr,
+    .type = ev.type,
+    .value = 0,
+  };
+  events.push_back(event);
+  ev_map.resize(events.size());
+}
+
+void input_source::toggle_event(int id, event_state state) {
+  if (id < 0 || id >= events.size() || events[id].state == EVENT_DISABLED)
+    return;
+  events[id].state = state;
+  if (state == EVENT_DISABLED)
+    devprofile->remove_event(std::string(events[id].name));
 }
 
 void input_source::register_option(option_info opt) {
@@ -94,9 +112,7 @@ void input_source::update_option(const char* name, const char* value) {
 }
 
 void input_source::list_options(std::vector<option_info>& list) const {
-  for (auto e : options) {
-    list.push_back(e.second);
-  }
+  devprofile->list_options(list);
 }
 
 
@@ -172,7 +188,7 @@ void input_source::inject_event(int id, int64_t value, bool skip_adv_trans) {
 
 void input_source::send_value(int id, int64_t value) {
   bool blocked = false;
-  for (auto adv_trans : events.at(id).attached)
+  for (auto adv_trans : ev_map.at(id).attached)
     if (adv_trans->claim_event(id, {value})) blocked = true;
 
   
@@ -180,9 +196,7 @@ void input_source::send_value(int id, int64_t value) {
 
   if (blocked) return;
 
-  
-
-  if (events.at(id).trans && out_dev) events.at(id).trans->process({value}, out_dev);
+  if (ev_map.at(id).trans && out_dev) ev_map.at(id).trans->process({value}, out_dev);
 
   //On a key press, try to claim a slot if we don't have one.
   if (!out_dev && events.at(id).type == DEV_KEY)
@@ -194,7 +208,7 @@ void input_source::force_value(int id, int64_t value) {
 
   events.at(id).value = value;
 
-  if (events.at(id).trans && out_dev) events.at(id).trans->process({value}, out_dev);
+  if (ev_map.at(id).trans && out_dev) ev_map.at(id).trans->process({value}, out_dev);
 
   //On a key press, try to claim a slot if we don't have one.
   if (!out_dev && events.at(id).type == DEV_KEY)
@@ -283,7 +297,7 @@ void input_source::handle_internal_message(input_internal_msg &msg) {
     //valid event_translator at all times.
     //Assumption: This is called only from the unique thread
     //handling this device's events.
-    event_translator** trans = &(this->events.at(msg.id).trans);
+    event_translator** trans = &(this->ev_map.at(msg.id).trans);
     remove_recurring_event(*trans);
     delete *trans;
     *(trans) = msg.trans;
@@ -348,14 +362,14 @@ void input_source::end_thread() {
 
 void input_source::add_listener(int id, advanced_event_translator* trans) {
   if (id < 0 || id >= events.size()) return;
-  events[id].attached.push_back(trans);
+  ev_map[id].attached.push_back(trans);
 }
 
 void input_source::remove_listener(int id, advanced_event_translator* trans) {
-  if (id < 0 || id >= events.size()) return;
-  for (auto it = events[id].attached.begin(); it != events[id].attached.end(); it++) {
+  if (id < 0 || id >= ev_map.size()) return;
+  for (auto it = ev_map[id].attached.begin(); it != ev_map[id].attached.end(); it++) {
     if (*it == trans) {
-      events[id].attached.erase(it);
+      ev_map[id].attached.erase(it);
       return;
     }
   }
@@ -381,4 +395,8 @@ int64_t input_source::ms_since_last_recurring_update() {
   int64_t delta_sec = now.tv_sec - last_recurring_update.tv_sec;
   int64_t delta_nsec = now.tv_nsec - last_recurring_update.tv_nsec;
   return delta_sec*1000 + delta_nsec/1000000;
+}
+
+std::string input_source::get_manager_name() const {
+  return manager->name;
 }

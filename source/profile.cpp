@@ -73,6 +73,26 @@ void profile::set_mapping(std::string in_event_name, event_translator* mapper, e
   }
 }
 
+void profile::remove_event(std::string event_name) {
+  std::lock_guard<std::mutex> guard(lock);
+  auto alias = aliases.find(event_name);
+  if (alias != aliases.end())
+    event_name = alias->second;
+  trans_map oldmap = get_mapping(event_name);
+
+  if (oldmap.type == NO_ENTRY) {
+    return; //Nothing to do?
+  }
+
+  if (oldmap.trans) delete oldmap.trans;
+  mapping.erase(event_name);
+
+  for (auto prof : subscribers) {
+    auto ptr = prof.lock();
+    if (ptr) ptr->remove_event(event_name);
+  }
+}
+
 
 void profile::register_option(const option_info opt) {
   std::lock_guard<std::mutex> guard(lock);
@@ -165,6 +185,12 @@ option_info profile::get_option(std::string opname) {
   auto it = options.find(opname);
   if (it == options.end()) return {"","",""};
   return it->second;
+}
+
+void profile::list_options(std::vector<option_info>& list) const {
+  std::lock_guard<std::mutex> guard(lock);
+  for (auto opt : options)
+    list.push_back(opt.second);
 }
 
 void profile::subscribe_to(profile* parent) {

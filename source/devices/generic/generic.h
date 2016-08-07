@@ -21,12 +21,19 @@ struct device_match {
 
 int parse_hex(const std::string& text);
 
+//Info on an event as read from the .cfg file
 struct gen_source_event {
-  int id;
+  int code; //e.g. BTN_SOUTH or ABS_X
   int split_id = 1;
   std::string name;
   std::string descr;
   enum entry_type type;
+};
+
+//Info on an event the input source needs. Name/descr/type is read from event list via the id.
+struct split_ev_info {
+  int code; //The event count read from raw device, e.g. BTN_SOUTH
+  int id;       //The id of this event within the registered event list (MoltenGamepad assigned)
 };
 
 struct generic_driver_info {
@@ -59,7 +66,7 @@ public:
   std::map<evcode, decodedevent> eventcodes;
   struct udev_device* node = nullptr;
 
-  generic_device(std::vector<gen_source_event>& events, int fd, bool watch, slot_manager* slot_man, device_manager* manager, std::string type, const std::string& uniq);
+  generic_device(std::vector<split_ev_info>& events, int fd, bool watch, slot_manager* slot_man, device_manager* manager, std::string type, const std::string& uniq);
   ~generic_device();
 
   virtual int set_player(int player_num);
@@ -251,13 +258,6 @@ public:
 
   generic_manager(moltengamepad* mg, generic_driver_info& descr);
 
-  virtual void for_each_dev(std::function<void (const input_source*)> func) {
-    std::lock_guard<std::mutex> lock(devlistlock);
-    for (auto file : openfiles)
-      for (auto dev : file->devices)
-        func(dev);
-  };
-
   virtual ~generic_manager();
 
   virtual int accept_device(struct udev* udev, struct udev_device* dev);
@@ -265,7 +265,7 @@ public:
 protected:
   std::mutex devlistlock;
   std::vector<generic_file*> openfiles;
-  std::vector<std::vector<gen_source_event>> splitevents;
+  std::vector<std::vector<split_ev_info>> splitevents;
   int dev_counter = 0;
   std::string devname = "";
   int open_device(struct udev* udev, struct udev_device* dev);

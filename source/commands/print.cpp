@@ -54,7 +54,7 @@ void print_driver_dev_list(device_manager* man, std::ostream& out) {
     has_dev = true;
   };
 
-  man->for_each_dev(print_dev);
+  man->for_all_devices(print_dev);
 
   if (!has_dev) {
     out << "  no devices" << std::endl;
@@ -76,7 +76,7 @@ int do_print_devs(moltengamepad* mg, std::string name, std::ostream& out) {
       
       const std::vector<source_event>& events = dev->get_events();
       for (auto v : events) {
-        out << v.name << ":\t" << v.descr << std::endl;
+        if (v.state != EVENT_DISABLED) out << v.name << ":\t" << v.descr << std::endl;
       }
 
       std::vector<option_info> list;

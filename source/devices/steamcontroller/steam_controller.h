@@ -43,9 +43,9 @@ enum sc_keys {
 };
 
 
-extern const source_event steamcont_events[];
+extern const event_decl steamcont_events[];
 
-extern const option_info steamcont_options[];
+extern const option_decl steamcont_options[];
 
 int lookup_steamcont_event(const char* evname);
 
@@ -74,11 +74,6 @@ public:
   //We don't handle any udev events at all!
   virtual int accept_device(struct udev* udev, struct udev_device* dev) { return -2;};
 
-  virtual void for_each_dev(std::function<void (const input_source*)> func) {
-    std::lock_guard<std::mutex> lock(devlistlock);
-    for (auto pair : sc_devs)
-      func(pair->second);
-  };
 
   void init_profile();
 

@@ -131,11 +131,6 @@ public:
 
   virtual int accept_device(struct udev* udev, struct udev_device* dev);
 
-  virtual void for_each_dev(std::function<void (const input_source*)> func) {
-    std::lock_guard<std::mutex> lock(devlistlock);
-    for (auto wm : wii_devs)
-      func(wm);
-  };
 
   void init_profile();
 

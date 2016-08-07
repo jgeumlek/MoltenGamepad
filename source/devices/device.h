@@ -24,12 +24,23 @@ class slot_manager;
 
 class device_manager;
 
+enum event_state { 
+  EVENT_ACTIVE, //Device can currently send this event.
+  EVENT_INACTIVE, //Device might be able to send this event, but not right now.
+  EVENT_DISABLED, //Device will NEVER be able to send this event.
+  //This last one is included as all events of a manager are inherited.
+};
+
 struct source_event {
   int id;
   const char* name;
   const char* descr;
   enum entry_type type;
   int64_t value;
+  event_state state = EVENT_ACTIVE;
+};
+
+struct event_mapping {
   event_translator* trans;
   std::vector<advanced_event_translator*> attached;
 };
@@ -83,6 +94,7 @@ public:
 
   std::string get_name() const { return name; };
   void set_name(std::string name) { this->name = name; };
+  std::string get_manager_name() const;
   virtual std::string get_description() const { return descr; };
   virtual std::string get_uniq() const { return uniq; };
   virtual std::string get_type() const { return device_type; };
@@ -100,6 +112,7 @@ protected:
   std::string device_type = "gamepad";
   std::string uniq = ""; //A unique string for this input_source, if available
   std::vector<source_event> events;
+  std::vector<event_mapping> ev_map;
   std::map<std::string, option_info> options;
   std::map<std::string, adv_entry> adv_trans;
   std::shared_ptr<profile> devprofile = std::make_shared<profile>();
@@ -112,8 +125,9 @@ protected:
   timespec last_recurring_update;
 
 
-  void register_event(source_event ev);
-  void register_option(option_info ev);
+  void register_event(event_decl ev);
+  void toggle_event(int id, event_state state);
+  void register_option(option_info opt);
   void watch_file(int fd, void* tag);
   void set_trans(int id, event_translator* trans);
   void force_value(int id, int64_t value);
@@ -151,13 +165,20 @@ public:
   virtual ~device_manager() {
   };
   
-  virtual void for_each_dev(std::function<void (const input_source*)> func) {};
+  void register_event(event_decl ev);
+  void register_option(option_decl opt);
+
+  const std::vector<event_decl>& get_events() const {
+    return events;
+  };
+
+  void for_all_devices(std::function<void (const input_source*)> func);
 
   std::string name;
   simple_messenger log;
   std::shared_ptr<profile> mapprofile = std::make_shared<profile>();
 
-
+  std::vector<event_decl> events;
 
 };
 

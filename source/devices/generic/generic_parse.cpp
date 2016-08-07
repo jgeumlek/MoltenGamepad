@@ -110,11 +110,11 @@ void generic_assignment_line(std::vector<token>& line, generic_driver_info*& inf
     return;
   }
 
-  int id = get_key_id(field.c_str());
-  if (id != -1) {
+  int code = get_key_id(field.c_str());
+  if (code != -1) {
     gen_source_event ev;
     ev.name = value;
-    ev.id = id;
+    ev.code = code;
     ev.descr = descr;
     ev.type = DEV_KEY;
     ev.split_id = split_id;
@@ -122,11 +122,11 @@ void generic_assignment_line(std::vector<token>& line, generic_driver_info*& inf
     return;
   }
 
-  id = get_axis_id(field.c_str());
-  if (id != -1) {
+  code = get_axis_id(field.c_str());
+  if (code != -1) {
     gen_source_event ev;
     ev.name = value;
-    ev.id = id;
+    ev.code = code;
     ev.descr = descr;
     ev.type = DEV_AXIS;
     ev.split_id = split_id;

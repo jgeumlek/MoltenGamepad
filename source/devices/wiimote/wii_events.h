@@ -3,6 +3,7 @@
 
 
 //NOTE: Code abuses the fact wiimote buttons in nk_* follow/align with the orignal wm_* events
+//      Also, they must appear in identical order in the wiimote_events array.
 enum wii_keys {
   wm_a,
   wm_b,
@@ -79,11 +80,11 @@ enum wii_keys {
 };
 
 
-extern const source_event wiimote_events[];
+extern const event_decl wiimote_events[];
 
 
 
-extern const option_info wiimote_options[];
+extern const option_decl wiimote_options[];
 
 int lookup_wii_event(const char* evname);
 

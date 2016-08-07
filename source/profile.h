@@ -8,8 +8,6 @@
 #include <memory>
 #include "options.h"
 
-enum entry_type {DEV_OPTION, DEV_KEY, DEV_AXIS, DEV_REL, NO_ENTRY} ;
-
 typedef std::pair<std::string, std::string> str_pair;
 
 class event_translator;
@@ -34,7 +32,7 @@ public:
   std::unordered_map<std::string, option_info> options;
   std::unordered_map<std::string, std::string> aliases;
   std::map<std::string, adv_map> adv_trans;
-  std::mutex lock;
+  mutable std::mutex lock;
 
 
   entry_type get_entry_type(std::string in_event_name);
@@ -45,6 +43,7 @@ public:
 
   void set_advanced(std::vector<std::string> names, advanced_event_translator* trans);
 
+  void remove_event(std::string event_name);
   void register_option(const option_info opt);
   int set_option(std::string opname, std::string value);
 
@@ -52,6 +51,7 @@ public:
   std::string get_alias(std::string name);
 
   option_info get_option(std::string opname);
+  void list_options(std::vector<option_info>& list) const;
   
   void subscribe_to(profile* parent);
   void remember_subscription(profile* parent); //similar to above, but we don't try to add ourselves to the parent.

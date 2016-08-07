@@ -1,32 +1,42 @@
 #include "generic.h"
 
-generic_device::generic_device(std::vector<gen_source_event>& inevents, int fd, bool watch, slot_manager* slot_man, device_manager* manager, std::string type, const std::string& uniq) : input_source(slot_man, manager, type) {
+generic_device::generic_device(std::vector<split_ev_info>& split_events, int fd, bool watch, slot_manager* slot_man, device_manager* manager, std::string type, const std::string& uniq) : input_source(slot_man, manager, type) {
   this->uniq = uniq;
   this->fd = fd;
-  for (int i = 0; i < inevents.size(); i++) {
-    source_event ev;
+
+  //We will enable events one-by-one later
+  for (int i = 0; i < events.size(); i++) {
+    toggle_event(i, EVENT_INACTIVE);
+  }
+
+  for (int i = 0; i < split_events.size(); i++) {
+    
     input_absinfo     abs;
     memset(&abs, 0, sizeof(abs));
-    ev.id = i;
-    ev.name = inevents.at(i).name.c_str();
-    ev.descr = inevents.at(i).descr.c_str();
-    ev.type = inevents.at(i).type;
-    ev.value = 0;
-    ev.trans = nullptr;
-    register_event(ev);
+    
+    auto ev = events[split_events[i].id];
+    toggle_event(split_events[i].id, EVENT_ACTIVE);
+    
 
     int type = EV_KEY;
     if (ev.type == DEV_AXIS) type = EV_ABS;
     if (ev.type == DEV_REL)  type = EV_REL;
 
-    evcode code(type, inevents.at(i).id);
+    evcode code(type, split_events[i].code);
+    //Read in ABS ranges so we can rescale the generated events
     if (ev.type == DEV_AXIS) {
-      if (ioctl(fd, EVIOCGABS(inevents.at(i).id), &abs)) {
+      if (ioctl(fd, EVIOCGABS(split_events[i].code), &abs)) {
         perror("evdev EVIOCGABS ioctl");
       }
     }
-    decodedevent decoded(i, abs);
+    decodedevent decoded(split_events[i].id, abs);
     eventcodes.insert(std::pair<evcode, decodedevent>(code, decoded));
+  }
+
+  //Remove events that are disabled from our profile
+  for (int i = 0; i < events.size(); i++) {
+    if (events[i].state == EVENT_INACTIVE)
+      toggle_event(i, EVENT_DISABLED);
   }
 
   if (watch) watch_file(fd, &fd);

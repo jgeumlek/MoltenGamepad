@@ -160,7 +160,11 @@ void do_header_line(std::vector<token>& line, std::string& header) {
 //Need a static location for this array
 MGType mouse_fields[] = {MG_TRANS, MG_NULL};
 
-MGparser::MGparser(moltengamepad* mg) : mg(mg), out("parse") {
+std::map<std::string,trans_generator> MGparser::trans_gens;
+moltengamepad* MGparser::mg;
+
+void MGparser::load_translators(moltengamepad* mg) {
+  MGparser::mg = mg;
   TRANSGEN(btn2btn);
   TRANSGEN(btn2axis);
   TRANSGEN(axis2axis);
@@ -181,6 +185,9 @@ MGparser::MGparser(moltengamepad* mg) : mg(mg), out("parse") {
   });
   //key is just a synonym to the above. It redirects events to the keyboard slot.
   trans_gens["key"] = trans_gens["mouse"];
+}
+
+MGparser::MGparser(moltengamepad* mg) : out("parse") {
   out.add_listener(1);
 }
 
@@ -373,6 +380,7 @@ void MGparser::parse_line(std::vector<token>& line, std::string& header) {
 void MGparser::exec_line(std::vector<token>& line, std::string& header) {
   parse_line(line, header);
 }
+
 
 event_translator* MGparser::parse_trans(enum entry_type intype, std::vector<token>& tokens, std::vector<token>::iterator& it) {
   //Note: this function is assumed to be called at the top of parsing a translator,

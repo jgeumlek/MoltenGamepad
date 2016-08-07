@@ -1,5 +1,8 @@
 #include "generic.h"
 #include <algorithm>
+#include <unordered_map>
+
+
 
 generic_manager::generic_manager(moltengamepad* mg, generic_driver_info& descr) : device_manager(mg,descr.name) {
   this->devname = descr.devname.c_str();
@@ -9,14 +12,30 @@ generic_manager::generic_manager(moltengamepad* mg, generic_driver_info& descr) 
   split = descr.split;
   flatten = descr.flatten;
 
+  std::unordered_map<std::string, int> event_names;
+  int event_count = 0;
+
+  //We might have split devices, each with their own distinct and possibly overlapping events.
+  //So when we need to keep track of events on a per-split basis
   for (int i = 1; i <= split; i++) {
-    splitevents.push_back(std::vector<gen_source_event>());
+    splitevents.push_back(std::vector<split_ev_info>());
   }
 
-  for (auto gen_ev : descr.events) {
+  //Check if we have no event of this name. If so, add it.
+  //If we already know an event of that name, then reuse the already registered one.
+  for (gen_source_event &gen_ev : descr.events) {
     if (gen_ev.split_id < 1 || gen_ev.split_id > split) continue;
-    splitevents.at(gen_ev.split_id - 1).push_back(gen_ev);
-    mapprofile->set_mapping(gen_ev.name, new event_translator(), gen_ev.type, true);
+    int event_id;
+    int split_index = gen_ev.split_id - 1;
+    auto lookup = event_names.find(gen_ev.name);
+    if (lookup == event_names.end()) {
+      register_event({gen_ev.name.c_str(), gen_ev.descr.c_str(), gen_ev.type, ""});
+      event_id = event_count++;
+      event_names.insert({gen_ev.name, event_id});
+    } else {
+      event_id = lookup->second;
+    }
+    splitevents.at(split_index).push_back({gen_ev.code, event_id});
   }
 
   for (auto alias : descr.aliases) {
@@ -163,8 +182,6 @@ void generic_manager::create_inputs(generic_file* opened_file, int fd, bool watc
     generic_device* gendev = new generic_device(splitevents.at(i - 1), fd, watch, mg->slots, this, descr->split_types[i-1], opened_file->uniq);
     opened_file->add_dev(gendev);
     mg->add_device(gendev, this, descr->devname);
-    auto devprofile = gendev->get_profile();
-    mapprofile->copy_into(devprofile,true, true);
   }
 }
 

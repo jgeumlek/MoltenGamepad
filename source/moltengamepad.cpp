@@ -199,6 +199,9 @@ int moltengamepad::init() {
   //load config dirs from environment variables
   xdg_config_dirs = find_xdg_config_dirs(opts->get<std::string>("config_dir"));
   
+  //Initialize static parser variables
+  MGparser::load_translators(this);
+  
   //Load moltengamepad.cfg if it exists
   config_extras cfg;
   //First, lock some options that can't be changed at this point.
@@ -393,6 +396,7 @@ std::shared_ptr<input_source> moltengamepad::add_device(input_source* source, de
   devprof->name = source->get_name();
   add_profile(devprof.get());
   devprof->add_device(ptr);
+  manager->mapprofile->copy_into(devprof, true, true);
   device_list_lock.unlock();
   ptr->start_thread();
   return ptr;

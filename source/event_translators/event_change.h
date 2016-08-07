@@ -26,20 +26,7 @@ class advanced_event_translator;
 
 //Maybe add a varargs or tuple type?
 
-struct MGField {
-  MGType type;
-  union {
-    event_translator* trans;
-    advanced_event_translator* adv_trans;
-    int key;
-    int axis;
-    int rel;
-    std::string* string;
-    int integer;
-    float real;
-    output_slot* slot;
-  };
-};
+
 
 struct MGTransDef {
   std::string identifier;

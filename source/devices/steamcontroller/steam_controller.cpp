@@ -2,62 +2,47 @@
 #include "steam_controller.h"
 
 
-#define BTN DEV_KEY,0,nullptr
-#define ABS DEV_AXIS,0,nullptr
+#define BTN DEV_KEY
+#define ABS DEV_AXIS
 #define OPT DEV_OPTION
-const source_event steamcont_events[] = {
-  {sc_a,"a","A Button",BTN},
-  {sc_b,"b","B Button",BTN},
-  {sc_x,"x","X Button",BTN},
-  {sc_y,"y","Y Button",BTN},
-  {sc_forward,"forward","Forward Button (right middle button)",BTN},
-  {sc_back,"back","Back Button (left middle button)",BTN},
-  {sc_mode,"mode","Mode Button (middle middle button)",BTN},
-  {sc_tl,"tl","Left Bumper",BTN},
-  {sc_tl2,"tl2","Left Trigger",BTN},
-  {sc_tr,"tr","Right Bumper",BTN},
-  {sc_tr2,"tr2","Right Trigger",BTN},
-  {sc_lgrip,"lgrip","Left Grip",BTN},
-  {sc_rgrip,"rgrip","Right Grip",BTN},
-  {sc_stick_click,"stick_click","Thumb Stick Click",BTN},
-  {sc_left_pad_click,"left_pad_click","Left Touch Pad Click",BTN},
-  {sc_right_pad_click,"right_pad_click","Right Touch Pad Click",BTN},
-  {sc_left_pad_touch,"left_pad_touch","Left Touch Pad Touch Detected",BTN},
-  {sc_right_pad_touch,"right_pad_touch","Right Touch Pad Touch Detected",BTN},
+const event_decl steamcont_events[] = {
+  {"a","A Button",BTN,"primary"},
+  {"b","B Button",BTN,"secondary"},
+  {"x","X Button",BTN,"third"},
+  {"y","Y Button",BTN,"fourth"},
+  {"forward","Forward Button (right middle button)",BTN,"start"},
+  {"back","Back Button (left middle button)",BTN,"select"},
+  {"mode","Mode Button (middle middle button)",BTN,"mode"},
+  {"tl","Left Bumper",BTN,"tl"},
+  {"tl2","Left Trigger",BTN,"tl2"},
+  {"tr","Right Bumper",BTN,"tr"},
+  {"tr2","Right Trigger",BTN,"tr2"},
+  {"lgrip","Left Grip",BTN},
+  {"rgrip","Right Grip",BTN},
+  {"stick_click","Thumb Stick Click",BTN,"thumbl"},
+  {"left_pad_click","Left Touch Pad Click",BTN,"thumbl"},
+  {"right_pad_click","Right Touch Pad Click",BTN,"thumbr"},
+  {"left_pad_touch","Left Touch Pad Touch Detected",BTN},
+  {"right_pad_touch","Right Touch Pad Touch Detected",BTN},
 
-  {sc_stick_x,"stick_x","Thumb Stick X-axis", ABS},
-  {sc_stick_y,"stick_y","Thumb Stick Y-axis", ABS},
-  {sc_left_pad_x,"left_pad_x","Left Touch Pad X-axis", ABS},
-  {sc_left_pad_y,"left_pad_y","Left Touch Pad Y-axis", ABS},
-  {sc_right_pad_x,"right_pad_x","Right Touch Pad X-axis", ABS},
-  {sc_right_pad_y,"right_pad_y","Right Touch Pad Y-axis", ABS},
-  {sc_tl2_axis,"tl2_axis","Right Trigger Analog Values", ABS},
-  {sc_tr2_axis,"tr2_axis","Right Trigger Analog Values", ABS},
-  { -1, nullptr, nullptr, NO_ENTRY, 0, nullptr}
+  {"stick_x","Thumb Stick X-axis", ABS,"+left_x"},
+  {"stick_y","Thumb Stick Y-axis", ABS,"+left_y"},
+  {"left_pad_x","Left Touch Pad X-axis", ABS,"(left,right)"},
+  {"left_pad_y","Left Touch Pad Y-axis", ABS,"(up,down)"},
+  {"right_pad_x","Right Touch Pad X-axis", ABS,"+right_x"},
+  {"right_pad_y","Right Touch Pad Y-axis", ABS,"+right_y"},
+  {"tl2_axis","Right Trigger Analog Values", ABS,"tl2_axis"},
+  {"tr2_axis","Right Trigger Analog Values", ABS,"tr2_axis"},
+  {nullptr, nullptr, NO_ENTRY, nullptr}
 };
 
-const option_info steamcont_options[] = {
-  {"automouse", "Enable built in mouse movement emulation (\"Lizard\" mode)", "false"},
-  {"autobuttons", "Enable built in keyboard/mouse button emulation (\"Lizard\" mode)", "false"},
-  {"", "", ""},
+const option_decl steamcont_options[] = {
+  {"automouse", "Enable built in mouse movement emulation (\"Lizard\" mode)", "false", MG_BOOL},
+  {"autobuttons", "Enable built in keyboard/mouse button emulation (\"Lizard\" mode)", "false", MG_BOOL},
+  {nullptr, nullptr, nullptr},
 };
-
-int lookup_steamcont_event(const char* evname) {
-  const source_event* event = &steamcont_events[0];
-  for ( ; event->id >= 0; event++) {
-     if (!strcmp(event->name, evname))
-       return event->id;
-  }
-  return -1;
-}
 
 steam_controller::steam_controller(scraw::controller* sc, slot_manager* slot_man, device_manager* manager) : sc(sc), input_source(slot_man, manager, "gamepad") {
-  for (int i = 0; i < steamcont_event_max; i++) {
-    register_event(steamcont_events[i]);
-  }
-  for (int i = 0; !steamcont_options[i].name.empty(); i++) {
-    register_option(steamcont_options[i]);
-  }
   pipe(statepipe);
   watch_file(statepipe[0],statepipe);
   scraw::controller_config ctrl_cfg;
@@ -102,8 +87,10 @@ void steam_controller::on_state_change(const scraw_controller_state_t& state) {
 void steam_controller::process(void* tag) {
   scraw_controller_state_t state;
   int ret = read(statepipe[0],&state,sizeof(state));
+  
   if (ret < sizeof(state))
     return; //abort.
+  
   //start checking events for new values to report...
   auto buttons = state.buttons;
   CHECK_BTN(SCRAW_BTN_A,sc_a);
