@@ -126,6 +126,23 @@ int profile::set_option(std::string opname, std::string value) {
   return 0;
 }
 
+void profile::remove_option(std::string option_name) {
+  std::lock_guard<std::mutex> guard(lock);
+  
+
+  int ret = options.erase(option_name);
+  if (ret == 0) return;
+
+  for (auto prof : subscribers) {
+    auto ptr = prof.lock();
+    if (ptr) ptr->remove_option(option_name);
+  }
+  for (auto dev : devices) {
+    auto ptr = dev.lock();
+    if (ptr) ptr->remove_option(option_name);
+  }
+}
+
 void profile::set_advanced(std::vector<std::string> names, advanced_event_translator* trans) {
   if (names.empty()) return;
   std::lock_guard<std::mutex> guard(lock);

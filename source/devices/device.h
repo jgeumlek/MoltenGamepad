@@ -77,6 +77,7 @@ public:
 
   void update_map(const char* evname, event_translator* trans);
   void update_option(const char* opname, const char* value);
+  void remove_option(std::string option_name);
   void update_advanced(const std::vector<std::string>& evnames, advanced_event_translator* trans);
 
   void start_thread();
@@ -119,6 +120,7 @@ protected:
   std::thread* thread = nullptr;
   volatile bool keep_looping = true;
   device_manager* manager;
+  std::mutex opt_lock;
   
   std::vector<const event_translator*> recurring_events;
   bool do_recurring_events = false;

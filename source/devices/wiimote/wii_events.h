@@ -49,6 +49,11 @@ enum wii_keys {
   cc_thumbl,
   cc_thumbr,
 
+  cc_left_x,
+  cc_left_y,
+  cc_right_x,
+  cc_right_y,
+
   wm_accel_x,
   wm_accel_y,
   wm_accel_z,
@@ -67,10 +72,6 @@ enum wii_keys {
   nk_stick_x,
   nk_stick_y,
 
-  cc_left_x,
-  cc_left_y,
-  cc_right_x,
-  cc_right_y,
 
 
   bal_x,

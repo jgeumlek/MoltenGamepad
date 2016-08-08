@@ -46,6 +46,7 @@ public:
   void remove_event(std::string event_name);
   void register_option(const option_info opt);
   int set_option(std::string opname, std::string value);
+  void remove_option(std::string option_name);
 
   void set_alias(std::string external, std::string local);
   std::string get_alias(std::string name);

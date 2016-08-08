@@ -222,10 +222,18 @@ void wiimote::update_mode(modes new_mode) {
   if (mode == PRO_EXT) {
     event_prefix = 'c';
     other_event = EVENT_DISABLED;
+    devprofile->remove_option("wm_accel_active");
+    devprofile->remove_option("nk_accel_active");
+    devprofile->remove_option("wm_ir_active");
+    devprofile->remove_option("nk_ir_active");
   }
   if (mode == BALANCE_EXT) {
     event_prefix = 'b';
     other_event = EVENT_DISABLED;
+    devprofile->remove_option("wm_accel_active");
+    devprofile->remove_option("nk_accel_active");
+    devprofile->remove_option("wm_ir_active");
+    devprofile->remove_option("nk_ir_active");
   }
   if (mode == NO_EXT)
     event_prefix = 'w';

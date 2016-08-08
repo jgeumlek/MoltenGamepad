@@ -71,8 +71,13 @@ void input_source::toggle_event(int id, event_state state) {
 }
 
 void input_source::register_option(option_info opt) {
-
+  std::lock_guard<std::mutex> lock(opt_lock);
   options.insert(std::pair<std::string, option_info>(opt.name, opt));
+}
+
+void input_source::remove_option(std::string option_name) {
+  std::lock_guard<std::mutex> lock(opt_lock);
+  options.erase(option_name);
 }
 
 
@@ -103,6 +108,7 @@ void input_source::update_map(const char* evname, event_translator* trans) {
 }
 
 void input_source::update_option(const char* name, const char* value) {
+  std::lock_guard<std::mutex> lock(opt_lock);
   std::string sname = std::string(name);
   std::string svalue = std::string(value);
   auto it = options.find(sname);

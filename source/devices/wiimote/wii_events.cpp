@@ -61,6 +61,11 @@ const event_decl wiimote_events[] = {
   {EVNAME(cc_thumbl), "Classic Controller Left Stick Click (Wii U Pro only)", BTN, "thumbl"},
   {EVNAME(cc_thumbr), "Classic Controller Right Stick Click  (Wii U Pro only)", BTN, "thumbr"},
 
+  {EVNAME(cc_left_x), "Classic Controller Left Stick X", ABS, "+left_x"},
+  {EVNAME(cc_left_y), "Classic Controller Left Stick Y", ABS, "+left_y"},
+  {EVNAME(cc_right_x), "Classic Controller Right Stick X", ABS, "+right_x"},
+  {EVNAME(cc_right_y), "Classic Controller Right Stick Y", ABS, "+right_y"},
+
   {EVNAME(wm_accel_x), "Wiimote X acceleration ((-) <--> (+) axis)", ABS},
   {EVNAME(wm_accel_y), "Wiimote Y acceleration (plug <--> pointer axis)", ABS},
   {EVNAME(wm_accel_z), "Wiimote Z acceleration (top <--> bottom axis)", ABS},
@@ -79,10 +84,6 @@ const event_decl wiimote_events[] = {
   {EVNAME(nk_stick_x), "Nunchuk stick X", ABS, "+left_x"},
   {EVNAME(nk_stick_y), "Nunchuk stick Y", ABS, "+left_y"},
 
-  {EVNAME(cc_left_x), "Classic Controller Left Stick X", ABS, "+left_x"},
-  {EVNAME(cc_left_y), "Classic Controller Left Stick Y", ABS, "+left_y"},
-  {EVNAME(cc_right_x), "Classic Controller Right Stick X", ABS, "+right_x"},
-  {EVNAME(cc_right_y), "Classic Controller Right Stick Y", ABS, "+right_y"},
 
   {EVNAME(bal_x), "Balance Board Center of Gravity X", ABS},
   {EVNAME(bal_y), "Balance Board Center of Gravity Y", ABS},
@@ -92,9 +93,9 @@ const event_decl wiimote_events[] = {
 };
 
 const option_decl wiimote_options[] = {
-  {"wm_accel_active", "Enable accelerometers when no extension", "false", MG_BOOL},
+  {"wm_accel_active", "Enable accelerometers when no extension is present", "false", MG_BOOL},
   {"nk_accel_active", "Enable accelerometers when nunchuk is present", "false", MG_BOOL},
-  {"wm_ir_active", "Enable IR data when no extension", "false", MG_BOOL},
+  {"wm_ir_active", "Enable IR data when no extension is present", "false", MG_BOOL},
   {"nk_ir_active", "Enable IR data when nunchuk is present", "false", MG_BOOL},
   {"grab_exclusive", "Grab device events via ioctl EVIOCGRAB", "true", MG_BOOL},
   {"grab_permissions", "Grab device via blocking all read permissions", "false", MG_BOOL},
