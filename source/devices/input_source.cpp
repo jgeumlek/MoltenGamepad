@@ -11,6 +11,10 @@
 input_source::input_source(slot_manager* slot_man, device_manager* manager, std::string type) : slot_man(slot_man), manager(manager), device_type(type) {
   for (auto ev : manager->get_events())
     register_event(ev);
+  std::vector<option_info> prof_opts;
+  manager->mapprofile->list_options(prof_opts);
+  for (auto opt : prof_opts)
+    options[opt.name] = opt;
 
   epfd = epoll_create(1);
   if (epfd < 1) perror("epoll create");
