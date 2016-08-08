@@ -76,7 +76,8 @@ int do_print_devs(moltengamepad* mg, std::string name, std::ostream& out) {
       
       const std::vector<source_event>& events = dev->get_events();
       for (auto v : events) {
-        if (v.state != EVENT_DISABLED) out << v.name << ":\t" << v.descr << std::endl;
+        const char* evstate = (v.state == EVENT_INACTIVE) ? " (inactive)" : "";
+        if (v.state != EVENT_DISABLED) out << v.name << ":\t" << v.descr << evstate << std::endl;
       }
 
       std::vector<option_info> list;

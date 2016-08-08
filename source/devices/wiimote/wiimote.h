@@ -21,6 +21,7 @@ struct dev_node {
   struct udev_device* dev = nullptr;
   int fd = -1;
   mode_t orig_mode;
+  bool fix_mode = false;
 };
 
 
@@ -37,7 +38,9 @@ struct irdata {
   int y = 1023;
 };
 
-enum modes {NO_EXT, NUNCHUK_EXT, CLASSIC_EXT};
+enum modes {NO_EXT, NUNCHUK_EXT, CLASSIC_EXT, PRO_EXT, BALANCE_EXT, MODE_UNCERTAIN};
+//MODE_UNCERTAIN is for the early stage where we don't know if this is a wiimote,
+// a balance board, or a Wii U Pro controller.
 
 
 class wiimote : public input_source {
@@ -53,7 +56,7 @@ public:
   struct dev_node balance;
   struct wii_leds leds;
 
-  modes mode = NO_EXT;
+  modes mode = MODE_UNCERTAIN;
 
   wiimote(slot_manager* slot_man, device_manager* manager, const std::string& uniq);
 
@@ -65,11 +68,10 @@ public:
   void enable_accel(bool enable);
   void enable_motionplus(bool enable);
 
-  void update_mode();
+  void update_mode(modes mode);
   void remove_extension() {
     if (mode != NO_EXT) manager->log.take_message(name + " lost its extension.");
-    mode = NO_EXT;
-    update_mode();
+    update_mode(NO_EXT);
   }
 
   virtual std::string get_description() const;
@@ -87,6 +89,7 @@ protected:
 private:
   irdata ircache[4];
   int balancecache[4] = {0, 0, 0, 0};
+  std::mutex mode_lock;
   bool wm_accel_active = false;
   bool nk_accel_active = false;
   bool wm_ir_active = false;
