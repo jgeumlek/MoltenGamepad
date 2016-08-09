@@ -11,13 +11,7 @@ void device_manager::register_event(event_decl ev) {
 }
 
 void device_manager::register_option(option_decl opt) {
-  option_info info;
-  info.locked = false;
-  info.name = std::string(opt.name);
-  info.descr = std::string(opt.descr);
-  info.stringval = std::string(opt.value);
-  info.value.type = opt.type;
-  mapprofile->register_option(info);
+  mapprofile->register_option(opt);
 }
 
 void device_manager::for_all_devices(std::function<void (const input_source*)> func) {

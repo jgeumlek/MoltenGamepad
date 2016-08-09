@@ -21,11 +21,13 @@ void print_profile(profile& profile, std::ostream& out) {
     MGparser::print_def(NO_ENTRY, def, out);
     out << std::endl;
   }
-  for (auto it = profile.options.begin(); it != profile.options.end(); it++) {
-    out << profile.name << ".?" << it->first << " = " << it->second.stringval << std::endl;
-    out << "   #  " << it->second.descr << std::endl;
+  std::vector<option_info> opts;
+  profile.list_options(opts);
+  for (auto opt : opts) {
+    out << profile.name << ".?" << opt.name << " = " << opt.stringval << std::endl;
+    out << "   #  " << opt.descr << std::endl;
   }
-  if (profile.mapping.empty() && profile.adv_trans.empty() && profile.options.empty())
+  if (profile.mapping.empty() && profile.adv_trans.empty() && opts.empty())
     out << "#(empty profile)" << std::endl;
   profile.lock.unlock();
 }

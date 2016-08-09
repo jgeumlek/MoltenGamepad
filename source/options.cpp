@@ -45,6 +45,12 @@ int options::set(std::string opname, std::string value) {
   set_locked(opname, value);
 }
 
+int options::remove(std::string opname) {
+  std::lock_guard<std::mutex> guard(optlock);
+  int ret = options.erase(opname);
+  return (ret > 0) ? 0 : -1;
+}
+
 int options::set_locked(std::string& opname, std::string& value) {
   if (options.find(opname) == options.end()) 
     return -1; //This option was not registered, ignore it.
@@ -94,6 +100,12 @@ option_info options::get_option(std::string opname) {
     return opt;
   }
   return it->second;
+}
+
+void options::list_options(std::vector<option_info>& list) const {
+  std::lock_guard<std::mutex> guard(optlock);
+  for (auto opt : options)
+    list.push_back(opt.second);
 }
 
 void options::lock(std::string opname, bool locked) {

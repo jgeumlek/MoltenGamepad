@@ -21,10 +21,11 @@ public:
   int remove(std::string opname);
   void lock(std::string opname, bool locked);
   option_info get_option(std::string opname);
+  void list_options(std::vector<option_info>& list) const;
   template<typename T> int get(std::string opname, T& target);
   template<typename T> T get(std::string opname);
 
 protected:
-  std::mutex optlock;
+  mutable std::mutex optlock;
   int set_locked(std::string& opname, std::string& value);
 };

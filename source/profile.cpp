@@ -93,11 +93,11 @@ void profile::remove_event(std::string event_name) {
   }
 }
 
-
+//The opt class can register from either an option_info or option_decl.
+//Just go ahead and expose both...
 void profile::register_option(const option_info opt) {
   std::lock_guard<std::mutex> guard(lock);
-  options.erase(opt.name);
-  options[opt.name] = opt;
+  opts.register_option(opt);
 
   for (auto prof : subscribers) {
     auto ptr = prof.lock();
@@ -109,12 +109,26 @@ void profile::register_option(const option_info opt) {
   }
 }
 
+void profile::register_option(const option_decl opt) {
+  std::lock_guard<std::mutex> guard(lock);
+  opts.register_option(opt);
+
+  for (auto prof : subscribers) {
+    auto ptr = prof.lock();
+    if (ptr) ptr->register_option(opt);
+  }
+  for (auto dev : devices) {
+    auto ptr = dev.lock();
+    if (ptr) ptr->update_option(opt.name,opt.value);
+  }
+}
+
 int profile::set_option(std::string opname, std::string value) {
   std::lock_guard<std::mutex> guard(lock);
-  if (options.find(opname) == options.end()) 
-    return -1; //This option was not registered, ignore it.
 
-  options[opname].stringval = value;
+  int ret = opts.set(opname,value);
+  if (ret != 0)
+    return ret; //something went wrong... Don't propagate to subscribers.
   for (auto prof : subscribers) {
     auto ptr = prof.lock();
     if (ptr) ptr->set_option(opname, value);
@@ -130,8 +144,8 @@ void profile::remove_option(std::string option_name) {
   std::lock_guard<std::mutex> guard(lock);
   
 
-  int ret = options.erase(option_name);
-  if (ret == 0) return;
+  int ret = opts.remove(option_name);
+  if (ret != 0) return;
 
   for (auto prof : subscribers) {
     auto ptr = prof.lock();
@@ -199,15 +213,11 @@ std::string profile::get_alias(std::string name) {
 
 option_info profile::get_option(std::string opname) {
   std::lock_guard<std::mutex> guard(lock);
-  auto it = options.find(opname);
-  if (it == options.end()) return option_info();
-  return it->second;
+  return opts.get_option(opname);
 }
 
 void profile::list_options(std::vector<option_info>& list) const {
-  std::lock_guard<std::mutex> guard(lock);
-  for (auto opt : options)
-    list.push_back(opt.second);
+  opts.list_options(list);
 }
 
 void profile::subscribe_to(profile* parent) {
@@ -270,9 +280,11 @@ void profile::copy_into(std::shared_ptr<profile> target, bool add_subscription, 
     target->set_mapping(entry.first, entry.second.trans->clone(), entry.second.type, add_new);
   for (auto entry : adv_trans)
     target->set_advanced(entry.second.fields, entry.second.trans->clone());
-  for (auto entry : options) {
-    if (add_new)  target->register_option(entry.second);
-    if (!add_new) target->set_option(entry.first,entry.second.stringval);
+  std::vector<option_info> optionlist;
+  opts.list_options(optionlist);
+  for (auto opt : optionlist) {
+    if (add_new)  target->register_option(opt);
+    if (!add_new) target->set_option(opt.name,opt.stringval);
   }
   if (add_subscription) {
     subscribers.push_back(target);

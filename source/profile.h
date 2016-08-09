@@ -29,7 +29,7 @@ class profile : public std::enable_shared_from_this<profile> {
 public:
   std::string name;
   std::unordered_map<std::string, trans_map> mapping;
-  std::unordered_map<std::string, option_info> options;
+  options opts;
   std::unordered_map<std::string, std::string> aliases;
   std::map<std::string, adv_map> adv_trans;
   mutable std::mutex lock;
@@ -45,6 +45,7 @@ public:
 
   void remove_event(std::string event_name);
   void register_option(const option_info opt);
+  void register_option(const option_decl opt);
   int set_option(std::string opname, std::string value);
   void remove_option(std::string option_name);
 
