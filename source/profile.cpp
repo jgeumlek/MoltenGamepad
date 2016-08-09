@@ -105,7 +105,7 @@ void profile::register_option(const option_info opt) {
   }
   for (auto dev : devices) {
     auto ptr = dev.lock();
-    if (ptr) ptr->update_option(opt.name.c_str(),opt.value.c_str());
+    if (ptr) ptr->update_option(opt.name.c_str(),opt.stringval.c_str());
   }
 }
 
@@ -114,7 +114,7 @@ int profile::set_option(std::string opname, std::string value) {
   if (options.find(opname) == options.end()) 
     return -1; //This option was not registered, ignore it.
 
-  options[opname].value = value;
+  options[opname].stringval = value;
   for (auto prof : subscribers) {
     auto ptr = prof.lock();
     if (ptr) ptr->set_option(opname, value);
@@ -200,7 +200,7 @@ std::string profile::get_alias(std::string name) {
 option_info profile::get_option(std::string opname) {
   std::lock_guard<std::mutex> guard(lock);
   auto it = options.find(opname);
-  if (it == options.end()) return {"","",""};
+  if (it == options.end()) return option_info();
   return it->second;
 }
 
@@ -272,7 +272,7 @@ void profile::copy_into(std::shared_ptr<profile> target, bool add_subscription, 
     target->set_advanced(entry.second.fields, entry.second.trans->clone());
   for (auto entry : options) {
     if (add_new)  target->register_option(entry.second);
-    if (!add_new) target->set_option(entry.first,entry.second.value);
+    if (!add_new) target->set_option(entry.first,entry.second.stringval);
   }
   if (add_subscription) {
     subscribers.push_back(target);

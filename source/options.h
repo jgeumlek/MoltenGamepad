@@ -16,7 +16,9 @@ public:
   
   std::unordered_map<std::string, option_info> options;
   void register_option(const option_info opt);
+  void register_option(const option_decl opt);
   int set(std::string opname, std::string value);
+  int remove(std::string opname);
   void lock(std::string opname, bool locked);
   option_info get_option(std::string opname);
   template<typename T> int get(std::string opname, T& target);
@@ -24,4 +26,5 @@ public:
 
 protected:
   std::mutex optlock;
+  int set_locked(std::string& opname, std::string& value);
 };

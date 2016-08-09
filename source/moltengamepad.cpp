@@ -169,7 +169,7 @@ int fifo_loop(moltengamepad* mg) {
 }
 
 
-const option_info general_options[] = {
+const option_decl general_options[] = {
 
   {"num_gamepads", "Number of virtual gamepads to create", "4", MG_INT},
   {"dpad_as_hat", "Use a hat to represent the dpad, instead of 4 separate buttons", "false", MG_BOOL},

@@ -436,7 +436,7 @@ void release_def(MGTransDef& def) {
     if (entry.type == MG_ADVANCED_TRANS)
       delete entry.adv_trans;
     if (entry.type == MG_STRING)
-      delete entry.string;
+      free(entry.string);
   }
 }
 
@@ -571,7 +571,13 @@ bool MGparser::parse_def(enum entry_type intype, MGTransDef& def, complex_expr* 
         def.fields[i].integer = val ? 1 : 0;
       });
     }
-    if (type == MG_STRING) def.fields[i].string = new std::string(expr->params[j]->ident);
+    if (type == MG_STRING) {
+      size_t size = expr->params[j]->ident.size();
+      char* copy = (char*) calloc(size+1,sizeof(char));
+      strncpy(copy,expr->params[j]->ident.c_str(), size);
+      copy[size] = '\0';
+      def.fields[i].string = copy;
+    }
     //TODO: float
     j++;
   }
@@ -615,7 +621,7 @@ void MGparser::print_def(entry_type intype, MGTransDef& def, std::ostream& outpu
     }
     if (type == MG_INT) output << field.integer;
     if (type == MG_FLOAT) output << field.real;
-    if (type == MG_STRING) output << "\""<<*(field.string)<<"\"";
+    if (type == MG_STRING) output << "\""<<field.string<<"\"";
     if (type == MG_SLOT) output << field.slot->name;
     if (type == MG_BOOL) output << (field.integer ? "true":"false");
     if (type == MG_TRANS || type == MG_KEY_TRANS || type == MG_AXIS_TRANS || type == MG_REL_TRANS) {

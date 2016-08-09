@@ -22,7 +22,7 @@ void print_profile(profile& profile, std::ostream& out) {
     out << std::endl;
   }
   for (auto it = profile.options.begin(); it != profile.options.end(); it++) {
-    out << profile.name << ".?" << it->first << " = " << it->second.value << std::endl;
+    out << profile.name << ".?" << it->first << " = " << it->second.stringval << std::endl;
     out << "   #  " << it->second.descr << std::endl;
   }
   if (profile.mapping.empty() && profile.adv_trans.empty() && profile.options.empty())
@@ -84,7 +84,7 @@ int do_print_devs(moltengamepad* mg, std::string name, std::ostream& out) {
       dev->list_options(list);
       out << " options:" << std::endl;
       for (auto v : list) {
-        out << "?" << v.name << " = " << v.value << "\n\t" << v.descr << std::endl;
+        out << "?" << v.name << " = " << v.stringval << "\n\t" << v.descr << std::endl;
       }
       if (list.empty()) {
         out << "(no options)" << std::endl;

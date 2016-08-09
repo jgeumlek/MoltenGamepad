@@ -114,7 +114,7 @@ void input_source::update_option(const char* name, const char* value) {
   auto it = options.find(sname);
   if (it != options.end()) {
     if (!process_option(name, value)) {
-      it->second.value = svalue;
+      it->second.stringval = svalue;
     } else {
       //Device rejected the option.
     }

@@ -35,8 +35,9 @@ struct MGField {
     int key;
     int axis;
     int rel;
-    std::string* string;
+    char* string;
     int integer;
+    bool boolean;
     float real;
     output_slot* slot;
   };
@@ -59,9 +60,9 @@ struct option_decl {
 struct option_info {
   std::string name;
   std::string descr;
-  std::string value;
-  MGType type;
+  MGField value;
   bool locked = false;
+  std::string stringval; //Just because allocation is simpler outside the union.
 };
 
 

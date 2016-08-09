@@ -11,13 +11,12 @@ void device_manager::register_event(event_decl ev) {
 }
 
 void device_manager::register_option(option_decl opt) {
-  option_info info = {
-    .name = (opt.name),
-    .descr = (opt.descr),
-    .value = (opt.value),
-    .type = (opt.type),
-    .locked = false,
-  };
+  option_info info;
+  info.locked = false;
+  info.name = std::string(opt.name);
+  info.descr = std::string(opt.descr);
+  info.stringval = std::string(opt.value);
+  info.value.type = opt.type;
   mapprofile->register_option(info);
 }
 

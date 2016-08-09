@@ -34,8 +34,8 @@ int main(int argc, char* argv[]) {
   //signal(SIGHUP, signal_handler);
 
   options options;
-  const option_info* opt = &general_options[0];
-  for (int i = 0; !opt->name.empty(); opt = &general_options[++i]) {
+  const option_decl* opt = &general_options[0];
+  for (int i = 0; opt->name && *opt->name; opt = &general_options[++i]) {
     options.register_option(*opt);
   }
   int ret = parse_opts(options, argc, argv);

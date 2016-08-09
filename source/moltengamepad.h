@@ -38,7 +38,7 @@ enum file_category {
 
 
 
-extern const option_info general_options[];
+extern const option_decl general_options[];
 
 class moltengamepad {
 public:
