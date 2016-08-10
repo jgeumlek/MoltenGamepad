@@ -107,10 +107,20 @@ void input_source::update_map(const char* evname, event_translator* trans) {
   }
 }
 
-void input_source::update_option(const char* name, const char* value) {
+std::string field_to_string(const MGField field) {
+  if (field.type == MG_STRING)
+    return std::string(field.string);
+  if (field.type == MG_INT)
+    return std::to_string(field.integer);
+  if (field.type == MG_BOOL)
+    return field.boolean ? "true" : "false";
+  return "error";
+}
+
+void input_source::update_option(const char* name, const MGField value) {
   std::lock_guard<std::mutex> lock(opt_lock);
   std::string sname = std::string(name);
-  std::string svalue = std::string(value);
+  std::string svalue = field_to_string(value);
   auto it = options.find(sname);
   if (it != options.end()) {
     if (!process_option(name, value)) {

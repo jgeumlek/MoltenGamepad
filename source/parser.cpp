@@ -436,7 +436,7 @@ void release_def(MGTransDef& def) {
     if (entry.type == MG_ADVANCED_TRANS)
       delete entry.adv_trans;
     if (entry.type == MG_STRING)
-      free(entry.string);
+      free((char*)entry.string);
   }
 }
 

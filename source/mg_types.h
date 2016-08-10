@@ -35,7 +35,7 @@ struct MGField {
     int key;
     int axis;
     int rel;
-    char* string;
+    const char* string;
     int integer;
     bool boolean;
     float real;

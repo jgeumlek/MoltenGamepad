@@ -23,43 +23,36 @@ wiimote::~wiimote() {
   clear_node(&balance);
 }
 
-int wiimote::process_option(const char* name, const char* value) {
+int wiimote::process_option(const char* name, const MGField value) {
   if (!strcmp(name, "wm_accel_active")) {
-    return read_bool(std::string(value), [&] (bool val) {
-      this->wm_accel_active = val;
-      update_mode(mode);
-    });
+    this->wm_accel_active = value.boolean;
+    update_mode(mode);
+    return 0;
   }
   if (!strcmp(name, "nk_accel_active")) {
-    return read_bool(std::string(value), [&] (bool val) {
-      this->nk_accel_active = val;
-      update_mode(mode);
-    });
+    this->nk_accel_active = value.boolean;
+    update_mode(mode);
+    return 0;
   }
   if (!strcmp(name, "wm_ir_active")) {
-    return read_bool(std::string(value), [&] (bool val) {
-      this->wm_ir_active = val;
-      update_mode(mode);
-    });
+    this->wm_ir_active = value.boolean;
+    update_mode(mode);
+    return 0;
   }
   if (!strcmp(name, "nk_ir_active")) {
-    return read_bool(std::string(value), [&] (bool val) {
-      this->nk_ir_active = val;
-      update_mode(mode);
-    });
+    this->nk_ir_active = value.boolean;
+    update_mode(mode);
+    return 0;
   }
   if (!strcmp(name, "grab_exclusive")) {
-    return read_bool(std::string(value), [&] (bool val) {
-      this->grab_exclusive = val;
-      grab_ioctl(val);
-    });
+    this->grab_exclusive = value.boolean;
+    grab_ioctl(value.boolean);
+    return 0;
   }
   if (!strcmp(name, "grab_permissions")) {
-    return read_bool(std::string(value), [&] (bool val) {
-      this->grab_permissions = val;
-      grab_chmod(val);
-    });
-    return -1;
+    this->grab_permissions = value.boolean;
+    grab_chmod(value.boolean);
+    return 0;
   }
 
   return -1;

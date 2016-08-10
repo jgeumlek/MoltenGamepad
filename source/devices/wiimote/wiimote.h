@@ -84,7 +84,7 @@ public:
   void read_wiimote();
 protected:
   void process(void*);
-  virtual int process_option(const char* opname, const char* value);
+  virtual int process_option(const char* opname, const MGField value);
 
 private:
   irdata ircache[4];

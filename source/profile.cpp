@@ -105,7 +105,7 @@ void profile::register_option(const option_info opt) {
   }
   for (auto dev : devices) {
     auto ptr = dev.lock();
-    if (ptr) ptr->update_option(opt.name.c_str(),opt.stringval.c_str());
+    if (ptr) ptr->update_option(opt.name.c_str(),opt.value);
   }
 }
 
@@ -119,7 +119,10 @@ void profile::register_option(const option_decl opt) {
   }
   for (auto dev : devices) {
     auto ptr = dev.lock();
-    if (ptr) ptr->update_option(opt.name,opt.value);
+    auto optionval = opts.get_option(opt.name);
+    if (optionval.value.type == MG_STRING)
+      optionval.value.string = optionval.stringval.c_str();
+    if (ptr) ptr->update_option(opt.name,optionval.value);
   }
 }
 
@@ -135,7 +138,8 @@ int profile::set_option(std::string opname, std::string value) {
   }
   for (auto dev : devices) {
     auto ptr = dev.lock();
-    if (ptr) ptr->update_option(opname.c_str(),value.c_str());
+    auto optionval = opts.get_option(opname);
+    if (ptr) ptr->update_option(opname.c_str(),optionval.value);
   }
   return 0;
 }

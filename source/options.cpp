@@ -20,6 +20,8 @@ void options::register_option(const option_info opt) {
   MGType type = opt.value.type;
   if (type != MG_INT && type != MG_BOOL && type != MG_STRING)
     return; //unsupported.
+  if (type == MG_STRING && opt.value.string != nullptr)
+    return; //Data integrity assumption violated
   options[opt.name] = opt;
 
 }
@@ -86,6 +88,7 @@ int options::set_locked(std::string& opname, std::string& value) {
   
   if (type == MG_STRING) {
     options[opname].stringval = value;
+    options[opname].value.string = nullptr;
     return 0;
   }
   

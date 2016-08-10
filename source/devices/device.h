@@ -76,7 +76,7 @@ public:
   }
 
   void update_map(const char* evname, event_translator* trans);
-  void update_option(const char* opname, const char* value);
+  void update_option(const char* opname, const MGField field);
   void remove_option(std::string option_name);
   void update_advanced(const std::vector<std::string>& evnames, advanced_event_translator* trans);
 
@@ -138,7 +138,7 @@ protected:
   void thread_loop();
 
   virtual void process(void* tag) {};
-  virtual int process_option(const char* opname, const char* value) {
+  virtual int process_option(const char* opname, const MGField field) {
     return 0;
   };
   
