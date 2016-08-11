@@ -21,7 +21,7 @@ public:
 
   ~slot_manager();
 
-  void request_slot(input_source* dev);
+  int request_slot(input_source* dev);
   void move_to_slot(input_source* dev, output_slot* target);
   void remove(input_source* dev);
 

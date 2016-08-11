@@ -4,7 +4,6 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <glob.h>
-#include "devices/wiimote/wiimote.h"
 #include "devices/generic/generic.h"
 
 #ifdef BUILD_STEAM_CONTROLLER_DRIVER
@@ -230,8 +229,8 @@ int moltengamepad::init() {
   errors.add_listener(2);
 
   //add built in drivers
-  managers.push_back(new wiimote_manager(this));
-  drivers.take_message("wiimote driver initialized.");
+  init_plugin_api();
+  load_builtins(this);
 #ifdef BUILD_STEAM_CONTROLLER_DRIVER
   managers.push_back(new steam_controller_manager(this));
   drivers.take_message("steamcontroller driver initialized.");
@@ -348,7 +347,11 @@ moltengamepad::~moltengamepad() {
   delete slots;
 }
 
-
+device_manager* moltengamepad::add_manager(manager_plugin manager, void* manager_plug_data) {
+  auto man = new device_manager(this, manager, manager_plug_data);
+  managers.push_back(man);
+  drivers.take_message(man->name + " driver initialized.");
+};
 
 device_manager* moltengamepad::find_manager(const char* name) {
   for (auto it = managers.begin(); it != managers.end(); it++) {
@@ -402,7 +405,12 @@ std::shared_ptr<input_source> moltengamepad::add_device(input_source* source, de
   return ptr;
 }
 
-void moltengamepad::remove_device(input_source* source) {
+std::shared_ptr<input_source> moltengamepad::add_device(device_manager* manager, device_plugin dev, void* dev_plug_data) {
+  input_source* ptr = new input_source(manager, dev, dev_plug_data);
+  return add_device(ptr, manager, std::string(dev.name_stem));
+}
+
+int moltengamepad::remove_device(input_source* source) {
   device_list_lock.lock();
   
   for (int i = 0; i < devices.size(); i++) {
@@ -414,6 +422,7 @@ void moltengamepad::remove_device(input_source* source) {
     }
   }
   device_list_lock.unlock();
+  return 0;
 }
 
 void moltengamepad::for_all_devices(std::function<void (std::shared_ptr<input_source>&)> func) {

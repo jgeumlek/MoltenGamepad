@@ -66,7 +66,7 @@ public:
   std::map<evcode, decodedevent> eventcodes;
   struct udev_device* node = nullptr;
 
-  generic_device(std::vector<split_ev_info>& events, int fd, bool watch, slot_manager* slot_man, device_manager* manager, std::string type, const std::string& uniq);
+  generic_device(std::vector<split_ev_info>& events, int fd, bool watch, device_manager* manager, std::string type, const std::string& uniq);
   ~generic_device();
 
   virtual int set_player(int player_num);

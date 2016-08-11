@@ -52,7 +52,7 @@ int lookup_steamcont_event(const char* evname);
 
 class steam_controller : public input_source {
 public:
-  steam_controller(scraw::controller* sc, slot_manager* slot_man, device_manager* manager);
+  steam_controller(scraw::controller* sc, device_manager* manager);
   ~steam_controller();
 
 protected:

@@ -1,6 +1,6 @@
 #include "generic.h"
 
-generic_device::generic_device(std::vector<split_ev_info>& split_events, int fd, bool watch, slot_manager* slot_man, device_manager* manager, std::string type, const std::string& uniq) : input_source(slot_man, manager, type) {
+generic_device::generic_device(std::vector<split_ev_info>& split_events, int fd, bool watch, device_manager* manager, std::string type, const std::string& uniq) : input_source(manager, type) {
   this->uniq = uniq;
   this->fd = fd;
 

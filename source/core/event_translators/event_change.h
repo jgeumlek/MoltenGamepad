@@ -12,8 +12,6 @@
 #define EVENT_KEY 0
 #define EVENT_AXIS 1
 
-#define RANGE 32768
-#define ABS_RANGE RANGE
 
 struct mg_ev {
   int64_t value;

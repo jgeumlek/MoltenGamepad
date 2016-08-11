@@ -5,7 +5,10 @@
 #include <iostream>
 #include <thread>
 #include <sys/epoll.h>
-#include "../device.h"
+#include <mutex>
+#include <unistd.h>
+#include <linux/input.h>
+#include "../plugin.h"
 #include "wii_events.h"
 
 #define WIIMOTE_NAME "Nintendo Wii Remote"
@@ -17,12 +20,18 @@
 #define BALANCE_BOARD_NAME "Nintendo Wii Remote Balance Board"
 #define WII_U_PRO_NAME "Nintendo Wii Remote Pro Controller"
 
+extern int wiimote_loaded;
+extern moltengamepad_methods mg_methods;
+extern moltengamepad* mg;
+extern device_plugin wiidev;
+
 struct dev_node {
   struct udev_device* dev = nullptr;
   int fd = -1;
   mode_t orig_mode;
   bool fix_mode = false;
 };
+
 
 
 enum ext_type {NUNCHUK, CLASSIC, GUITAR, DRUMS, UNKNOWN};
@@ -43,7 +52,7 @@ enum modes {NO_EXT, NUNCHUK_EXT, CLASSIC_EXT, PRO_EXT, BALANCE_EXT, MODE_UNCERTA
 // a balance board, or a Wii U Pro controller.
 
 
-class wiimote : public input_source {
+class wiimote {
 public:
   struct dev_node base;
   struct dev_node buttons;
@@ -58,8 +67,6 @@ public:
 
   modes mode = MODE_UNCERTAIN;
 
-  wiimote(slot_manager* slot_man, device_manager* manager, const std::string& uniq);
-
   ~wiimote();
   
   virtual void handle_event(struct udev_device* dev);
@@ -70,18 +77,21 @@ public:
 
   void update_mode(modes mode);
   void remove_extension() {
-    if (mode != NO_EXT) manager->log.take_message(name + " lost its extension.");
+    //if (mode != NO_EXT) manager->log.take_message(name + " lost its extension.");
     update_mode(NO_EXT);
   }
 
-  virtual std::string get_description() const;
-  virtual std::string get_type() const;
+  const char* get_description() const;
+  const char* get_type() const;
 
   void store_node(struct udev_device* dev, const char* name);
   void remove_node(const char* name);
 
 
   void read_wiimote();
+  static device_methods methods;
+  input_source* ref;
+  friend int wiimote_plugin_init(moltengamepad* mg_ref, plugin_api api);
 protected:
   void process(void*);
   virtual int process_option(const char* opname, const MGField value);
@@ -108,6 +118,9 @@ private:
   void grab_chmod(bool grabbed);
 
 
+  void send_value(int id, int64_t value) {
+    methods.send_value(ref, id, value);
+  };
   void process_core();
   void process_classic(int fd);
   void process_nunchuk(int fd);
@@ -128,27 +141,30 @@ private:
 
 
 
-class wiimote_manager : public device_manager {
+class wiimote_manager {
 public:
   std::vector<wiimote*> wii_devs;
 
-  virtual int accept_device(struct udev* udev, struct udev_device* dev);
+  int accept_device(struct udev* udev, struct udev_device* dev);
 
 
   void init_profile();
 
-  wiimote_manager(moltengamepad* mg) : device_manager(mg,"wiimote") {
+  int init(device_manager* ref) {
+    this->ref = ref;
     init_profile();
   }
 
-  ~wiimote_manager() {
-    for (auto it = wii_devs.begin(); it != wii_devs.end(); ++it) {
-      mg->remove_device(*it);
-    }
-  }
+  static manager_methods methods;
+
 private:
   int dev_counter = 0;
   std::mutex devlistlock;
+  device_manager* ref;
+  wiimote* find_wii_dev_by_path(const char* syspath);
+  int destroy_wii_dev_by_path(const char* syspath);
 };
+
+extern int wiimote_plugin_init(moltengamepad* mg_ref, plugin_api api);
 
 #endif

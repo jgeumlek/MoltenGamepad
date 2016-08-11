@@ -3,7 +3,8 @@ all : moltengamepad
 LDLIBS=-ludev -lpthread
 CPPFLAGS+=-std=c++14
 
-SRCS=$(shell echo source/*.cpp source/*/*.cpp source/*/*/*.cpp)
+SRCS=$(shell echo source/core/*.cpp source/core/*/*.cpp source/core/*/*/*.cpp source/plugin/*.cpp)
+SRCS+=$(shell echo source/plugin/wiimote/*.cpp)
 OBJS=$(subst .cpp,.o,$(SRCS))
 
 #Borrowed magic to handle using gcc to generate build dependencies.
@@ -30,6 +31,7 @@ source/%.o : source/%.cpp $(DEPDIR)/%.d
 	@echo "compiling $<..."
 	@$(COMPILE.cpp) $(OUTPUT_OPTION) $<
 	$(POSTCOMPILE)
+
 
 $(DEPDIR)/%.d: ;
 .PRECIOUS: $(DEPDIR)/%.d

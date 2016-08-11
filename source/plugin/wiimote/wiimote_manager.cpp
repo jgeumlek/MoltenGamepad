@@ -7,14 +7,14 @@
 #include <sys/stat.h>
 
 
-
+manager_methods wiimote_manager::methods;
 
 /*NOTE: Finding uses prefixes, but destroying needs an exact match.
   This allows easily adding/removing subnodes while only deleting
   if the base node is removed                                    */
-wiimote* find_wii_dev_by_path(std::vector<wiimote*>* devs, const char* syspath) {
+wiimote* wiimote_manager::find_wii_dev_by_path(const char* syspath) {
   if (syspath == nullptr) return nullptr;
-  for (auto it = devs->begin(); it != devs->end(); ++it) {
+  for (auto it = wii_devs.begin(); it != wii_devs.end(); ++it) {
     const char* devpath = udev_device_get_syspath((*it)->base.dev);
     if (!devpath) continue;
 
@@ -23,15 +23,15 @@ wiimote* find_wii_dev_by_path(std::vector<wiimote*>* devs, const char* syspath) 
   return nullptr;
 }
 
-int destroy_wii_dev_by_path(moltengamepad* mg, std::vector<wiimote*>* devs, const char* syspath) {
+int wiimote_manager::destroy_wii_dev_by_path(const char* syspath) {
   if (syspath == nullptr) return -1;
-  for (auto it = devs->begin(); it != devs->end(); ++it) {
+  for (auto it = wii_devs.begin(); it != wii_devs.end(); ++it) {
     const char* devpath = udev_device_get_syspath((*it)->base.dev);
     if (!devpath) continue;
 
     if (!strcmp(devpath, syspath)) {
-      mg->remove_device(*it);
-      devs->erase(it);
+      methods.remove_device(ref,(*it)->ref);
+      wii_devs.erase(it);
       return 0;
     }
   }
@@ -49,10 +49,10 @@ int wiimote_manager::accept_device(struct udev* udev, struct udev_device* dev) {
   if (!strcmp(action, "remove")) {
 
     const char* syspath = udev_device_get_syspath(dev);
-    wiimote* existing = find_wii_dev_by_path(&wii_devs, syspath);
+    wiimote* existing = find_wii_dev_by_path(syspath);
 
     if (existing) {
-      int ret = destroy_wii_dev_by_path(mg, &wii_devs, syspath);
+      int ret = destroy_wii_dev_by_path(syspath);
       if (ret) {
         //exact path wasn't found, therefore this is not a parent device.
         existing->handle_event(dev);
@@ -78,15 +78,17 @@ int wiimote_manager::accept_device(struct udev* udev, struct udev_device* dev) {
 
   const char* parentpath = udev_device_get_syspath(parent);
   const char* uniq = udev_device_get_property_value(parent, "HID_UNIQ");
-  wiimote* existing = find_wii_dev_by_path(&wii_devs, parentpath);
+  wiimote* existing = find_wii_dev_by_path(parentpath);
 
   if (existing == nullptr) {
     //time to add a device;
-    wiimote* wm = new wiimote(mg->slots, this, uniq ? std::string(uniq) : "");
-    wm->base.dev = udev_device_ref(parent);
-    wm->handle_event(dev);
-    wii_devs.push_back(wm);
-    mg->add_device(wm, this, "wm");
+    device_plugin wm = wiidev;
+    wm.uniq = uniq ? uniq : "";
+    wiimote* wm_data = new wiimote();
+    wm_data->base.dev = udev_device_ref(parent);
+    wm_data->handle_event(dev);
+    wii_devs.push_back(wm_data);
+    methods.add_device(ref, wm, wm_data);
   } else {
     //This is a subdevice of something we already track
     //pass this subdevice to it for proper storage

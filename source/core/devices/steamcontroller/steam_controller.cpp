@@ -42,7 +42,7 @@ const option_decl steamcont_options[] = {
   {nullptr, nullptr, nullptr},
 };
 
-steam_controller::steam_controller(scraw::controller* sc, slot_manager* slot_man, device_manager* manager) : sc(sc), input_source(slot_man, manager, "gamepad") {
+steam_controller::steam_controller(scraw::controller* sc, device_manager* manager) : sc(sc), input_source(manager, "gamepad") {
   pipe(statepipe);
   watch_file(statepipe[0],statepipe);
   scraw::controller_config ctrl_cfg;

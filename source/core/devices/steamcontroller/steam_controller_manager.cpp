@@ -18,7 +18,7 @@ steam_controller_manager::steam_controller_manager(moltengamepad* mg) : device_m
 
 void steam_controller_manager::on_controller_gained(scraw::controller sc) {
   scraw::controller* ref = new scraw::controller(sc);
-  steam_controller* steamcont = new steam_controller(ref, mg->slots, this);
+  steam_controller* steamcont = new steam_controller(ref, this);
   sc_devs[sc] = steamcont;
   mg->add_device(steamcont, this, "sc");
 }

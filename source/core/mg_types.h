@@ -1,5 +1,8 @@
 #pragma once
+#include <string>
 
+#define RANGE 32768
+#define ABS_RANGE RANGE
 
 enum MGType {
   MG_KEY_TRANS,
@@ -19,7 +22,12 @@ enum MGType {
   MG_NULL,
 };
 
-
+enum event_state { 
+  EVENT_ACTIVE, //Device can currently send this event.
+  EVENT_INACTIVE, //Device might be able to send this event, but not right now.
+  EVENT_DISABLED, //Device will NEVER be able to send this event.
+  //This last one is included as all events of a manager are inherited.
+};
 
 enum entry_type {DEV_OPTION, DEV_KEY, DEV_AXIS, DEV_REL, NO_ENTRY} ;
 

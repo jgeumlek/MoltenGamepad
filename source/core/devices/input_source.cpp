@@ -8,7 +8,8 @@
 
 
 
-input_source::input_source(slot_manager* slot_man, device_manager* manager, std::string type) : slot_man(slot_man), manager(manager), device_type(type) {
+input_source::input_source(device_manager* manager, std::string type) : manager(manager), device_type(type) {
+  memset(&plugin, 0, sizeof(plugin));
   for (auto ev : manager->get_events())
     register_event(ev);
   std::vector<option_info> prof_opts;
@@ -28,6 +29,31 @@ input_source::input_source(slot_manager* slot_man, device_manager* manager, std:
 
 }
 
+input_source::input_source(device_manager* manager, device_plugin plugin, void* plug_data) 
+      : manager(manager), plugin(plugin), plug_data(plug_data), uniq(plugin.uniq) {
+
+  for (auto ev : manager->get_events())
+    register_event(ev);
+  std::vector<option_info> prof_opts;
+  manager->mapprofile->list_options(prof_opts);
+  for (auto opt : prof_opts)
+    options[opt.name] = opt;
+
+  epfd = epoll_create(1);
+  if (epfd < 1) perror("epoll create");
+
+  int internal[2];
+  pipe(internal);
+  watch_file(internal[0], this);
+
+  priv_pipe = internal[1];
+  internalpipe = internal[0];
+  
+  if (plugin.init)
+    plugin.init(this);
+}
+  
+
 input_source::~input_source() {
   end_thread();
   close(internalpipe);
@@ -45,8 +71,10 @@ input_source::~input_source() {
   }
 
   if (out_dev) {
-    slot_man->remove(this);
+    manager->mg->slots->remove(this);
   };
+  if (plugin.destroy)
+    plugin.destroy(plug_data);
 }
 
 
@@ -220,8 +248,18 @@ void input_source::send_value(int id, int64_t value) {
 
   //On a key press, try to claim a slot if we don't have one.
   if (!out_dev && events.at(id).type == DEV_KEY)
-    slot_man->request_slot(this);
+    manager->mg->slots->request_slot(this);
 
+}
+
+void input_source::send_syn_report() {
+  if (out_dev) {
+    input_event ev;
+    memset(&ev,0,sizeof(ev));
+    ev.type = EV_SYN;
+    ev.code = SYN_REPORT;
+    out_dev->take_event(ev);
+  }
 }
 
 void input_source::force_value(int id, int64_t value) {
@@ -232,7 +270,7 @@ void input_source::force_value(int id, int64_t value) {
 
   //On a key press, try to claim a slot if we don't have one.
   if (!out_dev && events.at(id).type == DEV_KEY)
-    slot_man->request_slot(this);
+    manager->mg->slots->request_slot(this);
 
 }
 
@@ -346,13 +384,7 @@ void input_source::process_recurring_events() {
       trans->process_recurring(out_dev);
     }
   }
-  if (out_dev) {
-    input_event ev;
-    memset(&ev,0,sizeof(ev));
-    ev.type = EV_SYN;
-    ev.code = SYN_REPORT;
-    out_dev->take_event(ev);
-  }
+  send_syn_report();
   clock_gettime(CLOCK_MONOTONIC, &last_recurring_update);
 }
 
@@ -420,3 +452,27 @@ int64_t input_source::ms_since_last_recurring_update() {
 std::string input_source::get_manager_name() const {
   return manager->name;
 }
+
+void input_source::process(void *tag) {
+  if (plugin.process_event)
+    plugin.process_event(this, tag);
+}
+
+int input_source::process_option(const char* opname, const MGField field) {
+  if (plugin.process_option)
+    return plugin.process_option(this, opname, field);
+  return -1;
+}
+
+std::string input_source::get_description() const {
+  if (plugin.get_description)
+    return std::string(plugin.get_description(this));
+  return descr;
+}
+
+std::string input_source::get_type() const {
+  if (plugin.get_type)
+    return std::string(plugin.get_type(this));
+  return device_type;
+}
+  

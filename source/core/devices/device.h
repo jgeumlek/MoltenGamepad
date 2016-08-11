@@ -12,6 +12,7 @@
 #include "../moltengamepad.h"
 #include "../profile.h"
 #include "../messages.h"
+#include "../../plugin/plugin.h"
 
 
 
@@ -20,16 +21,9 @@ class advanced_event_translator;
 class moltengamepad;
 
 
-class slot_manager;
-
 class device_manager;
 
-enum event_state { 
-  EVENT_ACTIVE, //Device can currently send this event.
-  EVENT_INACTIVE, //Device might be able to send this event, but not right now.
-  EVENT_DISABLED, //Device will NEVER be able to send this event.
-  //This last one is included as all events of a manager are inherited.
-};
+
 
 struct source_event {
   int id;
@@ -62,7 +56,8 @@ struct input_internal_msg {
 
 class input_source : public std::enable_shared_from_this<input_source> {
 public:
-  input_source(slot_manager* slot_man, device_manager* manager, std::string type);
+  input_source(device_manager* manager, std::string type);
+  input_source(device_manager* manager, device_plugin plugin, void* plug_data);
   virtual ~input_source();
   
   
@@ -96,15 +91,16 @@ public:
   std::string get_name() const { return name; };
   void set_name(std::string name) { this->name = name; };
   std::string get_manager_name() const;
-  virtual std::string get_description() const { return descr; };
+  virtual std::string get_description() const;
   virtual std::string get_uniq() const { return uniq; };
-  virtual std::string get_type() const { return device_type; };
+  virtual std::string get_type() const;
   std::string get_alias(std::string event_name) const;
   std::shared_ptr<profile> get_profile() const { return devprofile; };
 
   output_slot* out_dev = nullptr;
+  void* const plug_data = nullptr;
+  friend void init_plugin_api();
 protected:
-  slot_manager* slot_man;
   int epfd = 0;
   int priv_pipe = 0;
   int internalpipe = 0;
@@ -120,6 +116,7 @@ protected:
   std::thread* thread = nullptr;
   volatile bool keep_looping = true;
   device_manager* manager;
+  device_plugin plugin;
   std::mutex opt_lock;
   
   std::vector<const event_translator*> recurring_events;
@@ -134,13 +131,12 @@ protected:
   void set_trans(int id, event_translator* trans);
   void force_value(int id, int64_t value);
   void send_value(int id, int64_t value);
+  void send_syn_report();
 
   void thread_loop();
 
-  virtual void process(void* tag) {};
-  virtual int process_option(const char* opname, const MGField field) {
-    return 0;
-  };
+  virtual void process(void* tag);
+  virtual int process_option(const char* opname, const MGField field);
   
   
   void handle_internal_message(input_internal_msg &msg);
@@ -155,20 +151,20 @@ protected:
 class device_manager {
 public:
   moltengamepad* mg;
-  virtual int accept_device(struct udev* udev, struct udev_device* dev) {
-    return -1;
-  }
+  void* const plug_data = nullptr;
+  manager_plugin plugin;
+  virtual int accept_device(struct udev* udev, struct udev_device* dev);
 
-  device_manager(moltengamepad* mg, std::string name) : mg(mg), name(name), log(name) {
-    mapprofile->name = name;
-    log.add_listener(1);
-  }
-
-  virtual ~device_manager() {
-  };
+  device_manager(moltengamepad* mg, std::string name);
   
-  void register_event(event_decl ev);
-  void register_option(option_decl opt);
+  device_manager(moltengamepad* mg, manager_plugin plugin, void* plug_data);
+
+  virtual ~device_manager();
+  
+  int register_event(event_decl ev);
+  int register_option(option_decl opt);
+  int register_alias(const char* external, const char* local);
+  input_source* add_device(device_plugin dev, void* dev_plug_data);
 
   const std::vector<event_decl>& get_events() const {
     return events;

@@ -148,7 +148,7 @@ void wiimote::process_core() {
         send_value(offset + wm_home, ev.value);
         break;
       case SYN_REPORT:
-        if (out_dev) out_dev->take_event(ev);
+        methods.send_syn_report(ref);
       }
     }
   }
@@ -224,9 +224,7 @@ void wiimote::process_classic(int fd) {
         break;
       }
     else {
-
-      if (out_dev) out_dev->take_event(ev);
-
+      methods.send_syn_report(ref);
     }
 
   }
@@ -265,8 +263,7 @@ void wiimote::process_nunchuk(int fd) {
         break;
       }
     else {
-
-      if (out_dev) out_dev->take_event(ev);
+      methods.send_syn_report(ref);
     }
   }
 }
@@ -295,7 +292,7 @@ void wiimote::process_accel(int fd) {
         send_value(offset + 2, ev.value * WIIMOTE_ACCEL_SCALE);
         break;
       case SYN_REPORT:
-        if (out_dev) out_dev->take_event(ev);
+        methods.send_syn_report(ref);
       }
     }
   }
@@ -336,7 +333,7 @@ void wiimote::process_ir(int fd) {
       break;
     case SYN_REPORT:
       compute_ir();
-      if (out_dev) out_dev->take_event(ev);
+      methods.send_syn_report(ref);
       break;
     }
   }
@@ -393,7 +390,7 @@ void wiimote::process_balance(int fd) {
       break;
     case SYN_REPORT:
       compute_balance();
-      if (out_dev) out_dev->take_event(ev);
+      methods.send_syn_report(ref);
       break;
     }
   }
@@ -496,9 +493,7 @@ void wiimote::process_pro(int fd) {
         break;
       }
     else {
-
-      if (out_dev) out_dev->take_event(ev);
-
+      methods.send_syn_report(ref);
     }
 
   }

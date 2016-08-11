@@ -25,19 +25,21 @@ slot_manager::~slot_manager() {
   delete debugslot;
 }
 
-void slot_manager::request_slot(input_source* dev) {
+int slot_manager::request_slot(input_source* dev) {
   std::lock_guard<std::mutex> guard(lock);
   if (dev->get_type() == "keyboard") {
     move_device(dev,keyboard);
-    return;
+    return 0;
   }
   for (int i = 0; i < slots.size(); i++) {
     if (slots[i]->accept_device(dev->shared_from_this())) {
       move_device(dev, slots[i]);
-      return;
+      return 0;
     }
   }
   move_device(dev,dummyslot);
+
+  return 0;
 }
 
 void slot_manager::move_to_slot(input_source* dev, output_slot* target) {

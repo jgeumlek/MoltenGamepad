@@ -14,6 +14,7 @@
 #include "signalflags.h"
 #include "messages.h"
 #include "profile.h"
+#include "plugin_loader.h"
 
 #define VERSION_STRING "0.1.1-beta"
 
@@ -64,10 +65,12 @@ public:
   std::string locate(file_category cat, std::string path);
   std::vector<std::string> locate_glob(file_category cat, std::string pathglob);
 
+  device_manager* add_manager(manager_plugin manager, void* manager_plug_data);
   device_manager* find_manager(const char* name);
   std::shared_ptr<input_source> find_device(const char* name);
   std::shared_ptr<input_source> add_device(input_source* source, device_manager* manager, std::string name_stem);
-  void remove_device(input_source* source);
+  std::shared_ptr<input_source> add_device(device_manager* manager, device_plugin dev, void* dev_plug_data);
+  int remove_device(input_source* source);
   void for_all_devices(std::function<void (std::shared_ptr<input_source>&)> func);
 
   std::shared_ptr<profile> find_profile(const std::string& name);

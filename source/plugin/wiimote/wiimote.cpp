@@ -6,10 +6,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 
-wiimote::wiimote(slot_manager* slot_man, device_manager* manager, const std::string& uniq) : input_source(slot_man, manager, "gamepad") {
-  this->uniq = uniq;
-  descr = "Wii remote";
-}
+device_methods wiimote::methods;
 
 wiimote::~wiimote() {
   clear_node(&base);
@@ -66,7 +63,7 @@ void wiimote::clear_node(struct dev_node* node) {
   if (node->fd >= 0) close(node->fd);
 }
 
-std::string wiimote::get_description() const {
+const char* wiimote::get_description() const {
   if (pro.fd > 0) return "Wii U Pro Controller";
   if (classic.fd > 0) return "Wii Remote with Classic Controller";
   if (nunchuk.fd > 0) return "Wii Remote with Nunchuk Controller";
@@ -75,7 +72,7 @@ std::string wiimote::get_description() const {
   return "Wii device (???)";
 }
 
-std::string wiimote::get_type() const {
+const char* wiimote::get_type() const {
   if (balance.fd > 0) return "balance";
   return "gamepad";
 }
@@ -135,7 +132,7 @@ void wiimote::store_node(struct udev_device* dev, const char* name) {
   int node = name_to_node(name);
   switch (node) {
   case CORE:
-    manager->log.take_message(this->name + " core found.");
+    //manager->log.take_message(this->name + " core found.");
 
     buttons.dev = udev_device_ref(dev);
     open_node(&buttons);
@@ -144,32 +141,32 @@ void wiimote::store_node(struct udev_device* dev, const char* name) {
       //But if they were processed out of order, NUNCHUK_EXT or CLASSIC_EXT take precedence!
     break;
   case IR:
-    manager->log.take_message(this->name + " IR found.");
+    //manager->log.take_message(this->name + " IR found.");
     ir.dev = udev_device_ref(dev);
     if ((mode == NO_EXT && wm_ir_active) || (mode == NUNCHUK_EXT && nk_ir_active))
       open_node(&ir);
     break;
   case ACCEL:
-    manager->log.take_message(this->name + " accelerometers found.");
+    //manager->log.take_message(this->name + " accelerometers found.");
     accel.dev = udev_device_ref(dev);
     if ((mode == NO_EXT && wm_accel_active) || (mode == NUNCHUK_EXT && nk_accel_active))
       open_node(&ir);
     break;
   case MP:
-    manager->log.take_message(this->name + " motion+ found.");
+    //manager->log.take_message(this->name + " motion+ found.");
     motionplus.dev = udev_device_ref(dev);
     break;
   case E_NK:
     nunchuk.dev = udev_device_ref(dev);
     open_node(&nunchuk);
     update_mode(NUNCHUK_EXT);
-    manager->log.take_message(this->name + " gained a nunchuk.");
+    //manager->log.take_message(this->name + " gained a nunchuk.");
     break;
   case E_CC:
     classic.dev = udev_device_ref(dev);
     open_node(&classic);
     update_mode(CLASSIC_EXT);
-    manager->log.take_message(this->name + " gained a classic controller.");
+    //manager->log.take_message(this->name + " gained a classic controller.");
     break;
   case BALANCE:
     balance.dev = udev_device_ref(dev);
@@ -196,14 +193,14 @@ void wiimote::update_mode(modes new_mode) {
   //And events cannot be reactivated after being disabled.
   if (mode == MODE_UNCERTAIN && new_mode != MODE_UNCERTAIN && new_mode != PRO_EXT) {
     //Finally enough evidence to conclude this is not a Wii U Pro.
-    toggle_event(cc_thumbl, EVENT_DISABLED);
-    toggle_event(cc_thumbr, EVENT_DISABLED);
+    methods.toggle_event(ref, cc_thumbl, EVENT_DISABLED);
+    methods.toggle_event(ref, cc_thumbr, EVENT_DISABLED);
   }
   //Similar story for balance boards
   if (mode == MODE_UNCERTAIN && new_mode != MODE_UNCERTAIN && new_mode != BALANCE_EXT) {
     //Finally enough evidence to conclude this is not a Balance Board.
-    toggle_event(bal_x, EVENT_DISABLED);
-    toggle_event(bal_y, EVENT_DISABLED);
+    methods.toggle_event(ref, bal_x, EVENT_DISABLED);
+    methods.toggle_event(ref, bal_y, EVENT_DISABLED);
   }
 
   if (mode != MODE_UNCERTAIN && new_mode == MODE_UNCERTAIN)
@@ -215,18 +212,18 @@ void wiimote::update_mode(modes new_mode) {
   if (mode == PRO_EXT) {
     event_prefix = 'c';
     other_event = EVENT_DISABLED;
-    devprofile->remove_option("wm_accel_active");
-    devprofile->remove_option("nk_accel_active");
-    devprofile->remove_option("wm_ir_active");
-    devprofile->remove_option("nk_ir_active");
+    methods.remove_option(ref, "wm_accel_active");
+    methods.remove_option(ref, "nk_accel_active");
+    methods.remove_option(ref, "wm_ir_active");
+    methods.remove_option(ref, "nk_ir_active");
   }
   if (mode == BALANCE_EXT) {
     event_prefix = 'b';
     other_event = EVENT_DISABLED;
-    devprofile->remove_option("wm_accel_active");
-    devprofile->remove_option("nk_accel_active");
-    devprofile->remove_option("wm_ir_active");
-    devprofile->remove_option("nk_ir_active");
+    methods.remove_option(ref, "wm_accel_active");
+    methods.remove_option(ref, "nk_accel_active");
+    methods.remove_option(ref, "wm_ir_active");
+    methods.remove_option(ref, "nk_ir_active");
   }
   if (mode == NO_EXT)
     event_prefix = 'w';
@@ -237,18 +234,18 @@ void wiimote::update_mode(modes new_mode) {
   
   
   //Just do  wild across the board state changes.
-  for (int i = 0; i < events.size(); i++) {
-    if (events[i].name[0] == event_prefix) {
-      toggle_event(i, EVENT_ACTIVE);
+  for (int i = 0; i < wii_event_max; i++) {
+    if (wiimote_events[i].name[0] == event_prefix) {
+      methods.toggle_event(ref, i, EVENT_ACTIVE);
     } else {
-      toggle_event(i, other_event);
+      methods.toggle_event(ref, i, other_event);
     }
   }
   //Now reactivate wm_* events for the classic controller mode, since that matches current behavior
   if (mode == CLASSIC_EXT) {
-    for (int i = 0; i < events.size(); i++) {
-      if (events[i].name[0] == 'w') {
-        toggle_event(i, EVENT_ACTIVE);
+    for (int i = 0; i < wii_event_max; i++) {
+      if (wiimote_events[i].name[0] == 'w') {
+        methods.toggle_event(ref, i, EVENT_ACTIVE);
       }
     }
   }
@@ -259,11 +256,11 @@ void wiimote::update_mode(modes new_mode) {
       open_node(&ir);
     }
     if (mode == NO_EXT) {
-      toggle_event(wm_ir_x, EVENT_ACTIVE);
-      toggle_event(wm_ir_y, EVENT_ACTIVE);
+      methods.toggle_event(ref, wm_ir_x, EVENT_ACTIVE);
+      methods.toggle_event(ref, wm_ir_y, EVENT_ACTIVE);
     } else if (mode == NUNCHUK_EXT) {
-      toggle_event(nk_ir_x, EVENT_ACTIVE);
-      toggle_event(nk_ir_y, EVENT_ACTIVE);
+      methods.toggle_event(ref, nk_ir_x, EVENT_ACTIVE);
+      methods.toggle_event(ref, nk_ir_y, EVENT_ACTIVE);
     }
   } else {
     if (ir.fd > 0) {
@@ -271,26 +268,26 @@ void wiimote::update_mode(modes new_mode) {
       close(ir.fd);
       ir.fd = -1;
     }
-    toggle_event(wm_ir_x, EVENT_INACTIVE);
-    toggle_event(wm_ir_y, EVENT_INACTIVE);
-    toggle_event(nk_ir_x, EVENT_INACTIVE);
-    toggle_event(nk_ir_y, EVENT_INACTIVE);
+    methods.toggle_event(ref, wm_ir_x, EVENT_INACTIVE);
+    methods.toggle_event(ref, wm_ir_y, EVENT_INACTIVE);
+    methods.toggle_event(ref, nk_ir_x, EVENT_INACTIVE);
+    methods.toggle_event(ref, nk_ir_y, EVENT_INACTIVE);
   }
   if ((mode == NO_EXT && wm_accel_active) || (mode == NUNCHUK_EXT && nk_accel_active)) {
     if (accel.dev != nullptr && accel.fd < 0) {
       open_node(&accel);
     }
     if (mode == NO_EXT) {
-      toggle_event(wm_accel_x, EVENT_ACTIVE);
-      toggle_event(wm_accel_y, EVENT_ACTIVE);
-      toggle_event(wm_accel_z, EVENT_ACTIVE);
+      methods.toggle_event(ref, wm_accel_x, EVENT_ACTIVE);
+      methods.toggle_event(ref, wm_accel_y, EVENT_ACTIVE);
+      methods.toggle_event(ref, wm_accel_z, EVENT_ACTIVE);
     } else if (mode == NUNCHUK_EXT) {
-      toggle_event(nk_accel_x, EVENT_ACTIVE);
-      toggle_event(nk_accel_y, EVENT_ACTIVE);
-      toggle_event(nk_accel_z, EVENT_ACTIVE);
-      toggle_event(nk_wm_accel_x, EVENT_ACTIVE);
-      toggle_event(nk_wm_accel_y, EVENT_ACTIVE);
-      toggle_event(nk_wm_accel_z, EVENT_ACTIVE);
+      methods.toggle_event(ref, nk_accel_x, EVENT_ACTIVE);
+      methods.toggle_event(ref, nk_accel_y, EVENT_ACTIVE);
+      methods.toggle_event(ref, nk_accel_z, EVENT_ACTIVE);
+      methods.toggle_event(ref, nk_wm_accel_x, EVENT_ACTIVE);
+      methods.toggle_event(ref, nk_wm_accel_y, EVENT_ACTIVE);
+      methods.toggle_event(ref, nk_wm_accel_z, EVENT_ACTIVE);
     }
   } else {
     if (accel.fd > 0) {
@@ -298,15 +295,15 @@ void wiimote::update_mode(modes new_mode) {
       close(accel.fd);
       accel.fd = -1;
     }
-    toggle_event(nk_accel_x, EVENT_INACTIVE);
-    toggle_event(nk_accel_y, EVENT_INACTIVE);
-    toggle_event(nk_accel_z, EVENT_INACTIVE);
-    toggle_event(nk_wm_accel_x, EVENT_INACTIVE);
-    toggle_event(nk_wm_accel_y, EVENT_INACTIVE);
-    toggle_event(nk_wm_accel_z, EVENT_INACTIVE);
-    toggle_event(wm_accel_x, EVENT_INACTIVE);
-    toggle_event(wm_accel_y, EVENT_INACTIVE);
-    toggle_event(wm_accel_z, EVENT_INACTIVE);
+    methods.toggle_event(ref, nk_accel_x, EVENT_INACTIVE);
+    methods.toggle_event(ref, nk_accel_y, EVENT_INACTIVE);
+    methods.toggle_event(ref, nk_accel_z, EVENT_INACTIVE);
+    methods.toggle_event(ref, nk_wm_accel_x, EVENT_INACTIVE);
+    methods.toggle_event(ref, nk_wm_accel_y, EVENT_INACTIVE);
+    methods.toggle_event(ref, nk_wm_accel_z, EVENT_INACTIVE);
+    methods.toggle_event(ref, wm_accel_x, EVENT_INACTIVE);
+    methods.toggle_event(ref, wm_accel_y, EVENT_INACTIVE);
+    methods.toggle_event(ref, wm_accel_z, EVENT_INACTIVE);
   }
 
 }
@@ -323,7 +320,7 @@ void wiimote::remove_node(const char* name) {
     remove_extension();
   };
   if (node == MP) {
-    manager->log.take_message(this->name + " motion+ removed.");
+    //manager->log.take_message(this->name + " motion+ removed.");
     clear_node(&motionplus);
   }
 }
@@ -340,7 +337,7 @@ void wiimote::open_node(struct dev_node* node) {
   if (grab_exclusive) grab_ioctl_node(node, true);
   if (grab_permissions) grab_chmod_node(node, true);
 
-  watch_file(node->fd, node);
+  methods.watch_file(ref, node->fd, node);
 };
 
 void wiimote::grab_chmod_node(struct dev_node* node, bool grab) {
