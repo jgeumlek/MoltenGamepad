@@ -75,7 +75,7 @@ public:
 
   void update_mode(modes mode);
   void remove_extension() {
-    //if (mode != NO_EXT) manager->log.take_message(name + " lost its extension.");
+    if (mode != NO_EXT) methods.print(ref, "removed extension");
     update_mode(NO_EXT);
   }
 
@@ -88,7 +88,7 @@ public:
 
   void read_wiimote();
   static device_methods methods;
-  input_source* ref;
+  input_source* ref = nullptr;
   friend int wiimote_plugin_init(plugin_api api);
 protected:
   void process(void*);

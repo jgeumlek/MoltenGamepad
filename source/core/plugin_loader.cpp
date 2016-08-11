@@ -23,6 +23,7 @@ int load_builtins(moltengamepad* mg) {
 
 void init_plugin_api() {
   plugin_api api;
+  memset(&api, 0, sizeof(api));
 
   api.mg.add_manager = [] (manager_plugin manager, void* manager_plug_data) {
     return loader_mg->add_manager(manager, manager_plug_data);
@@ -76,6 +77,10 @@ void init_plugin_api() {
   };
   api.device.remove_option = [] (input_source* dev, const char* opname) -> int {
     dev->devprofile->remove_option(std::string(opname));
+    return 0;
+  };
+  api.device.print = [] (input_source* dev, const char* text) -> int {
+    dev->print(std::string(text));
     return 0;
   };
 

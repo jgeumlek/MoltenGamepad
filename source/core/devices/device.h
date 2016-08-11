@@ -137,7 +137,8 @@ protected:
 
   virtual void process(void* tag);
   virtual int process_option(const char* opname, const MGField field);
-  
+
+  void print(std::string message);
   
   void handle_internal_message(input_internal_msg &msg);
 

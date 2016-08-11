@@ -13,6 +13,7 @@ struct device_methods {
   int (*send_value) (input_source* dev, int id, int64_t value);
   int (*send_syn_report) (input_source* dev);
   int (*remove_option) (input_source* dev, const char* opname);
+  int (*print) (input_source*, const char* message);
 };
 
 struct device_plugin {

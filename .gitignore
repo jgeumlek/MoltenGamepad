@@ -1,3 +1,4 @@
 moltengamepad
 *.o
 .d
+*.so

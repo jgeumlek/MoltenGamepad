@@ -86,9 +86,9 @@ int wiimote_manager::accept_device(struct udev* udev, struct udev_device* dev) {
     wm.uniq = uniq ? uniq : "";
     wiimote* wm_data = new wiimote();
     wm_data->base.dev = udev_device_ref(parent);
-    wm_data->handle_event(dev);
     wii_devs.push_back(wm_data);
     methods.add_device(ref, wm, wm_data);
+    wm_data->handle_event(dev);
   } else {
     //This is a subdevice of something we already track
     //pass this subdevice to it for proper storage

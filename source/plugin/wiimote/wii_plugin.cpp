@@ -30,7 +30,7 @@ int wiimote_plugin_init(plugin_api api) {
   wiidev.uniq = "";
   wiidev.phys = "";
   wiidev.init = [] (void* wm, input_source* ref) -> int {
-    ((wiimote*)ref)->ref = ref;
+    ((wiimote*)wm)->ref = ref;
     return 0;
   };
   wiidev.destroy = [] (void* data) -> int {

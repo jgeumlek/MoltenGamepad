@@ -1,22 +1,20 @@
 
 #uncomment the lines below to include those plugins
-MG_BUILT_INS+="wiimote"
-#MG_BUILT_INS+="steamcontroller"
+MG_BUILT_INS+=wiimote
+#MG_BUILT_INS+=steamcontroller
 
 LDLIBS=-ludev -lpthread
 CPPFLAGS+=-std=c++14
 
-SRCS=$(shell echo source/core/*.cpp source/core/*/*.cpp source/core/*/*/*.cpp source/plugin/*.cpp)
-
-ifneq (,$(findstring steamcontroller,$(MG_BUILT_INS)))
-  LDLIBS+=-lscraw
-endif
-
-MG_BUILT_IN_PATHS=$(patsubst %,source/plugin/%/*.cpp,$(MG_BUILT_INS))
+SRCS:=$(shell echo source/core/*.cpp source/core/*/*.cpp source/core/*/*/*.cpp source/plugin/*.cpp)
 
 
-SRCS+=$(shell echo $(MG_BUILT_IN_PATHS))
+
+
+SRCS:=$(SRCS) $(shell echo $(MG_BUILT_IN_PATHS))
 OBJS=$(subst .cpp,.o,$(SRCS))
+
+include $(patsubst %,source/plugin/%/Makefile,$(MG_BUILT_INS))
 
 #Borrowed magic to handle using gcc to generate build dependencies.
 
@@ -41,7 +39,7 @@ all : moltengamepad
 %.o : %.cpp
 source/%.o : source/%.cpp $(DEPDIR)/%.d
 	@echo "compiling $<..."
-	@$(COMPILE.cpp) $(OUTPUT_OPTION) $<
+	$(COMPILE.cpp) $(OUTPUT_OPTION) $<
 	$(POSTCOMPILE)
 
 
@@ -67,6 +65,5 @@ debug : CPPFLAGS+=-DDEBUG -g
 debug : moltengamepad
 
 .PHONY: steam
-steam : MG_BUILT_INS+="steamcontroller"
-steam : LDLIBS+=-lscraw
-steam : moltengamepad
+steam :
+	MG_BUILT_INS="steamcontroller" $(MAKE) moltengamepad

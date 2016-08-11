@@ -478,3 +478,6 @@ std::string input_source::get_type() const {
   return device_type;
 }
   
+void input_source::print(std::string message) {
+  manager->log.take_message(name + ": " + message);
+}

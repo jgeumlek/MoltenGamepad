@@ -132,7 +132,7 @@ void wiimote::store_node(struct udev_device* dev, const char* name) {
   int node = name_to_node(name);
   switch (node) {
   case CORE:
-    //manager->log.take_message(this->name + " core found.");
+    methods.print(ref,"added core");
 
     buttons.dev = udev_device_ref(dev);
     open_node(&buttons);
@@ -141,32 +141,32 @@ void wiimote::store_node(struct udev_device* dev, const char* name) {
       //But if they were processed out of order, NUNCHUK_EXT or CLASSIC_EXT take precedence!
     break;
   case IR:
-    //manager->log.take_message(this->name + " IR found.");
+    methods.print(ref,"added IR");
     ir.dev = udev_device_ref(dev);
     if ((mode == NO_EXT && wm_ir_active) || (mode == NUNCHUK_EXT && nk_ir_active))
       open_node(&ir);
     break;
   case ACCEL:
-    //manager->log.take_message(this->name + " accelerometers found.");
+    methods.print(ref,"added accelerometers");
     accel.dev = udev_device_ref(dev);
     if ((mode == NO_EXT && wm_accel_active) || (mode == NUNCHUK_EXT && nk_accel_active))
       open_node(&ir);
     break;
   case MP:
-    //manager->log.take_message(this->name + " motion+ found.");
+    methods.print(ref,"added motion+");
     motionplus.dev = udev_device_ref(dev);
     break;
   case E_NK:
+    methods.print(ref,"added nunchuk");
     nunchuk.dev = udev_device_ref(dev);
     open_node(&nunchuk);
     update_mode(NUNCHUK_EXT);
-    //manager->log.take_message(this->name + " gained a nunchuk.");
     break;
   case E_CC:
+    methods.print(ref,"added classic controller");
     classic.dev = udev_device_ref(dev);
     open_node(&classic);
     update_mode(CLASSIC_EXT);
-    //manager->log.take_message(this->name + " gained a classic controller.");
     break;
   case BALANCE:
     balance.dev = udev_device_ref(dev);
@@ -320,7 +320,7 @@ void wiimote::remove_node(const char* name) {
     remove_extension();
   };
   if (node == MP) {
-    //manager->log.take_message(this->name + " motion+ removed.");
+    methods.print(ref, "removed motion+");
     clear_node(&motionplus);
   }
 }
