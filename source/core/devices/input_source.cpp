@@ -50,7 +50,7 @@ input_source::input_source(device_manager* manager, device_plugin plugin, void* 
   internalpipe = internal[0];
   
   if (plugin.init)
-    plugin.init(this);
+    plugin.init(plug_data, this);
 }
   
 
@@ -235,6 +235,8 @@ void input_source::inject_event(int id, int64_t value, bool skip_adv_trans) {
 }
 
 void input_source::send_value(int id, int64_t value) {
+  if (id < 0 || id > events.size() || events[id].value == value)
+    return;
   bool blocked = false;
   for (auto adv_trans : ev_map.at(id).attached)
     if (adv_trans->claim_event(id, {value})) blocked = true;
@@ -455,24 +457,24 @@ std::string input_source::get_manager_name() const {
 
 void input_source::process(void *tag) {
   if (plugin.process_event)
-    plugin.process_event(this, tag);
+    plugin.process_event(plug_data, tag);
 }
 
 int input_source::process_option(const char* opname, const MGField field) {
   if (plugin.process_option)
-    return plugin.process_option(this, opname, field);
+    return plugin.process_option(plug_data, opname, field);
   return -1;
 }
 
 std::string input_source::get_description() const {
   if (plugin.get_description)
-    return std::string(plugin.get_description(this));
+    return std::string(plugin.get_description(plug_data));
   return descr;
 }
 
 std::string input_source::get_type() const {
   if (plugin.get_type)
-    return std::string(plugin.get_type(this));
+    return std::string(plugin.get_type(plug_data));
   return device_type;
 }
   

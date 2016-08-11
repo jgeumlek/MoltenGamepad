@@ -20,9 +20,7 @@
 #define BALANCE_BOARD_NAME "Nintendo Wii Remote Balance Board"
 #define WII_U_PRO_NAME "Nintendo Wii Remote Pro Controller"
 
-extern int wiimote_loaded;
-extern moltengamepad_methods mg_methods;
-extern moltengamepad* mg;
+extern moltengamepad_methods wii_mg_methods;
 extern device_plugin wiidev;
 
 struct dev_node {
@@ -91,7 +89,7 @@ public:
   void read_wiimote();
   static device_methods methods;
   input_source* ref;
-  friend int wiimote_plugin_init(moltengamepad* mg_ref, plugin_api api);
+  friend int wiimote_plugin_init(plugin_api api);
 protected:
   void process(void*);
   virtual int process_option(const char* opname, const MGField value);

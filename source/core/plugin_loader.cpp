@@ -3,28 +3,32 @@
 
 plugin_api plugin_methods;
 
-std::vector<std::function<int (moltengamepad*, plugin_api)>> builtin_plugins;
+std::vector<std::function<int (plugin_api)>> builtin_plugins;
 
-int register_builtin_plugin( int (*init) (moltengamepad*, plugin_api)) {
+int register_builtin_plugin( int (*init) (plugin_api)) {
   if (init) {
-    std::function<int (moltengamepad*, plugin_api)> func = init;
-    builtin_plugins.push_back(func);
+    builtin_plugins.push_back(init);
   }
 };
 
+moltengamepad* loader_mg;
+
 int load_builtins(moltengamepad* mg) {
+  loader_mg = mg;
   for (auto func : builtin_plugins)
-    func(mg, plugin_methods);
+    func(plugin_methods);
 };
+
+
 
 void init_plugin_api() {
   plugin_api api;
 
-  api.mg.add_manager = [] (moltengamepad* mg, manager_plugin manager, void* manager_plug_data) {
-    return mg->add_manager(manager, manager_plug_data);
+  api.mg.add_manager = [] (manager_plugin manager, void* manager_plug_data) {
+    return loader_mg->add_manager(manager, manager_plug_data);
   };
-  api.mg.request_slot = [] (moltengamepad* mg, input_source* dev) {
-    return mg->slots->request_slot(dev);
+  api.mg.request_slot = [] (input_source* dev) {
+    return loader_mg->slots->request_slot(dev);
   };
   
   api.manager.plug_data = [] (const device_manager* man) {

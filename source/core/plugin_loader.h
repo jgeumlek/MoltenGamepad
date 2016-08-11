@@ -5,9 +5,9 @@
 
 extern plugin_api plugin_methods;
 
-extern std::vector<std::function<int (moltengamepad*, plugin_api)>> builtin_plugins;
+extern std::vector<std::function<int (plugin_api)>> builtin_plugins;
 
-int register_builtin_plugin( int (*init) (moltengamepad*, plugin_api));
+int register_builtin_plugin( int (*init) (plugin_api));
 
 void init_plugin_api();
 

@@ -11,7 +11,7 @@ device_manager::device_manager(moltengamepad* mg, manager_plugin plugin, void* p
   mapprofile->name = name;
   log.add_listener(1);
   if (plugin.init)
-    plugin.init(this);
+    plugin.init(plug_data, this);
 }
 
 int device_manager::register_event(event_decl ev) {
@@ -40,7 +40,7 @@ device_manager::~device_manager() {
 
 int device_manager::accept_device(struct udev* udev, struct udev_device* dev) {
   if (plugin.process_udev_event)
-    return plugin.process_udev_event(this, udev, dev);
+    return plugin.process_udev_event(plug_data, udev, dev);
   return -1;
 }
 

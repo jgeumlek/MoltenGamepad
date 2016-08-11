@@ -1,10 +1,12 @@
-#ifdef BUILD_STEAM_CONTROLLER_DRIVER
 #include "steam_controller.h"
 
 
 #define BTN DEV_KEY
 #define ABS DEV_AXIS
 #define OPT DEV_OPTION
+
+device_methods steam_controller::methods;
+
 const event_decl steamcont_events[] = {
   {"a","A Button",BTN,"primary"},
   {"b","B Button",BTN,"secondary"},
@@ -42,9 +44,8 @@ const option_decl steamcont_options[] = {
   {nullptr, nullptr, nullptr},
 };
 
-steam_controller::steam_controller(scraw::controller* sc, device_manager* manager) : sc(sc), input_source(manager, "gamepad") {
+steam_controller::steam_controller(scraw::controller* sc) : sc(sc) {
   pipe(statepipe);
-  watch_file(statepipe[0],statepipe);
   scraw::controller_config ctrl_cfg;
   ctrl_cfg.idle_timeout = 300;
   ctrl_cfg.imu = false;
@@ -67,13 +68,13 @@ void steam_controller::on_state_change(const scraw_controller_state_t& state) {
 //A lot of boiler plate if-statements to check each event one-by-one.
 //So let's make some macros to give clearer semantics.
 
-#define CHECK_BTN(SCRAW_ID,MG_ID) if (!!(buttons & SCRAW_ID) != events[MG_ID].value) send_value(MG_ID,!!(buttons & SCRAW_ID));
-#define CHECK_AXIS(SCRAW_ID,MG_ID) if (state.SCRAW_ID != events[MG_ID].value) send_value(MG_ID,state.SCRAW_ID);
+#define CHECK_BTN(SCRAW_ID,MG_ID) methods.send_value(ref,MG_ID,!!(buttons & SCRAW_ID));
+#define CHECK_AXIS(SCRAW_ID,MG_ID) methods.send_value(ref,MG_ID,state.SCRAW_ID);
 
 //Play it safe, since changing sign can overflow.
 #define CHECK_AXIS_FLIP(SCRAW_ID,MG_ID) do { \
   uint64_t new_val = state.SCRAW_ID;\
-  if (-new_val != events[MG_ID].value) send_value(MG_ID,-new_val);\
+  methods.send_value(ref,MG_ID,-new_val);\
 } while(0);
 
 //Need to to rescale the positive-only trigger values to span the whole range.
@@ -81,7 +82,7 @@ void steam_controller::on_state_change(const scraw_controller_state_t& state) {
   uint64_t new_val = state.SCRAW_ID;\
   new_val *= 2;\
   new_val -= RANGE;\
-  if (new_val != events[MG_ID].value) send_value(MG_ID,new_val);\
+  methods.send_value(ref,MG_ID,new_val);\
 } while(0);
 
 void steam_controller::process(void* tag) {
@@ -125,11 +126,6 @@ void steam_controller::process(void* tag) {
   CHECK_AXIS_TRIGGER(left_trigger,sc_tl2_axis);
   CHECK_AXIS_TRIGGER(right_trigger,sc_tr2_axis);
 
-  struct input_event syn_ev;
-  memset(&syn_ev, 0, sizeof(syn_ev));
-  syn_ev.type = EV_SYN;
-  syn_ev.code = SYN_REPORT;
-  if (out_dev) out_dev->take_event(syn_ev);
+  methods.send_syn_report(ref);
 }
 
-#endif

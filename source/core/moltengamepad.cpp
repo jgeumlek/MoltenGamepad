@@ -5,11 +5,6 @@
 #include <errno.h>
 #include <glob.h>
 #include "devices/generic/generic.h"
-
-#ifdef BUILD_STEAM_CONTROLLER_DRIVER
-#include "devices/steamcontroller/steam_controller.h"
-#endif
-
 #include "parser.h"
 
 //FUTURE WORK: Make it easier to specify additional virtpad styles.
@@ -231,12 +226,7 @@ int moltengamepad::init() {
   //add built in drivers
   init_plugin_api();
   load_builtins(this);
-#ifdef BUILD_STEAM_CONTROLLER_DRIVER
-  managers.push_back(new steam_controller_manager(this));
-  drivers.take_message("steamcontroller driver initialized.");
-#endif
 
-  
 
   std::string confdir = locate(FILE_CONFIG,"");
   if (!confdir.empty()) {
@@ -350,6 +340,11 @@ moltengamepad::~moltengamepad() {
 device_manager* moltengamepad::add_manager(manager_plugin manager, void* manager_plug_data) {
   auto man = new device_manager(this, manager, manager_plug_data);
   managers.push_back(man);
+  if (manager.subscribe_to_gamepad_profile)
+    gamepad->copy_into(man->mapprofile, true, true);
+  //Future work: load manager options now.
+  if (manager.start)
+    manager.start(man->plug_data);
   drivers.take_message(man->name + " driver initialized.");
 };
 

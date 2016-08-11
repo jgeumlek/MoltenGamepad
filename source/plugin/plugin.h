@@ -19,12 +19,12 @@ struct device_plugin {
   const char* name_stem;
   const char* uniq;
   const char* phys;
-  int (*init) (input_source* dev);
+  int (*init) (void* plug_data, input_source* dev);
   int (*destroy) (void* plug_data);
-  const char* (*get_description) (const input_source* dev);
-  const char* (*get_type) (const input_source* dev);
-  int (*process_event) (input_source* dev, void* tag);
-  int (*process_option) (input_source* dev, const char* opname, MGField opvalue);
+  const char* (*get_description) (const void* plug_data);
+  const char* (*get_type) (const void* plug_data);
+  int (*process_event) (void* plug_data, void* tag);
+  int (*process_option) (void* plug_data, const char* opname, MGField opvalue);
 };
 
 struct manager_methods {
@@ -41,18 +41,18 @@ struct manager_methods {
 struct manager_plugin {
   const char* name;
   bool subscribe_to_gamepad_profile;
-  int (*init) (device_manager*);
+  int (*init) (void* plug_data, device_manager*);
   int (*destroy) (void* plug_data);
-  int (*start) (device_manager*);
-  int (*process_udev_event) (device_manager*, struct udev* udev, struct udev_device* dev);
-  int (*process_manager_option) (device_manager*, const char* opname, MGField opvalue);
+  int (*start) (void* plug_data);
+  int (*process_udev_event) (void* plug_data, struct udev* udev, struct udev_device* dev);
+  int (*process_manager_option) (void* plug_data, const char* opname, MGField opvalue);
 };
 
 class moltengamepad;
 
 struct moltengamepad_methods {
-  device_manager* (*add_manager) (moltengamepad*, manager_plugin, void* manager_plug_data);
-  int (*request_slot) (moltengamepad*, input_source*);
+  device_manager* (*add_manager) (manager_plugin, void* manager_plug_data);
+  int (*request_slot) (input_source*);
 };
 
 struct plugin_api {
@@ -61,9 +61,9 @@ struct plugin_api {
   struct device_methods device;
 };
 
-int register_plugin( int (*init) (moltengamepad*, plugin_api));
+int register_plugin( int (*init) (plugin_api));
 
-extern int (*plugin_init) (moltengamepad*, plugin_api);
+extern int (*plugin_init) (plugin_api);
   
   
   
