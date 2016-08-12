@@ -6,7 +6,7 @@ void btn2axis::process(struct mg_ev ev, output_slot* out) {
   memset(&out_ev, 0, sizeof(out_ev));
   out_ev.type = EV_ABS;
   out_ev.code = out_axis;
-  out_ev.value = ev.value * direction * RANGE;
+  out_ev.value = ev.value * direction * ABS_RANGE;
   write_out(out_ev, out);
 }
 

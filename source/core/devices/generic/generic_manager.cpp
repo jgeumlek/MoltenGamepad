@@ -2,9 +2,9 @@
 #include <algorithm>
 #include <unordered_map>
 
+manager_methods generic_manager::methods;
 
-
-generic_manager::generic_manager(moltengamepad* mg, generic_driver_info& descr) : device_manager(mg,descr.name) {
+generic_manager::generic_manager(moltengamepad* mg, generic_driver_info& descr) : mg(mg) {
   this->devname = descr.devname.c_str();
 
   this->descr = &descr;
@@ -12,46 +12,53 @@ generic_manager::generic_manager(moltengamepad* mg, generic_driver_info& descr) 
   split = descr.split;
   flatten = descr.flatten;
 
-  std::unordered_map<std::string, int> event_names;
-  int event_count = 0;
 
   //We might have split devices, each with their own distinct and possibly overlapping events.
   //So when we need to keep track of events on a per-split basis
   for (int i = 1; i <= split; i++) {
     splitevents.push_back(std::vector<split_ev_info>());
   }
+}
 
+int generic_manager::init(device_manager* ref) {
+  this->ref = ref;
+  std::unordered_map<std::string, int> event_names;
   //Check if we have no event of this name. If so, add it.
   //If we already know an event of that name, then reuse the already registered one.
-  for (gen_source_event &gen_ev : descr.events) {
+  for (gen_source_event &gen_ev : descr->events) {
     if (gen_ev.split_id < 1 || gen_ev.split_id > split) continue;
     int event_id;
     int split_index = gen_ev.split_id - 1;
     auto lookup = event_names.find(gen_ev.name);
     if (lookup == event_names.end()) {
-      register_event({gen_ev.name.c_str(), gen_ev.descr.c_str(), gen_ev.type, ""});
+      methods.register_event(ref, {gen_ev.name.c_str(), gen_ev.descr.c_str(), gen_ev.type, ""});
       event_id = event_count++;
       event_names.insert({gen_ev.name, event_id});
     } else {
       event_id = lookup->second;
     }
-    splitevents.at(split_index).push_back({gen_ev.code, event_id});
+    splitevents.at(split_index).push_back({gen_ev.code, gen_ev.type, event_id});
   }
 
-  for (auto alias : descr.aliases) {
-    mapprofile->set_alias(alias.first,alias.second);
+  for (auto alias : descr->aliases) {
+    methods.register_alias(ref, alias.first.c_str(),alias.second.c_str());
   }
 
-  descr.split_types.resize(split,"gamepad");
-  for (auto type : descr.split_types) {
+  descr->split_types.resize(split,"gamepad");
+  
+
+}
+
+manager_plugin generic_manager::get_plugin() {
+  manager_plugin plug = genericman;
+  plug.name = descr->name.c_str();
+  for (auto type : descr->split_types) {
     if (type == "gamepad") {
-      mg->gamepad->copy_into(mapprofile, true, false);
+      plug.subscribe_to_gamepad_profile = true;
       break;
     }
   }
-
-  mg->drivers.take_message(std::string(name) + " driver initialized.");
-
+  return plug;
 }
 
 generic_manager::~generic_manager() {
@@ -144,7 +151,8 @@ int generic_manager::accept_device(struct udev* udev, struct udev_device* dev) {
       if (!strncmp(sysname, "event", 3)) {
         for (auto it = descr->matches.begin(); it != descr->matches.end(); it++) {
           if (matched(udev,dev,*it)) {
-            return open_device(udev, dev);
+            if (open_device(udev, dev) == SUCCESS)
+              return DEVICE_CLAIMED;
           }
         }
       }
@@ -153,7 +161,7 @@ int generic_manager::accept_device(struct udev* udev, struct udev_device* dev) {
 
 
 
-  return -2;
+  return DEVICE_UNCLAIMED;
 }
 
 int generic_manager::open_device(struct udev* udev, struct udev_device* dev) {
@@ -172,16 +180,19 @@ int generic_manager::open_device(struct udev* udev, struct udev_device* dev) {
       create_inputs(openfiles.back(), openfiles.back()->fds.front(), false);
     }
   } catch (...) {
-    return -1; //Something went wrong opening this device...
+    return FAILURE; //Something went wrong opening this device...
   }
-  return 0;
+  return SUCCESS;
 }
 
 void generic_manager::create_inputs(generic_file* opened_file, int fd, bool watch) {
   for (int i = 1; i <= split; i++) {
-    generic_device* gendev = new generic_device(splitevents.at(i - 1), fd, watch, this, descr->split_types[i-1], opened_file->uniq);
-    opened_file->add_dev(gendev);
-    mg->add_device(gendev, this, descr->devname);
+    generic_device* gendev = new generic_device(splitevents.at(i - 1), event_count, fd, watch, descr->split_types[i-1], opened_file->uniq);
+    device_plugin plug = genericdev;
+    plug.name_stem = descr->devname.c_str();
+    plug.uniq = gendev->uniq.c_str();
+    input_source* source = mg->add_device(ref, plug, gendev).get();
+    if (source) opened_file->add_dev(source);
   }
 }
 

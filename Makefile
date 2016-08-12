@@ -39,7 +39,7 @@ all : moltengamepad
 %.o : %.cpp
 source/%.o : source/%.cpp $(DEPDIR)/%.d
 	@echo "compiling $<..."
-	$(COMPILE.cpp) $(OUTPUT_OPTION) $<
+	@$(COMPILE.cpp) $(OUTPUT_OPTION) $<
 	$(POSTCOMPILE)
 
 

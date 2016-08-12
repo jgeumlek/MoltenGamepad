@@ -6,7 +6,7 @@ void axis2btns::process(struct mg_ev ev, output_slot* out) {
   memset(&out_ev, 0, sizeof(out_ev));
   out_ev.type = EV_KEY;
   out_ev.code = neg_btn;
-  out_ev.value = ev.value < -.5 * RANGE;
+  out_ev.value = ev.value < -.5 * ABS_RANGE;
   if (out_ev.value != neg_cache) {
     write_out(out_ev, out);
     neg_cache = out_ev.value;
@@ -14,7 +14,7 @@ void axis2btns::process(struct mg_ev ev, output_slot* out) {
 
   out_ev.type = EV_KEY;
   out_ev.code = pos_btn;
-  out_ev.value = ev.value > .5 * RANGE;
+  out_ev.value = ev.value > .5 * ABS_RANGE;
   if (out_ev.value != pos_cache) {
     write_out(out_ev, out);
     pos_cache = out_ev.value;

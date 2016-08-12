@@ -81,7 +81,7 @@ void steam_controller::on_state_change(const scraw_controller_state_t& state) {
 #define CHECK_AXIS_TRIGGER(SCRAW_ID,MG_ID) do { \
   uint64_t new_val = state.SCRAW_ID;\
   new_val *= 2;\
-  new_val -= RANGE;\
+  new_val -= ABS_RANGE;\
   methods.send_value(ref,MG_ID,new_val);\
 } while(0);
 

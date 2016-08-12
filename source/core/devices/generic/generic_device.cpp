@@ -1,55 +1,62 @@
 #include "generic.h"
 
-generic_device::generic_device(std::vector<split_ev_info>& split_events, int fd, bool watch, device_manager* manager, std::string type, const std::string& uniq) : input_source(manager, type) {
-  this->uniq = uniq;
+device_methods generic_device::methods;
+
+generic_device::generic_device(std::vector<split_ev_info>& split_events, int total_events, int fd, bool watch, const std::string& type, const std::string& uniq) : uniq(uniq), type(type) {
   this->fd = fd;
+  eventstates = (event_state*)calloc(total_events, sizeof(event_state));
+  this->total_events = total_events;
+  this->watch = watch;
 
   //We will enable events one-by-one later
-  for (int i = 0; i < events.size(); i++) {
-    toggle_event(i, EVENT_INACTIVE);
+  for (int i = 0; i < total_events; i++) {
+    eventstates[i] = EVENT_DISABLED;
   }
 
   for (int i = 0; i < split_events.size(); i++) {
     
     input_absinfo     abs;
     memset(&abs, 0, sizeof(abs));
-    
-    auto ev = events[split_events[i].id];
-    toggle_event(split_events[i].id, EVENT_ACTIVE);
+
+    auto ev = split_events[i];
+
+    eventstates[ev.id] = EVENT_ACTIVE;
     
 
     int type = EV_KEY;
     if (ev.type == DEV_AXIS) type = EV_ABS;
     if (ev.type == DEV_REL)  type = EV_REL;
 
-    evcode code(type, split_events[i].code);
+    evcode code(type, ev.code);
     //Read in ABS ranges so we can rescale the generated events
     if (ev.type == DEV_AXIS) {
       if (ioctl(fd, EVIOCGABS(split_events[i].code), &abs)) {
         perror("evdev EVIOCGABS ioctl");
       }
     }
-    decodedevent decoded(split_events[i].id, abs);
+    decodedevent decoded(ev.id, abs);
     eventcodes.insert(std::pair<evcode, decodedevent>(code, decoded));
   }
+}
 
-  //Remove events that are disabled from our profile
-  for (int i = 0; i < events.size(); i++) {
-    if (events[i].state == EVENT_INACTIVE)
-      toggle_event(i, EVENT_DISABLED);
-  }
+int generic_device::init(input_source* ref) {
+  this->ref = ref;
+  for (int i = 0; i < total_events; i++)
+    methods.toggle_event(ref, i, eventstates[i]);
 
-  if (watch) watch_file(fd, &fd);
+  if (watch) methods.watch_file(ref, fd, &fd);
+  int internal[2];
+  pipe(internal);
+  methods.watch_file(ref, internal[0], &pipe_read);
+  pipe_write = internal[1];
+  pipe_read = internal[0];
+  return 0;
 }
 
 generic_device::~generic_device() {
   if (node) udev_device_unref(node);
+  if (eventstates) free(eventstates);
 }
-
-int generic_device::set_player(int player_num) {};
-
-
-void generic_device::update_option(const char* opname, const char* value) {};
 
 void generic_device::process(void* tag) {
   struct input_event ev;
@@ -59,9 +66,8 @@ void generic_device::process(void* tag) {
   };
   int ret = read(file, &ev, sizeof(ev));
   if (ret > 0) {
-    if (ev.type == EV_SYN && out_dev) {
-      out_dev->take_event(ev);
-      return;
+    if (ev.type == EV_SYN) {
+      methods.send_syn_report(ref);
     }
     evcode code(ev.type, ev.code);
     auto it = eventcodes.find(code);
@@ -69,7 +75,7 @@ void generic_device::process(void* tag) {
     decodedevent decoded = it->second;
     int id = decoded.first;
     if (ev.type == EV_KEY) {
-      send_value(id, ev.value);
+      methods.send_value(ref, id, ev.value);
     }
     if (ev.type == EV_ABS) {
       //do some ABS rescaling.
@@ -78,25 +84,17 @@ void generic_device::process(void* tag) {
       int value = ev.value;
       int64_t oldscale = info.maximum - info.minimum;
       if (oldscale == 0) {
-        send_value(id, value);
+        methods.send_value(ref, id, value);
         return;
       }
       int64_t newscale = 2 * ABS_RANGE;
       int64_t scaledvalue = -ABS_RANGE + (value - info.minimum) * newscale / oldscale;
-      send_value(id, scaledvalue);
+      methods.send_value(ref, id, scaledvalue);
     }
   }
 }
 
-int generic_device::get_pipe() {
-  if (pipe_write >= 0) return pipe_write;
-  int internal[2];
-  pipe(internal);
-  watch_file(internal[0], &pipe_read);
-  pipe_write = internal[1];
-  pipe_read = internal[0];
 
-  return pipe_write;
-}
+  
 
 

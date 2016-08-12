@@ -163,6 +163,6 @@ private:
   int destroy_wii_dev_by_path(const char* syspath);
 };
 
-extern int wiimote_plugin_init(moltengamepad* mg_ref, plugin_api api);
+extern int wiimote_plugin_init(plugin_api api);
 
 #endif

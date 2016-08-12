@@ -59,19 +59,19 @@ int wiimote_manager::accept_device(struct udev* udev, struct udev_device* dev) {
       } else {
         //exact path found, and destroyed.
       }
-      return 0;
+      return DEVICE_CLAIMED;
     }
-    return -1;
+    return DEVICE_UNCLAIMED;
 
 
   }
-  if (!subsystem) return -1;
+  if (!subsystem) return DEVICE_UNCLAIMED;
 
   struct udev_device* parent = udev_device_get_parent_with_subsystem_devtype(dev, "hid", nullptr);
   if (!strcmp(udev_device_get_subsystem(dev), "hid")) {
     parent = dev; //We are already looking at it!
   }
-  if (!parent) return -2;
+  if (!parent) return DEVICE_UNCLAIMED;
 
   const char* driver = udev_device_get_driver(parent);
   if (!driver || strcmp(driver, "wiimote")) return -2;
@@ -96,5 +96,5 @@ int wiimote_manager::accept_device(struct udev* udev, struct udev_device* dev) {
   }
 
 
-  return 0;
+  return DEVICE_CLAIMED;
 }

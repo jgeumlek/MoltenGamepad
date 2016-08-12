@@ -56,17 +56,16 @@ struct input_internal_msg {
 
 class input_source : public std::enable_shared_from_this<input_source> {
 public:
-  input_source(device_manager* manager, std::string type);
   input_source(device_manager* manager, device_plugin plugin, void* plug_data);
-  virtual ~input_source();
+  ~input_source();
   
   
-  virtual int set_player(int player_num) {
+  int set_player(int player_num) {
   }
   
   void list_options(std::vector<option_info>& list) const;
   
-  virtual void set_slot(output_slot* outdev) {
+  void set_slot(output_slot* outdev) {
     this->out_dev = outdev;
   }
 
@@ -91,9 +90,9 @@ public:
   std::string get_name() const { return name; };
   void set_name(std::string name) { this->name = name; };
   std::string get_manager_name() const;
-  virtual std::string get_description() const;
-  virtual std::string get_uniq() const { return uniq; };
-  virtual std::string get_type() const;
+  std::string get_description() const;
+  std::string get_uniq() const { return uniq; };
+  std::string get_type() const;
   std::string get_alias(std::string event_name) const;
   std::shared_ptr<profile> get_profile() const { return devprofile; };
 
@@ -135,8 +134,8 @@ protected:
 
   void thread_loop();
 
-  virtual void process(void* tag);
-  virtual int process_option(const char* opname, const MGField field);
+  void process(void* tag);
+  int process_option(const char* opname, const MGField field);
 
   void print(std::string message);
   
@@ -154,13 +153,11 @@ public:
   moltengamepad* mg;
   void* const plug_data = nullptr;
   manager_plugin plugin;
-  virtual int accept_device(struct udev* udev, struct udev_device* dev);
-
-  device_manager(moltengamepad* mg, std::string name);
+  int accept_device(struct udev* udev, struct udev_device* dev);
   
   device_manager(moltengamepad* mg, manager_plugin plugin, void* plug_data);
 
-  virtual ~device_manager();
+  ~device_manager();
   
   int register_event(event_decl ev);
   int register_option(option_decl opt);

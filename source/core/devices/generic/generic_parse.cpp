@@ -6,7 +6,8 @@
 #include "../../eventlists/eventlist.h"
 
 
-
+#define GENDEV_INCOMPLETE_INFO -1
+#define GENDEV_REJECTED_MANAGER -5
 void generic_assignment_line(std::vector<token>& line, generic_driver_info*& info, moltengamepad* mg, context context) {
 
   auto it = line.begin();
@@ -212,16 +213,17 @@ void generic_parse_line(std::vector<token>& line, generic_driver_info*& info, mo
     int ret = generic_match_line(line, match);
     if (ret == 0) {
 
-      if (info->events.size() > 0 && !info->name.empty() && !info->devname.empty()) {
-        //This is starting a new driver! Package up the old one and send it off.
-        if (!mg->find_manager(info->name.c_str())) {
-          mg->managers.push_back(new generic_manager(mg, *info));
-        } else {
-          mg->errors.take_message("redundant driver \""+info->name+"\" ignored");
-          delete info;
-        }
+      ret = add_generic_manager(mg, *info);
+
+      if (ret == GENDEV_REJECTED_MANAGER) {
+        delete info; //Get rid of it!
+      }
+      if (ret == 0 || ret == GENDEV_REJECTED_MANAGER) {
+        //Either of these cases, we start a new driver description now.
         info = new generic_driver_info;
       }
+      //If ret == GENDEV_INCOMPLETE_INFO, we don't need to do anything special.
+      //In all three cases, add the match line to our (now) incomplete driver description.
       info->matches.push_back(match);
     }
     return;
@@ -266,22 +268,79 @@ int generic_config_loop(moltengamepad* mg, std::istream& in, std::string& path) 
 
   }
 
-  if (info->events.size() > 0 && !info->name.empty() && !info->devname.empty()) {
-    if (!mg->find_manager(info->name.c_str()))  {
-      mg->managers.push_back(new generic_manager(mg, *info));
-      need_to_free_info = false;
-    } else {
-      mg->errors.take_message("redundant driver \""+info->name+"\" ignored");
-    }
-  } else {
-    mg->errors.take_message("missing name, devname, or events ("+path+")");
-  }
   
-  if (need_to_free_info) {
+  
+  int ret = add_generic_manager(mg, *info);
+  if (ret)
     delete info;
+  if (ret == GENDEV_INCOMPLETE_INFO) {
+    mg->errors.take_message("missing name, devname, or events ("+path+")");
   }
 
   delete[] buff;
   return 0;
+}
+
+int add_generic_manager(moltengamepad* mg, generic_driver_info& info) {
+  if (info.events.size() > 0 && !info.name.empty() && !info.devname.empty()) {
+    if (!mg->find_manager(info.name.c_str()))  {
+      generic_manager* manager = new generic_manager(mg, info);
+      mg->add_manager(manager->get_plugin(), manager);
+      return 0;
+    } else {
+      mg->errors.take_message("redundant driver \""+info.name+"\" ignored");
+      return GENDEV_REJECTED_MANAGER;
+    }
+  } 
+  return GENDEV_INCOMPLETE_INFO;
+}
+
+device_plugin genericdev;
+manager_plugin genericman;
+
+int init_generic_callbacks() {
+  generic_device::methods = plugin_methods.device;
+  generic_manager::methods = plugin_methods.manager;
+
+  //set manager call backs
+  genericman.name = "generic";
+  genericman.subscribe_to_gamepad_profile = true;
+  genericman.init = [] (void* wm, device_manager* ref) -> int {
+    return ((generic_manager*)wm)->init(ref);
+  };
+  genericman.destroy = [] (void* data) -> int {
+    delete (generic_manager*) data;
+    return 0;
+  };
+  genericman.start = [] (void*) { return 0;};
+  genericman.process_manager_option = nullptr;
+  genericman.process_udev_event = [] (void* ref, struct udev* udev, struct udev_device* dev) {
+    return ((generic_manager*)ref)->accept_device(udev, dev);
+  };
+
+  //set device callbacks
+  genericdev.name_stem = "generic_device";
+  genericdev.uniq = "";
+  genericdev.phys = "";
+  genericdev.init = [] (void* gendev, input_source* ref)  {
+    return ((generic_device*)gendev)->init(ref);
+  };
+  genericdev.destroy = [] (void* data) -> int {
+    delete (generic_device*) data;
+    return 0;
+  };
+  genericdev.get_description = [] (const void* ref) {
+    return "No description available";
+  };
+  genericdev.get_type = [] (const void* ref) {
+    return ((const generic_device*)ref)->type.c_str();
+  };
+  genericdev.process_event = [] (void* ref, void* tag) -> int {
+    ((generic_device*)ref)->process(tag);
+    return 0;
+  };
+  genericdev.process_option = [] (void* ref, const char* opname, MGField opvalue) {
+    return -1;
+  };
 }
 

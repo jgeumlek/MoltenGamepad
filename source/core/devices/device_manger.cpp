@@ -1,12 +1,6 @@
 #include "device.h"
 #include "../parser.h"
 
-device_manager::device_manager(moltengamepad* mg, std::string name) : mg(mg), name(name), log(name) {
-  memset(&plugin, 0, sizeof(plugin));
-  mapprofile->name = name;
-  log.add_listener(1);
-}
-
 device_manager::device_manager(moltengamepad* mg, manager_plugin plugin, void* plug_data) : mg(mg), plugin(plugin), name(plugin.name), log(name), plug_data(plug_data) {
   mapprofile->name = name;
   log.add_listener(1);

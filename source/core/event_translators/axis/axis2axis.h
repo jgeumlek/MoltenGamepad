@@ -9,8 +9,8 @@ public:
   }
   virtual void process(struct mg_ev ev, output_slot* out) {
     int value = ev.value * direction;
-    if (value < -RANGE) value = -RANGE;
-    if (value > RANGE) value = RANGE;
+    if (value < -ABS_RANGE) value = -ABS_RANGE;
+    if (value > ABS_RANGE) value = ABS_RANGE;
     struct input_event out_ev;
     memset(&out_ev, 0, sizeof(out_ev));
     out_ev.type = EV_ABS;

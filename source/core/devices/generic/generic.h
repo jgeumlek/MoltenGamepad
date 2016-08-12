@@ -4,12 +4,28 @@
 #include <vector>
 #include <map>
 #include <iostream>
+#include <mutex>
 #include <fstream>
-#include "../device.h"
+#include <unistd.h>
+#include <linux/input.h>
+#include "../../../plugin/plugin.h"
+#include "../../moltengamepad.h"
+#include "../../plugin_loader.h"
 #include <sys/epoll.h>
 #include <sys/stat.h>
 
-class moltengamepad;
+/*
+ * The Generic driver functionality must be built in statically to moltengamepad.
+ * (1) If no generic drivers are made, the impact of inclusion is minimal.
+ * (2) The --config-path and --gendev-path options would overly-complicated to provide via plugin api
+ * 
+ * However, to avoid code redundancy, we still follow the plugin method of creating input_sources
+ * and device_managers. Where reasonable, we still cheat and directly interact with moltengamepad objects.
+ */
+
+extern device_plugin genericdev;
+extern manager_plugin genericman;
+int init_generic_callbacks();
 
 struct device_match {
   int vendor = -1;
@@ -30,9 +46,10 @@ struct gen_source_event {
   enum entry_type type;
 };
 
-//Info on an event the input source needs. Name/descr/type is read from event list via the id.
+//Info on an event the input source needs. 
 struct split_ev_info {
   int code; //The event count read from raw device, e.g. BTN_SOUTH
+  entry_type type; //DEV_KEY, DEV_AXIS, etc.
   int id;       //The id of this event within the registered event list (MoltenGamepad assigned)
 };
 
@@ -52,30 +69,36 @@ struct generic_driver_info {
 };
 
 int generic_config_loop(moltengamepad* mg, std::istream& in, std::string& path);
+int add_generic_manager(moltengamepad* mg, generic_driver_info& info);
 
 
 typedef std::pair<int, int> evcode;
 typedef std::pair<int, input_absinfo> decodedevent;
 
-class generic_device : public input_source {
+class generic_device {
 public:
   int fd = -1;
   int pipe_read = -1;
   int pipe_write = -1;
+  int total_events;
+  event_state* eventstates = nullptr;
+  bool watch = watch;
+  const std::string type;
+  const std::string uniq;
 
   std::map<evcode, decodedevent> eventcodes;
   struct udev_device* node = nullptr;
 
-  generic_device(std::vector<split_ev_info>& events, int fd, bool watch, device_manager* manager, std::string type, const std::string& uniq);
+  generic_device(std::vector<split_ev_info>& split_events, int total_events, int fd, bool watch, const std::string& type, const std::string& uniq);
   ~generic_device();
 
-  virtual int set_player(int player_num);
+  int init(input_source* ref);
 
-  virtual void update_option(const char* opname, const char* value);
-
-  virtual void process(void*);
+  void process(void*);
 
   int get_pipe();
+  input_source* ref = nullptr;
+  static device_methods methods;
 
 };
 
@@ -99,7 +122,7 @@ class generic_file {
 public:
   int epfd = 0;
   std::thread* thread = nullptr;
-  std::vector<generic_device*> devices;
+  std::vector<input_source*> devices;
   std::vector<int> fds;
   std::map<std::string, generic_node> nodes;
   std::string uniq;
@@ -107,160 +130,38 @@ public:
   bool grab_chmod = false;
   bool keep_looping = true;
   moltengamepad* mg;
+
   int internal_pipe[2];
 
-  generic_file(struct udev_device* node, bool grab_ioctl, bool grab_chmod) {
-    struct udev_device* hidparent = udev_device_get_parent_with_subsystem_devtype(node,"hid",NULL);
-    if (hidparent) {
-      const char* uniq_id = udev_device_get_property_value(hidparent, "HID_UNIQ");
-      if (uniq_id) 
-        uniq = std::string(uniq_id);
-    }
-    epfd = epoll_create(1);
-    if (epfd < 1) perror("epoll create");
-    this->grab_ioctl = grab_ioctl;
-    this->grab_chmod = grab_chmod;
-    open_node(node);
-    //set up a pipe so we can talk to out own thread.
-    pipe(internal_pipe);
-    
-    struct epoll_event event;
-    memset(&event, 0, sizeof(event));
-    event.events = EPOLLIN | EPOLLPRI | EPOLLERR | EPOLLHUP;
-    event.data.u32 = internal_pipe[0];
-    int ret = epoll_ctl(epfd, EPOLL_CTL_ADD, internal_pipe[0], &event);
-    if (ret < 0) perror("epoll add");
-    
-    if (fds.empty()) throw - 1;
+  generic_file(struct udev_device* node, bool grab_ioctl, bool grab_chmod);
 
-    thread = new std::thread(&generic_file::thread_loop, this);
-  }
+  ~generic_file();
 
-
-  ~generic_file() {
-    keep_looping = false;
-    for (auto node_it : nodes) {
-      close_node(node_it.first, false); //TODO: Fix this repeated map look up...
-    }
-    if (thread) {
-      int beep = 0;
-      write(internal_pipe[1],&beep,sizeof(beep));
-      thread->join();
-      delete thread;
-    }
-    for (auto dev : devices) {
-      mg->remove_device(dev);
-    }
-    close(epfd);
-    close(internal_pipe[0]);
-    close(internal_pipe[1]);
-
-  }
-
-
-  void open_node(struct udev_device* node) {
-    std::string path(udev_device_get_devnode(node));
-    if (nodes.find(path) == nodes.end()) {
-      int fd = open(udev_device_get_devnode(node), O_RDONLY | O_NONBLOCK | O_CLOEXEC);
-      if (fd < 0) {
-        perror("open subdevice:");
-        return;
-      }
-      struct stat filestat;
-      fstat(fd, &filestat);
-
-      if (grab_ioctl) {
-        ioctl(fd, EVIOCGRAB, 1);
-      }
-
-      if (grab_chmod) {
-        //Remove all permissions. Other software will really ignore it.
-        //Requires the device to be owned by the current user. (not merely have access)
-        chmod(udev_device_get_devnode(node), 0);
-      }
-
-      struct epoll_event event;
-      memset(&event, 0, sizeof(event));
-
-      event.events = EPOLLIN | EPOLLPRI | EPOLLERR | EPOLLHUP;
-      event.data.u32 = fd;
-      int ret = epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &event);
-      if (ret < 0) perror("epoll add");
-
-      fds.push_back(fd);
-      nodes[path] = {path, udev_device_ref(node), fd, filestat.st_mode};
-    }
-  }
-
-  void close_node(struct udev_device* node, bool erase) {
-    const char* path = udev_device_get_devnode(node);
-    if (!path) return;
-
-    close_node(std::string(path), erase);
-  }
-
-  void close_node(const std::string& path, bool erase) {
-    auto it = nodes.find(path);
-
-    if (it == nodes.end()) return;
-
-    close(it->second.fd);
-    if (grab_chmod) chmod(path.c_str(), it->second.orig_mode);
-    udev_device_unref(it->second.node);
-    if (erase) nodes.erase(it);
-  }
-
-  void add_dev(generic_device* dev) {
-    devices.push_back(dev);
-  }
-
-  void thread_loop() {
-    struct epoll_event event;
-    struct epoll_event events[1];
-    memset(&event, 0, sizeof(event));
-    while ((keep_looping)) {
-      int n = epoll_wait(epfd, events, 1, -1);
-      if (n < 0 && errno == EINTR) {
-        continue;
-      }
-      if (n < 0 && errno != EINTR) {
-        perror("epoll wait:");
-        break;
-      }
-      if (n == 0) continue;
-      
-      struct input_event ev;
-      int file = events[0].data.u32;
-      int ret = read(file, &ev, sizeof(ev));
-      if (file == internal_pipe[0]) {
-        continue; //Just a quick ping to ensure we aren't stuck in epoll_wait
-      }
-      if (ret == sizeof(ev)) {
-        for (auto dev : devices) {
-          write(dev->get_pipe(), &ev, sizeof(ev));
-        }
-      } else if (errno == ENODEV && keep_looping) {
-        close(file);
-        //TODO: possibly close out the stored node as well?
-        //For now, rely on the generic manager telling us via udev events.
-      }
-
-    }
-  }
+  void open_node(struct udev_device* node);
+  void close_node(struct udev_device* node, bool erase);
+  void close_node(const std::string& path, bool erase);
+  void add_dev(input_source* dev);
+  void thread_loop();
 
 };
 
-class generic_manager : public device_manager {
+class generic_manager {
 public:
   generic_driver_info* descr = nullptr;
   int split = 1;
   bool flatten = false;
+  device_manager* ref;
+  static manager_methods methods;
+  moltengamepad* mg;
+  int event_count = 0;
 
   generic_manager(moltengamepad* mg, generic_driver_info& descr);
+  manager_plugin get_plugin();
 
   virtual ~generic_manager();
 
-  virtual int accept_device(struct udev* udev, struct udev_device* dev);
+  int accept_device(struct udev* udev, struct udev_device* dev);
+  int init(device_manager* ref);
 
 protected:
   std::mutex devlistlock;

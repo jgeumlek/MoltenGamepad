@@ -51,7 +51,7 @@ int wiimote_plugin_init(plugin_api api) {
     return ((wiimote*)ref)->process_option(opname, opvalue);
   };
 
-  api.mg.add_manager(wiiman,  manager);
+  api.mg.add_manager(wiiman, manager);
   return 0;
 }
 

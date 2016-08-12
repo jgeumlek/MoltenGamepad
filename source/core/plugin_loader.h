@@ -1,5 +1,5 @@
 #pragma once
-#include "../plugin/plugin.h"
+#include "mg_types.h"
 #include <vector>
 #include <functional>
 

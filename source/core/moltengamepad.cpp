@@ -225,6 +225,7 @@ int moltengamepad::init() {
 
   //add built in drivers
   init_plugin_api();
+  init_generic_callbacks();
   load_builtins(this);
 
 

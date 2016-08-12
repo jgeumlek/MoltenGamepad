@@ -6,29 +6,6 @@
 #include <thread>
 #include <iostream>
 
-
-
-input_source::input_source(device_manager* manager, std::string type) : manager(manager), device_type(type) {
-  memset(&plugin, 0, sizeof(plugin));
-  for (auto ev : manager->get_events())
-    register_event(ev);
-  std::vector<option_info> prof_opts;
-  manager->mapprofile->list_options(prof_opts);
-  for (auto opt : prof_opts)
-    options[opt.name] = opt;
-
-  epfd = epoll_create(1);
-  if (epfd < 1) perror("epoll create");
-
-  int internal[2];
-  pipe(internal);
-  watch_file(internal[0], this);
-
-  priv_pipe = internal[1];
-  internalpipe = internal[0];
-
-}
-
 input_source::input_source(device_manager* manager, device_plugin plugin, void* plug_data) 
       : manager(manager), plugin(plugin), plug_data(plug_data), uniq(plugin.uniq) {
 
