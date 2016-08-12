@@ -36,15 +36,13 @@ MoltenGamepad targets a set-it-and-forget-it daemon-like usage pattern,  where d
 
     make
 
-If you get undefined KEY_* errors, you'll need to remove those lines from the eventlists. There is a script `source/eventlists/generate_key_codes` designed to build these eventlists, but it has not been extensively tested. 
+If you get undefined KEY_* errors, you'll need to remove those lines from the eventlists. There is a script `source/eventlists/generate_key_codes` designed to build these eventlists, but it has not been extensively tested. Run it from within `source/eventlists`.
 
 The only linked libraries under this default target are libudev and libpthread.
 
-If you also have the [scraw](https://gitlab.com/dennis-hamester/scraw) and [scrawpp](https://gitlab.com/dennis-hamester/scrawpp) libraries installed, there is some steam controller support available, but it is not included in the default make target.
+Currently two plugins can optionally be built into MoltenGamepad when compiling, `wiimote` and `steamcontroller`. By default, only the former is set to be built. Modify the lines at the beginning of the Makefile to control whether these plugins are included.
 
-    make steam
-    
-This make target will build and include the steam controller support. When changing between building with or without this support, a `make clean` is recommended.
+Note that the Steam Controller plugin requires the [scraw](https://gitlab.com/dennis-hamester/scraw) and [scrawpp](https://gitlab.com/dennis-hamester/scrawpp) libraries.
 
 ##Running
 
@@ -57,7 +55,7 @@ MoltenGamepad will start up, search existing devices, and wait for devices to sh
 to see the available command line arguments.
 
 
-You'll need appropriate permissions on the uinput device node, as well as any device nodes you wish MoltenGamepad to work with.
+You'll need appropriate permissions on the uinput device node, as well as any device nodes you wish MoltenGamepad to work with. See `documentation/permissions_(udev).md` for more details.
 
 You might need to use `--uinput-path` to tell MoltenGamepad where the uinput device is on your system. (You might even need to modprobe uinput)
 
@@ -103,7 +101,6 @@ See this README, the various files in the `documentation` folder, the output of 
 
 * Changing input mappings does not clear out previous values, potentially leading to stuck inputs.
 * Multiple inputs mapped to the same output event clobber each other. Desired behavior uncertain.
-* Framework needs some clean up before it can truly be called "extendable".
 * Software may attempt to read both the virtual and original devices, leading to duplicated events.
 * No rumble support.
 * Will likely add some amount of input latency, though it hasn't been measured beyond playtests.
@@ -122,13 +119,13 @@ You need read access to the various event devices you wish to read. Most systems
 
 A driver handles a certain class of input devices. Its responsibilities include identifying appropriate devices and knowing when they are removed. A driver also includes an implementation of an input source, providing the code to actually read and process input events.
 
-MoltenGamepad has a wiimote driver built in, handling the gritty details of the Linux kernel event devices made by a wiimote. It supports swapping events when a wiimote extension is changed, along with combining the extension inputs with the wiimote inputs.
+One included driver is the Wiimote driver. It handles the gritty details of the Linux kernel event devices made by a wiimote. Extra features include swapping active events when a wiimote extension is changed, along with combining the extension inputs with the wiimote inputs.
 
-MoltenGamepad also contains support to read special configuration files to create generic drivers. These drivers can identify input devices by their reported name, and can provide meaningful names to their event codes.
+MoltenGamepad also contains support to read special configuration files to create generic drivers. These drivers can identify input devices by their reported name or vendor/product ids, and can provide meaningful names to their event codes.
 
 The dream here is to have a variety of drivers, enabling interesting features of certain hardware or gathering unorthodox input sources. Perhaps one might read controller inputs off the network/chatroom. Or expose controller inputs onto the file system.
 
-REMINDER: At the moment, only the wiimote driver will be active on a bare installation of MoltenGamepad.
+REMINDER: At the moment, only the wiimote driver will be active on a default installation of MoltenGamepad.
 
 ###How does setting a mapping work?
 
