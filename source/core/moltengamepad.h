@@ -7,6 +7,7 @@
 #include <memory>
 #include <mutex>
 #include <functional>
+#include <unordered_set>
 #include "devices/device.h"
 #include "slot_manager.h"
 #include "uinput.h"
@@ -47,6 +48,8 @@ public:
   std::vector<device_manager*> managers;
   std::vector<std::shared_ptr<input_source>> devices;
   std::vector<std::weak_ptr<profile>> profiles;
+  std::unordered_set<std::string> forbidden_ids; //keywords can't be ids (avoid ambiguity)
+  std::unordered_set<std::string> ids_in_use; //prevent duplicate names to avoid ambiguity
   slot_manager* slots;
   udev_handler udev;
   simple_messenger drivers;
@@ -64,6 +67,7 @@ public:
   //Use an empty path to get the appropriate directory to create a file in.
   std::string locate(file_category cat, std::string path);
   std::vector<std::string> locate_glob(file_category cat, std::string pathglob);
+
 
   device_manager* add_manager(manager_plugin manager, void* manager_plug_data);
   device_manager* find_manager(const char* name);
@@ -83,6 +87,7 @@ private:
   std::thread* remote_handler = nullptr;
   std::mutex  device_list_lock;
   std::mutex  profile_list_lock;
+  std::mutex  id_list_lock;
   std::vector<std::string> xdg_config_dirs;
 
 

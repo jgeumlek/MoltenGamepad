@@ -215,9 +215,6 @@ void generic_parse_line(std::vector<token>& line, generic_driver_info*& info, mo
 
       ret = add_generic_manager(mg, *info);
 
-      if (ret == GENDEV_REJECTED_MANAGER) {
-        delete info; //Get rid of it!
-      }
       if (ret == 0 || ret == GENDEV_REJECTED_MANAGER) {
         //Either of these cases, we start a new driver description now.
         info = new generic_driver_info;
@@ -271,9 +268,8 @@ int generic_config_loop(moltengamepad* mg, std::istream& in, std::string& path) 
   
   
   int ret = add_generic_manager(mg, *info);
-  if (ret)
-    delete info;
   if (ret == GENDEV_INCOMPLETE_INFO) {
+    delete info;
     mg->errors.take_message("missing name, devname, or events ("+path+")");
   }
 
@@ -283,14 +279,11 @@ int generic_config_loop(moltengamepad* mg, std::istream& in, std::string& path) 
 
 int add_generic_manager(moltengamepad* mg, generic_driver_info& info) {
   if (info.events.size() > 0 && !info.name.empty() && !info.devname.empty()) {
-    if (!mg->find_manager(info.name.c_str()))  {
-      generic_manager* manager = new generic_manager(mg, info);
-      mg->add_manager(manager->get_plugin(), manager);
-      return 0;
-    } else {
-      mg->errors.take_message("redundant driver \""+info.name+"\" ignored");
+    generic_manager* manager = new generic_manager(mg, info);
+    auto man = mg->add_manager(manager->get_plugin(), manager);
+    if (!man)
       return GENDEV_REJECTED_MANAGER;
-    }
+    return 0;
   } 
   return GENDEV_INCOMPLETE_INFO;
 }

@@ -182,7 +182,24 @@ const option_decl general_options[] = {
   {"", "", ""},
 };
 
-
+const char* keywords[] = {
+  "",
+  "load",
+  "save",
+  "print",
+  "move",
+  "clear",
+  "alter",
+  "moltengamepad",
+  "mg",
+  "to",
+  "from",
+  "nothing",
+  "none",
+  "general",
+  "default",
+  nullptr,
+};
 
 int config_parse_line(moltengamepad* mg, std::vector<token>& line, context context, options& opt, config_extras& extra);
 
@@ -195,6 +212,8 @@ int moltengamepad::init() {
   
   //Initialize static parser variables
   MGparser::load_translators(this);
+  for (int i = 0; keywords[i]; i++)
+    forbidden_ids.insert(std::string(keywords[i]));
   
   //Load moltengamepad.cfg if it exists
   config_extras cfg;
@@ -249,11 +268,6 @@ int moltengamepad::init() {
       int ret = generic_config_loop(this, file, path);
     }
   }
-
-
-  //add driver profiles
-  for (auto man : managers)
-    add_profile(man->mapprofile.get());
 
   //Run any startup profiles before beginning the udev searches
   for (auto profile_path : cfg.startup_profiles) {
@@ -338,15 +352,35 @@ moltengamepad::~moltengamepad() {
   delete slots;
 }
 
+
 device_manager* moltengamepad::add_manager(manager_plugin manager, void* manager_plug_data) {
+  std::lock_guard<std::mutex> guard(id_list_lock);
+  std::string manager_name(manager.name);
+  bool destroyed = false;
+  if (forbidden_ids.find(manager_name) != forbidden_ids.end()) {
+    errors.take_message("manager name " + manager_name + " is invalid.");
+    destroyed = true;
+  }
+  if (ids_in_use.find(manager_name) != ids_in_use.end()) {
+    errors.take_message("redundant manager " + manager_name + " ignored.");
+    destroyed = true;
+  }
+  if (destroyed) {
+    if (manager.destroy)
+      manager.destroy(manager_plug_data);
+    return nullptr;
+  }
+
   auto man = new device_manager(this, manager, manager_plug_data);
   managers.push_back(man);
+  add_profile(man->mapprofile.get());
   if (manager.subscribe_to_gamepad_profile)
     gamepad->copy_into(man->mapprofile, true, true);
   //Future work: load manager options now.
   if (manager.start)
     manager.start(man->plug_data);
   drivers.take_message(man->name + " driver initialized.");
+  return man;
 };
 
 device_manager* moltengamepad::find_manager(const char* name) {
@@ -365,27 +399,29 @@ std::shared_ptr<input_source> moltengamepad::find_device(const char* name) {
   return nullptr;
 }
 std::shared_ptr<input_source> moltengamepad::add_device(input_source* source, device_manager* manager, std::string name_stem) {
+
   std::shared_ptr<input_source> ptr(source);
+
   device_list_lock.lock();
+  std::lock_guard<std::mutex> guard(id_list_lock);
+  if (forbidden_ids.find(name_stem) != forbidden_ids.end())
+    return nullptr;
+
   
   //try to find an unused name. It is okay if this is slow.
   std::string proposal;
-  bool available;
+  bool available = false;
   for (int i = 1; i < 64; i++) {
     proposal = name_stem + std::to_string(i);
-    available = true;
-    for (auto dev : devices) {
-      if (dev->get_name() == proposal) {
-        available = false;
-	break;
-      }
+    if (ids_in_use.find(proposal) == ids_in_use.end()) {
+      available = true;
+      break; //This proposal is available!
     }
-    if (available) break;
   }
   
   if (!available) {
     errors.take_message("could not find available name for " + name_stem);
-    return ptr;
+    return nullptr;
   }
   //Set the device and profile name, send a message, link the profile, and finally start the device thread.
   ptr->set_name(proposal);
@@ -440,6 +476,7 @@ std::shared_ptr<profile> moltengamepad::find_profile(const std::string& name) {
 void moltengamepad::add_profile(profile* profile) {
   profile_list_lock.lock();
   profiles.push_back(profile->get_shared_ptr());
+  ids_in_use.insert(profile->name);
   profile_list_lock.unlock();
 }
 

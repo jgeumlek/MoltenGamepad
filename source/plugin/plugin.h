@@ -134,6 +134,7 @@ struct manager_plugin {
   int (*destroy) (void* plug_data);
   //If this manager creates input sources independently of udev events, 
   //any such processes should be started via this callback.
+  //Any functionality that depends on manager options should be done in start
   int (*start) (void* plug_data);
   //If the udev_device is relevant to this manager:
   //  add or remove input_sources as appropriate
@@ -146,6 +147,9 @@ struct manager_plugin {
   //UNIMPLEMENTED
   int (*process_manager_option) (void* plug_data, const char* opname, MGField opvalue);
 };
+// init is called first
+// Then process_manager_option for each option registered in init
+// Finally start is called
 
 
 struct moltengamepad_methods {

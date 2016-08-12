@@ -45,14 +45,7 @@ struct adv_entry {
 };
 
 //Struct used internally, not designed for public consumption.
-struct input_internal_msg {
-  enum input_msg_type { IN_TRANS_MSG, IN_ADV_TRANS_MSG, IN_EVENT_MSG } type;
-  int id;
-  event_translator* trans;
-  adv_entry adv;
-  int64_t value;
-  bool skip_adv_trans;
-};
+struct input_internal_msg;
 
 class input_source : public std::enable_shared_from_this<input_source> {
 public:
@@ -65,9 +58,7 @@ public:
   
   void list_options(std::vector<option_info>& list) const;
   
-  void set_slot(output_slot* outdev) {
-    this->out_dev = outdev;
-  }
+  void set_slot(output_slot* outdev);
 
   void update_map(const char* evname, event_translator* trans);
   void update_option(const char* opname, const MGField field);
@@ -139,7 +130,7 @@ protected:
 
   void print(std::string message);
   
-  void handle_internal_message(input_internal_msg &msg);
+  void handle_internal_message(input_internal_msg& msg);
 
   void add_recurring_event(const event_translator* trans);
   void remove_recurring_event(const event_translator* trans);

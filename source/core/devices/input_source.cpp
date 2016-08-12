@@ -54,6 +54,16 @@ input_source::~input_source() {
     plugin.destroy(plug_data);
 }
 
+struct input_internal_msg {
+  enum input_msg_type { IN_TRANS_MSG, IN_ADV_TRANS_MSG, IN_EVENT_MSG, IN_OPTION_MSG, IN_SLOT_MSG, IN_END_THREAD_MSG } type;
+  int id;
+  int64_t value;
+  MGField field;
+  adv_entry adv;
+  bool skip_adv_trans;
+  char* name;
+};
+
 
 void input_source::register_event(event_decl ev) {
   source_event event = {
@@ -122,18 +132,30 @@ std::string field_to_string(const MGField field) {
   return "error";
 }
 
+char* copy_str(const char* str) {
+  int len = strlen(str) + 1;
+  char* copy = (char*)calloc(len, sizeof(char));
+  strncpy(copy, str, len);
+  return copy;
+}
+
 void input_source::update_option(const char* name, const MGField value) {
-  std::lock_guard<std::mutex> lock(opt_lock);
-  std::string sname = std::string(name);
-  std::string svalue = field_to_string(value);
-  auto it = options.find(sname);
-  if (it != options.end()) {
-    if (!process_option(name, value)) {
-      it->second.stringval = svalue;
-    } else {
-      //Device rejected the option.
-    }
-  }
+  struct input_internal_msg msg;
+  memset(&msg, 0, sizeof(msg));
+  msg.field = value;
+  msg.name = copy_str(name);
+  if (value.type == MG_STRING)
+    msg.field.string = copy_str(value.string);
+  msg.type = input_internal_msg::IN_OPTION_MSG;
+  write(priv_pipe, &msg, sizeof(msg));
+}
+
+void input_source::set_slot(output_slot* slot) {
+  struct input_internal_msg msg;
+  memset(&msg, 0, sizeof(msg));
+  msg.field.slot = slot;
+  msg.type = input_internal_msg::IN_SLOT_MSG;
+  write(priv_pipe, &msg, sizeof(msg));
 }
 
 void input_source::list_options(std::vector<option_info>& list) const {
@@ -192,7 +214,7 @@ void input_source::set_trans(int id, event_translator* trans) {
   struct input_internal_msg msg;
   memset(&msg, 0, sizeof(msg));
   msg.id = id;
-  msg.trans = trans;
+  msg.field.trans = trans;
   msg.type = input_internal_msg::IN_TRANS_MSG;
   write(priv_pipe, &msg, sizeof(msg));
 };
@@ -296,7 +318,7 @@ void input_source::thread_loop() {
   }
 }
 
-void input_source::handle_internal_message(input_internal_msg &msg) {
+void input_source::handle_internal_message(input_internal_msg& msg) {
   //Is it an advanced_event_translator message?
   if (msg.type == input_internal_msg::IN_ADV_TRANS_MSG) {
     if (!msg.adv.fields || msg.adv.fields->empty())
@@ -328,7 +350,7 @@ void input_source::handle_internal_message(input_internal_msg &msg) {
   }
   if (msg.type == input_internal_msg::IN_TRANS_MSG) {
     //Is it an event_translator message?
-    if (msg.id < 0 || !msg.trans) return;
+    if (!msg.field.trans) return;
 
     //Assumption: Every registered event must have a
     //valid event_translator at all times.
@@ -337,10 +359,10 @@ void input_source::handle_internal_message(input_internal_msg &msg) {
     event_translator** trans = &(this->ev_map.at(msg.id).trans);
     remove_recurring_event(*trans);
     delete *trans;
-    *(trans) = msg.trans;
-    msg.trans->attach(this);
-    if (msg.trans->wants_recurring_events()) {
-      add_recurring_event(msg.trans);
+    *(trans) = msg.field.trans;
+    msg.field.trans->attach(this);
+    if (msg.field.trans->wants_recurring_events()) {
+      add_recurring_event(msg.field.trans);
     }
     do_recurring_events = recurring_events.size() > 0;
   }
@@ -355,6 +377,25 @@ void input_source::handle_internal_message(input_internal_msg &msg) {
       send_value(msg.id, msg.value);
     }
   }
+  if (msg.type == input_internal_msg::IN_SLOT_MSG)
+    out_dev = msg.field.slot;
+  if (msg.type == input_internal_msg::IN_OPTION_MSG) {
+    std::lock_guard<std::mutex> lock(opt_lock);
+    std::string sname = std::string(msg.name);
+    std::string svalue = field_to_string(msg.field);
+    auto it = options.find(sname);
+    if (it != options.end()) {
+      if (!process_option(msg.name, msg.field)) {
+        it->second.stringval = svalue;
+      } else {
+        //Device rejected the option.
+      }
+    }
+    free (msg.name);
+    if (msg.field.type == MG_STRING)
+       free ((char*)msg.field.string);
+  }
+
 }
 
 void input_source::process_recurring_events() {
@@ -384,7 +425,10 @@ void input_source::start_thread() {
 void input_source::end_thread() {
   if (thread) {
     keep_looping = false;
-    write(priv_pipe, "h", sizeof(char));
+    struct input_internal_msg msg;
+    memset(&msg, 0, sizeof(msg));
+    msg.type = input_internal_msg::IN_END_THREAD_MSG;
+    write(priv_pipe, &msg, sizeof(msg));
     thread->join();
     delete thread;
     thread = nullptr;
