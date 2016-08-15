@@ -362,7 +362,7 @@ void input_source::handle_internal_message(input_internal_msg& msg) {
     *(trans) = msg.field.trans;
     msg.field.trans->attach(this);
     if (msg.field.trans->wants_recurring_events()) {
-      add_recurring_event(msg.field.trans);
+      add_recurring_event(msg.field.trans, msg.id);
     }
     do_recurring_events = recurring_events.size() > 0;
   }
@@ -399,9 +399,9 @@ void input_source::handle_internal_message(input_internal_msg& msg) {
 }
 
 void input_source::process_recurring_events() {
-  for (auto trans : recurring_events) {
-    if (out_dev) {
-      trans->process_recurring(out_dev);
+  for (auto rec : recurring_events) {
+    if (out_dev && events[rec.id].state == EVENT_ACTIVE) {
+      rec.trans->process_recurring(out_dev);
     }
   }
   send_syn_report();
@@ -451,13 +451,13 @@ void input_source::remove_listener(int id, advanced_event_translator* trans) {
 }
 
 
-void input_source::add_recurring_event(const event_translator* trans) {
-  recurring_events.push_back(trans);
+void input_source::add_recurring_event(const event_translator* trans, int id) {
+  recurring_events.push_back({trans, id});
 }
 
 void input_source::remove_recurring_event(const event_translator* trans) {
   for (auto it = recurring_events.begin(); it != recurring_events.end(); it++) {
-    if (*it == trans) {
+    if (it->trans == trans) {
       recurring_events.erase(it);
       return;
     }

@@ -39,6 +39,11 @@ struct event_mapping {
   std::vector<advanced_event_translator*> attached;
 };
 
+struct recurring_info {
+  const event_translator* trans;
+  int id;
+};
+
 struct adv_entry {
   std::vector<std::string>* fields;
   advanced_event_translator* trans;
@@ -109,7 +114,7 @@ protected:
   device_plugin plugin;
   std::mutex opt_lock;
   
-  std::vector<const event_translator*> recurring_events;
+  std::vector<recurring_info> recurring_events;
   bool do_recurring_events = false;
   timespec last_recurring_update;
 
@@ -132,7 +137,7 @@ protected:
   
   void handle_internal_message(input_internal_msg& msg);
 
-  void add_recurring_event(const event_translator* trans);
+  void add_recurring_event(const event_translator* trans, int id);
   void remove_recurring_event(const event_translator* trans);
 
   void process_recurring_events();
