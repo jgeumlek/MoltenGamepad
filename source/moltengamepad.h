@@ -15,7 +15,7 @@
 #include "messages.h"
 #include "profile.h"
 
-#define VERSION_STRING "0.1.1-beta"
+#define VERSION_STRING "0.1.2-beta"
 
 class slot_manager;
 class device_manager;

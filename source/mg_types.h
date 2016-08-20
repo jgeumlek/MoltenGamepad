@@ -25,5 +25,5 @@ struct option_info {
   std::string descr;
   std::string value;
   MGType type;
-  bool locked = false;
+  bool locked;
 }; 

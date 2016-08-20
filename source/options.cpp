@@ -16,9 +16,11 @@ int read_bool(const std::string value, std::function<void (bool)> process) {
 void options::register_option(const option_info opt) {
   std::lock_guard<std::mutex> guard(optlock);
   options.erase(opt.name);
+  option_info new_opt = opt;
+  new_opt.locked = false;
   if (opt.type != MG_INT && opt.type != MG_BOOL && opt.type != MG_STRING)
     return; //unsupported.
-  options[opt.name] = opt;
+  options[opt.name] = new_opt;
 
 }
 
@@ -49,7 +51,7 @@ int options::set(std::string opname, std::string value) {
 option_info options::get_option(std::string opname) {
   std::lock_guard<std::mutex> guard(optlock);
   auto it = options.find(opname);
-  if (it == options.end()) return {"","","", MG_NULL};
+  if (it == options.end()) return {"","","", MG_NULL, false};
   return it->second;
 }
 
