@@ -72,6 +72,7 @@ void input_source::register_event(event_decl ev) {
     .descr = ev.descr,
     .type = ev.type,
     .value = 0,
+    .state = EVENT_ACTIVE,
   };
   events.push_back(event);
   ev_map.resize(events.size());

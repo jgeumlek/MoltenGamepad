@@ -66,27 +66,27 @@ const event_decl wiimote_events[] = {
   {EVNAME(cc_right_x), "Classic Controller Right Stick X", ABS, "+right_x"},
   {EVNAME(cc_right_y), "Classic Controller Right Stick Y", ABS, "+right_y"},
 
-  {EVNAME(wm_accel_x), "Wiimote X acceleration ((-) <--> (+) axis)", ABS},
-  {EVNAME(wm_accel_y), "Wiimote Y acceleration (plug <--> pointer axis)", ABS},
-  {EVNAME(wm_accel_z), "Wiimote Z acceleration (top <--> bottom axis)", ABS},
-  {EVNAME(wm_ir_x), "Wiimote IR pointer X", ABS},
-  {EVNAME(wm_ir_y), "Wiimote IR pointer Y", ABS},
+  {EVNAME(wm_accel_x), "Wiimote X acceleration ((-) <--> (+) axis)", ABS, ""},
+  {EVNAME(wm_accel_y), "Wiimote Y acceleration (plug <--> pointer axis)", ABS, ""},
+  {EVNAME(wm_accel_z), "Wiimote Z acceleration (top <--> bottom axis)", ABS, ""},
+  {EVNAME(wm_ir_x), "Wiimote IR pointer X", ABS, ""},
+  {EVNAME(wm_ir_y), "Wiimote IR pointer Y", ABS, ""},
 
 
-  {EVNAME(nk_wm_accel_x), "Wiimote X acceleration with Nunchuk", ABS},
-  {EVNAME(nk_wm_accel_y), "Wiimote Y acceleration with Nunchuk", ABS},
-  {EVNAME(nk_wm_accel_z), "Wiimote Z acceleration with Nunchuk", ABS},
-  {EVNAME(nk_ir_x), "Wiimote IR pointer X with Nunchuk", ABS},
-  {EVNAME(nk_ir_y), "Wiimote IR pointer Y with Nunchuk", ABS},
-  {EVNAME(nk_accel_x), "Nunchuk X acceleration", ABS},
-  {EVNAME(nk_accel_y), "Nunchuk Y acceleration", ABS},
-  {EVNAME(nk_accel_z), "Nunchuk Z acceleration", ABS},
+  {EVNAME(nk_wm_accel_x), "Wiimote X acceleration with Nunchuk", ABS, ""},
+  {EVNAME(nk_wm_accel_y), "Wiimote Y acceleration with Nunchuk", ABS, ""},
+  {EVNAME(nk_wm_accel_z), "Wiimote Z acceleration with Nunchuk", ABS, ""},
+  {EVNAME(nk_ir_x), "Wiimote IR pointer X with Nunchuk", ABS, ""},
+  {EVNAME(nk_ir_y), "Wiimote IR pointer Y with Nunchuk", ABS, ""},
+  {EVNAME(nk_accel_x), "Nunchuk X acceleration", ABS, ""},
+  {EVNAME(nk_accel_y), "Nunchuk Y acceleration", ABS, ""},
+  {EVNAME(nk_accel_z), "Nunchuk Z acceleration", ABS, ""},
   {EVNAME(nk_stick_x), "Nunchuk stick X", ABS, "+left_x"},
   {EVNAME(nk_stick_y), "Nunchuk stick Y", ABS, "+left_y"},
 
 
-  {EVNAME(bal_x), "Balance Board Center of Gravity X", ABS},
-  {EVNAME(bal_y), "Balance Board Center of Gravity Y", ABS},
+  {EVNAME(bal_x), "Balance Board Center of Gravity X", ABS, ""},
+  {EVNAME(bal_y), "Balance Board Center of Gravity Y", ABS, ""},
 
 
   {nullptr, nullptr, NO_ENTRY, nullptr}

@@ -37,7 +37,7 @@ struct event_decl {
   const char* name;
   const char* descr;
   enum entry_type type;  //DEV_KEY or DEV_AXIS or DEV_REL
-  const char* default_mapping = ""; //will be read by the parser to generate an event translator
+  const char* default_mapping; //will be read by the parser to generate an event translator
 };
 
 struct option_decl {

@@ -31,7 +31,7 @@ struct source_event {
   const char* descr;
   enum entry_type type;
   int64_t value;
-  event_state state = EVENT_ACTIVE;
+  event_state state;
 };
 
 struct event_mapping {
