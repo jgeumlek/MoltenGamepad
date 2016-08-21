@@ -198,6 +198,14 @@ const char* keywords[] = {
   "none",
   "general",
   "default",
+  "slot",
+  "slots",
+  "profile",
+  "profiles",
+  "device",
+  "devices",
+  "set",
+  "setting",
   nullptr,
 };
 
@@ -521,3 +529,25 @@ int loop_file(const std::string path, std::function<int (std::vector<token>&, co
   delete[] buff;
   return 0;
 }
+
+int moltengamepad::set_option(std::string& category, std::string& name, std::string& value) {
+  //need to properly ensure the lifetime of referenced objects...
+  //For the slot_manager however, the lifetime is the same as this entire process.
+  int ret = FAILURE;
+  run_on_options(category, [&ret, &name, &value] (options* opts) { ret = opts->set(name,value); });
+
+  return ret;
+}
+
+void moltengamepad::list_options(std::string& category, std::vector<option_info>& list) const {
+  run_on_options(category, [&list] (options* opts) { opts->list_options(list); });
+}
+
+void moltengamepad::run_on_options(std::string& category, std::function<void (options*)> func) const {
+  //need to properly ensure the lifetime of referenced objects...
+  //For the slot_manager however, the lifetime is the same as this entire process.
+  if (category == "slot" || category == "slots") {
+    func(&slots->opts);
+    return;
+  }
+};

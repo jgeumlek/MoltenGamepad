@@ -12,6 +12,8 @@
 
 class input_source;
 
+enum slot_state { SLOT_ACTIVE, SLOT_INACTIVE, SLOT_CLOSED, SLOT_DISABLED};
+
 class output_slot {
 public:
   std::string name;
@@ -36,6 +38,7 @@ public:
 
   int pad_count = 0;
   std::map<std::string, std::string> options;
+  slot_state state = SLOT_INACTIVE;
 protected:
   int uinput_fd = -1;
   std::vector<std::weak_ptr<input_source>> devices;
@@ -70,7 +73,6 @@ protected:
   int face_1234[4] = {BTN_SOUTH, BTN_EAST, BTN_WEST, BTN_NORTH};
   void set_face_map(std::string map);
   std::string get_face_map();
-  enum acceptancetype { NONE, SINGULAR, GREEDY} acceptance = SINGULAR;
 };
 
 class virtual_keyboard : public output_slot {

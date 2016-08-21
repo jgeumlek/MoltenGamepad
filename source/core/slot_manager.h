@@ -8,16 +8,15 @@
 #include "output_slot.h"
 #include "devices/device.h"
 #include "messages.h"
+#include "options.h"
 
 class input_source;
-
-enum virtpad_type { LINUX_PAD, DPAD_AS_HAT_PAD };
 
 class slot_manager {
 public:
 
 
-  slot_manager(int num_pads, bool keys, const virtpad_settings& padstyle);
+  slot_manager(int max_pads, bool keys, const virtpad_settings& padstyle);
 
   ~slot_manager();
 
@@ -31,17 +30,21 @@ public:
   output_slot* keyboard = nullptr;
   output_slot* dummyslot = nullptr;
   output_slot* debugslot = nullptr;
+  options opts;
   std::vector<output_slot*> slots;
 private:
-  virtpad_type padtype;
   void remove_from(output_slot* slot);
   void move_device(input_source* dev, output_slot* target);
+  int process_option(std::string& name, MGField value);
 
   bool slots_on_demand = false;
 
   uinput* ui;
   std::mutex lock;
-  int num_slots = 2;
+  int min_pads = 1;
+  int max_pads = 4;
+  int active_pads = 4;
+  bool persistent_slots = true;
   simple_messenger log;
 };
 

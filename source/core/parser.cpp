@@ -369,7 +369,7 @@ void MGparser::parse_line(std::vector<token>& line, std::string& header) {
     return;
   }
 
-  if (find_token_type(TK_EQUAL, line)) {
+  if (find_token_type(TK_EQUAL, line) && line[0].value != "set") {
     do_assignment_line(line, header);
   } else {
     do_command(mg, line);

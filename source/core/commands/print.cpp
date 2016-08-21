@@ -121,22 +121,49 @@ int do_print_drivers(moltengamepad* mg, std::string name, std::ostream& out) {
 
 }
 
+int do_print_slot(output_slot* slot, bool details, std::ostream& out) {
+  const char* statestr = "";
+  if (slot->state == SLOT_INACTIVE)
+    statestr = "(inactive)";
+  if (slot->state == SLOT_DISABLED)
+    statestr = "(disabled)";
+  out << slot->name << ":\t" << slot->descr << statestr << std::endl;
+  if (details) {
+    for (auto e : slot->options) {
+      out << "\t" << e.first << " = " << e.second << std::endl;
+    }
+  }
+};
+
 int do_print_slots(moltengamepad* mg, std::string name, std::ostream& out) {
   if (name.empty()) {
     for (auto slot : mg->slots->slots) {
-      out << slot->name << ":\t" << slot->descr <<  std::endl;
+      do_print_slot(slot, false, out);
     }
-    out << mg->slots->keyboard->name << ":\t" << mg->slots->keyboard->descr << std::endl;
-    out << mg->slots->dummyslot->name << ":\t" << mg->slots->dummyslot->descr << std::endl;
-    if (mg->slots->debugslot) out << mg->slots->debugslot->name << ":\t" << mg->slots->debugslot->descr << std::endl;
+    do_print_slot(mg->slots->keyboard, false, out);
+    do_print_slot(mg->slots->dummyslot, false, out);
+    if (mg->slots->debugslot) do_print_slot(mg->slots->debugslot, false, out);
     return 0;
   }
   output_slot* slot = mg->slots->find_slot(name);
   if (slot) {
-    out << slot->name << ":\t" << slot->descr << std::endl;
-    for (auto e : slot->options) {
-      out << "\t" << e.first << " = " << e.second << std::endl;
-    }
+    do_print_slot(slot, true, out);
+  }
+
+  return 0;
+
+}
+
+int do_print_options(moltengamepad* mg, std::string name, std::ostream& out) {
+  if (name.empty()) {
+    out << "slots" << std::endl;
+    return 0;
+  }
+  std::vector<option_info> list;
+  mg->list_options(name, list);
+  for (auto opt : list) {
+    out << opt.name << " = " << opt.stringval << std::endl;
+    out << "\t" << opt.descr << std::endl;
   }
 
   return 0;
@@ -145,7 +172,7 @@ int do_print_slots(moltengamepad* mg, std::string name, std::ostream& out) {
 
 #define PRINT_USAGE ""\
 "USAGE:\n\tprint <type> [element]\n"\
-"\ttypes recognized: drivers, devices, profiles, slots\n"\
+"\ttypes recognized: drivers, devices, profiles, slots, options\n"\
 "\tprint <type> will list all elements of that type\n"\
 "\tprint <type> [element] will show detailed info on that element\n"
 int do_print(moltengamepad* mg, std::vector<token>& command) {
@@ -158,6 +185,7 @@ int do_print(moltengamepad* mg, std::vector<token>& command) {
   if (command.at(1).value.compare(0, 6, "device") == 0) return do_print_devs(mg, arg, std::cout);
   if (command.at(1).value.compare(0, 7, "profile") == 0) return do_print_profile(mg, arg, std::cout);
   if (command.at(1).value.compare(0, 4, "slot") == 0) return do_print_slots(mg, arg, std::cout);
+  if (command.at(1).value.compare(0, 6, "option") == 0) return do_print_options(mg, arg, std::cout);
 
   std::cout << PRINT_USAGE << std::endl;
   return 0;

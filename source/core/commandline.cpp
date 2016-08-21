@@ -12,6 +12,7 @@ int do_load(moltengamepad* mg, std::vector<token>& command);
 int do_move(moltengamepad* mg, std::vector<token>& command);
 int do_alterslot(moltengamepad* mg, std::vector<token>& command);
 int do_clear(moltengamepad* mg, std::vector<token>& command);
+int do_set(moltengamepad* mg, std::vector<token>& command);
 
 #define HELP_TEXT "available commands:\n"\
 "\tprint:\tprint out lists and information\n"\
@@ -20,9 +21,12 @@ int do_clear(moltengamepad* mg, std::vector<token>& command);
 "\tclear:\tclear (zero-out) a slot's outputs\n"\
 "\tsave:\tsave all profiles to a file\n"\
 "\tload:\tload profiles from a file\n"\
+"\tset:\tset global options\n"\
 "\tquit:\tquit this application\n"\
 "\t<profile>.<event> = <outevent>\n"\
-"\t\tchange the event mapping for <event> to <outevent> in the profile <profile>"
+"\t\tchange the event mapping for <event> to <outevent> in the profile <profile>\n"\
+"\t<profile>.?<option> = <value>\n"\
+"\t\tchange a local option for a profile"
 int do_command(moltengamepad* mg, std::vector<token>& command) {
   if (command.empty()) return 0;
   if (command.front().type == TK_ENDL) return 0;
@@ -40,6 +44,7 @@ int do_command(moltengamepad* mg, std::vector<token>& command) {
   if (command.front().value == "load") return do_load(mg, command);
   if (command.front().value == "alterslot") return do_alterslot(mg, command);
   if (command.front().value == "clear") return do_clear(mg, command);
+  if (command.front().value == "set") return do_set(mg, command);
   if (command.front().value == "help") {
     std::cout << HELP_TEXT << std::endl;
     return 0;

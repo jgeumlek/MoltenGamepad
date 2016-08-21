@@ -81,6 +81,8 @@ public:
   void add_profile(profile* profile);
   void remove_profile(profile* source);
   void for_all_profiles(std::function<void (std::shared_ptr<profile>&)> func);
+  int set_option(std::string& category, std::string& name, std::string& value);
+  void list_options(std::string& category, std::vector<option_info>& list) const;
 
 private:
   
@@ -89,6 +91,7 @@ private:
   std::mutex  profile_list_lock;
   std::mutex  id_list_lock;
   std::vector<std::string> xdg_config_dirs;
+  void run_on_options(std::string& category, std::function<void (options*)> func) const;
 
 
 };
