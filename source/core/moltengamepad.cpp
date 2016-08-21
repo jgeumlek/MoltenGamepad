@@ -240,6 +240,7 @@ int moltengamepad::init() {
   gamepad->gamepad_defaults();
   gamepad->name = "gamepad";
   add_profile(gamepad.get());
+  ids_in_use.insert("gamepad");
   //set up our padstyles and our slot manager
   virtpad_settings padstyle = default_padstyle;
   opts->get<bool>("dpad_as_hat",padstyle.dpad_as_hat);
@@ -388,6 +389,7 @@ device_manager* moltengamepad::add_manager(manager_plugin manager, void* manager
   if (manager.start)
     manager.start(man->plug_data);
   drivers.take_message(man->name + " driver initialized.");
+  ids_in_use.insert(man->name);
   return man;
 };
 
@@ -433,6 +435,7 @@ std::shared_ptr<input_source> moltengamepad::add_device(input_source* source, de
   }
   //Set the device and profile name, send a message, link the profile, and finally start the device thread.
   ptr->set_name(proposal);
+  ids_in_use.insert(proposal);
   devices.push_back(ptr);
   plugs.take_message("device " + source->get_name() + " added.");
   auto devprof = source->get_profile();
@@ -452,11 +455,12 @@ std::shared_ptr<input_source> moltengamepad::add_device(device_manager* manager,
 
 int moltengamepad::remove_device(input_source* source) {
   device_list_lock.lock();
-  
+  std::lock_guard<std::mutex> guard(id_list_lock);
   for (int i = 0; i < devices.size(); i++) {
     if (source == devices[i].get()) {
       plugs.take_message("device " + source->get_name() + " removed.");
       remove_profile(devices[i]->get_profile().get());
+      ids_in_use.erase(source->get_name());
       devices.erase(devices.begin() + i);
       i--;
     }
