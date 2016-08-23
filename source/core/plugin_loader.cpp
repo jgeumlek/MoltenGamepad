@@ -39,12 +39,14 @@ void init_plugin_api() {
     return man->register_event(ev);
   };
   api.manager.register_dev_option = [] (device_manager* man, option_decl opt) {
-    return man->register_option(opt);
+    return man->register_device_option(opt);
+  };
+  api.manager.register_manager_option = [] (device_manager* man, option_decl opt) {
+    return man->register_manager_option(opt);
   };
   api.manager.register_alias = [] (device_manager* man, const char* external, const char* local) {
     return man->register_alias(external, local);
   };
-  api.manager.register_manager_option = nullptr;
   api.manager.add_device = [] (device_manager* man, device_plugin dev, void* dev_plug_data) {
     return man->add_device(dev, dev_plug_data);
   };

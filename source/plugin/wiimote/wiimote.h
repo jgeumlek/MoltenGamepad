@@ -151,9 +151,14 @@ public:
   int init(device_manager* ref) {
     this->ref = ref;
     init_profile();
+    return SUCCESS;
   }
 
+  int process_manager_option(const char* name, MGField value);
+
   static manager_methods methods;
+  static int (*request_slot) (input_source*);
+  static bool auto_assign_balance;
 
 private:
   int dev_counter = 0;

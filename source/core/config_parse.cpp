@@ -36,14 +36,14 @@ void config_assignment_line(moltengamepad* mg, std::vector<token>& line, context
     opt.set(field,value);
 }
 
-int config_parse_line(moltengamepad* mg, std::vector<token>& line, context context, options& opt, config_extras& extra) {
+int config_parse_line(moltengamepad* mg, std::vector<token>& line, context context, options& opt, config_extras* extra) {
   //<option> = <value>
   if (find_token_type(TK_EQUAL, line)) {
     config_assignment_line(mg, line, context, opt);
   }
 
   //load profiles from <file>
-  if (line.size() >= 4 && line[0].value == "load") {
+  if (extra && line.size() >= 4 && line[0].value == "load") {
     if (line[1].value != "profiles" && line[1].value != "profile")
       return 0;
     if (line[2].value != "from")
@@ -52,7 +52,7 @@ int config_parse_line(moltengamepad* mg, std::vector<token>& line, context conte
     for (int i = 4; i < line.size(); i++) 
       if (line.at(i).type != TK_ENDL) filename += line.at(i).value;
 
-    extra.startup_profiles.push_back(filename);
+    extra->startup_profiles.push_back(filename);
   }
 
 

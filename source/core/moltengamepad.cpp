@@ -84,6 +84,9 @@ std::string moltengamepad::locate(file_category cat, std::string path) {
       commandline_override = opts->get<std::string>("gendev_dir");
       category_prefix = "/gendevices/";
       break;
+    case FILE_MANAGER_SET:
+      category_prefix = "/managers/";
+      break;
   }
 
   std::vector<std::string> dirs = xdg_config_dirs;
@@ -119,6 +122,9 @@ std::vector<std::string> moltengamepad::locate_glob(file_category cat, std::stri
     case FILE_GENDEV:
       commandline_override = opts->get<std::string>("gendev_dir");
       category_prefix = "/gendevices/";
+      break;
+    case FILE_MANAGER_SET:
+      category_prefix = "/managers/";
       break;
   }
   
@@ -209,7 +215,7 @@ const char* keywords[] = {
   nullptr,
 };
 
-int config_parse_line(moltengamepad* mg, std::vector<token>& line, context context, options& opt, config_extras& extra);
+int config_parse_line(moltengamepad* mg, std::vector<token>& line, context context, options& opt, config_extras* extra);
 
 int moltengamepad::init() {
   //This whole function is pretty bad in handling the config directories not being present.
@@ -232,7 +238,7 @@ int moltengamepad::init() {
   std::string cfgfile = locate(FILE_CONFIG,"moltengamepad.cfg");
   std::cout << "loading " << cfgfile << std::endl;
   loop_file(cfgfile, [this, &cfg] (std::vector<token>& tokens, context ctx) {
-    config_parse_line(this, tokens, ctx, *(this->opts), cfg);
+    config_parse_line(this, tokens, ctx, *(this->opts), &cfg);
     return 0;
   });
 
@@ -261,6 +267,7 @@ int moltengamepad::init() {
   if (!confdir.empty()) {
     if (opts->get<std::string>("profile_dir").empty()) mkdir((confdir + "/profiles/").c_str(), 0755);
     if (opts->get<std::string>("gendev_dir").empty()) mkdir((confdir + "/gendevices/").c_str(), 0755);
+    mkdir((confdir + "/managers/").c_str(), 0755);
   }
 
   
@@ -385,7 +392,14 @@ device_manager* moltengamepad::add_manager(manager_plugin manager, void* manager
   add_profile(man->mapprofile.get());
   if (manager.subscribe_to_gamepad_profile)
     gamepad->copy_into(man->mapprofile, true, true);
-  //Future work: load manager options now.
+
+  if (man->has_options) {
+    auto filepath = locate(FILE_MANAGER_SET, manager_name + ".cfg");
+    loop_file(filepath, [this, man] (std::vector<token>& tokens, context ctx) {
+      config_parse_line(this, tokens, ctx, man->opts, nullptr);
+      return 0;
+    });
+  }
   if (manager.start)
     manager.start(man->plug_data);
   drivers.take_message(man->name + " driver initialized.");
@@ -393,14 +407,14 @@ device_manager* moltengamepad::add_manager(manager_plugin manager, void* manager
   return man;
 };
 
-device_manager* moltengamepad::find_manager(const char* name) {
+device_manager* moltengamepad::find_manager(const char* name) const {
   for (auto it = managers.begin(); it != managers.end(); it++) {
     if (!strcmp((*it)->name.c_str(), name)) return (*it);
   }
   return nullptr;
 }
 
-std::shared_ptr<input_source> moltengamepad::find_device(const char* name) {
+std::shared_ptr<input_source> moltengamepad::find_device(const char* name) const {
   std::lock_guard<std::mutex> guard(device_list_lock);
   for (auto it = devices.begin(); it != devices.end(); it++) {
 
@@ -445,6 +459,8 @@ std::shared_ptr<input_source> moltengamepad::add_device(input_source* source, de
   manager->mapprofile->copy_into(devprof, true, true);
   device_list_lock.unlock();
   ptr->start_thread();
+  if (slots->opts.get<bool>("auto_assign"))
+    slots->request_slot(ptr.get());
   return ptr;
 }
 
@@ -552,6 +568,12 @@ void moltengamepad::run_on_options(std::string& category, std::function<void (op
   //For the slot_manager however, the lifetime is the same as this entire process.
   if (category == "slot" || category == "slots") {
     func(&slots->opts);
+    return;
+  }
+  //For device managers, the lifetime is currently also tied to the entire process
+  device_manager* man = find_manager(category.c_str());
+  if (man) {
+    func(&man->opts);
     return;
   }
 };

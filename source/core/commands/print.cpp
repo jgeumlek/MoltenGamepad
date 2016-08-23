@@ -157,6 +157,9 @@ int do_print_slots(moltengamepad* mg, std::string name, std::ostream& out) {
 int do_print_options(moltengamepad* mg, std::string name, std::ostream& out) {
   if (name.empty()) {
     out << "slots" << std::endl;
+    for (auto man : mg->managers) {
+      if (man->has_options) out << man->name <<  std::endl;
+    }
     return 0;
   }
   std::vector<option_info> list;

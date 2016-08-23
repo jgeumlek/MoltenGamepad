@@ -38,5 +38,7 @@ void wiimote_manager::init_profile() {
   for (int i = 0; opt->name && *opt->name; opt = &wiimote_options[++i]) {
     methods.register_dev_option(ref, *opt);
   }
+  
+  methods.register_manager_option(ref, {"auto_assign_balance","Assign balance boards to an output slot upon connection","true",MG_BOOL});
 };
 

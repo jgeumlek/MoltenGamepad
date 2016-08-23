@@ -1,7 +1,7 @@
 #include "device.h"
 #include "../parser.h"
 
-device_manager::device_manager(moltengamepad* mg, manager_plugin plugin, void* plug_data) : mg(mg), plugin(plugin), name(plugin.name), log(name), plug_data(plug_data) {
+device_manager::device_manager(moltengamepad* mg, manager_plugin plugin, void* plug_data) : mg(mg), plugin(plugin), name(plugin.name), log(name), plug_data(plug_data), opts([&] (std::string& name, MGField value) { return process_manager_option(name, value); }) {
   mapprofile->name = name;
   log.add_listener(1);
   if (plugin.init)
@@ -17,9 +17,21 @@ int device_manager::register_event(event_decl ev) {
   return 0;
 }
 
-int device_manager::register_option(option_decl opt) {
+int device_manager::register_device_option(option_decl opt) {
   mapprofile->register_option(opt);
   return 0;
+}
+
+int device_manager::register_manager_option(option_decl opt) {
+  opts.register_option(opt);
+  has_options = true;
+  return 0;
+}
+
+int device_manager::process_manager_option(const std::string& name, MGField value) {
+  if (plugin.process_manager_option)
+    return plugin.process_manager_option(plug_data, name.c_str(), value);
+  return FAILURE;
 }
 
 int device_manager::register_alias(const char* external, const char* local) {

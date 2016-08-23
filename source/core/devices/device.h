@@ -149,16 +149,19 @@ public:
   moltengamepad* mg;
   void* const plug_data = nullptr;
   manager_plugin plugin;
-  int accept_device(struct udev* udev, struct udev_device* dev);
   
   device_manager(moltengamepad* mg, manager_plugin plugin, void* plug_data);
 
   ~device_manager();
   
   int register_event(event_decl ev);
-  int register_option(option_decl opt);
+  int register_device_option(option_decl opt);
+  int register_manager_option(option_decl opt);
   int register_alias(const char* external, const char* local);
   input_source* add_device(device_plugin dev, void* dev_plug_data);
+
+  int accept_device(struct udev* udev, struct udev_device* dev);
+  int process_manager_option(const std::string& name, MGField value);
 
   const std::vector<event_decl>& get_events() const {
     return events;
@@ -171,6 +174,9 @@ public:
   std::shared_ptr<profile> mapprofile = std::make_shared<profile>();
 
   std::vector<event_decl> events;
+
+  options opts;
+  bool has_options = false;
 
 };
 

@@ -8,6 +8,8 @@
 
 
 manager_methods wiimote_manager::methods;
+int (*wiimote_manager::request_slot) (input_source*);
+bool wiimote_manager::auto_assign_balance;
 
 /*NOTE: Finding uses prefixes, but destroying needs an exact match.
   This allows easily adding/removing subnodes while only deleting
@@ -97,4 +99,13 @@ int wiimote_manager::accept_device(struct udev* udev, struct udev_device* dev) {
 
 
   return DEVICE_CLAIMED;
+}
+
+int wiimote_manager::process_manager_option(const char* name, const MGField value) {
+  if (!strcmp(name, "auto_assign_balance")) {
+    auto_assign_balance = value.boolean;
+    return SUCCESS;
+  }
+
+  return FAILURE;
 }

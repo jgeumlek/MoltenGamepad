@@ -172,6 +172,8 @@ void wiimote::store_node(struct udev_device* dev, const char* name) {
     balance.dev = udev_device_ref(dev);
     open_node(&balance);
     update_mode(BALANCE_EXT);
+    if (wiimote_manager::auto_assign_balance)
+      wiimote_manager::request_slot(ref);
     break;
   case WII_U_PRO:
     pro.dev = udev_device_ref(dev);

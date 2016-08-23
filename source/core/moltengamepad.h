@@ -34,7 +34,7 @@ enum file_category {
   FILE_CONFIG,       //The root config folder
   FILE_PROFILE,      //Profiles, aka mappings.
   FILE_GENDEV,       //Generic driver descriptors
-  FILE_DRIVER_SET,   //Driver-specific settings (FUTURE)
+  FILE_MANAGER_SET,  //Manager-specific settings (FUTURE)
   FILE_DEVICE_SET,   //Device-specific settings (FUTURE)
 };
 
@@ -70,8 +70,8 @@ public:
 
 
   device_manager* add_manager(manager_plugin manager, void* manager_plug_data);
-  device_manager* find_manager(const char* name);
-  std::shared_ptr<input_source> find_device(const char* name);
+  device_manager* find_manager(const char* name) const;
+  std::shared_ptr<input_source> find_device(const char* name) const;
   std::shared_ptr<input_source> add_device(input_source* source, device_manager* manager, std::string name_stem);
   std::shared_ptr<input_source> add_device(device_manager* manager, device_plugin dev, void* dev_plug_data);
   int remove_device(input_source* source);
@@ -87,9 +87,9 @@ public:
 private:
   
   std::thread* remote_handler = nullptr;
-  std::mutex  device_list_lock;
-  std::mutex  profile_list_lock;
-  std::mutex  id_list_lock;
+  mutable std::mutex  device_list_lock;
+  mutable std::mutex  profile_list_lock;
+  mutable std::mutex  id_list_lock;
   std::vector<std::string> xdg_config_dirs;
   void run_on_options(std::string& category, std::function<void (options*)> func) const;
 

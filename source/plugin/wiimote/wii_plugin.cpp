@@ -6,6 +6,7 @@ int wiimote_plugin_init(plugin_api api) {
   //set static vars
   wiimote_manager::methods = api.manager;
   wiimote::methods = api.device;
+  wiimote_manager::request_slot = api.mg.request_slot;
   wiimote_manager* manager = new wiimote_manager();
 
   //set manager call backs
@@ -20,7 +21,9 @@ int wiimote_plugin_init(plugin_api api) {
     return 0;
   };
   wiiman.start = [] (void*) { return 0;};
-  wiiman.process_manager_option = nullptr;
+  wiiman.process_manager_option = [] (void* ref, const char* opname, MGField opvalue) {
+    return ((wiimote_manager*)ref)->process_manager_option(opname, opvalue);
+  };
   wiiman.process_udev_event = [] (void* ref, struct udev* udev, struct udev_device* dev) {
     return ((wiimote_manager*)ref)->accept_device(udev, dev);
   };
