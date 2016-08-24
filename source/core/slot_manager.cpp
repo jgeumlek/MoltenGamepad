@@ -34,6 +34,8 @@ slot_manager::~slot_manager() {
 
 int slot_manager::request_slot(input_source* dev) {
   std::lock_guard<std::mutex> guard(lock);
+  if (dev->get_slot())
+    return 0;
   if (dev->get_type() == "keyboard" || active_pads == 0) {
     move_device(dev,keyboard);
     return 0;

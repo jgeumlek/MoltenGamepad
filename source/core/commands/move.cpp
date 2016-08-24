@@ -6,7 +6,7 @@
 #include "../parser.h"
 
 
-#define MOVE_USAGE "USAGE:\n\tmove <device> to <slot>\n\t\"all\" can be used to refer to all devices\n\t\"nothing\" can be used as a slot name to remove from all slots"
+#define MOVE_USAGE "USAGE:\n\tmove <device> to <slot>\n\t\"all\" can be used to refer to all devices\n\t\"nothing\" can be used as a slot name to remove from all slots\n\t\"auto\" can be used as a slot name to let the slot manager decide"
 int do_move(moltengamepad* mg, std::vector<token>& command) {
   if (command.size() < 4) {
     std::cout << MOVE_USAGE << std::endl;
@@ -24,6 +24,16 @@ int do_move(moltengamepad* mg, std::vector<token>& command) {
     std::cout << "device " << devname << " not found.\n" << MOVE_USAGE << std::endl;
     return -1;
   };
+  if (!slot && slotname == "auto") {
+    if (devname != "all") {
+      mg->slots->request_slot(dev.get());
+    } else {
+      mg->for_all_devices( [mg] (auto dev) {
+        mg->slots->request_slot(dev.get());
+      });
+    }
+    return 0;
+  }
   if (!slot && slotname != "nothing") {
     std::cout << "slot " << slotname << " not found.\n" << MOVE_USAGE << std::endl;
     return -1;
