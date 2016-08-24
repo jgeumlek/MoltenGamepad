@@ -62,13 +62,6 @@ void slot_manager::move_to_slot(input_source* dev, output_slot* target) {
 void slot_manager::move_device(input_source* dev, output_slot* target) {
   //private, should only be called with lock acquired
   if (!dev) return;
-  if (dev->out_dev == target) return;
-  if (dev->out_dev) {
-    dev->out_dev->remove_device(dev);
-  }
-  if (target) {
-    target->add_device(dev->shared_from_this());
-  }
   dev->set_slot(target);
   if (target) {
     log.take_message(dev->get_name() + " assigned to slot " + target->name);
@@ -77,12 +70,6 @@ void slot_manager::move_device(input_source* dev, output_slot* target) {
   }
 }
 
-
-void slot_manager::remove(input_source* dev) {
-  std::lock_guard<std::mutex> guard(lock);
-  if (!dev || !dev->out_dev) return;
-  dev->out_dev->remove_device(dev);
-}
 
 
 output_slot* slot_manager::find_slot(std::string slotname) {

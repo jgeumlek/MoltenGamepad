@@ -22,7 +22,6 @@ public:
 
   int request_slot(input_source* dev);
   void move_to_slot(input_source* dev, output_slot* target);
-  void remove(input_source* dev);
 
   const uinput* get_uinput() { return ui; };
 

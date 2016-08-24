@@ -64,6 +64,7 @@ public:
   void list_options(std::vector<option_info>& list) const;
   
   void set_slot(output_slot* outdev);
+  output_slot* get_slot();
 
   void update_map(const char* evname, event_translator* trans);
   void update_option(const char* opname, const MGField field);
@@ -92,7 +93,7 @@ public:
   std::string get_alias(std::string event_name) const;
   std::shared_ptr<profile> get_profile() const { return devprofile; };
 
-  output_slot* out_dev = nullptr;
+
   void* const plug_data = nullptr;
   friend void init_plugin_api();
 protected:
@@ -113,7 +114,10 @@ protected:
   device_manager* manager;
   device_plugin plugin;
   std::mutex opt_lock;
-  
+  std::mutex slot_lock;
+  output_slot* out_dev = nullptr;
+  output_slot* assigned_slot = nullptr; //might differ from the above due to thread synchro.
+
   std::vector<recurring_info> recurring_events;
   bool do_recurring_events = false;
   timespec last_recurring_update;

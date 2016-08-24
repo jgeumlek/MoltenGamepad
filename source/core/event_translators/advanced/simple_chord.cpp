@@ -15,6 +15,7 @@ void simple_chord::fill_def(MGTransDef& def) {
 void simple_chord::init(input_source* source) {
   //Stash the actual event ids this device has for the names we are interested in.
   auto events = source->get_events();
+
   for (auto name : event_names) {
     event_ids.push_back(-1);
     event_vals.push_back(0);
@@ -27,25 +28,24 @@ void simple_chord::init(input_source* source) {
       if (!strcmp(event.name, looking_for.c_str())) {
         event_ids[i] = event.id;
         event_vals[i] = event.value;
+        break;
       }
     }
   }
 
-  out_dev_ptr = &(source->out_dev);
 };
 
 void simple_chord::attach(input_source* source) {
-
   for (int id : event_ids)
     source->add_listener(id, this);
 
-  this->source = source;
+  this->owner = source;
 };
 
 simple_chord::~simple_chord() {
-  if (source) {
+  if (owner) {
     for (int id : event_ids) {
-      source->remove_listener(id, this);
+      owner->remove_listener(id, this);
     }
   }
   if (out_trans) delete out_trans;
@@ -60,7 +60,7 @@ bool simple_chord::claim_event(int id, mg_ev event) {
     output = output && (event_vals[i]);
   }
   if (output != output_cache) {
-    output_slot* out_dev = *out_dev_ptr;
+    output_slot* out_dev = owner->get_slot();
     if (out_dev) out_trans->process({output}, out_dev);
     output_cache = output;
   }

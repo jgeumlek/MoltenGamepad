@@ -29,7 +29,7 @@ bool exclusive_chord::claim_event(int id, mg_ev event) {
   }
 
   //if not thread, start thread.
-  if (!thread && event.value && !old_val) {
+  if (!output && !thread && event.value && !old_val) {
 
     thread_active = true;
     for (int i = 0; i < event_vals.size(); i++) {
@@ -43,7 +43,7 @@ bool exclusive_chord::claim_event(int id, mg_ev event) {
     //chord succeeded. Send event only if thread hasn't timed out.
 
     thread_active = false;
-    output_slot* out_dev = *out_dev_ptr;
+    output_slot* out_dev = owner->get_slot();
     if (out_dev && thread) out_trans->process({output}, out_dev);
 
     output_cache = output;
@@ -51,7 +51,7 @@ bool exclusive_chord::claim_event(int id, mg_ev event) {
   if (!output && output != output_cache) {
 
     //chord released. clear out everything.
-    output_slot* out_dev = *out_dev_ptr;
+    output_slot* out_dev = owner->get_slot();
     if (out_dev) out_trans->process({output}, out_dev);
     for (int i = 0; i < event_vals.size(); i++) {
       chord_hits[i] = 0;
@@ -71,6 +71,7 @@ bool exclusive_chord::claim_event(int id, mg_ev event) {
 void exclusive_chord::init(input_source* source) {
   //Stash the actual event ids this device has for the names we are interested in.
   auto events = source->get_events();
+  owner = source;
   for (auto name : event_names) {
     event_ids.push_back(-1);
     event_vals.push_back(0);
@@ -90,8 +91,8 @@ void exclusive_chord::init(input_source* source) {
     }
   }
 
-  out_dev_ptr = &(source->out_dev);
 };
+
 
 void exclusive_chord::thread_func() {
   //sleep
@@ -101,9 +102,8 @@ void exclusive_chord::thread_func() {
   //If we are still active, fire the event.
   if (thread_active) {
     //send out events
-    
     for (int i = 0; i < event_ids.size(); i++) {
-      if (chord_hits[i]) source->inject_event(event_ids[i], event_vals[i], false);
+      if (chord_hits[i]) owner->inject_event(event_ids[i], event_vals[i], true);
       chord_hits[i] = 0;
     }
     thread_active = false;

@@ -47,8 +47,9 @@ input_source::~input_source() {
     if (it.second.fields) delete it.second.fields;
   }
 
-  if (out_dev) {
-    manager->mg->slots->remove(this);
+  if (assigned_slot) {
+    assigned_slot->remove_device(this);
+    assigned_slot = nullptr;
   };
   if (plugin.destroy)
     plugin.destroy(plug_data);
@@ -66,8 +67,9 @@ struct input_internal_msg {
 
 
 void input_source::register_event(event_decl ev) {
+  int id = events.size();
   source_event event = {
-    .id = 0,
+    .id = id,
     .name = ev.name,
     .descr = ev.descr,
     .type = ev.type,
@@ -152,11 +154,23 @@ void input_source::update_option(const char* name, const MGField value) {
 }
 
 void input_source::set_slot(output_slot* slot) {
+  std::lock_guard<std::mutex> guard(slot_lock);
+  if (slot == assigned_slot) return;
+  if (assigned_slot)
+    assigned_slot->remove_device(this);
+  if (slot)
+    slot->add_device(shared_from_this());
   struct input_internal_msg msg;
   memset(&msg, 0, sizeof(msg));
   msg.field.slot = slot;
   msg.type = input_internal_msg::IN_SLOT_MSG;
   write(priv_pipe, &msg, sizeof(msg));
+  assigned_slot = slot;
+}
+
+output_slot* input_source::get_slot() {
+  std::lock_guard<std::mutex> guard(slot_lock);
+  return assigned_slot;
 }
 
 void input_source::list_options(std::vector<option_info>& list) const {
@@ -229,7 +243,6 @@ void input_source::inject_event(int id, int64_t value, bool skip_adv_trans) {
   msg.value = value;
   msg.skip_adv_trans = skip_adv_trans;
   msg.type = input_internal_msg::IN_EVENT_MSG;
-  events.at(id).value = value;
   write(priv_pipe, &msg, sizeof(msg));
 
 }
@@ -369,7 +382,6 @@ void input_source::handle_internal_message(input_internal_msg& msg) {
   }
   if (msg.type == input_internal_msg::IN_EVENT_MSG) {
     //Is it an event injection message?
-
     if (msg.id < 0) return;
 
     if (msg.skip_adv_trans) {

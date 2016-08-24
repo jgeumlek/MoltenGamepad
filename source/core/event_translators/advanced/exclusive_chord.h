@@ -9,6 +9,7 @@ public:
 
   volatile std::thread* thread = nullptr;
   std::vector<int> chord_hits;
+  input_source* owner = nullptr;
 
   virtual void init(input_source* source);
   virtual bool claim_event(int id, mg_ev event);

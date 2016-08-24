@@ -7,9 +7,8 @@ public:
   std::vector<int> event_ids;
   std::vector<int> event_vals;
   int output_cache = 0;
-  input_source* source = nullptr;
+  input_source* owner = nullptr;
   event_translator* out_trans = nullptr;
-  output_slot** out_dev_ptr;
 
   simple_chord(std::vector<std::string> event_names, event_translator* trans) : event_names(event_names), out_trans(trans) {};
 
