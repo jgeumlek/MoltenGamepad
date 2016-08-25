@@ -1,6 +1,8 @@
 #include "generic.h"
 
-generic_file::generic_file(struct udev_device* node, bool grab_ioctl, bool grab_chmod) {
+
+generic_file::generic_file(moltengamepad* mg, struct udev_device* node, bool grab_ioctl, bool grab_chmod) {
+  this->mg = mg;
   struct udev_device* hidparent = udev_device_get_parent_with_subsystem_devtype(node,"hid",NULL);
   if (hidparent) {
     const char* uniq_id = udev_device_get_property_value(hidparent, "HID_UNIQ");
@@ -67,7 +69,8 @@ void generic_file::open_node(struct udev_device* node) {
     if (grab_chmod) {
       //Remove all permissions. Other software will really ignore it.
       //Requires the device to be owned by the current user. (not merely have access)
-      chmod(udev_device_get_devnode(node), 0);
+      mg->udev.grab_permissions(node, true);
+
     }
 
     struct epoll_event event;
@@ -96,7 +99,8 @@ void generic_file::close_node(const std::string& path, bool erase) {
   if (it == nodes.end()) return;
 
   close(it->second.fd);
-  if (grab_chmod) chmod(path.c_str(), it->second.orig_mode);
+  if (grab_chmod)
+    mg->udev.grab_permissions(it->second.node, false);
   udev_device_unref(it->second.node);
   if (erase) nodes.erase(it);
 }

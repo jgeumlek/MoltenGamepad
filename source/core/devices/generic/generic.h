@@ -133,7 +133,7 @@ public:
 
   int internal_pipe[2];
 
-  generic_file(struct udev_device* node, bool grab_ioctl, bool grab_chmod);
+  generic_file(moltengamepad* mg, struct udev_device* node, bool grab_ioctl, bool grab_chmod);
 
   ~generic_file();
 

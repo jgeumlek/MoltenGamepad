@@ -158,6 +158,7 @@ public:
 
   static manager_methods methods;
   static int (*request_slot) (input_source*);
+  static int (*grab_permissions) (udev_device*, bool);
   static bool auto_assign_balance;
 
 private:

@@ -31,6 +31,9 @@ void init_plugin_api() {
   api.mg.request_slot = [] (input_source* dev) {
     return loader_mg->slots->request_slot(dev);
   };
+  api.mg.grab_permissions = [] (udev_device* dev, bool grabbed) {
+    return loader_mg->udev.grab_permissions(dev, grabbed);
+  };
   
   api.manager.plug_data = [] (const device_manager* man) {
     return man->plug_data;

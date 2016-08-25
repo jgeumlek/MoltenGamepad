@@ -166,17 +166,10 @@ int generic_manager::accept_device(struct udev* udev, struct udev_device* dev) {
 
 int generic_manager::open_device(struct udev* udev, struct udev_device* dev) {
   try {
-    if (flatten) {
-      if (openfiles.size() < 1) {
-        openfiles.push_back(new generic_file(dev, descr->grab_ioctl, descr->grab_chmod));
-        openfiles.front()->mg = mg;
-        create_inputs(openfiles.front(), openfiles.front()->fds.front(), false);
-      } else {
-        openfiles.front()->open_node(dev);
-      }
+    if (flatten && openfiles.size() >= 1) {
+      openfiles.front()->open_node(dev);
     } else {
-      openfiles.push_back(new generic_file(dev, descr->grab_ioctl, descr->grab_chmod));
-      openfiles.back()->mg = mg;
+      openfiles.push_back(new generic_file(mg, dev, descr->grab_ioctl, descr->grab_chmod));
       create_inputs(openfiles.back(), openfiles.back()->fds.front(), false);
     }
   } catch (...) {

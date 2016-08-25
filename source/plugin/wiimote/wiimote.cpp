@@ -143,17 +143,27 @@ void wiimote::store_node(struct udev_device* dev, const char* name) {
   case IR:
     methods.print(ref,"added IR");
     ir.dev = udev_device_ref(dev);
-    if ((mode == NO_EXT && wm_ir_active) || (mode == NUNCHUK_EXT && nk_ir_active))
+    if ((mode == NO_EXT && wm_ir_active) || (mode == NUNCHUK_EXT && nk_ir_active)) {
       open_node(&ir);
+    } else {
+      //we aren't using it now, but grab it so that it is hidden if desired.
+      wiimote_manager::grab_permissions(dev,true);
+    }
     break;
   case ACCEL:
     methods.print(ref,"added accelerometers");
     accel.dev = udev_device_ref(dev);
-    if ((mode == NO_EXT && wm_accel_active) || (mode == NUNCHUK_EXT && nk_accel_active))
+    if ((mode == NO_EXT && wm_accel_active) || (mode == NUNCHUK_EXT && nk_accel_active)) {
       open_node(&ir);
+    } else {
+      //we aren't using it now, but grab it so that it is hidden if desired.
+      wiimote_manager::grab_permissions(dev,true);
+    }
     break;
   case MP:
     methods.print(ref,"added motion+");
+    //we never use it, but grab it so that it is hidden if desired.
+    wiimote_manager::grab_permissions(dev,true);
     motionplus.dev = udev_device_ref(dev);
     break;
   case E_NK:
@@ -255,6 +265,8 @@ void wiimote::update_mode(modes new_mode) {
   //Now do the various extras like IR or accelerometers.
   if ((mode == NO_EXT && wm_ir_active) || (mode == NUNCHUK_EXT && nk_ir_active)) {
     if (ir.dev != nullptr && ir.fd < 0) {
+      //If it was grabbed previously, we need to ungrab before we can open.
+      wiimote_manager::grab_permissions(ir.dev, false);
       open_node(&ir);
     }
     if (mode == NO_EXT) {
@@ -266,7 +278,7 @@ void wiimote::update_mode(modes new_mode) {
     }
   } else {
     if (ir.fd > 0) {
-      if (ir.fix_mode) chmod(udev_device_get_devnode(ir.dev), ir.orig_mode);
+      wiimote_manager::grab_permissions(ir.dev, false);
       close(ir.fd);
       ir.fd = -1;
     }
@@ -277,6 +289,8 @@ void wiimote::update_mode(modes new_mode) {
   }
   if ((mode == NO_EXT && wm_accel_active) || (mode == NUNCHUK_EXT && nk_accel_active)) {
     if (accel.dev != nullptr && accel.fd < 0) {
+      //If it was grabbed previously, we need to ungrab before we can open.
+      wiimote_manager::grab_permissions(accel.dev, false);
       open_node(&accel);
     }
     if (mode == NO_EXT) {
@@ -293,7 +307,7 @@ void wiimote::update_mode(modes new_mode) {
     }
   } else {
     if (accel.fd > 0) {
-      if (accel.fix_mode) chmod(udev_device_get_devnode(accel.dev), accel.orig_mode);
+      wiimote_manager::grab_permissions(accel.dev, false);
       close(accel.fd);
       accel.fd = -1;
     }
@@ -343,17 +357,7 @@ void wiimote::open_node(struct dev_node* node) {
 };
 
 void wiimote::grab_chmod_node(struct dev_node* node, bool grab) {
-  if (node->fd < 0) return;
-  if (grab) {
-    struct stat filestat;
-    fstat(node->fd, &filestat);
-    node->orig_mode = filestat.st_mode;
-    node->fix_mode = true;
-    chmod(udev_device_get_devnode(node->dev), 0);
-  } else {
-    chmod(udev_device_get_devnode(node->dev), node->orig_mode);
-    node->fix_mode = false;
-  }
+  wiimote_manager::grab_permissions(node->dev, grab);
 }
 
 void wiimote::grab_chmod(bool grab) {

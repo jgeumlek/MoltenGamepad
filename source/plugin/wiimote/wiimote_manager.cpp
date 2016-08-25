@@ -9,6 +9,7 @@
 
 manager_methods wiimote_manager::methods;
 int (*wiimote_manager::request_slot) (input_source*);
+int (*wiimote_manager::grab_permissions) (udev_device*, bool);
 bool wiimote_manager::auto_assign_balance;
 
 /*NOTE: Finding uses prefixes, but destroying needs an exact match.

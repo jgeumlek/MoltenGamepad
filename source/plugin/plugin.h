@@ -157,6 +157,11 @@ struct moltengamepad_methods {
   device_manager* (*add_manager) (manager_plugin, void* manager_plug_data);
   //Request that this input source be assigned a slot.
   int (*request_slot) (input_source*);
+  //If grabbed == true
+  //  perform appropriate file permission shuffling to hide this device
+  //If grabbed == false
+  //  undo the above
+  int (*grab_permissions) (udev_device* dev, bool grabbed);
 };
 
 //A struct of all the methods the plugin will be provided.

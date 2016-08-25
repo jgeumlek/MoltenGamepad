@@ -7,6 +7,7 @@ int wiimote_plugin_init(plugin_api api) {
   wiimote_manager::methods = api.manager;
   wiimote::methods = api.device;
   wiimote_manager::request_slot = api.mg.request_slot;
+  wiimote_manager::grab_permissions = api.mg.grab_permissions;
   wiimote_manager* manager = new wiimote_manager();
 
   //set manager call backs
