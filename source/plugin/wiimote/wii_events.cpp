@@ -228,6 +228,12 @@ void wiimote::process_classic(int fd) {
     }
 
   }
+  if (ret < 0 && errno == ENODEV) {
+    close(fd);
+    classic.fd = -1;
+    return;
+  }
+  if (ret < 0) perror("read classic ext");
 }
 
 #define NUNCHUK_STICK_SCALE ABS_RANGE/24
@@ -266,6 +272,12 @@ void wiimote::process_nunchuk(int fd) {
       methods.send_syn_report(ref);
     }
   }
+  if (ret < 0 && errno == ENODEV) {
+    close(fd);
+    nunchuk.fd = -1;
+    return;
+  }
+  if (ret < 0) perror("read nunchuk");
 }
 
 #define WIIMOTE_ACCEL_SCALE ABS_RANGE/90

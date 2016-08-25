@@ -75,7 +75,8 @@ public:
 
   void update_mode(modes mode);
   void remove_extension() {
-    if (mode != NO_EXT) methods.print(ref, "removed extension");
+    if (mode != NO_EXT)
+      methods.print(ref, "removed extension");
     update_mode(NO_EXT);
   }
 

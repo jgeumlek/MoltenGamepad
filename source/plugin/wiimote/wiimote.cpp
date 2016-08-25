@@ -61,6 +61,7 @@ void wiimote::clear_node(struct dev_node* node) {
   if (node->dev) udev_device_unref(node->dev);
   node->dev = nullptr;
   if (node->fd >= 0) close(node->fd);
+  node->fd = -1;
 }
 
 const char* wiimote::get_description() const {
