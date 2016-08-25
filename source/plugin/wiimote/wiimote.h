@@ -26,8 +26,6 @@ extern device_plugin wiidev;
 struct dev_node {
   struct udev_device* dev = nullptr;
   int fd = -1;
-  mode_t orig_mode;
-  bool fix_mode = false;
 };
 
 

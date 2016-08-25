@@ -12,7 +12,6 @@
 #include "../../moltengamepad.h"
 #include "../../plugin_loader.h"
 #include <sys/epoll.h>
-#include <sys/stat.h>
 
 /*
  * The Generic driver functionality must be built in statically to moltengamepad.
@@ -106,7 +105,6 @@ struct generic_node {
   std::string path;
   udev_device* node;
   int fd;
-  mode_t orig_mode;
 };
 
 

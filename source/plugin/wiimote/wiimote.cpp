@@ -4,7 +4,6 @@
 #include <sys/epoll.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <sys/stat.h>
 
 device_methods wiimote::methods;
 
@@ -57,7 +56,7 @@ int wiimote::process_option(const char* name, const MGField value) {
 
 void wiimote::clear_node(struct dev_node* node) {
   if (grab_exclusive) grab_ioctl_node(node, false);
-  if (node->fix_mode) grab_chmod_node(node, false);
+  grab_chmod_node(node, false);
   if (node->dev) udev_device_unref(node->dev);
   node->dev = nullptr;
   if (node->fd >= 0) close(node->fd);
@@ -347,10 +346,6 @@ void wiimote::open_node(struct dev_node* node) {
   if (node->fd < 0)
     perror("open subdevice:");
 
-  node->fix_mode = false;
-  struct stat filestat;
-  fstat(node->fd, &filestat);
-  node->orig_mode = filestat.st_mode;
   if (grab_exclusive) grab_ioctl_node(node, true);
   if (grab_permissions) grab_chmod_node(node, true);
 

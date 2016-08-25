@@ -59,8 +59,6 @@ void generic_file::open_node(struct udev_device* node) {
       perror("open subdevice:");
       return;
     }
-    struct stat filestat;
-    fstat(fd, &filestat);
 
     if (grab_ioctl) {
       ioctl(fd, EVIOCGRAB, 1);
@@ -82,7 +80,7 @@ void generic_file::open_node(struct udev_device* node) {
     if (ret < 0) perror("epoll add");
 
     fds.push_back(fd);
-    nodes[path] = {path, udev_device_ref(node), fd, filestat.st_mode};
+    nodes[path] = {path, udev_device_ref(node), fd};
   }
 }
 
