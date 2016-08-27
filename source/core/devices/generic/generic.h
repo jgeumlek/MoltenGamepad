@@ -62,6 +62,7 @@ struct generic_driver_info {
   bool grab_ioctl = false; //use ioctl EVIOCGRAB.
   bool grab_chmod = false; //Remove all permissions after we open device. Restore them on close.
   bool flatten = false;
+  bool subscribe_to_gamepad = false;
   std::vector<std::pair<std::string,std::string>> aliases;
   int split = 1;
   std::vector<std::string> split_types;

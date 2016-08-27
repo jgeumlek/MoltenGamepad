@@ -52,6 +52,8 @@ int generic_manager::init(device_manager* ref) {
 manager_plugin generic_manager::get_plugin() {
   manager_plugin plug = genericman;
   plug.name = descr->name.c_str();
+  if (descr->subscribe_to_gamepad)
+    plug.subscribe_to_gamepad_profile = true;
   for (auto type : descr->split_types) {
     if (type == "gamepad") {
       plug.subscribe_to_gamepad_profile = true;
