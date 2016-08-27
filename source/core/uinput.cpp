@@ -25,6 +25,8 @@ std::string uinput_devnode(int fd) {
   memset(buffer,0,sizeof(buffer));
   ioctl(fd, UI_GET_SYSNAME(127), &buffer);
   buffer[127] = '\0';
+  if (buffer[0] == '\0')
+    return "";
   return std::string("/sys/devices/virtual/input/") + std::string(buffer);
 }
 
@@ -101,6 +103,7 @@ int uinput::make_gamepad(const uinput_ids& ids, bool dpad_as_hat, bool analog_tr
     ioctl(fd, UI_SET_KEYBIT, BTN_TL2);
     ioctl(fd, UI_SET_KEYBIT, BTN_TR2);
   }
+  ioctl(fd, UI_SET_PHYS, "moltengamepad");
 
 
   write(fd, &uidev, sizeof(uidev));
@@ -160,6 +163,7 @@ int uinput::make_keyboard(const uinput_ids& ids) {
   }
 
   ioctl(fd, UI_SET_PROPBIT, INPUT_PROP_DIRECT);
+  ioctl(fd, UI_SET_PHYS, "moltengamepad");
 
   write(fd, &uidev, sizeof(uidev));
   if (ioctl(fd, UI_DEV_CREATE) < 0)
@@ -208,6 +212,7 @@ int uinput::make_mouse(const uinput_ids& ids) {
   }
 
   ioctl(fd, UI_SET_PROPBIT, INPUT_PROP_POINTER);
+  ioctl(fd, UI_SET_PHYS, "moltengamepad");
 
   write(fd, &uidev, sizeof(uidev));
   if (ioctl(fd, UI_DEV_CREATE) < 0)
