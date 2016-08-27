@@ -17,7 +17,6 @@ int do_set(moltengamepad* mg, std::vector<token>& command);
 #define HELP_TEXT "available commands:\n"\
 "\tprint:\tprint out lists and information\n"\
 "\tmove:\tmove a device to a different slot\n"\
-"\talterslot:\tchange a slot setting\n"\
 "\tclear:\tclear (zero-out) a slot's outputs\n"\
 "\tsave:\tsave all profiles to a file\n"\
 "\tload:\tload profiles from a file\n"\
