@@ -82,6 +82,14 @@ void generic_assignment_line(std::vector<token>& line, generic_driver_info*& inf
     return;
   }
 
+  if (field == "rumble") {
+    int ret = read_bool(value, [&info] (bool val) {
+      info->rumble = val;
+    });
+    if (ret) mg->errors.take_message("\""+value + "\" was not recognized as true or false. ("+context.path+":"+std::to_string(context.line_number)+")");
+    return;
+  }
+
   if (field == "flatten") {
     int ret = read_bool(value, [&info] (bool val) {
       info->flatten = val;
@@ -343,5 +351,8 @@ int init_generic_callbacks() {
   genericdev.process_option = [] (void* ref, const char* opname, MGField opvalue) {
     return -1;
   };
+  genericdev.upload_ff = nullptr;
+  genericdev.erase_ff = nullptr;
+  genericdev.play_ff = nullptr;
 }
 

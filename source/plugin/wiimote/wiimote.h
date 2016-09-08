@@ -80,6 +80,9 @@ public:
 
   const char* get_description() const;
   const char* get_type() const;
+  int upload_ff(const ff_effect* effect);
+  int erase_ff(int id);
+  int play_ff(int id, int repetitions);
 
   void store_node(struct udev_device* dev, const char* name);
   void remove_node(const char* name);

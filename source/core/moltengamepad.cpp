@@ -13,6 +13,7 @@ const virtpad_settings default_padstyle = {
   {"Virtual Gamepad (MoltenGamepad)", 1, 1, 1}, //u_ids
   false, //dpad_as_hat
   true, //analog_triggers
+  false, //rumble
   "SEWN", //facemap_1234
 };
 
@@ -20,6 +21,7 @@ const virtpad_settings xpad_padstyle = {
   {"Microsoft X-Box 360 pad", 0x045e, 0x028e, 0x110}, //u_ids
   true, //dpad_as_hat
   true, //analog_triggers
+  false, //rumble
   "SEWN", //facemap_1234
 };
 
@@ -185,6 +187,7 @@ const option_decl general_options[] = {
   {"pidfile", "Location to write the PID when in daemon mode", "", MG_STRING},
   {"enumerate", "Check for already connected devices", "true", MG_BOOL},
   {"monitor", "Listen for device connections/disconnections", "true", MG_BOOL},
+  {"rumble", "Process controller rumble effects", "false", MG_BOOL},
   {"", "", ""},
 };
 
@@ -251,6 +254,7 @@ int moltengamepad::init() {
   virtpad_settings padstyle = default_padstyle;
   opts->get<bool>("dpad_as_hat",padstyle.dpad_as_hat);
   if (opts->get<bool>("mimic_xpad")) padstyle = xpad_padstyle;
+  opts->get<bool>("rumble",padstyle.rumble);
   slots = new slot_manager(opts->get<int>("num_gamepads"), opts->get<bool>("make_keyboard"), padstyle);
   //add standard streams
   drivers.add_listener(1);
@@ -327,6 +331,8 @@ int moltengamepad::init() {
       remote_handler = new std::thread(fifo_loop, this);
     }
   }
+
+
 
 }
 

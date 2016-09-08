@@ -54,6 +54,15 @@ int wiimote_plugin_init(plugin_api api) {
   wiidev.process_option = [] (void* ref, const char* opname, MGField opvalue) {
     return ((wiimote*)ref)->process_option(opname, opvalue);
   };
+  wiidev.upload_ff =  [] (void* ref, ff_effect* effect) {
+    return ((wiimote*)ref)->upload_ff(effect);
+  };
+  wiidev.erase_ff =  [] (void* ref, int id) {
+    return ((wiimote*)ref)->erase_ff(id);
+  };
+  wiidev.play_ff =  [] (void* ref, int id, int repetitions) {
+    return ((wiimote*)ref)->play_ff(id, repetitions);
+  };
 
   api.mg.add_manager(wiiman, manager);
   return 0;

@@ -510,3 +510,36 @@ void wiimote::process_pro(int fd) {
 
   }
 }
+#include <iostream>
+int wiimote::upload_ff(const ff_effect* effect) {
+  int fd = buttons.fd;
+  if (fd < 0)
+    fd = pro.fd;
+  if (fd < 0)
+    return -1;
+  int ret = ioctl(fd, EVIOCSFF, effect);
+  return effect->id;
+}
+int wiimote::erase_ff(int id) {
+  int fd = buttons.fd;
+  if (fd < 0)
+    fd = pro.fd;
+  if (fd < 0)
+    return -1;
+  int ret = ioctl(fd, EVIOCRMFF, id);
+  return 0;
+}
+int wiimote::play_ff(int id, int repetitions) {
+  int fd = buttons.fd;
+  if (fd < 0)
+    fd = pro.fd;
+  if (fd < 0)
+    return -1;
+  input_event ev;
+  memset(&ev, 0, sizeof(ev));
+  ev.type = EV_FF;
+  ev.code = id;
+  ev.value = repetitions;
+  write(fd, &ev, sizeof(ev));
+  return 0;
+}

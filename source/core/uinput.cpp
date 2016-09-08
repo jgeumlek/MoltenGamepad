@@ -1,6 +1,8 @@
 #include "uinput.h"
 #include "eventlists/eventlist.h"
 #include "string.h"
+#include "output_slot.h"
+#include <sys/epoll.h>
 
 
 const char* try_to_find_uinput() {
@@ -30,25 +32,42 @@ std::string uinput_devnode(int fd) {
   return std::string("/sys/devices/virtual/input/") + std::string(buffer);
 }
 
-void uinput_destroy(int fd) {
-  ioctl(fd, UI_DEV_DESTROY);
+void uinput::uinput_destroy(int fd) {
+  std::lock_guard<std::mutex> guard(lock);
+  int ret = ioctl(fd, UI_DEV_DESTROY);
+  close(fd);
+  ff_slots.erase(fd);
+  if (ret < 0)
+    perror("ui_destroy");
 }
 
 uinput::uinput() {
   filename = try_to_find_uinput();
   if (filename == nullptr) throw - 1;
 
+  epfd = -1;
+  ff_thread = nullptr;
 
 }
 
-int uinput::make_gamepad(const uinput_ids& ids, bool dpad_as_hat, bool analog_triggers) {
+uinput::~uinput() {
+  if (epfd >= 0)
+    close(epfd);
+  if (ff_thread) {
+    ff_thread->detach();
+  }
+}
+
+int uinput::make_gamepad(const uinput_ids& ids, bool dpad_as_hat, bool analog_triggers, bool rumble) {
   static int abs[] = { ABS_X, ABS_Y, ABS_RX, ABS_RY};
   static int key[] = { BTN_SOUTH, BTN_EAST, BTN_NORTH, BTN_WEST, BTN_SELECT, BTN_MODE, BTN_START, BTN_TL, BTN_TR, BTN_THUMBL, BTN_THUMBR, -1};
   struct uinput_user_dev uidev;
   int fd;
   int i;
-  //TODO: Read from uinput for rumble events?
-  fd = open(filename, O_WRONLY | O_NONBLOCK);
+  int mode = O_WRONLY;
+  if (rumble)
+    mode = O_RDWR;
+  fd = open(filename, mode | O_NONBLOCK);
   if (fd < 0) {
     perror("open uinput");
     return -1;
@@ -102,6 +121,12 @@ int uinput::make_gamepad(const uinput_ids& ids, bool dpad_as_hat, bool analog_tr
   if (!analog_triggers) {
     ioctl(fd, UI_SET_KEYBIT, BTN_TL2);
     ioctl(fd, UI_SET_KEYBIT, BTN_TR2);
+  }
+
+  if (rumble) {
+    ioctl(fd, UI_SET_EVBIT, EV_FF);
+    ioctl(fd, UI_SET_FFBIT, FF_RUMBLE);
+    uidev.ff_effects_max = 1;
   }
   ioctl(fd, UI_SET_PHYS, "moltengamepad");
 
@@ -225,9 +250,6 @@ int uinput::make_mouse(const uinput_ids& ids) {
   return fd;
 }
 
-uinput::~uinput() {
-}
-
 bool uinput::node_owned(const std::string& path) const {
   lock.lock();
   for (auto node : virtual_nodes) {
@@ -242,6 +264,107 @@ bool uinput::node_owned(const std::string& path) const {
   return false;
 }
 
+int uinput::setup_epoll() {
+  epfd = epoll_create(1);
+  if (epfd < 0) perror("epoll create");
+  return (epfd < 0);
+}
+
+int uinput::watch_for_ff(int fd, output_slot* slot) {
+  std::lock_guard<std::mutex> guard(lock);
+  if (epfd < 0)
+    setup_epoll();
+  if (fd <= 0) return -1;
+  struct epoll_event event;
+  memset(&event, 0, sizeof(event));
+
+  event.events = EPOLLIN | EPOLLPRI | EPOLLERR | EPOLLHUP;
+  event.data.fd = fd;
+  int ret = epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &event);
+  if (ret < 0) perror("epoll add");
+
+  ff_slots[fd] = slot;
+
+  return (ret < 0);
+}
+
+int uinput::start_ff_thread() {
+  keep_looping = true;
+  ff_thread = new std::thread(&uinput::ff_thread_loop, this);
+  return 0;
+}
+
+
+
+void uinput::ff_thread_loop() {
+  if (epfd < 0)
+    return;
+  struct epoll_event event;
+  struct epoll_event events[1];
+  memset(&event, 0, sizeof(event));
+
+  while ((keep_looping)) {
+    int n = epoll_wait(epfd, events, 1, 1000);
+    if ((n < 0 && errno == EINTR) || n == 0) {
+      continue;
+    }
+    if (n < 0 && errno != EINTR) {
+      perror("epoll wait:");
+      break;
+    }
+    int uinput_fd = events[0].data.fd;
+    //Read the event.
+    struct input_event ev;
+    int ret;
+    ret = read(uinput_fd, &ev, sizeof(ev));
+    if (ret != sizeof(ev)) {
+      if (ret < 0 && errno != EAGAIN && errno != EINTR)
+        perror("read_ff");
+      return;
+    } else {
+      std::lock_guard<std::mutex> guard(lock);
+      auto listener = ff_slots.find(uinput_fd);
+      output_slot* slot = nullptr;
+      if (listener != ff_slots.end())
+        slot = listener->second;
+
+      if (ev.type == EV_UINPUT && ev.code == UI_FF_UPLOAD) {
+        struct uinput_ff_upload effect;
+        memset(&effect,0,sizeof(effect));
+        effect.request_id = ev.value;
+
+        ioctl(uinput_fd, UI_BEGIN_FF_UPLOAD, &effect);
+        if (slot) {
+          int id = slot->upload_ff(effect.effect);
+          int retval = (id < 0); //fail if id < 0
+          effect.effect.id = id;
+        } else {
+          //no slot? Just say this upload fails.
+          effect.effect.id = -1;
+          effect.retval = -1;
+        }
+
+        ioctl(uinput_fd, UI_END_FF_UPLOAD, &effect);
+      }
+      if (ev.type == EV_UINPUT && ev.code == UI_FF_ERASE) {
+        struct uinput_ff_erase effect;
+        memset(&effect,0,sizeof(effect));
+        effect.request_id = ev.value;
+
+        ioctl(uinput_fd, UI_BEGIN_FF_ERASE, &effect);
+        if (slot) {
+          slot->erase_ff(effect.effect_id);
+        }
+        ioctl(uinput_fd, UI_END_FF_ERASE, &effect);
+      }
+      if (ev.type == EV_FF) {
+        if (slot) {
+          slot->play_ff(ev.code, ev.value);
+        }
+      }
+    }
+  }
+}
 
 
 

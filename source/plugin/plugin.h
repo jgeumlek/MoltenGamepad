@@ -1,5 +1,6 @@
 #pragma once
 #include <libudev.h>
+#include <linux/input.h>
 #include "plugin_constants.h"
 
 #define ABS_RANGE 32768
@@ -100,6 +101,13 @@ struct device_plugin {
   int (*process_event) (void* plug_data, void* tag);
   //called when a device option is changed.
   int (*process_option) (void* plug_data, const char* opname, MGField opvalue);
+  //Called to upload a force feedback effect. (A.K.A. Rumble vibration)
+  //The return value should be a non-negative id that will represent this effect.
+  int (*upload_ff) (void* plug_data, ff_effect* effect);
+  //Called to erase the specified effect.
+  int (*erase_ff) (void* plug_data, int id);
+  //Called to activate a previously uploaded effect.
+  int (*play_ff) (void* plug_data, int id, int repeats);
 };
 
 struct manager_methods {

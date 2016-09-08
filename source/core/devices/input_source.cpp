@@ -28,6 +28,8 @@ input_source::input_source(device_manager* manager, device_plugin plugin, void* 
   
   if (plugin.init)
     plugin.init(plug_data, this);
+
+  ff_ids[0] = -1;
 }
   
 
@@ -156,8 +158,13 @@ void input_source::update_option(const char* name, const MGField value) {
 void input_source::set_slot(output_slot* slot) {
   std::lock_guard<std::mutex> guard(slot_lock);
   if (slot == assigned_slot) return;
-  if (assigned_slot)
+  if (assigned_slot) {
     assigned_slot->remove_device(this);
+    if (ff_ids[0] != -1) {
+      play_ff(0,0);
+      erase_ff(0);
+    }
+  }
   if (slot)
     slot->add_device(shared_from_this());
   struct input_internal_msg msg;
@@ -514,4 +521,28 @@ std::string input_source::get_type() const {
   
 void input_source::print(std::string message) {
   manager->log.take_message(name + ": " + message);
+}
+
+int input_source::upload_ff(ff_effect effect) {
+  if (plugin.upload_ff) {
+    effect.id = ff_ids[0];
+    ff_ids[0] = plugin.upload_ff(plug_data,&effect);
+    if (ff_ids[0] < 0) ff_ids[0] = -1;
+  }
+  return -(ff_ids[0] < 0);
+}
+
+int input_source::erase_ff(int id) {
+  if (plugin.erase_ff) {
+    int ret = plugin.erase_ff(plug_data, ff_ids[id]);
+    ff_ids[id] = -1;
+    return ret;
+  }
+  return -1;
+}
+
+int input_source::play_ff(int id, int repetitions) {
+  if (plugin.play_ff)
+    return plugin.play_ff(plug_data, ff_ids[id], repetitions);
+  return -1;
 }

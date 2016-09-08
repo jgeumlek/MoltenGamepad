@@ -135,6 +135,8 @@ int print_usage(char* execname) {
                           "\n"\
                           "--mimic-xpad\n"\
                           "\tMake the virtual output devices appear as xpad-style XBox 360 devices\n"\
+                          "--rumble -R\n"\
+                          "\tProcess controller rumble effects. (Do not quit while rumble effects are loaded.)\n"\
                           "--daemon -d\n"\
                           "\tFork and exit immediately, leaving the daemon running in the background.\n"\
                           "--pidfile -P\n"\
@@ -168,6 +170,7 @@ int parse_opts(options& options, int argc, char* argv[]) {
     {"dpad-as-hat",   0,    0,    0},
     {"mimic-xpad",    0,    0,    0},
     {"daemon",        0,    0,  'd'},
+    {"rumble",        0,    0,  'R'},
     {0,               0,    0,    0},
   };
   int long_index;
@@ -175,7 +178,7 @@ int parse_opts(options& options, int argc, char* argv[]) {
   //We lock the settings so that way command line args
   //take precedence over settings later read from files.
   while (c != -1) {
-    c = getopt_long(argc, argv, "u:p:g:n:c:f:P:mhvd", long_options, &long_index);
+    c = getopt_long(argc, argv, "u:p:g:n:c:f:P:Rmhvd", long_options, &long_index);
     switch (c) {
     case 0:
       if (long_index == 10) {
@@ -230,6 +233,10 @@ int parse_opts(options& options, int argc, char* argv[]) {
     case 'c':
       options.set("config_dir",std::string(optarg));
       options.lock("config_dir", true);
+      break;
+    case 'R':
+      options.set("rumble","true");
+      options.lock("rumble", true);
       break;
     case 'h':
       print_usage(argv[0]);

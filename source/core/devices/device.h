@@ -82,6 +82,10 @@ public:
 
   void add_listener(int id, advanced_event_translator* trans);
   void remove_listener(int id, advanced_event_translator* trans);
+
+  int upload_ff(ff_effect effect);
+  int erase_ff(int id);
+  int play_ff(int id, int repetitions);
   
 
   std::string get_name() const { return name; };
@@ -117,6 +121,7 @@ protected:
   std::mutex slot_lock;
   output_slot* out_dev = nullptr;
   output_slot* assigned_slot = nullptr; //might differ from the above due to thread synchro.
+  int ff_ids[1]; //Since the physical device might hand us different ids.
 
   std::vector<recurring_info> recurring_events;
   bool do_recurring_events = false;

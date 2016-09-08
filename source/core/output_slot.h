@@ -18,8 +18,8 @@ class output_slot {
 public:
   std::string name;
   std::string descr;
-  output_slot(std::string name) : name(name) {};
-  output_slot(std::string name, std::string descr) : name(name), descr(descr) {};
+  output_slot(std::string name) : name(name) { effects[0].id = -1;};
+  output_slot(std::string name, std::string descr) : name(name), descr(descr) {effects[0].id = -1;};
   virtual ~output_slot();
   virtual void take_event(struct input_event in) {
   }
@@ -28,6 +28,10 @@ public:
   virtual bool add_device(std::shared_ptr<input_source> dev);
   virtual bool remove_device(input_source* dev);
 
+  int upload_ff(const ff_effect& effect);
+  int erase_ff(int id);
+  int play_ff(int id, int reptitions);
+
   void update_option(std::string option, std::string value) {
     if (options.find(option) == options.end()) return;
     if (process_option(option, value) == OPTION_ACCEPTED)
@@ -35,14 +39,19 @@ public:
   }
 
   virtual void clear_outputs();
+  virtual void close_virt_device();
+  void for_all_devices(std::function<void (std::shared_ptr<input_source>&)> func);
 
   int pad_count = 0;
   std::map<std::string, std::string> options;
   slot_state state = SLOT_INACTIVE;
+  ff_effect effects[1];
 protected:
   int uinput_fd = -1;
   std::vector<std::weak_ptr<input_source>> devices;
   std::mutex lock;
+  bool device_opened = true;
+  uinput* ui = nullptr;
 
   virtual int process_option(std::string name, std::string value) {
     return -1;
@@ -55,6 +64,7 @@ struct virtpad_settings {
   uinput_ids u_ids;
   bool dpad_as_hat;
   bool analog_triggers;
+  bool rumble;
   std::string facemap_1234;
 };
 
@@ -73,6 +83,7 @@ protected:
   int face_1234[4] = {BTN_SOUTH, BTN_EAST, BTN_WEST, BTN_NORTH};
   void set_face_map(std::string map);
   std::string get_face_map();
+
 };
 
 class virtual_keyboard : public output_slot {

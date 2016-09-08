@@ -1,9 +1,10 @@
 #include "output_slot.h"
 #include "uinput.h"
 #include "devices/device.h"
+#include <linux/uinput.h>
+#include <csignal>
 
 output_slot::~output_slot() {
-  if (uinput_fd >= 0) uinput_destroy(uinput_fd);
 }
 
 bool output_slot::remove_device(input_source* dev) {
@@ -30,6 +31,8 @@ bool output_slot::accept_device(std::shared_ptr<input_source> dev) {
 bool output_slot::add_device(std::shared_ptr<input_source> dev) {
   std::lock_guard<std::mutex> guard(lock);
   devices.push_back(dev);
+  if (effects[0].id != -1)
+    dev->upload_ff(effects[0]);
   return true;
 }
 
@@ -51,14 +54,78 @@ void output_slot::clear_outputs() {
   for (out_ev.code = 0; out_ev.code < REL_MAX; out_ev.code++)
     take_event(out_ev);
 }
+void noop_signal_handler(int signum) {
+  //HACK: Assumes we only close_virt_device at the very end of process lifespan.
+  return;
+}
+void output_slot::close_virt_device() {
+  do {
+    signal(SIGINT, noop_signal_handler);
+    signal(SIGTERM, noop_signal_handler);
+    lock.lock();
+    //check for ff effect
+    if (effects[0].id != -1) {
+      std::cerr << "A virtual device cannot be closed until its force-feedback effects have been erased." << std::endl;
+      lock.unlock();
+      sleep(2);
+      continue;
+      //Bad stuff might happen with uinput module. Just keep looping.
+    }
+    //close/destroy the uinput device.
+    if (uinput_fd >= 0) {
+      if (ui)
+        ui->uinput_destroy(uinput_fd);
+    }
+    lock.unlock();
+    return;  //Everything is fine, break the loop.
+  } while (true);
+}
+
+int output_slot::upload_ff(const ff_effect& effect) {
+  std::lock_guard<std::mutex> guard(lock);
+  if (effect.id == -1 && effects[0].id != -1)
+    return -1;
+  effects[0] = effect;
+  for (auto it = devices.begin(); it != devices.end(); it++) {
+    auto ptr = it->lock();
+    ptr->upload_ff(effect);
+  }
+  return 0; //return an id for this event.
+}
+
+int output_slot::erase_ff(int id) {
+  std::lock_guard<std::mutex> guard(lock);
+  if (id != 0)
+    return FAILURE;
+  effects[0].id = -1;
+  for (auto it = devices.begin(); it != devices.end(); it++) {
+    auto ptr = it->lock();
+    ptr->erase_ff(id);
+  }
+  return SUCCESS; //return an id for this event.
+}
+
+int output_slot::play_ff(int id, int repetitions) {
+  std::lock_guard<std::mutex> guard(lock);
+  if (id != 0 || effects[0].id == -1)
+    return FAILURE;
+  for (auto it = devices.begin(); it != devices.end(); it++) {
+    auto ptr = it->lock();
+    ptr->play_ff(id, repetitions);
+  }
+  return SUCCESS;
+}
 
 static std::string boolstrings[2] = {"false", "true"};
 virtual_gamepad::virtual_gamepad(std::string name, std::string descr, virtpad_settings settings, uinput* ui) : output_slot(name, descr) {
   this->dpad_as_hat = settings.dpad_as_hat;
   this->analog_triggers = settings.analog_triggers;
+  effects[0].id = -1;
   set_face_map(settings.facemap_1234);
-  uinput_fd = ui->make_gamepad(settings.u_ids, dpad_as_hat, analog_triggers);
+  uinput_fd = ui->make_gamepad(settings.u_ids, dpad_as_hat, analog_triggers, settings.rumble);
   if (uinput_fd < 0) throw - 5;
+  if (settings.rumble)
+    ui->watch_for_ff(uinput_fd, this);
   options["dpad_as_hat"] = boolstrings[dpad_as_hat];
   options["analog_triggers"] = boolstrings[analog_triggers];
   options["device_string"] = settings.u_ids.device_string;
@@ -67,6 +134,7 @@ virtual_gamepad::virtual_gamepad(std::string name, std::string descr, virtpad_se
   options["version_id"] = std::to_string(settings.u_ids.version_id);
   options["facemap_1234"] = get_face_map();
   this->padstyle = settings;
+  this->ui = ui;
 }
 
 virtual_keyboard::virtual_keyboard(std::string name, std::string descr, uinput_ids keyboard_ids, uinput_ids mouse_ids, uinput* ui) : output_slot(name, descr) {
@@ -81,6 +149,7 @@ virtual_keyboard::virtual_keyboard(std::string name, std::string descr, uinput_i
   if (mouse_fd < 0) throw -5;
   
   this->u_ids = keyboard_ids;
+  this->ui = ui;
 }
 
 void virtual_keyboard::take_event(struct input_event in) {
@@ -174,6 +243,17 @@ std::string virtual_gamepad::get_face_map() {
   }
   return out;
 }
+
+void print_effect(ff_effect& effect) {
+  std::cout << " type:"<< effect.type;
+  std::cout << " id:"<< effect.id;
+  std::cout << " d:"<< effect.direction;
+  std::cout << " type:"<< effect.type;
+  std::cout << " trigger:"<< effect.trigger.button << "," << effect.trigger.interval;
+  std::cout << " play:"<< effect.replay.length << "," << effect.replay.delay << std::endl;
+}
+
+
 
 
 int virtual_gamepad::process_option(std::string name, std::string value) {

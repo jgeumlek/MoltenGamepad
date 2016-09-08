@@ -41,6 +41,6 @@ enum device_claim {
 
 enum mg_result_codes {
   SUCCESS = 0,
-  FAILURE,
+  FAILURE = -1,
 };
   

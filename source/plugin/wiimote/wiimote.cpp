@@ -342,7 +342,10 @@ void wiimote::remove_node(const char* name) {
 }
 
 void wiimote::open_node(struct dev_node* node) {
-  node->fd = open(udev_device_get_devnode(node->dev), O_RDONLY | O_NONBLOCK | O_CLOEXEC);
+  int mode = O_RDONLY;
+  if (node == &buttons || node == &pro)
+    mode = O_RDWR;
+  node->fd = open(udev_device_get_devnode(node->dev), mode | O_NONBLOCK | O_CLOEXEC);
   if (node->fd < 0)
     perror("open subdevice:");
 

@@ -59,6 +59,9 @@ int sc_plugin_init(plugin_api api) {
   scdev.process_option = [] (void* data, const char* opname, MGField opvalue) {
     return ((steam_controller*)data)->process_option(opname, opvalue);
   };
+  scdev.upload_ff = nullptr;
+  scdev.erase_ff = nullptr;
+  scdev.play_ff = nullptr;
 
   api.mg.add_manager(scman,  manager);
   return 0;
