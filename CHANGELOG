@@ -1,3 +1,26 @@
+---------------------------
+0.2.1-beta
+2016-09-17
+---------------------------
+
+This release has new features and significant code restructuring and bug fixes.
+
+Code and feature set getting more stable, but this is not yet a 1.0 release.
+
+The largest new feature is rumble support, but it carries a caveat and is disabled by default. The uinput kernel module appears to have a bug when a virtual device is destroyed while having force-feedback effects uploaded. When hit, this bug appears to cause a failure state that requires the user to reboot their machine. MoltenGamepad will block destroying these devices until all force-feedback effects are erased, but the user must take care to not forcefully kill the MoltenGamepad process.
+
+Due to the above, rumble support is not enabled by default, but is controlled by a simple `--rumble` command line flag.
+
+Highlights:
+* Rumble support added.
+* "make eventlists" can auto-generate the correct event lists.
+* Relevant "jsX" devices are grabbed in addition to the "eventX" devices.
+* `set` command added for global settings.
+* `auto_assign` global setting added to assign devices to slots upon connection.
+* The `move` command can use `auto` as a slot destination.
+* A plug-in API is forming for adding support for more devices.
+* `alterslot` deprecated, to be removed in future version.
+
 
 ---------------------------
 0.1.1-beta

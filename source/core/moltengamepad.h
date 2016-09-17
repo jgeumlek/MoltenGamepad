@@ -17,7 +17,7 @@
 #include "profile.h"
 #include "plugin_loader.h"
 
-#define VERSION_STRING "0.1.1-beta"
+#define VERSION_STRING "0.2.1-beta"
 
 class slot_manager;
 class device_manager;
