@@ -29,6 +29,7 @@ Specialized drivers can be made for certain input devices enabling smarter featu
 * Easy loading and saving of event mapping profiles.
 * Profiles can be changed at run time, of course.
 * Supports a command FIFO for controlling a running instance of MoltenGamepad via scripting.
+* Virtual devices can process rumble events (but this is disabled by default)
 
 MoltenGamepad targets a set-it-and-forget-it daemon-like usage pattern,  where devices can connect or disconnect freely. Its main purpose is letting a user "standardize" their software to expect just one type of controller, and then automagically transform connected input devices to match that standardized abstraction. 
 
@@ -36,7 +37,9 @@ MoltenGamepad targets a set-it-and-forget-it daemon-like usage pattern,  where d
 
     make
 
-If you get undefined KEY_* errors, you'll need to remove those lines from the eventlists. There is a script `source/eventlists/generate_key_codes` designed to build these eventlists, but it has not been extensively tested. Run it from within `source/eventlists`.
+If you get undefined KEY_* errors, you'll need to remove those lines from the eventlists. The following command should rebuild these eventlists to match your system. Afterwards you can try running `make` again. If this fails with `not found` you may need to update a variable in the Makefile to tell it where your key codes are defined.
+
+    make eventlists
 
 The only linked libraries under this default target are libudev and libpthread.
 

@@ -3,6 +3,12 @@
 MG_BUILT_INS+=wiimote
 #MG_BUILT_INS+=steamcontroller
 
+#If you need to run "make eventlists" and it failed to find your
+#input header where all the key codes are defined, put the
+#correct path to this header in the following variable.
+#(if you can compile successfully, you do not need to do anything here.)
+INPUT_HEADER:=""
+
 LDLIBS=-ludev -lpthread
 CPPFLAGS+=-std=c++14
 
@@ -63,6 +69,10 @@ clean :
 .PHONY: debug
 debug : CPPFLAGS+=-DDEBUG -g
 debug : moltengamepad
+
+.PHONY: eventlists
+eventlists : source/core/eventlists/generate_key_codes
+	cd source/core/eventlists && ./generate_key_codes $(INPUT_HEADER)
 
 .PHONY: steam
 steam :

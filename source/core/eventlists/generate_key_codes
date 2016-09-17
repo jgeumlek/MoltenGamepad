@@ -4,16 +4,22 @@
 #If not, this isn't for you.
 
 FILE="/usr/include/linux/input-event-codes.h"
-
-if [ "$#" -ne 1 ]; then
+FALLBACK="/usr/include/linux/input.h"
+if [ -z "$1" ]; then
   if [ -e "$FILE" ]; then
     echo "Found /usr/include/linux/input-event-codes.h"
     echo ""
 
   else
     echo "Could not find linux/input-event-codes.h" >&2
-    echo "Usage: $0 <path to linux/input-event-codes.h>" >&2
-    exit 1
+    if [ -e "$FALLBACK" ]; then
+      echo "Found $FALLBACK instead"
+      echo ""
+      FILE=$FALLBACK
+    else
+      echo "Usage: $0 <path to linux/input-event-codes.h or linux/input.h>" >&2
+      exit 1
+    fi
   fi
 else
   FILE=$1
