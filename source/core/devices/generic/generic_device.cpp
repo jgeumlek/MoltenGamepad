@@ -2,11 +2,11 @@
 
 device_methods generic_device::methods;
 
-generic_device::generic_device(std::vector<split_ev_info>& split_events, int total_events, int fd, bool watch, const std::string& type, const std::string& uniq) : uniq(uniq), type(type) {
-  this->fd = fd;
+generic_device::generic_device(std::vector<split_ev_info>& split_events, int total_events, generic_file* file, const std::string& type, bool rumble) : uniq(file->uniq), type(type), rumble(rumble) {
+  int fd = file->get_fd();
+  this->file = file;
   eventstates = (event_state*)calloc(total_events, sizeof(event_state));
   this->total_events = total_events;
-  this->watch = watch;
 
   //We will enable events one-by-one later
   for (int i = 0; i < total_events; i++) {
@@ -44,7 +44,6 @@ int generic_device::init(input_source* ref) {
   for (int i = 0; i < total_events; i++)
     methods.toggle_event(ref, i, eventstates[i]);
 
-  if (watch) methods.watch_file(ref, fd, &fd);
   int internal[2];
   pipe(internal);
   methods.watch_file(ref, internal[0], &pipe_read);
@@ -60,10 +59,7 @@ generic_device::~generic_device() {
 
 void generic_device::process(void* tag) {
   struct input_event ev;
-  int file = fd;
-  if (pipe_read >= 0 && tag == &pipe_read) {
-    file = pipe_read;
-  };
+  int file = pipe_read;
   int ret = read(file, &ev, sizeof(ev));
   if (ret > 0) {
     if (ev.type == EV_SYN) {
@@ -94,7 +90,31 @@ void generic_device::process(void* tag) {
   }
 }
 
-
+int generic_device::upload_ff(ff_effect* effect) {
+  if (!rumble)
+    return -1;
+  int fd = file->get_fd();
+  int ret = ioctl(fd, EVIOCSFF, effect);
+  return effect->id;
+}
   
+int generic_device::erase_ff(int id) {
+  if (!rumble)
+    return -1;
+  int fd = file->get_fd();
+  int ret = ioctl(fd, EVIOCRMFF, id);
+  return 0;
+}
 
-
+int generic_device::play_ff(int id, int repetitions) {
+  if (!rumble)
+    return -1;
+  int fd = file->get_fd();
+  input_event ev;
+  memset(&ev, 0, sizeof(ev));
+  ev.type = EV_FF;
+  ev.code = id;
+  ev.value = repetitions;
+  write(fd, &ev, sizeof(ev));
+  return 0;
+}

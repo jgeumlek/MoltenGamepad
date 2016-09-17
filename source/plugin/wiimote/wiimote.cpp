@@ -346,8 +346,15 @@ void wiimote::open_node(struct dev_node* node) {
   if (node == &buttons || node == &pro)
     mode = O_RDWR;
   node->fd = open(udev_device_get_devnode(node->dev), mode | O_NONBLOCK | O_CLOEXEC);
-  if (node->fd < 0)
+  if (node->fd < 0 && mode == O_RDWR && errno == EACCES) {
+    node->fd = open(udev_device_get_devnode(node->dev), O_RDONLY | O_NONBLOCK | O_CLOEXEC);
+    if (node->fd >= 0)
+      methods.print(ref, "could not open with write permissions. Rumble effects are disabled.");
+  }
+  if (node->fd < 0) {
     perror("open subdevice:");
+    return;
+  }
 
   if (grab_exclusive) grab_ioctl_node(node, true);
   if (grab_permissions) grab_chmod_node(node, true);

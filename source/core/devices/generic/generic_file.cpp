@@ -1,8 +1,10 @@
 #include "generic.h"
+#include <errno.h>
 
 
-generic_file::generic_file(moltengamepad* mg, struct udev_device* node, bool grab_ioctl, bool grab_chmod) {
+generic_file::generic_file(moltengamepad* mg, struct udev_device* node, bool grab_ioctl, bool grab_chmod, bool rumble) {
   this->mg = mg;
+  this->rumble = rumble;
   struct udev_device* hidparent = udev_device_get_parent_with_subsystem_devtype(node,"hid",NULL);
   if (hidparent) {
     const char* uniq_id = udev_device_get_property_value(hidparent, "HID_UNIQ");
@@ -52,9 +54,16 @@ generic_file::~generic_file() {
 
 
 void generic_file::open_node(struct udev_device* node) {
+  std::lock_guard<std::mutex> guard(lock);
   std::string path(udev_device_get_devnode(node));
   if (nodes.find(path) == nodes.end()) {
-    int fd = open(udev_device_get_devnode(node), O_RDONLY | O_NONBLOCK | O_CLOEXEC);
+    int mode = rumble ? O_RDWR : O_RDONLY;
+    int fd = open(udev_device_get_devnode(node), mode | O_NONBLOCK | O_CLOEXEC);
+    if (fd < 0 && mode == O_RDWR && errno == EACCES) {
+      fd = open(udev_device_get_devnode(node), O_RDONLY | O_NONBLOCK | O_CLOEXEC);
+      if (fd >= 0)
+        mg->errors.take_message("Generic device could not get write permissions. Rumble effects are disabled.");
+    }
     if (fd < 0) {
       perror("open subdevice:");
       return;
@@ -92,6 +101,7 @@ void generic_file::close_node(struct udev_device* node, bool erase) {
 }
 
 void generic_file::close_node(const std::string& path, bool erase) {
+  std::lock_guard<std::mutex> guard(lock);
   auto it = nodes.find(path);
 
   if (it == nodes.end()) return;
@@ -139,5 +149,12 @@ void generic_file::thread_loop() {
     }
 
   }
+}
+
+int generic_file::get_fd() {
+  std::lock_guard<std::mutex> guard(lock);
+  if (fds.size() == 0)
+    return -1;
+  return fds.front();
 }
 

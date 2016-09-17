@@ -171,8 +171,8 @@ int generic_manager::open_device(struct udev* udev, struct udev_device* dev) {
     if (flatten && openfiles.size() >= 1) {
       openfiles.front()->open_node(dev);
     } else {
-      openfiles.push_back(new generic_file(mg, dev, descr->grab_ioctl, descr->grab_chmod));
-      create_inputs(openfiles.back(), openfiles.back()->fds.front(), false);
+      openfiles.push_back(new generic_file(mg, dev, descr->grab_ioctl, descr->grab_chmod, descr->rumble));
+      create_inputs(openfiles.back());
     }
   } catch (...) {
     return FAILURE; //Something went wrong opening this device...
@@ -180,9 +180,9 @@ int generic_manager::open_device(struct udev* udev, struct udev_device* dev) {
   return SUCCESS;
 }
 
-void generic_manager::create_inputs(generic_file* opened_file, int fd, bool watch) {
+void generic_manager::create_inputs(generic_file* opened_file) {
   for (int i = 1; i <= split; i++) {
-    generic_device* gendev = new generic_device(splitevents.at(i - 1), event_count, fd, watch, descr->split_types[i-1], opened_file->uniq);
+    generic_device* gendev = new generic_device(splitevents.at(i - 1), event_count, opened_file, descr->split_types[i-1], descr->rumble);
     device_plugin plug = genericdev;
     plug.name_stem = descr->devname.c_str();
     plug.uniq = gendev->uniq.c_str();

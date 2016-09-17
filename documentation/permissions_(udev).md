@@ -28,7 +28,7 @@ Below is an example udev rule that makes all Wii devices world-readable.
 
 ## Rumble
 
-Should MG ever support rumble, write permissions will be needed on the event devices. (and read permission on uninput)
+In order to send rumble events to a device, MoltenGamepad requires write access to the event device.
 
 ## Allow MoltenGamepad to change permissions (Hide the original device)
 

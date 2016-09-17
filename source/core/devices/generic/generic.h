@@ -72,37 +72,6 @@ struct generic_driver_info {
 int generic_config_loop(moltengamepad* mg, std::istream& in, std::string& path);
 int add_generic_manager(moltengamepad* mg, generic_driver_info& info);
 
-
-typedef std::pair<int, int> evcode;
-typedef std::pair<int, input_absinfo> decodedevent;
-
-class generic_device {
-public:
-  int fd = -1;
-  int pipe_read = -1;
-  int pipe_write = -1;
-  int total_events;
-  event_state* eventstates = nullptr;
-  bool watch = watch;
-  const std::string type;
-  const std::string uniq;
-
-  std::map<evcode, decodedevent> eventcodes;
-  struct udev_device* node = nullptr;
-
-  generic_device(std::vector<split_ev_info>& split_events, int total_events, int fd, bool watch, const std::string& type, const std::string& uniq);
-  ~generic_device();
-
-  int init(input_source* ref);
-
-  void process(void*);
-
-  int get_pipe();
-  input_source* ref = nullptr;
-  static device_methods methods;
-
-};
-
 struct generic_node {
   std::string path;
   udev_device* node;
@@ -126,14 +95,16 @@ public:
   std::vector<int> fds;
   std::map<std::string, generic_node> nodes;
   std::string uniq;
+  std::mutex lock;
   bool grab_ioctl = false;
   bool grab_chmod = false;
   bool keep_looping = true;
+  bool rumble = false;
   moltengamepad* mg;
 
   int internal_pipe[2];
 
-  generic_file(moltengamepad* mg, struct udev_device* node, bool grab_ioctl, bool grab_chmod);
+  generic_file(moltengamepad* mg, struct udev_device* node, bool grab_ioctl, bool grab_chmod, bool rumble);
 
   ~generic_file();
 
@@ -142,6 +113,41 @@ public:
   void close_node(const std::string& path, bool erase);
   void add_dev(input_source* dev);
   void thread_loop();
+  int get_fd();
+
+};
+
+typedef std::pair<int, int> evcode;
+typedef std::pair<int, input_absinfo> decodedevent;
+
+class generic_device {
+public:
+  int pipe_read = -1;
+  int pipe_write = -1;
+  int total_events;
+  event_state* eventstates = nullptr;
+  bool rumble = false;
+  const std::string type;
+  const std::string uniq;
+
+  std::map<evcode, decodedevent> eventcodes;
+  struct udev_device* node = nullptr;
+
+  generic_device(std::vector<split_ev_info>& split_events, int total_events, generic_file* file, const std::string& type, bool rumble);
+  ~generic_device();
+
+  int init(input_source* ref);
+
+  void process(void*);
+
+  int get_pipe();
+  input_source* ref = nullptr;
+  generic_file* file = nullptr;
+  static device_methods methods;
+
+  int upload_ff(ff_effect* effect);
+  int erase_ff(int id);
+  int play_ff(int id, int repetitions);
 
 };
 
@@ -170,7 +176,7 @@ protected:
   int dev_counter = 0;
   std::string devname = "";
   int open_device(struct udev* udev, struct udev_device* dev);
-  void create_inputs(generic_file* opened_file, int fd, bool watch);
+  void create_inputs(generic_file* opened_file);
 
 };
 

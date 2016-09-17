@@ -27,6 +27,11 @@ Such a file has the following form, where `#` starts comments. All `<values>` MU
     ##(Helpful for annoying devices that create a dead duplicate node,
     ## or if you know you want to combine all devices of this type)
     #flatten="false"
+
+    ##Should we try to forward rumble (force-feedback) events?
+    ##This setting has no effect unless MoltenGamepad was run with rumble enabled.
+    ##You can not enable both rumble and flatten.
+    #rumble="false"
     
     ##How many input sources should we generate for this device?
     #split = 1
@@ -108,6 +113,7 @@ Here is a longer file, showing a configuration for a Dualshock 4 controller.
     #Reminder: change_permissions requires a udev rule to make the current user the owner of the device
     change_permissions = "true"
     flatten = "false"
+    rumble = "true"
     
     
     btn_tl2 = "share", "Share Button"

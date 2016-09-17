@@ -295,6 +295,10 @@ int generic_config_loop(moltengamepad* mg, std::istream& in, std::string& path) 
 
 int add_generic_manager(moltengamepad* mg, generic_driver_info& info) {
   if (info.events.size() > 0 && !info.name.empty() && !info.devname.empty()) {
+    if (info.rumble && info.flatten) {
+      mg->errors.take_message(info.name + ": flatten and rumble cannot both be active. Rumble is disabled.");
+      info.rumble = false;
+    }
     generic_manager* manager = new generic_manager(mg, info);
     auto man = mg->add_manager(manager->get_plugin(), manager);
     if (!man)
@@ -351,8 +355,14 @@ int init_generic_callbacks() {
   genericdev.process_option = [] (void* ref, const char* opname, MGField opvalue) {
     return -1;
   };
-  genericdev.upload_ff = nullptr;
-  genericdev.erase_ff = nullptr;
-  genericdev.play_ff = nullptr;
+  genericdev.upload_ff =  [] (void* ref, ff_effect* effect) {
+    return ((generic_device*)ref)->upload_ff(effect);
+  };
+  genericdev.erase_ff =  [] (void* ref, int id) {
+    return ((generic_device*)ref)->erase_ff(id);
+  };
+  genericdev.play_ff =  [] (void* ref, int id, int repetitions) {
+    return ((generic_device*)ref)->play_ff(id, repetitions);
+  };
 }
 

@@ -86,6 +86,8 @@ For use with most games, use the `--mimic-xpad` option to make the virtual outpu
 
     ./moltengamepad --mimic-xpad
 
+Rumble support is disabled by default. Use `--rumble` to enable it.
+
 Another useful option is `--make-fifo`, which creates a named pipe so that the running instance can be controlled from scripts and such.
 
 The command FIFO is placed at `$XDG_RUNTIME_DIR/moltengamepad` by default, and can be set with `--fifo-path`.
@@ -101,8 +103,6 @@ See this README, the various files in the `documentation` folder, the output of 
 
 * Changing input mappings does not clear out previous values, potentially leading to stuck inputs.
 * Multiple inputs mapped to the same output event clobber each other. Desired behavior uncertain.
-* Software may attempt to read both the virtual and original devices, leading to duplicated events.
-* No rumble support.
 * Will likely add some amount of input latency, though it hasn't been measured beyond playtests.
 * Automagic configuration can lead to minor undesired behavior with aliases for events.
 
@@ -114,6 +114,8 @@ MoltenGamepad will fail if you don't have the right permissions, and you likely 
 You need write access to uinput to create the virtual gamepads.
 
 You need read access to the various event devices you wish to read. Most systems automatically tag event devices that look like joysticks/gamepads to be readable by the current user. Unorthodox devices like a wiimote will need special udev rules.
+
+If you enable rumble support, you need write access to the various event devices in order to send the rumble events.
 
 ###What is a MoltenGamepad driver?
 
