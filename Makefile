@@ -1,10 +1,26 @@
-all : moltengamepad
+
+#uncomment the lines below to include those plugins
+MG_BUILT_INS+=wiimote
+#MG_BUILT_INS+=steamcontroller
+
+#If you need to run "make eventlists" and it failed to find your
+#input header where all the key codes are defined, put the
+#correct path to this header in the following variable.
+#(if you can compile successfully, you do not need to do anything here.)
+INPUT_HEADER:=""
 
 LDLIBS=-ludev -lpthread
 CPPFLAGS+=-std=c++14
 
-SRCS=$(shell echo source/*.cpp source/*/*.cpp source/*/*/*.cpp)
+SRCS:=$(shell echo source/core/*.cpp source/core/*/*.cpp source/core/*/*/*.cpp source/plugin/*.cpp)
+
+
+
+
+SRCS:=$(SRCS) $(shell echo $(MG_BUILT_IN_PATHS))
 OBJS=$(subst .cpp,.o,$(SRCS))
+
+include $(patsubst %,source/plugin/%/Makefile,$(MG_BUILT_INS))
 
 #Borrowed magic to handle using gcc to generate build dependencies.
 
@@ -18,6 +34,7 @@ COMPILE.cpp = $(CXX) $(DEPFLAGS) $(CXXFLAGS) $(CPPFLAGS) $(TARGET_ARCH) -c
 POSTCOMPILE = mv -f $(DEPDIR)/$*.Td $(DEPDIR)/$*.d
 
 
+all : moltengamepad
 .SECONDEXPANSION:
 %.o : %.c
 %.o : %.c $(DEPDIR)/%.d
@@ -31,6 +48,7 @@ source/%.o : source/%.cpp $(DEPDIR)/%.d
 	@$(COMPILE.cpp) $(OUTPUT_OPTION) $<
 	$(POSTCOMPILE)
 
+
 $(DEPDIR)/%.d: ;
 .PRECIOUS: $(DEPDIR)/%.d
 
@@ -40,6 +58,8 @@ $(DEPDIR)/%.d: ;
 
 
 moltengamepad : $(OBJS)
+	@echo "The following plugins are being statically included:"
+	@echo "    " $(MG_BUILT_INS)
 	$(CXX) $(LDFLAGS) -o moltengamepad $(OBJS) $(LDLIBS)
 
 clean :
@@ -50,7 +70,10 @@ clean :
 debug : CPPFLAGS+=-DDEBUG -g
 debug : moltengamepad
 
+.PHONY: eventlists
+eventlists : source/core/eventlists/generate_key_codes
+	cd source/core/eventlists && ./generate_key_codes $(INPUT_HEADER)
+
 .PHONY: steam
-steam : CPPFLAGS+=-DBUILD_STEAM_CONTROLLER_DRIVER
-steam : LDLIBS+=-lscraw
-steam : moltengamepad
+steam :
+	MG_BUILT_INS="steamcontroller" $(MAKE) moltengamepad
