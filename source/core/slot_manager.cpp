@@ -42,6 +42,11 @@ int slot_manager::request_slot(input_source* dev) {
   std::lock_guard<std::mutex> guard(lock);
   if (dev->get_slot())
     return 0;
+  output_slot* assigned = find_id_based_assignment(dev);
+  if (assigned) {
+    move_device(dev,assigned);
+    return 0;
+  }
   if (dev->get_type() == "keyboard" || active_pads == 0) {
     move_device(dev,keyboard);
     return 0;
@@ -78,7 +83,43 @@ void slot_manager::move_device(input_source* dev, output_slot* target) {
   }
 }
 
+void slot_manager::id_based_assign(slot_manager::id_type type, std::string id, output_slot* slot) {
+  std::lock_guard<std::mutex> guard(lock);
+  std::pair<slot_manager::id_type, std::string> key = std::make_pair(type,id);
+  if (!slot) {
+    id_slot_assignments.erase(key);
+    return;
+  }
+  id_slot_assignments[key] = slot;
+  return;
+}
 
+output_slot* slot_manager::find_id_based_assignment(input_source* dev) {
+  //private func, called while lock is held.
+  //Currently hardcoded priority:
+  // uniq assignment -> name assignment -> phys assignment.
+  if (id_slot_assignments.empty())
+    return nullptr;
+  std::pair<slot_manager::id_type, std::string> key = std::make_pair(UNIQ_ID,dev->get_uniq());
+  auto slot = id_slot_assignments.find(key);
+  if (slot != id_slot_assignments.end())
+    return slot->second;
+  key = std::make_pair(NAME_ID,dev->get_name());
+  slot = id_slot_assignments.find(key);
+  if (slot != id_slot_assignments.end())
+    return slot->second;
+  key = std::make_pair(PHYS_ID,dev->get_phys());
+  slot = id_slot_assignments.find(key);
+  if (slot != id_slot_assignments.end())
+    return slot->second;
+  return nullptr;
+}
+
+void slot_manager::for_all_assignments(std::function<void (slot_manager::id_type, std::string, output_slot*)> func) {
+  std::lock_guard<std::mutex> guard(lock);
+  for (auto entry : id_slot_assignments)
+    func(entry.first.first, entry.first.second, entry.second);
+}
 
 output_slot* slot_manager::find_slot(std::string slotname) {
   for (auto it = slots.begin(); it != slots.end(); it++) {

@@ -81,12 +81,14 @@ int wiimote_manager::accept_device(struct udev* udev, struct udev_device* dev) {
 
   const char* parentpath = udev_device_get_syspath(parent);
   const char* uniq = udev_device_get_property_value(parent, "HID_UNIQ");
+  const char* phys = udev_device_get_property_value(parent, "HID_PHYS");
   wiimote* existing = find_wii_dev_by_path(parentpath);
 
   if (existing == nullptr) {
     //time to add a device;
     device_plugin wm = wiidev;
     wm.uniq = uniq ? uniq : "";
+    wm.phys = phys ? phys : "";
     wiimote* wm_data = new wiimote();
     wm_data->base.dev = udev_device_ref(parent);
     wii_devs.push_back(wm_data);

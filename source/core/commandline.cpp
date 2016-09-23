@@ -11,6 +11,7 @@ int do_print(moltengamepad* mg, std::vector<token>& command);
 int do_load(moltengamepad* mg, std::vector<token>& command);
 int do_move(moltengamepad* mg, std::vector<token>& command);
 int do_alterslot(moltengamepad* mg, std::vector<token>& command);
+int do_assign(moltengamepad* mg, std::vector<token>& command);
 int do_clear(moltengamepad* mg, std::vector<token>& command);
 int do_set(moltengamepad* mg, std::vector<token>& command);
 
@@ -21,6 +22,7 @@ int do_set(moltengamepad* mg, std::vector<token>& command);
 "\tsave:\tsave all profiles to a file\n"\
 "\tload:\tload profiles from a file\n"\
 "\tset:\tset global options\n"\
+"\tassign:\tassign a slot for a device id, even before the device is connected.\n"\
 "\tquit:\tquit this application\n"\
 "\t<profile>.<event> = <outevent>\n"\
 "\t\tchange the event mapping for <event> to <outevent> in the profile <profile>\n"\
@@ -44,6 +46,7 @@ int do_command(moltengamepad* mg, std::vector<token>& command) {
   if (command.front().value == "alterslot") return do_alterslot(mg, command);
   if (command.front().value == "clear") return do_clear(mg, command);
   if (command.front().value == "set") return do_set(mg, command);
+  if (command.front().value == "assign") return do_assign(mg, command);
   if (command.front().value == "help") {
     std::cout << HELP_TEXT << std::endl;
     return 0;

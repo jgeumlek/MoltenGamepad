@@ -29,4 +29,3 @@ int do_alterslot(moltengamepad* mg, std::vector<token>& command) {
   return 0;
 
 }
-

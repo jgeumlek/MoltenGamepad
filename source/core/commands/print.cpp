@@ -175,9 +175,16 @@ int do_print_options(moltengamepad* mg, std::string name, std::ostream& out) {
 
 }
 
+const char* id_types[] = {"name", "uniq", "phys"};
+int do_print_assignments(moltengamepad* mg, std::string name, std::ostream& out) {
+  mg->slots->for_all_assignments([&out] (slot_manager::id_type type, std::string id, output_slot* slot) {
+    out << "\t" <<  id_types[type] << " \"" << id << "\" -> " << slot->name << std::endl;
+  });
+}
+
 #define PRINT_USAGE ""\
 "USAGE:\n\tprint <type> [element]\n"\
-"\ttypes recognized: drivers, devices, profiles, slots, options\n"\
+"\ttypes recognized: drivers, devices, profiles, slots, options, assignments\n"\
 "\tprint <type> will list all elements of that type\n"\
 "\tprint <type> [element] will show detailed info on that element\n"
 int do_print(moltengamepad* mg, std::vector<token>& command) {
@@ -186,11 +193,13 @@ int do_print(moltengamepad* mg, std::vector<token>& command) {
     return -1;
   }
   std::string arg = (command.size() >= 3 && command.at(2).type == TK_IDENT) ? command.at(2).value : "";
+  //be generous, compare only the roots of the categories. So "slot" or "slots" is fine.
   if (command.at(1).value.compare(0, 6, "driver") == 0) return do_print_drivers(mg, arg, std::cout);
   if (command.at(1).value.compare(0, 6, "device") == 0) return do_print_devs(mg, arg, std::cout);
   if (command.at(1).value.compare(0, 7, "profile") == 0) return do_print_profile(mg, arg, std::cout);
   if (command.at(1).value.compare(0, 4, "slot") == 0) return do_print_slots(mg, arg, std::cout);
   if (command.at(1).value.compare(0, 6, "option") == 0) return do_print_options(mg, arg, std::cout);
+  if (command.at(1).value.compare(0, 6, "assign") == 0) return do_print_assignments(mg, arg, std::cout);
 
   std::cout << PRINT_USAGE << std::endl;
   return 0;
