@@ -122,6 +122,7 @@ virtual_gamepad::virtual_gamepad(std::string name, std::string descr, virtpad_se
   this->analog_triggers = settings.analog_triggers;
   effects[0].id = -1;
   set_face_map(settings.facemap_1234);
+  settings.u_ids.phys = "moltengamepad/" + name;
   uinput_fd = ui->make_gamepad(settings.u_ids, dpad_as_hat, analog_triggers, settings.rumble);
   if (uinput_fd < 0) throw - 5;
   if (settings.rumble)

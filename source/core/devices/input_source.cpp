@@ -7,7 +7,7 @@
 #include <iostream>
 
 input_source::input_source(device_manager* manager, device_plugin plugin, void* plug_data) 
-      : manager(manager), plugin(plugin), plug_data(plug_data), uniq(plugin.uniq) {
+      : manager(manager), plugin(plugin), plug_data(plug_data), uniq(plugin.uniq), phys(plugin.phys) {
 
   for (auto ev : manager->get_events())
     register_event(ev);

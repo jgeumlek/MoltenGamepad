@@ -16,6 +16,7 @@
 
 struct uinput_ids {
   std::string device_string;
+  std::string phys;
   int vendor_id;
   int product_id;
   int version_id;

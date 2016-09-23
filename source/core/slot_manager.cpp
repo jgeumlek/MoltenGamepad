@@ -7,7 +7,7 @@ slot_manager::slot_manager(int max_pads, bool keys, const virtpad_settings& pads
   debugslot = new debug_device("debugslot", "Prints out all received events");
   debugslot->state = SLOT_ACTIVE;
   if (keys) {
-    keyboard = new virtual_keyboard("keyboard", "A virtual keyboard", {"Virtual Keyboard (MoltenGamepad)", 1, 1, 1}, {"Virtual Mouse (MoltenGamepad)", 1, 1, 1}, ui);
+    keyboard = new virtual_keyboard("keyboard", "A virtual keyboard", {"Virtual Keyboard (MoltenGamepad)", "moltengamepad/keyboard", 1, 1, 1}, {"Virtual Mouse (MoltenGamepad)", "moltengamepad/keyboard", 1, 1, 1}, ui);
     keyboard->state = SLOT_ACTIVE;
   } else {
     keyboard = new output_slot("keyboard", "Disabled virtual keyboard slot");

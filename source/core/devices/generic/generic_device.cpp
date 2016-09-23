@@ -2,7 +2,7 @@
 
 device_methods generic_device::methods;
 
-generic_device::generic_device(std::vector<split_ev_info>& split_events, int total_events, generic_file* file, const std::string& type, bool rumble) : uniq(file->uniq), type(type), rumble(rumble) {
+generic_device::generic_device(std::vector<split_ev_info>& split_events, int total_events, generic_file* file, const std::string& type, bool rumble) : type(type), rumble(rumble) {
   int fd = file->get_fd();
   this->file = file;
   eventstates = (event_state*)calloc(total_events, sizeof(event_state));

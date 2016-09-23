@@ -10,7 +10,7 @@
 //FUTURE WORK: Make it easier to specify additional virtpad styles.
 
 const virtpad_settings default_padstyle = {
-  {"Virtual Gamepad (MoltenGamepad)", 1, 1, 1}, //u_ids
+  {"Virtual Gamepad (MoltenGamepad)", "", 1, 1, 1}, //u_ids
   false, //dpad_as_hat
   true, //analog_triggers
   false, //rumble
@@ -18,7 +18,7 @@ const virtpad_settings default_padstyle = {
 };
 
 const virtpad_settings xpad_padstyle = {
-  {"Microsoft X-Box 360 pad", 0x045e, 0x028e, 0x110}, //u_ids
+  {"Microsoft X-Box 360 pad", "", 0x045e, 0x028e, 0x110}, //u_ids
   true, //dpad_as_hat
   true, //analog_triggers
   false, //rumble

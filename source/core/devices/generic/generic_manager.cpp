@@ -185,7 +185,17 @@ void generic_manager::create_inputs(generic_file* opened_file) {
     generic_device* gendev = new generic_device(splitevents.at(i - 1), event_count, opened_file, descr->split_types[i-1], descr->rumble);
     device_plugin plug = genericdev;
     plug.name_stem = descr->devname.c_str();
-    plug.uniq = gendev->uniq.c_str();
+    //if we have split devices, add identifiers for each split.
+    //If split == 1 (no splitting), then no extra identifiers needed.
+    std::string dev_suffix = (split > 1) ? "/split" + std::to_string(i) : "";
+    std::string phys = opened_file->phys;
+    if (!phys.empty())
+      phys += dev_suffix;
+    std::string uniq = opened_file->uniq;
+    if (!uniq.empty())
+      uniq += dev_suffix;
+    plug.uniq = uniq.c_str();
+    plug.phys = phys.c_str();
     input_source* source = mg->add_device(ref, plug, gendev).get();
     if (source) opened_file->add_dev(source);
   }

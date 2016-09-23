@@ -10,6 +10,9 @@ generic_file::generic_file(moltengamepad* mg, struct udev_device* node, bool gra
     const char* uniq_id = udev_device_get_property_value(hidparent, "HID_UNIQ");
     if (uniq_id) 
       uniq = std::string(uniq_id);
+    const char* phys_id = udev_device_get_property_value(hidparent, "HID_PHYS");
+    if (phys_id)
+      phys = std::string(phys_id);
   }
   epfd = epoll_create(1);
   if (epfd < 1) perror("epoll create");

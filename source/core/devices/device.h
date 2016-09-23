@@ -93,6 +93,7 @@ public:
   std::string get_manager_name() const;
   std::string get_description() const;
   std::string get_uniq() const { return uniq; };
+  std::string get_phys() const { return phys; };
   std::string get_type() const;
   std::string get_alias(std::string event_name) const;
   std::shared_ptr<profile> get_profile() const { return devprofile; };
@@ -108,6 +109,7 @@ protected:
   std::string descr = "No description available";
   std::string device_type = "gamepad";
   std::string uniq = ""; //A unique string for this input_source, if available
+  std::string phys = ""; //A string describing how/where this device is connected, if available.
   std::vector<source_event> events;
   std::vector<event_mapping> ev_map;
   std::map<std::string, option_info> options;

@@ -95,6 +95,7 @@ public:
   std::vector<int> fds;
   std::map<std::string, generic_node> nodes;
   std::string uniq;
+  std::string phys;
   std::mutex lock;
   bool grab_ioctl = false;
   bool grab_chmod = false;
@@ -128,7 +129,6 @@ public:
   event_state* eventstates = nullptr;
   bool rumble = false;
   const std::string type;
-  const std::string uniq;
 
   std::map<evcode, decodedevent> eventcodes;
   struct udev_device* node = nullptr;

@@ -128,7 +128,7 @@ int uinput::make_gamepad(const uinput_ids& ids, bool dpad_as_hat, bool analog_tr
     ioctl(fd, UI_SET_FFBIT, FF_RUMBLE);
     uidev.ff_effects_max = 1;
   }
-  ioctl(fd, UI_SET_PHYS, "moltengamepad");
+  ioctl(fd, UI_SET_PHYS, ids.phys.c_str());
 
 
   write(fd, &uidev, sizeof(uidev));
@@ -188,7 +188,7 @@ int uinput::make_keyboard(const uinput_ids& ids) {
   }
 
   ioctl(fd, UI_SET_PROPBIT, INPUT_PROP_DIRECT);
-  ioctl(fd, UI_SET_PHYS, "moltengamepad");
+  ioctl(fd, UI_SET_PHYS, ids.phys.c_str());
 
   write(fd, &uidev, sizeof(uidev));
   if (ioctl(fd, UI_DEV_CREATE) < 0)
@@ -237,7 +237,7 @@ int uinput::make_mouse(const uinput_ids& ids) {
   }
 
   ioctl(fd, UI_SET_PROPBIT, INPUT_PROP_POINTER);
-  ioctl(fd, UI_SET_PHYS, "moltengamepad");
+  ioctl(fd, UI_SET_PHYS, ids.phys.c_str());
 
   write(fd, &uidev, sizeof(uidev));
   if (ioctl(fd, UI_DEV_CREATE) < 0)

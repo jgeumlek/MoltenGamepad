@@ -71,8 +71,10 @@ int do_print_devs(moltengamepad* mg, std::string name, std::ostream& out) {
       out << dev->get_name() <<std::endl;
       out << " \"" << dev->get_description() << "\"" << std::endl;
       out << " type: " << dev->get_type() << std::endl;
-      auto uniq = dev->get_uniq();
+      std::string uniq = dev->get_uniq();
+      std::string phys = dev->get_phys();
       if (!uniq.empty()) out << " uniq: \"" << uniq << "\"" << std::endl;
+      if (!phys.empty()) out << " phys: \"" << phys << "\"" << std::endl;
 
       out << " events:" << std::endl;
       
