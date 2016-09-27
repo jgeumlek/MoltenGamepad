@@ -26,6 +26,7 @@ const virtpad_settings xpad_padstyle = {
 };
 
 
+volatile bool fifo_looping;
 
 std::vector<std::string> find_xdg_config_dirs(std::string commandline_override) {
   std::vector<std::string> dirs;
@@ -158,8 +159,7 @@ std::vector<std::string> moltengamepad::locate_glob(file_category cat, std::stri
 
 
 int fifo_loop(moltengamepad* mg) {
-  bool keep_looping = true;
-  while (keep_looping) {
+  while (fifo_looping) {
     std::ifstream file;
     std::string path;
     mg->opts->get<std::string>("fifo_path",path);
@@ -245,6 +245,30 @@ int moltengamepad::init() {
     return 0;
   });
 
+  //Now that we have all config parsed,
+  //check for FIFO to quit early if needed.
+  if (opts->get<bool>("make_fifo")) {
+    //unlock option so we can set/clear it if needed.
+    opts->lock("fifo_path",false);
+    //try to use $XDG_RUNTIME_DIR, only if set.
+    const char* run_dir = getenv("XDG_RUNTIME_DIR");
+    if (opts->get<std::string>("fifo_path").empty() && run_dir) {
+      opts->set("fifo_path", std::string(run_dir) + "/moltengamepad");
+    }
+    if (opts->get<std::string>("fifo_path").empty()) {
+      errors.take_message("Could not locate fifo path. Use the --fifo-path command line argument.");
+      throw -1; //Abort so we don't accidentally run without a means of control.
+    }
+    int ret = mkfifo(opts->get<std::string>("fifo_path").c_str(), 0660);
+    if (ret < 0)  {
+      perror("making fifo:");
+      opts->set("fifo_path","");
+      throw -1;
+    } else {
+      remote_handler = new std::thread(fifo_loop, this);
+    }
+  }
+
   //build the gamepad profile
   gamepad->gamepad_defaults();
   gamepad->name = "gamepad";
@@ -309,27 +333,10 @@ int moltengamepad::init() {
   if (opts->get<bool>("monitor")) udev.start_monitor();
   if (opts->get<bool>("enumerate"))   udev.enumerate();
 
-  //start listening on FIFO if needed.
+  //Finally start reading FIFO now that everything is up and running.
   if (opts->get<bool>("make_fifo")) {
-    //unlock option so we can set/clear it if needed.
-    opts->lock("fifo_path",false);
-    //try to use $XDG_RUNTIME_DIR, only if set.
-    const char* run_dir = getenv("XDG_RUNTIME_DIR");
-    if (opts->get<std::string>("fifo_path").empty() && run_dir) {
-      opts->set("fifo_path", std::string(run_dir) + "/moltengamepad");
-    }
-    if (opts->get<std::string>("fifo_path").empty()) {
-      errors.take_message("Could not locate fifo path. Use the --fifo-path command line argument.");
-      throw - 1; //Abort so we don't accidentally run without a means of control.
-    }
-    int ret = mkfifo(opts->get<std::string>("fifo_path").c_str(), 0660);
-    if (ret < 0)  {
-      perror("making fifo:");
-      opts->set("fifo_path","");
-      throw -1;
-    } else {
-      remote_handler = new std::thread(fifo_loop, this);
-    }
+    fifo_looping = true;
+    remote_handler = new std::thread(fifo_loop, this);
   }
 
 
@@ -351,6 +358,7 @@ moltengamepad::~moltengamepad() {
   if (opts->get<bool>("make_fifo")) {
     std::ofstream fifo;
     std::string path;
+    fifo_looping = false;
     opts->get("fifo_path",path);
     fifo.open(path, std::ostream::out);
     unlink(path.c_str());
