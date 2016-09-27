@@ -4,14 +4,16 @@ device_plugin wiidev;
 
 int wiimote_plugin_init(plugin_api api) {
   //set static vars
-  wiimote_manager::methods = api.manager;
-  wiimote::methods = api.device;
-  wiimote_manager::request_slot = api.mg.request_slot;
-  wiimote_manager::grab_permissions = api.mg.grab_permissions;
+  wiimote_manager::methods = *(api.head.manager);
+  wiimote::methods = *(api.head.device);
+  wiimote_manager::request_slot = api.head.mg->request_slot;
+  wiimote_manager::grab_permissions = api.head.mg->grab_permissions;
   wiimote_manager* manager = new wiimote_manager();
 
   //set manager call backs
   manager_plugin wiiman;
+  memset(&wiiman, 0, sizeof(wiiman));
+  wiiman.size = sizeof(wiiman);
   wiiman.name = "wiimote";
   wiiman.subscribe_to_gamepad_profile = true;
   wiiman.init = [] (void* wm, device_manager* ref) -> int {
@@ -30,6 +32,8 @@ int wiimote_plugin_init(plugin_api api) {
   };
 
   //set device callbacks
+  memset(&wiidev, 0, sizeof(wiidev));
+  wiidev.size = sizeof(wiidev);
   wiidev.name_stem = "wm";
   wiidev.uniq = "";
   wiidev.phys = "";

@@ -9,12 +9,14 @@ device_plugin scdev;
 
 int sc_plugin_init(plugin_api api) {  
   //set static vars
-  steam_controller_manager::methods = api.manager;
-  steam_controller::methods = api.device;
+  steam_controller_manager::methods = *(api.head.manager);
+  steam_controller::methods = *(api.head.device);
   steam_controller_manager* manager = new steam_controller_manager();
 
   //set manager call backs
   manager_plugin scman;
+  memset(&scman, 0, sizeof(scman));
+  scman.size = sizeof(scman);
   scman.name = "steamcontroller";
   scman.subscribe_to_gamepad_profile = true;
   scman.init = [] (void* plug_data, device_manager* ref) -> int {
@@ -33,6 +35,8 @@ int sc_plugin_init(plugin_api api) {
   };
 
   //set device call backs
+  memset(&scdev, 0, sizeof(scdev));
+  scdev.size = sizeof(scdev);
   scdev.name_stem = "sc";
   scdev.uniq = "";
   scdev.phys = "";

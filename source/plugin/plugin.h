@@ -52,6 +52,7 @@ struct option_decl {
 
 //These are methods of an input_source that the plugin may call.
 struct device_methods {
+  size_t size;
   //retrieve the driver-supplied pointer
   void* (*plug_data) (const input_source* dev);
   //Watch the given file descriptor, with a tag to identify it.
@@ -76,6 +77,7 @@ struct device_methods {
 };
 
 struct device_plugin {
+  size_t size;
   //The name of this device and its profile.
   //An appropriate number will be appended to this name.
   const char* name_stem;
@@ -111,6 +113,7 @@ struct device_plugin {
 };
 
 struct manager_methods {
+  size_t size;
   //retrieve the driver-supplied pointer
   void* (*plug_data) (const device_manager*);
   //expose an event
@@ -130,6 +133,7 @@ struct manager_methods {
 };
 
 struct manager_plugin {
+  size_t size;
   //A name for this manager and its profile
   const char* name;
   //set to true if the manager's profile should listen for changes to the gamepad profile.
@@ -161,6 +165,7 @@ struct manager_plugin {
 
 
 struct moltengamepad_methods {
+  size_t size;
   //Add a device manager with the given callbacks and plug_data
   device_manager* (*add_manager) (manager_plugin, void* manager_plug_data);
   //Request that this input source be assigned a slot.
@@ -172,8 +177,18 @@ struct moltengamepad_methods {
   int (*grab_permissions) (udev_device* dev, bool grabbed);
 };
 
-//A struct of all the methods the plugin will be provided.
+//A struct of pointers all the methods the plugin will be provided.
+struct plugin_api_header {
+  size_t size;
+  struct moltengamepad_methods* mg;
+  struct manager_methods* manager;
+  struct device_methods* device;
+};
+
+//Use the header to get offsets to the relevant sections rather than
+//accessing directly, as sizes of these structs may grow.
 struct plugin_api {
+  plugin_api_header head;
   struct moltengamepad_methods mg;
   struct manager_methods manager;
   struct device_methods device;

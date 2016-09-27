@@ -312,10 +312,13 @@ device_plugin genericdev;
 manager_plugin genericman;
 
 int init_generic_callbacks() {
-  generic_device::methods = plugin_methods.device;
-  generic_manager::methods = plugin_methods.manager;
+  generic_device::methods = *(plugin_methods.head.device);
+  generic_manager::methods = *(plugin_methods.head.manager);
 
   //set manager call backs
+  memset(&genericman, 0, sizeof(genericman));
+  genericman.size = sizeof(genericman);
+
   genericman.name = "generic";
   genericman.subscribe_to_gamepad_profile = true;
   genericman.init = [] (void* wm, device_manager* ref) -> int {
@@ -332,6 +335,8 @@ int init_generic_callbacks() {
   };
 
   //set device callbacks
+  memset(&genericdev, 0, sizeof(genericdev));
+  genericdev.size = sizeof(genericdev);
   genericdev.name_stem = "generic_device";
   genericdev.uniq = "";
   genericdev.phys = "";
