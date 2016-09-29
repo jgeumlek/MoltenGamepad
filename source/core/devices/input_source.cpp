@@ -264,13 +264,23 @@ void input_source::send_value(int id, int64_t value) {
   
   events.at(id).value = value;
 
+  //On a key press, try to claim a slot if we don't have one.
+  if (!out_dev && events.at(id).type == DEV_KEY && value) {
+    manager->mg->slots->request_slot(this);
+    //Normally moving slots sends an event queued into our private pipe.
+    //out_dev won't be updated until that event is read to ensure
+    //no race condition with event processing. But right now we are
+    //on the event loop thread. Skip the wait, set outdev now.
+    //(The internal message will still be processed later, but
+    // nothing will happen beyond assigning to out_dev again.)
+    std::lock_guard<std::mutex> guard(slot_lock);
+    out_dev = assigned_slot;
+  }
+
   if (blocked) return;
 
   if (ev_map.at(id).trans && out_dev) ev_map.at(id).trans->process({value}, out_dev);
-
-  //On a key press, try to claim a slot if we don't have one.
-  if (!out_dev && events.at(id).type == DEV_KEY)
-    manager->mg->slots->request_slot(this);
+    
 
 }
 
@@ -288,11 +298,20 @@ void input_source::force_value(int id, int64_t value) {
 
   events.at(id).value = value;
 
-  if (ev_map.at(id).trans && out_dev) ev_map.at(id).trans->process({value}, out_dev);
-
   //On a key press, try to claim a slot if we don't have one.
-  if (!out_dev && events.at(id).type == DEV_KEY)
+  if (!out_dev && events.at(id).type == DEV_KEY && value) {
     manager->mg->slots->request_slot(this);
+    //Normally moving slots sends an event queued into our private pipe.
+    //out_dev won't be updated until that event is read to ensure
+    //no race condition with event processing. But right now we are
+    //on the event loop thread. Skip the wait, set outdev now.
+    //(The internal message will still be processed later, but
+    // nothing will happen beyond assigning to out_dev again.)
+    std::lock_guard<std::mutex> guard(slot_lock);
+    out_dev = assigned_slot;
+  }
+
+  if (ev_map.at(id).trans && out_dev) ev_map.at(id).trans->process({value}, out_dev);
 
 }
 
