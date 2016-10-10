@@ -3,13 +3,13 @@
 
 
 #define SET_USAGE "USAGE:\n\tset <category> <option name> = <value>\n\tuse \"print options\" to see available categories."
-int do_set(moltengamepad* mg, std::vector<token>& command) {
+int do_set(moltengamepad* mg, std::vector<token>& command, message_stream* out) {
   if (command.size() < 5) {
-    std::cout << SET_USAGE << std::endl;
+    out->print(SET_USAGE);
     return -1;
   }
   if (command.at(3).type != TK_EQUAL) {
-    std::cout << SET_USAGE << std::endl;
+    out->print(SET_USAGE);
     return -1;
   }
   std::string category = command.at(1).value;
@@ -17,7 +17,7 @@ int do_set(moltengamepad* mg, std::vector<token>& command) {
   std::string opvalue = command.at(4).value;
   int ret = mg->set_option(category, opname, opvalue);
   if (ret)
-    std::cout << "error setting option " + opname + " = " + opvalue << std::endl;
+    out->err("error setting option " + opname + " = " + opvalue);
   return ret;
 }
 

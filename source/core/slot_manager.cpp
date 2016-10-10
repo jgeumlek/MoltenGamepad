@@ -18,7 +18,6 @@ slot_manager::slot_manager(int max_pads, bool keys, const virtpad_settings& pads
     slots.push_back(new virtual_gamepad("virtpad" + std::to_string(i + 1), "A virtual gamepad", padstyle, ui));
     slots[i]->state = SLOT_ACTIVE;
   }
-  log.add_listener(1);
   opts.register_option({"active_pads","Number of virtpad slots currently active for assignment.", std::to_string(max_pads).c_str(), MG_INT});
   opts.register_option({"auto_assign","Assign devices to an output slot upon connection.", "false", MG_BOOL});
 

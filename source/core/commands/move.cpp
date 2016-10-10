@@ -7,13 +7,13 @@
 
 
 #define MOVE_USAGE "USAGE:\n\tmove <device> to <slot>\n\t\"all\" can be used to refer to all devices\n\t\"nothing\" can be used as a slot name to remove from all slots\n\t\"auto\" can be used as a slot name to let the slot manager decide"
-int do_move(moltengamepad* mg, std::vector<token>& command) {
+int do_move(moltengamepad* mg, std::vector<token>& command, message_stream* out) {
   if (command.size() < 4) {
-    std::cout << MOVE_USAGE << std::endl;
+    out->print(MOVE_USAGE);
     return -1;
   }
   if (command.at(2).value != "to") {
-    std::cout << MOVE_USAGE << std::endl;
+    out->print(MOVE_USAGE);
     return -1;
   }
   std::string devname = command.at(1).value;
@@ -21,7 +21,7 @@ int do_move(moltengamepad* mg, std::vector<token>& command) {
   std::shared_ptr<input_source> dev = mg->find_device(devname.c_str());
   output_slot* slot = mg->slots->find_slot(slotname);
   if (!dev.get() && devname != "all") {
-    std::cout << "device " << devname << " not found.\n" << MOVE_USAGE << std::endl;
+    out->err("device " + devname + " not found.");
     return -1;
   };
   if (!slot && slotname == "auto") {
@@ -35,7 +35,7 @@ int do_move(moltengamepad* mg, std::vector<token>& command) {
     return 0;
   }
   if (!slot && slotname != "nothing") {
-    std::cout << "slot " << slotname << " not found.\n" << MOVE_USAGE << std::endl;
+    out->err("slot " + slotname + " not found.");
     return -1;
   };
   if (devname != "all") {

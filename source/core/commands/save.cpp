@@ -8,13 +8,13 @@
 int do_print_profile(moltengamepad* mg, std::string name, std::ostream& out);
 
 #define SAVE_USAGE "USAGE:\n\tsave profiles [profile name, ...] to <filename>\n\tFile will be placed in the profile directory"
-int do_save(moltengamepad* mg, std::vector<token>& command) {
+int do_save(moltengamepad* mg, std::vector<token>& command, message_stream* out) {
   if (command.size() < 4) {
-    std::cout << SAVE_USAGE << std::endl;
+    out->print(SAVE_USAGE);
     return -1;
   };
   if (command.at(1).value != "profiles" && command.at(1).value != "profile") {
-    std::cout << SAVE_USAGE << std::endl;
+    out->print(SAVE_USAGE);
     return -1;
   };
 
@@ -26,7 +26,7 @@ int do_save(moltengamepad* mg, std::vector<token>& command) {
   }
 
   if (i >= command.size() - 1) {
-    std::cout << SAVE_USAGE << std::endl;
+    out->print(SAVE_USAGE);
     return -1; //Ran out of tokens before getting to the filename
   }
   i++;
@@ -45,11 +45,11 @@ int do_save(moltengamepad* mg, std::vector<token>& command) {
     filename = std::string(resolved);
     free(resolved);
   }
-  std::cout << "attempting to save to " << filename << std::endl;
+  out->print("attempting to save to " + filename);
   std::ofstream file;
   file.open(filename, std::ofstream::out);
   if (file.fail()) {
-    std::cout << "could not open file" << std::endl;
+    out->err("could not open file " + filename);
     return -2;
   }
 
@@ -61,7 +61,7 @@ int do_save(moltengamepad* mg, std::vector<token>& command) {
 
   for (auto prof : profiles_to_save) {
     //TODO: Refactor so we can detect a profile doesn't exist earlier.
-    std::cout << "saving profile " << prof << std::endl;
+    out->print("saving profile ");
     file << "[" << prof << "]" << std::endl;
     do_print_profile(mg, prof, file);
   }

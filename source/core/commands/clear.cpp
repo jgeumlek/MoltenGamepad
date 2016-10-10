@@ -7,9 +7,9 @@
 
 
 #define CLEAR_USAGE "USAGE:\n\tclear <slot> \n\t\"allpads\" may be used as a slot name to refer to all gamepad slots"
-int do_clear(moltengamepad* mg, std::vector<token>& command) {
+int do_clear(moltengamepad* mg, std::vector<token>& command, message_stream* out) {
   if (command.size() < 2) {
-    std::cout << CLEAR_USAGE << std::endl;
+    out->print(CLEAR_USAGE);
     return -1;
   }
   std::string slotname = command.at(1).value;
@@ -22,7 +22,7 @@ int do_clear(moltengamepad* mg, std::vector<token>& command) {
   }
   output_slot* slot = mg->slots->find_slot(slotname);
   if (!slot) {
-    std::cout << "slot " << slotname << " not found.\n" << CLEAR_USAGE << std::endl;
+    out->err("slot " + slotname + " not found.");
     return -1;
   }
   slot->clear_outputs();

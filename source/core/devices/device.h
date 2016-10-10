@@ -181,7 +181,7 @@ public:
   void for_all_devices(std::function<void (const input_source*)> func);
 
   std::string name;
-  simple_messenger log;
+  message_stream log;
   std::shared_ptr<profile> mapprofile = std::make_shared<profile>();
 
   std::vector<event_decl> events;

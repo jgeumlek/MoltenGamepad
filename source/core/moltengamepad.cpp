@@ -6,6 +6,7 @@
 #include <glob.h>
 #include "devices/generic/generic.h"
 #include "parser.h"
+#include "protocols/ostream_protocol.h"
 
 //FUTURE WORK: Make it easier to specify additional virtpad styles.
 
@@ -223,7 +224,7 @@ int config_parse_line(moltengamepad* mg, std::vector<token>& line, context conte
 int moltengamepad::init() {
   //This whole function is pretty bad in handling the config directories not being present.
   //But at least we aren't just spilling into the user's top level home directory.
-  
+  stdout = new ostream_protocol(std::cout, std::cerr);
   //load config dirs from environment variables
   xdg_config_dirs = find_xdg_config_dirs(opts->get<std::string>("config_dir"));
   
@@ -256,7 +257,7 @@ int moltengamepad::init() {
       opts->set("fifo_path", std::string(run_dir) + "/moltengamepad");
     }
     if (opts->get<std::string>("fifo_path").empty()) {
-      errors.take_message("Could not locate fifo path. Use the --fifo-path command line argument.");
+      stdout->err(0,"Could not locate fifo path. Use the --fifo-path command line argument.");
       throw -1; //Abort so we don't accidentally run without a means of control.
     }
     int ret = mkfifo(opts->get<std::string>("fifo_path").c_str(), 0660);
@@ -281,9 +282,9 @@ int moltengamepad::init() {
   opts->get<bool>("rumble",padstyle.rumble);
   slots = new slot_manager(opts->get<int>("num_gamepads"), opts->get<bool>("make_keyboard"), padstyle);
   //add standard streams
-  drivers.add_listener(1);
-  plugs.add_listener(1);
-  errors.add_listener(2);
+  drivers.add_listener(stdout);
+  plugs.add_listener(stdout);
+  slots->log.add_listener(stdout);
 
   //add built in drivers
   init_plugin_api();
@@ -363,6 +364,7 @@ moltengamepad::~moltengamepad() {
     fifo.open(path, std::ostream::out);
     unlink(path.c_str());
     fifo << "quit" << std::endl;
+    fifo.close();
     if (remote_handler) {
       remote_handler->join();
       delete remote_handler;
@@ -380,6 +382,8 @@ moltengamepad::~moltengamepad() {
 
   //delete output slots
   delete slots;
+
+  delete stdout;
 }
 
 
@@ -388,11 +392,11 @@ device_manager* moltengamepad::add_manager(manager_plugin manager, void* manager
   std::string manager_name(manager.name);
   bool destroyed = false;
   if (forbidden_ids.find(manager_name) != forbidden_ids.end()) {
-    errors.take_message("manager name " + manager_name + " is invalid.");
+    drivers.err("manager name " + manager_name + " is invalid.");
     destroyed = true;
   }
   if (ids_in_use.find(manager_name) != ids_in_use.end()) {
-    errors.take_message("redundant manager " + manager_name + " ignored.");
+    drivers.err("redundant manager " + manager_name + " ignored.");
     destroyed = true;
   }
   if (destroyed) {
@@ -458,7 +462,7 @@ std::shared_ptr<input_source> moltengamepad::add_device(input_source* source, de
   }
   
   if (!available) {
-    errors.take_message("could not find available name for " + name_stem);
+    plugs.err("could not find available name for " + name_stem);
     return nullptr;
   }
   //Set the device and profile name, send a message, link the profile, and finally start the device thread.

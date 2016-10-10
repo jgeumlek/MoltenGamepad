@@ -3,7 +3,7 @@
 
 device_manager::device_manager(moltengamepad* mg, manager_plugin plugin, void* plug_data) : mg(mg), plugin(plugin), name(plugin.name), log(name), plug_data(plug_data), opts([&] (std::string& name, MGField value) { return process_manager_option(name, value); }) {
   mapprofile->name = name;
-  log.add_listener(1);
+  log.add_listener(mg->stdout);
   if (plugin.init)
     plugin.init(plug_data, this);
 }

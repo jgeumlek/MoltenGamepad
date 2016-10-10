@@ -187,21 +187,45 @@ int do_print_assignments(moltengamepad* mg, std::string name, std::ostream& out)
 "\ttypes recognized: drivers, devices, profiles, slots, options, assignments\n"\
 "\tprint <type> will list all elements of that type\n"\
 "\tprint <type> [element] will show detailed info on that element\n"
-int do_print(moltengamepad* mg, std::vector<token>& command) {
+int do_print(moltengamepad* mg, std::vector<token>& command, message_stream* out) {
   if (command.size() < 2) {
-    std::cout << PRINT_USAGE << std::endl;
+    out->print(PRINT_USAGE);
     return -1;
   }
+  std::stringstream ss;
   std::string arg = (command.size() >= 3 && command.at(2).type == TK_IDENT) ? command.at(2).value : "";
   //be generous, compare only the roots of the categories. So "slot" or "slots" is fine.
-  if (command.at(1).value.compare(0, 6, "driver") == 0) return do_print_drivers(mg, arg, std::cout);
-  if (command.at(1).value.compare(0, 6, "device") == 0) return do_print_devs(mg, arg, std::cout);
-  if (command.at(1).value.compare(0, 7, "profile") == 0) return do_print_profile(mg, arg, std::cout);
-  if (command.at(1).value.compare(0, 4, "slot") == 0) return do_print_slots(mg, arg, std::cout);
-  if (command.at(1).value.compare(0, 6, "option") == 0) return do_print_options(mg, arg, std::cout);
-  if (command.at(1).value.compare(0, 6, "assign") == 0) return do_print_assignments(mg, arg, std::cout);
+  bool matched = false;
+  if (command.at(1).value.compare(0, 6, "driver") == 0) {
+    do_print_drivers(mg, arg, ss);
+    matched = true;
+  }
+  if (command.at(1).value.compare(0, 6, "device") == 0) {
+    do_print_devs(mg, arg, ss);
+    matched = true;
+  }
+  if (command.at(1).value.compare(0, 7, "profile") == 0) {
+    do_print_profile(mg, arg, ss);
+    matched = true;
+  }
+  if (command.at(1).value.compare(0, 4, "slot") == 0) {
+    do_print_slots(mg, arg, ss);
+    matched = true;
+  }
+  if (command.at(1).value.compare(0, 6, "option") == 0) {
+    do_print_options(mg, arg, ss);
+    matched = true;
+  }
+  if (command.at(1).value.compare(0, 6, "assign") == 0) {
+    do_print_assignments(mg, arg, ss);
+    matched = true;
+  }
 
-  std::cout << PRINT_USAGE << std::endl;
+  if (matched) {
+    out->print(ss.str());
+  } else {
+    out->print(PRINT_USAGE);
+  }
   return 0;
 }
 

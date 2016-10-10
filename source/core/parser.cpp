@@ -187,8 +187,8 @@ void MGparser::load_translators(moltengamepad* mg) {
   trans_gens["key"] = trans_gens["mouse"];
 }
 
-MGparser::MGparser(moltengamepad* mg) : out("parse") {
-  out.add_listener(1);
+MGparser::MGparser(moltengamepad* mg, message_protocol* output) : out("parse") {
+  out.add_listener(output);
 }
 
 void MGparser::do_assignment(std::string header, std::string field, std::vector<token> rhs) {
@@ -372,7 +372,7 @@ void MGparser::parse_line(std::vector<token>& line, std::string& header) {
   if (find_token_type(TK_EQUAL, line) && line[0].value != "set") {
     do_assignment_line(line, header);
   } else {
-    do_command(mg, line);
+    do_command(mg, line, &out);
   }
 
 }

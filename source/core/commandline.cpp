@@ -6,14 +6,14 @@
 #include "parser.h"
 
 
-int do_save(moltengamepad* mg, std::vector<token>& command);
-int do_print(moltengamepad* mg, std::vector<token>& command);
-int do_load(moltengamepad* mg, std::vector<token>& command);
-int do_move(moltengamepad* mg, std::vector<token>& command);
-int do_alterslot(moltengamepad* mg, std::vector<token>& command);
-int do_assign(moltengamepad* mg, std::vector<token>& command);
-int do_clear(moltengamepad* mg, std::vector<token>& command);
-int do_set(moltengamepad* mg, std::vector<token>& command);
+int do_save(moltengamepad* mg, std::vector<token>& command, message_stream* out);
+int do_print(moltengamepad* mg, std::vector<token>& command, message_stream* out);
+int do_load(moltengamepad* mg, std::vector<token>& command, message_stream* out);
+int do_move(moltengamepad* mg, std::vector<token>& command, message_stream* out);
+int do_alterslot(moltengamepad* mg, std::vector<token>& command, message_stream* out);
+int do_assign(moltengamepad* mg, std::vector<token>& command, message_stream* out);
+int do_clear(moltengamepad* mg, std::vector<token>& command, message_stream* out);
+int do_set(moltengamepad* mg, std::vector<token>& command, message_stream* out);
 
 #define HELP_TEXT "available commands:\n"\
 "\tprint:\tprint out lists and information\n"\
@@ -28,33 +28,33 @@ int do_set(moltengamepad* mg, std::vector<token>& command);
 "\t\tchange the event mapping for <event> to <outevent> in the profile <profile>\n"\
 "\t<profile>.?<option> = <value>\n"\
 "\t\tchange a local option for a profile"
-int do_command(moltengamepad* mg, std::vector<token>& command) {
+int do_command(moltengamepad* mg, std::vector<token>& command, message_stream* out) {
   if (command.empty()) return 0;
   if (command.front().type == TK_ENDL) return 0;
   if (command.back().type == TK_ENDL) command.pop_back();
   if (command.front().value == "print") {
-    do_print(mg, command);
+    do_print(mg, command, out);
     return 0;
   }
   if (command.front().value == "move") {
-    do_move(mg, command);
+    do_move(mg, command, out);
     return 0;
   }
 
-  if (command.front().value == "save") return do_save(mg, command);
-  if (command.front().value == "load") return do_load(mg, command);
-  if (command.front().value == "alterslot") return do_alterslot(mg, command);
-  if (command.front().value == "clear") return do_clear(mg, command);
-  if (command.front().value == "set") return do_set(mg, command);
-  if (command.front().value == "assign") return do_assign(mg, command);
+  if (command.front().value == "save") return do_save(mg, command, out);
+  if (command.front().value == "load") return do_load(mg, command, out);
+  if (command.front().value == "alterslot") return do_alterslot(mg, command, out);
+  if (command.front().value == "clear") return do_clear(mg, command, out);
+  if (command.front().value == "set") return do_set(mg, command, out);
+  if (command.front().value == "assign") return do_assign(mg, command, out);
   if (command.front().value == "help") {
-    std::cout << HELP_TEXT << std::endl;
+    out->print(HELP_TEXT);
     return 0;
   };
   if (command.front().value == "quit") {
     return 0;
   };
-  std::cout << "Command not recognized. \"help\" for available commands" << std::endl;
+  out->print("Command not recognized. \"help\" for available commands.");
   return 0;
 }
 
@@ -64,7 +64,7 @@ int shell_loop(moltengamepad* mg, std::istream& in) {
   bool keep_looping = true;
   std::string header = "";
   char* buff = new char [1024];
-  MGparser parser(mg);
+  MGparser parser(mg, mg->stdout);
 
   while (!QUIT_APPLICATION && keep_looping) {
     in.getline(buff, 1024);

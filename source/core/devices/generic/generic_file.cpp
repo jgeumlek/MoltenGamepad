@@ -65,7 +65,7 @@ void generic_file::open_node(struct udev_device* node) {
     if (fd < 0 && mode == O_RDWR && errno == EACCES) {
       fd = open(udev_device_get_devnode(node), O_RDONLY | O_NONBLOCK | O_CLOEXEC);
       if (fd >= 0)
-        mg->errors.take_message("Generic device could not get write permissions. Rumble effects are disabled.");
+        mg->stdout->err(0,"Generic device could not get write permissions. Rumble effects are disabled.");
     }
     if (fd < 0) {
       perror("open subdevice:");

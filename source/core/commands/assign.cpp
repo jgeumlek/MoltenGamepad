@@ -6,9 +6,9 @@
 #include "../parser.h"
 
 #define ASSIGN_USAGE "USAGE:\n\tassign slot <slot> to <type> <id>\n\ttype can be \"name\", \"phys\", or \"uniq\".\n\tid should be the identifier string of the relevant type to be assigned.\n\tSet slot to \"nothing\" to clear this assignment."
-int do_assign(moltengamepad* mg, std::vector<token>& command) {
+int do_assign(moltengamepad* mg, std::vector<token>& command, message_stream* out) {
   if (command.size() < 6) {
-    std::cout << ASSIGN_USAGE << std::endl;
+    out->print(ASSIGN_USAGE);
     return -1;
   }
   std::string type = command.at(4).value;
@@ -17,11 +17,11 @@ int do_assign(moltengamepad* mg, std::vector<token>& command) {
 
   output_slot* slot = mg->slots->find_slot(slotname);
   if (!slot && slotname != "nothing") {
-    std::cout << "slot " << slotname << " not found.\n" << ASSIGN_USAGE << std::endl;
+    out->err("slot " + slotname + " not found.");
     return -1;
   };
   if (type != "name" && type != "phys" && type != "uniq") {
-    std::cout << "type " << type << " was not one of the valid types: name, phys, uniq." << std::endl;
+    out->err("type " + type + " was not one of the valid types: name, phys, uniq.");
     return -1;
   };
   slot_manager::id_type typeval = slot_manager::NAME_ID;

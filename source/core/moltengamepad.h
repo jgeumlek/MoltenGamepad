@@ -16,6 +16,7 @@
 #include "messages.h"
 #include "profile.h"
 #include "plugin_loader.h"
+#include "protocols.h"
 
 #define VERSION_STRING "0.2.1-beta"
 
@@ -52,13 +53,13 @@ public:
   std::unordered_set<std::string> ids_in_use; //prevent duplicate names to avoid ambiguity
   slot_manager* slots;
   udev_handler udev;
-  simple_messenger drivers;
-  simple_messenger plugs;
-  simple_messenger errors;
+  message_protocol* stdout;
+  message_stream drivers;
+  message_stream plugs;
   options* opts;
   std::shared_ptr<profile> gamepad = std::make_shared<profile>();
 
-  moltengamepad(options* opts) : drivers("driver"), plugs("hotplug"), errors("error"), opts(opts) {};
+  moltengamepad(options* opts) : drivers("driver"), plugs("hotplug"), opts(opts) {};
   ~moltengamepad();
   int init();
   int stop();

@@ -33,6 +33,7 @@ public:
   output_slot* debugslot = nullptr;
   options opts;
   std::vector<output_slot*> slots;
+  message_stream log;
 private:
   void remove_from(output_slot* slot);
   void move_device(input_source* dev, output_slot* target);
@@ -47,7 +48,6 @@ private:
   int max_pads = 4;
   int active_pads = 4;
   bool persistent_slots = true;
-  simple_messenger log;
   std::map<std::pair<id_type,std::string>,output_slot*> id_slot_assignments;
 };
 

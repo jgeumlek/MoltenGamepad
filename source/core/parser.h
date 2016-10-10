@@ -33,7 +33,7 @@ public:
 
 class MGparser {
 public:
-  MGparser(moltengamepad* mg);
+  MGparser(moltengamepad* mg, message_protocol* output);
   void exec_line(std::vector<token>& line, std::string& header);
   static event_translator* parse_trans(enum entry_type intype, std::vector<token>& tokens, std::vector<token>::iterator& it);
   static event_translator* parse_special_trans(enum entry_type intype, complex_expr* expr);
@@ -52,7 +52,7 @@ private:
   void parse_line(std::vector<token>& line, std::string& header);
   static event_translator* parse_trans_toplevel_quirks(enum entry_type intype, std::vector<token>& tokens, std::vector<token>::iterator& it);
   static std::map<std::string,trans_generator> trans_gens;
-  simple_messenger out;
+  message_stream out;
 };
 
 
@@ -64,7 +64,7 @@ void free_complex_expr(complex_expr* expr);
 
 
 
-int do_command(moltengamepad* mg, std::vector<token>& command);
+int do_command(moltengamepad* mg, std::vector<token>& command, message_stream* out);
 
 int shell_loop(moltengamepad* mg, std::istream& in);
 
