@@ -63,12 +63,14 @@ Other traits can be specified in match declaration using `<field>=` notation. Av
 * `vendor` : the hexadecimal vendor id
 * `product` : the hexadecimal product id
 * `uniq` : a (potentially missing) uniquely identifying string for the device
+* `driver` : the name of the linux driver for this event device
+* `events` : can be one of `superset`, `subset`, or `exact`. Superset matches if the device contains all the events of this generic driver. Subset matches if the device has no reported events not listed in this driver, but it must have at least one event in common with this driver. Exact requires both of the conditions of superset and subset to hold. That is, the device has exactly the events of this driver; no more, no less.
 
 Putting this together results in a match line that may resemble the following.
 
     [name="Microsoft X-Box 360 pad" vendor=045e product=028e]
 
-The first field is assumed to be the nameg. Thus the following is valid as long as ambiguity is avoided.
+The first field is assumed to be the name. Thus the following is valid as long as ambiguity is avoided.
 
     ["Microsoft X-Box 360 pad" vendor=045e product=028e]
 

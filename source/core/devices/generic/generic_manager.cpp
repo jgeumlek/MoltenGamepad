@@ -1,6 +1,7 @@
 #include "generic.h"
 #include <algorithm>
 #include <unordered_map>
+#include <set>
 
 manager_methods generic_manager::methods;
 
@@ -72,12 +73,135 @@ generic_manager::~generic_manager() {
   delete descr;
 }
 
-bool matched(struct udev* udev, struct udev_device* dev, const device_match& match) {
+//I don't have a 32 bit system to test how it reports its capability strings!
+#ifndef WORD_SIZE
+#define WORD_SIZE 64
+#endif
+
+std::vector<int> read_capabilities(const char* capabilities) {
+  std::vector<int> codes;
+  int len = strlen(capabilities);
+  if (len <= 0)
+    return codes;
+  //We are given a bitmask in hexadecimal
+  //We read right to left, as the lowest codes have the last bits.
+  //When we encounter a space, we skip to the next word boundary.
+  //(Any leading zeroes in a word have been stripped!)
+  int code = 0;
+  int next_word = WORD_SIZE;
+  const char* ptr = capabilities + len - 1;
+
+  for (const char* ptr = capabilities + len; ptr >= capabilities; ptr--) {
+    if (*ptr == '\n' || *ptr == '\0')
+      continue;
+    if (*ptr == ' ') {
+      code = next_word;
+      next_word += WORD_SIZE;
+      continue;
+    }
+    int digit = *ptr;
+    if (digit >= '0' && digit <= '9')
+      digit -= '0';
+    if (digit >= 'a' && digit <= 'f')
+      digit = (digit - 'a') + 10;
+    for (int i = 0;  i < 4; i++) {
+      if (digit & 1) {
+        codes.push_back(code);
+      }
+      digit >>= 1;
+      code++;
+    }
+  }
+  return codes;
+}
+
+
+bool events_matched(udev* udev, udev_device* dev, const generic_driver_info* gendev, device_match::ev_match match) {
+  if (match == device_match::EV_MATCH_IGNORED)
+    return true;
+  std::set<std::pair<entry_type,int>> gendev_events;
+  bool superset = false;
+  bool subset = true;
+  char* buffer = new char[1024];
+  memset(buffer, 0, 1024);
+  for (const gen_source_event& g_ev : gendev->events)
+    gendev_events.insert(std::make_pair(g_ev.type,g_ev.code));
+
+  udev_device* parent = udev_device_get_parent(dev);
+  const char* syspath = udev_device_get_syspath(parent);
+  if (!syspath) {
+    delete[] buffer;
+    return false;
+  }
+  std::string base_path(syspath);
+  base_path += "/capabilities/";
+  //Check abs events
+  int fd = open((base_path+"abs").c_str(), O_RDONLY);
+  if (fd < 1) {
+    delete[] buffer;
+    return false;
+  }
+  read(fd, buffer, 1024);
+  buffer[1023] = '\0';
+  close(fd);
+  std::vector<int> codes = read_capabilities(buffer);
+  for (int code : codes) {
+    std::pair<entry_type,int> pair = std::make_pair(DEV_AXIS,code);
+    int found = gendev_events.erase(pair);
+    if (!found) {
+      subset = false;
+      if (match != device_match::EV_MATCH_SUPERSET) {
+        delete[] buffer;
+        return false;
+      }
+    }
+  }
+  int total_events = codes.size();
+  //check key events
+  fd = open((base_path+"key").c_str(), O_RDONLY);
+  if (fd < 1) {
+    delete[] buffer;
+    return false;
+  }
+  memset(buffer, 0, 1024);
+  read(fd, buffer, 1024);
+  buffer[1023] = '\0';
+  close(fd);
+  codes = read_capabilities(buffer);
+  for (int code : codes) {
+    std::pair<entry_type,int> pair = std::make_pair(DEV_KEY,code);
+    int found = gendev_events.erase(pair);
+    if (!found) {
+      subset = false;
+      if (match != device_match::EV_MATCH_SUPERSET) {
+        delete[] buffer;
+        return false;
+      }
+    }
+  }
+  total_events += codes.size();
+  delete[] buffer;
+  superset = gendev_events.empty();
+  if (match == device_match::EV_MATCH_SUBSET) {
+    //reject the empty set as a trivial subset.
+    return subset && (total_events > 0);
+  }
+  if (match == device_match::EV_MATCH_EXACT) {
+    return subset && superset;
+  }
+  if (match == device_match::EV_MATCH_SUPERSET) {
+    return superset;
+  }
+  return false;
+}
+
+bool matched(struct udev* udev, struct udev_device* dev, const device_match& match, const generic_driver_info* gendev) {
   bool result = true;
   bool valid = false; //require at least one thing be matched...
   //lots of things to compute
   const char* phys = nullptr;
   const char* uniq = nullptr;
+  const char* driver = udev_device_get_driver(dev);
   std::string vendor_id;
   std::string product_id;
   struct udev_device* hidparent = udev_device_get_parent_with_subsystem_devtype(dev,"hid",NULL);
@@ -114,6 +238,10 @@ bool matched(struct udev* udev, struct udev_device* dev, const device_match& mat
     valid = true;
     result = result && (phys && !strcmp(match.phys.c_str(), phys));
   }
+  if (!match.driver.empty()) {
+    valid = true;
+    result = result && (driver && !strcmp(match.driver.c_str(), driver));
+  }
   if (match.vendor != -1) {
     valid = true;
     int vendor = parse_hex(vendor_id);
@@ -123,6 +251,10 @@ bool matched(struct udev* udev, struct udev_device* dev, const device_match& mat
     valid = true;
     int product = parse_hex(product_id);
     result = result && (match.product == product);
+  }
+  if (match.events != device_match::EV_MATCH_IGNORED) {
+    valid = true;
+    result = result && events_matched(udev, dev, gendev, match.events);
   }
   //a match must be valid as well as meeting all criteria
   return valid && result;
@@ -152,7 +284,7 @@ int generic_manager::accept_device(struct udev* udev, struct udev_device* dev) {
       const char* name = nullptr;
       if (!strncmp(sysname, "event", 3)) {
         for (auto it = descr->matches.begin(); it != descr->matches.end(); it++) {
-          if (matched(udev,dev,*it)) {
+          if (matched(udev,dev,*it, descr)) {
             if (open_device(udev, dev) == SUCCESS)
               return DEVICE_CLAIMED;
           }

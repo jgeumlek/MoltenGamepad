@@ -32,6 +32,9 @@ struct device_match {
   std::string name;
   std::string uniq;
   std::string phys;
+  std::string driver;
+  enum ev_match {EV_MATCH_IGNORED, EV_MATCH_SUBSET, EV_MATCH_EXACT, EV_MATCH_SUPERSET};
+  ev_match events = EV_MATCH_IGNORED;
 };
 
 int parse_hex(const std::string& text);
