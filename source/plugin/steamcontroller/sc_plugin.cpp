@@ -1,5 +1,5 @@
 #include "steam_controller.h"
-
+#include <cstring>
 
 device_plugin scdev;
 
