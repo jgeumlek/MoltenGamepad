@@ -164,9 +164,9 @@ Here is a longer file, showing a configuration for a Dualshock 4 controller.
     alias select share
     
     alias tr r1
-    alias tr2 r2
+    alias tr2_axis_btn r2
     alias tl l1
-    alias tl2 l2
+    alias tl2_axis_btn l2
     
     alias tr2_axis r2_axis
     alias tl2_axis l2_axis
