@@ -94,7 +94,7 @@ class generic_file {
 public:
   int epfd = 0;
   std::thread* thread = nullptr;
-  std::vector<input_source*> devices;
+  std::vector<std::shared_ptr<input_source>> devices;
   std::vector<int> fds;
   std::map<std::string, generic_node> nodes;
   std::string uniq;

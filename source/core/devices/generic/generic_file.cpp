@@ -47,7 +47,7 @@ generic_file::~generic_file() {
     delete thread;
   }
   for (auto dev : devices) {
-    mg->remove_device(dev);
+    mg->remove_device(dev.get());
   }
   close(epfd);
   close(internal_pipe[0]);
@@ -117,7 +117,7 @@ void generic_file::close_node(const std::string& path, bool erase) {
 }
 
 void generic_file::add_dev(input_source* dev) {
-  devices.push_back(dev);
+  devices.push_back(dev->shared_from_this());
 }
 
 void generic_file::thread_loop() {
