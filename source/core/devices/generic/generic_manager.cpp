@@ -268,16 +268,18 @@ int generic_manager::accept_device(struct udev* udev, struct udev_device* dev) {
   if (!action) action = "null";
 
   if (!strcmp(action, "remove")) {
-    if (!path) return -1;
+    if (!path) return DEVICE_UNCLAIMED;
     for (auto it = openfiles.begin(); it != openfiles.end(); it++) {
       (*it)->close_node(dev, true);
       if ((*it)->nodes.empty()) {
         delete(*it);
         openfiles.erase(it);
-        return 0;
+        return DEVICE_CLAIMED;
       }
     }
   }
+  int strongest_claim = DEVICE_CLAIMED;
+  bool has_claim = false;
   if (!strcmp(action, "add") || !strcmp(action, "null")) {
     if (!strcmp(subsystem, "input")) {
       const char* sysname = udev_device_get_sysname(dev);
@@ -285,17 +287,32 @@ int generic_manager::accept_device(struct udev* udev, struct udev_device* dev) {
       if (!strncmp(sysname, "event", 3)) {
         for (auto it = descr->matches.begin(); it != descr->matches.end(); it++) {
           if (matched(udev,dev,*it, descr)) {
-            if (open_device(udev, dev) == SUCCESS)
+            //If we are claiming this, open the device and return DEVICE_CLAIMED.
+            if (it->order == DEVICE_CLAIMED && open_device(udev, dev) == SUCCESS)
               return DEVICE_CLAIMED;
+            //otherwise, we are issuing a DEVICE_CLAIMED_DEFERRED() for this,
+            //and we should not open the device.
+            if (!has_claim) {
+              strongest_claim = it->order;
+              has_claim = true;
+            } else {
+              strongest_claim = (strongest_claim < it->order) ? strongest_claim : it->order;
+            }
           }
         }
       }
     }
   }
 
-
+  if (has_claim)
+    return strongest_claim;
 
   return DEVICE_UNCLAIMED;
+}
+
+int generic_manager::accept_deferred_device(struct udev* udev, struct udev_device* dev) {
+  std::lock_guard<std::mutex> lock(devlistlock);
+  return (open_device(udev,dev) == SUCCESS) ? DEVICE_CLAIMED : DEVICE_UNCLAIMED;
 }
 
 int generic_manager::open_device(struct udev* udev, struct udev_device* dev) {

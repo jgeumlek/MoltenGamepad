@@ -5,22 +5,47 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <glob.h>
+#include <algorithm>
 #include "devices/device.h"
 #include "uinput.h"
 
+struct deferred_claim {
+  device_manager* manager;
+  int order;
+};
+
+bool claim_cmp (const deferred_claim& a, const deferred_claim& b) {
+  return a.order < b.order;
+}
+
 void udev_handler::pass_along_device(struct udev_device* new_dev) {
   if (new_dev == nullptr) return;
+  std::vector<deferred_claim> deferred;
   std::lock_guard<std::mutex> lock(manager_lock);
   if (managers == nullptr) return;
-
   std::string path(udev_device_get_syspath(new_dev));
   if (ui && ui->node_owned(path))
     return; //Skip virtual devices we made
+
+  //Give each manager a chance to claim the device.
+  //Any deferred claims will be handled after going past every manager.
   for (auto it = managers->begin(); it != managers->end(); ++it) {
     device_manager* man = *it;
     int ret = man->accept_device(udev, new_dev);
-    if (ret == 0) break;
+    if (ret == DEVICE_CLAIMED) return;
+    if (ret == DEVICE_UNCLAIMED || ret < 0) continue;
+    deferred.push_back({man, ret});
   }
+  if (deferred.empty())
+    return; //no claims, no deferred claims.
+
+  //use stable sort so that the normal ordering still applies.
+  std::stable_sort(deferred.begin(), deferred.end(), claim_cmp);
+  for (deferred_claim claim : deferred) {
+    int ret = claim.manager->accept_deferred_device(udev, new_dev);
+    if (ret == DEVICE_CLAIMED) break;
+  }
+
 }
 
 

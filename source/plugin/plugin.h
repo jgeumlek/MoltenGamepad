@@ -148,9 +148,16 @@ struct manager_plugin {
   //any such processes should be started via this callback.
   //Any functionality that depends on manager options should be done in start
   int (*start) (void* plug_data);
-  //If the udev_device is relevant to this manager:
+  //If the udev device is relevant to this manager:
   //  add or remove input_sources as appropriate
   //  return DEVICE_CLAIMED
+  //If the device is relevant, but it is a low-priority match:
+  //  do nothing
+  //  return DEVICE_CLAIMED_DEFERRED(X)
+  //    where X is a positive integer.
+  //
+  //  this deferred claim MUST NOT be used on device remove events.
+  //
   //otherwise:
   //  return DEVICE_UNCLAIMED
   //This udev_device reference will be freed after this callback end.
@@ -158,6 +165,12 @@ struct manager_plugin {
   int (*process_udev_event) (void* plug_data, struct udev* udev, struct udev_device* dev);
   //UNIMPLEMENTED
   int (*process_manager_option) (void* plug_data, const char* opname, MGField opvalue);
+  //This is called if DEVICE_CLAIMED_DEFERRED() was used, and this driver ultimately
+  //had the strongest claim to the device.
+  //This should add an input_source and return DEVICE_CLAIMED.
+  //
+  //If the driver never uses DEVICE_CLAIMED_DEFERRED(), this function is not used.
+  int (*process_deferred_udev_event) (void* plug_data, struct udev* udev, struct udev_device* dev);
 };
 // init is called first
 // Then process_manager_option for each option registered in init

@@ -35,9 +35,13 @@ enum entry_type {
 };
 
 enum device_claim {
-  DEVICE_CLAIMED,
-  DEVICE_UNCLAIMED,
+  DEVICE_CLAIMED = 0,
+  DEVICE_UNCLAIMED = -1,
 };
+
+//Allow us to report a provisional claim.
+//a later driver might have a stronger claim.
+#define DEVICE_CLAIMED_DEFERRED(X)  (X >= 0 ? X : DEVICE_UNCLAIMED)
 
 enum mg_result_codes {
   SUCCESS = 0,

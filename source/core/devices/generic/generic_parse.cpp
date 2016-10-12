@@ -190,6 +190,14 @@ int parse_hex(const std::string& text) {
   return -1;
 }
 
+int parse_dec(const std::string& text) {
+  try {
+    return std::stoi(text,0,10);
+  } catch(...) {
+  }
+  return -1;
+}
+
 void add_to_match(device_match& current_match, const std::string& field, const std::string& value) {
   if (!value.empty()) {
     if (field == "name")
@@ -214,6 +222,10 @@ void add_to_match(device_match& current_match, const std::string& field, const s
       if (value == "ignored")
         current_match.events = device_match::EV_MATCH_IGNORED;
     }
+    if (field == "order") {
+      int order = parse_dec(value) - 1; //Syntax in gendev *.cfg is one-indexed, internal claim ordering is zero-indexed.
+      current_match.order = DEVICE_CLAIMED_DEFERRED(order);
+    }
   }
 }
 
@@ -236,7 +248,7 @@ int generic_match_line(std::vector<token>& line, device_match& current_match) {
       return 0;
     }
     //process key words as needed.
-    if ((*it).value == "name" || (*it).value == "vendor" || (*it).value == "product" || (*it).value == "uniq" || (*it).value == "phys" || (*it).value == "driver" || (*it).value == "events") {
+    if ((*it).value == "name" || (*it).value == "vendor" || (*it).value == "product" || (*it).value == "uniq" || (*it).value == "phys" || (*it).value == "driver" || (*it).value == "events" || (*it).value == "order") {
       std::string newfield = it->value;
       it++;
       if (it == line.end()) return -1; //Parse error for sure! need a closing brace
@@ -373,6 +385,9 @@ int init_generic_callbacks() {
   genericman.process_manager_option = nullptr;
   genericman.process_udev_event = [] (void* ref, struct udev* udev, struct udev_device* dev) {
     return ((generic_manager*)ref)->accept_device(udev, dev);
+  };
+  genericman.process_deferred_udev_event = [] (void* ref, struct udev* udev, struct udev_device* dev) {
+    return ((generic_manager*)ref)->accept_deferred_device(udev, dev);
   };
 
   //set device callbacks

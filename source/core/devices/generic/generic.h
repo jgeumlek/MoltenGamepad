@@ -35,6 +35,7 @@ struct device_match {
   std::string driver;
   enum ev_match {EV_MATCH_IGNORED, EV_MATCH_SUBSET, EV_MATCH_EXACT, EV_MATCH_SUPERSET};
   ev_match events = EV_MATCH_IGNORED;
+  int order = DEVICE_CLAIMED; //specifies the priority of this match.
 };
 
 int parse_hex(const std::string& text);
@@ -170,6 +171,7 @@ public:
   virtual ~generic_manager();
 
   int accept_device(struct udev* udev, struct udev_device* dev);
+  int accept_deferred_device(struct udev* udev, struct udev_device* dev);
   int init(device_manager* ref);
 
 protected:

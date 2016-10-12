@@ -172,6 +172,7 @@ public:
   input_source* add_device(device_plugin dev, void* dev_plug_data);
 
   int accept_device(struct udev* udev, struct udev_device* dev);
+  int accept_deferred_device(struct udev* udev, struct udev_device* dev);
   int process_manager_option(const std::string& name, MGField value);
 
   const std::vector<event_decl>& get_events() const {

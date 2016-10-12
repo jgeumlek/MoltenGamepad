@@ -47,7 +47,13 @@ device_manager::~device_manager() {
 int device_manager::accept_device(struct udev* udev, struct udev_device* dev) {
   if (plugin.process_udev_event)
     return plugin.process_udev_event(plug_data, udev, dev);
-  return -1;
+  return DEVICE_UNCLAIMED;
+}
+
+int device_manager::accept_deferred_device(struct udev* udev, struct udev_device* dev) {
+  if (plugin.process_deferred_udev_event)
+    return plugin.process_deferred_udev_event(plug_data, udev, dev);
+  return DEVICE_UNCLAIMED;
 }
 
 input_source* device_manager::add_device(device_plugin dev, void* dev_plug_data) {
