@@ -40,7 +40,9 @@ Such a file has the following form, where `#` starts comments. All `<values>` MU
     <event code name> = <name>,<description>
     
     #<event code name> is the evdev event name, such as btn_left or key_esc
-    # NOTE: numeric codes not allowed! Must be event names.
+    # NOTE: If you need to specify an event by number, use the following notation:
+    #       key(306)          [the same as btn_c]
+    #       abs(1)            [the same as abs_y]
     #<name> is the name of the event seen in MoltenGamepad
     #<description> is the description of the event seen in MoltenGamepad
     

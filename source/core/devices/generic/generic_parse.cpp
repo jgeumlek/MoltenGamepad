@@ -13,6 +13,7 @@ void generic_assignment_line(std::vector<token>& line, generic_driver_info*& inf
   auto it = line.begin();
   if (it == line.end()) return;
 
+  //check for a field, like one of our settings
   std::string field = line.front().value;
   std::string prefix = "";
 
@@ -20,6 +21,8 @@ void generic_assignment_line(std::vector<token>& line, generic_driver_info*& inf
 
   if (it == line.end()) return;
 
+  //If we see a dot, then what we saw so far was a prefix!
+  //Like when defining a split event.
   if ((*it).type == TK_DOT) {
     it++;
     if (it == line.end()) return;
@@ -29,8 +32,26 @@ void generic_assignment_line(std::vector<token>& line, generic_driver_info*& inf
 
   }
 
+  if (it == line.end()) return;
+  //If the next char is "(", then we are parsing
+  //a numeric event code, like "key(306)".
+  int numeric_literal = -1;
+  if ((*it).type == TK_LPAREN) {
+    it++;
+    if (it == line.end() || (*it).type != TK_IDENT)
+      return;
+    try {
+      numeric_literal = std::stoi((*it).value);
+    } catch (...) {
+      return;
+    }
+    it++;
+    if (it == line.end() || (*it).type != TK_RPAREN)
+      return;
+    it++;
+  }
 
-  if ((*it).type != TK_EQUAL) return;
+  if (it == line.end() || (*it).type != TK_EQUAL) return;
 
   it++; //Skip past the "="
 
@@ -126,8 +147,12 @@ void generic_assignment_line(std::vector<token>& line, generic_driver_info*& inf
     info->split_types[split_id-1] = value;
     return;
   }
-
-  int code = get_key_id(field.c_str());
+  int code = -1;
+  if (field == "key" && numeric_literal >= 0) {
+    code = numeric_literal;
+  } else {
+    code = get_key_id(field.c_str());
+  }
   if (code != -1) {
     gen_source_event ev;
     ev.name = value;
@@ -139,7 +164,11 @@ void generic_assignment_line(std::vector<token>& line, generic_driver_info*& inf
     return;
   }
 
-  code = get_axis_id(field.c_str());
+  if (field == "abs" && numeric_literal >= 0) {
+    code = numeric_literal;
+  } else {
+    code = get_axis_id(field.c_str());
+  }
   if (code != -1) {
     gen_source_event ev;
     ev.name = value;
