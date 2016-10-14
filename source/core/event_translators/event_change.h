@@ -21,11 +21,6 @@ class input_source;
 class event_translator;
 class advanced_event_translator;
 
-
-//Maybe add a varargs or tuple type?
-
-
-
 struct MGTransDef {
   std::string identifier;
   std::vector<MGField> fields;

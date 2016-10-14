@@ -13,7 +13,7 @@ public:
     return new btn2btn(*this);
   }
 
-  static const MGType fields[];
+  static const char* decl;
   btn2btn(std::vector<MGField>& fields);
   virtual void fill_def(MGTransDef& def);
 };

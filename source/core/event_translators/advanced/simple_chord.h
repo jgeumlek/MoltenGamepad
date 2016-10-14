@@ -23,6 +23,7 @@ public:
   }
 
   static const MGType fields[];
+  static const char* decl;
   simple_chord(std::vector<std::string> event_names, std::vector<MGField>& fields);
   virtual void fill_def(MGTransDef& def);
 protected:

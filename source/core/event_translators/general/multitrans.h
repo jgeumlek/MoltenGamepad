@@ -21,7 +21,7 @@ public:
     return new multitrans(translist);
   }
 
-  static const MGType fields[];
+  static const char* decl;
   multitrans(std::vector<MGField>& fields);
   virtual void fill_def(MGTransDef& def);
 };

@@ -17,19 +17,37 @@ struct token {
 
 std::vector<token> tokenize(std::string line);
 
+//A nested expression to handle parenthesized lists.
+//ex. redirect(btn2btn(key_w),keyboard)
 struct complex_expr {
   std::string ident;
+  std::string name;
   std::vector<complex_expr*> params;
 };
 
+struct named_field {
+  std::string name;
+  std::string default_val;
+  MGType type;
+};
+
+//Captures a translator declaration, so that we may parse it.
+//ex. key = btn2btn(key_code, int direction=1)
+struct trans_decl {
+  std::vector<entry_type> mapped_events;
+  std::string identifier;
+  std::vector<named_field> fields;
+};
 
 class trans_generator {
 public:
-  const MGType* fields;
+  trans_decl decl;
   std::function<event_translator* (std::vector<MGField>&)> generate;
-  trans_generator(const MGType* fields, std::function<event_translator* (std::vector<MGField>&)> generate) : fields(fields), generate(generate) {};
-  trans_generator() : fields(nullptr) {};
+  trans_generator(trans_decl decl, std::function<event_translator* (std::vector<MGField>&)> generate) : decl(decl), generate(generate) {};
+  trans_generator() {};
 };
+
+trans_generator build_trans_decl(const char* decl_string, std::function<event_translator* (std::vector<MGField>&)> generate);
 
 class MGparser {
 public:
@@ -39,6 +57,7 @@ public:
   static event_translator* parse_special_trans(enum entry_type intype, complex_expr* expr);
   static advanced_event_translator* parse_adv_trans(const std::vector<std::string>& fields, std::vector<token>& rhs);
   static bool parse_def(enum entry_type intype, MGTransDef& def, complex_expr* expr);
+  static bool parse_decl(enum entry_type intype, const trans_decl& decl, MGTransDef& def, complex_expr* expr);
   static void print_def(enum entry_type intype, MGTransDef& def, std::ostream& output);
   static bool print_special_def(entry_type intype, MGTransDef& def, std::ostream& output);
   static void load_translators(moltengamepad* mg);

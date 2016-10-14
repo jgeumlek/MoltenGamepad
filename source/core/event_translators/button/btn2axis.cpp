@@ -10,8 +10,7 @@ void btn2axis::process(struct mg_ev ev, output_slot* out) {
   write_out(out_ev, out);
 }
 
-
-const MGType btn2axis::fields[] = { MG_AXIS, MG_INT, MG_NULL };
+const char* btn2axis::decl = "key = btn2axis(axis_code, int direction=1)";
 btn2axis::btn2axis(std::vector<MGField>& fields) {
   BEGIN_READ_DEF;
   READ_AXIS(out_axis);

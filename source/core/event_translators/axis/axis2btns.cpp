@@ -22,7 +22,7 @@ void axis2btns::process(struct mg_ev ev, output_slot* out) {
 
 }
 
-const MGType axis2btns::fields[] = { MG_KEY, MG_KEY, MG_NULL };
+const char* axis2btns::decl = "axis = axis2btns(key_code, key_code)";
 axis2btns::axis2btns(std::vector<MGField>& fields) {
   BEGIN_READ_DEF;
   READ_KEY(neg_btn);

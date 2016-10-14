@@ -156,6 +156,9 @@ void do_header_line(std::vector<token>& line, std::string& header) {
 
 #define TRANSGEN(X) trans_gens[#X] = trans_generator(X::fields,[] (std::vector<MGField>& fields) { return new X(fields);});
 #define RENAME_TRANSGEN(name,X) trans_gens[#name] = trans_generator(X::fields,[] (std::vector<MGField>& fields) { return new X(fields);});
+#define TGEN(X) [] (std::vector<MGField>& fields) { return new X(fields);}
+#define MAKE_GEN(X) trans_gens[#X] = build_trans_decl(X::decl,TGEN(X));
+#define RENAME_GEN(name,X) trans_gens[#name] = build_trans_decl(X::decl,TGEN(X));
 
 //Need a static location for this array
 MGType mouse_fields[] = {MG_TRANS, MG_NULL};
@@ -163,19 +166,97 @@ MGType mouse_fields[] = {MG_TRANS, MG_NULL};
 std::map<std::string,trans_generator> MGparser::trans_gens;
 moltengamepad* MGparser::mg;
 
+MGType parse_type(const std::string& str) {
+  if (str == "trans")
+    return MG_TRANS;
+  if (str == "key_trans")
+    return MG_KEY_TRANS;
+  if (str == "axis_trans")
+    return MG_AXIS_TRANS;
+  if (str == "adv_trans")
+    return MG_ADVANCED_TRANS;
+  if (str == "key_code")
+    return MG_KEY;
+  if (str == "axis_code")
+    return MG_AXIS;
+  if (str == "rel_code")
+    return MG_REL;
+  if (str == "string")
+    return MG_STRING;
+  if (str == "bool")
+    return MG_BOOL;
+  if (str == "int")
+    return MG_INT;
+  if (str == "slot")
+    return MG_SLOT;
+  if (str == "float")
+    return MG_FLOAT;
+  return MG_NULL;
+}
+
+//ex. key = btn2btn(key_code, int direction=1)
+trans_generator build_trans_decl(const char* decl_string, std::function<event_translator* (std::vector<MGField>&)> generate) {
+  std::vector<token> tokens = tokenize(std::string(decl_string));
+  trans_decl parsed_decl;
+
+  auto it = tokens.begin();
+  while (it->value == "key" || it->value == "axis" || it->value == "event") {
+    if (it->value == "key")
+      parsed_decl.mapped_events.push_back(DEV_KEY);
+    if (it->value == "axis")
+      parsed_decl.mapped_events.push_back(DEV_AXIS);
+    if (it->value == "event")
+      parsed_decl.mapped_events.push_back(DEV_ANY);
+    it++;
+    if (it->type == TK_COMMA)
+      it++;
+  }
+  if (it->type == TK_EQUAL)
+    it++;
+  parsed_decl.identifier  = it->value;
+  it++;
+  if (it->type == TK_LPAREN)
+    it++;
+  while(it->type != TK_RPAREN) {
+    MGType type = parse_type(it->value);
+    std::string name = "";
+    std::string default_value = "";
+    it++;
+    if (it->type == TK_IDENT) {
+      name = it->value;
+      it++;
+    }
+    if (it->type == TK_EQUAL) {
+      it++;
+      default_value = it->value;
+      it++;
+    }
+    if (it->type == TK_COMMA)
+      it++;
+    parsed_decl.fields.push_back({name,default_value,type});
+  }
+  
+
+  return trans_generator(parsed_decl, generate);
+
+}
+
 void MGparser::load_translators(moltengamepad* mg) {
   MGparser::mg = mg;
-  TRANSGEN(btn2btn);
-  TRANSGEN(btn2axis);
-  TRANSGEN(axis2axis);
-  TRANSGEN(axis2btns);
-  TRANSGEN(btn2rel);
-  TRANSGEN(axis2rel);
-  RENAME_TRANSGEN(redirect,redirect_trans);
-  //RENAME_TRANSGEN(key,keyboard_redirect);
-  RENAME_TRANSGEN(multi,multitrans);
+  MAKE_GEN(btn2btn);
+  MAKE_GEN(btn2axis);
+  MAKE_GEN(axis2axis);
+  MAKE_GEN(axis2btns);
+  MAKE_GEN(btn2rel);
+  MAKE_GEN(axis2rel);
+  RENAME_GEN(redirect,redirect_trans);
+  RENAME_GEN(multi,multitrans);
   //add a quick mouse redirect
-  trans_gens["mouse"] = trans_generator( mouse_fields, [mg] (std::vector<MGField>& fields) {
+  trans_decl mouse_decl;
+  mouse_decl.identifier = "mouse";
+  mouse_decl.mapped_events.push_back(DEV_KEY);
+  mouse_decl.fields.push_back({"","",MG_TRANS});
+  trans_gens["mouse"] = trans_generator( mouse_decl, [mg] (std::vector<MGField>& fields) {
     //Need to tack on a field with the keyboard slot
     MGField keyboard_slot;
     keyboard_slot.type = MG_SLOT;
@@ -447,22 +528,19 @@ event_translator* MGparser::parse_trans_expr(enum entry_type intype, complex_exp
   event_translator* trans = parse_special_trans(intype, expr);
   if (trans) return trans;
 
-  const MGType(*fields) = nullptr;
+  
 
   auto generator = trans_gens.find(expr->ident);
   if (generator == trans_gens.end())
     return nullptr;
 
-  fields = generator->second.fields;
+  trans_decl& decl = generator->second.decl;
 
   MGTransDef def;
   def.identifier = expr->ident;
 
-  for (int i = 0; (fields)[i] != MG_NULL; i++) {
-    def.fields.push_back({(fields)[i], 0});
-  }
 
-  if (!parse_def(intype, def, expr)) return nullptr;
+  if (!parse_decl(intype, decl, def, expr)) return nullptr;
 
 
   //still need to build it!
@@ -580,6 +658,101 @@ bool MGparser::parse_def(enum entry_type intype, MGTransDef& def, complex_expr* 
     }
     //TODO: float
     j++;
+  }
+
+  return true;
+}
+
+bool MGparser::parse_decl(enum entry_type intype, const trans_decl& decl, MGTransDef& def, complex_expr* expr) {
+  if (!expr) return false;
+
+  int fieldsfound = expr->params.size();
+
+  //initialize two vectors to match our number of fields.
+  std::vector<complex_expr> values;
+  std::vector<bool> valid;
+  def.fields.clear();
+  for (int i = 0; i < decl.fields.size(); i++) {
+    def.fields.push_back({decl.fields[i].type,0});
+    complex_expr default_val;
+    default_val.ident = decl.fields[i].default_val;
+    values.push_back(default_val);
+    valid.push_back(false);
+  }
+
+  //assign each given parameter to its correct spot.
+  int offset = 0;
+  for (int i = 0; i < fieldsfound; i++) {
+    int spot = i - offset;
+    if (!expr->params[i]->name.empty()) {
+      for (spot = 0; spot < decl.fields.size(); spot++) {
+        if (decl.fields[spot].name == expr->params[i]->name)
+          break;
+      }
+      if (spot == decl.fields.size())
+        return false; //name not found?
+    }
+    values[spot] = *(expr->params[i]);
+    valid[spot] = true;
+    if (spot != i-offset)
+      offset++; //stay at current spot for the next loop.
+  }
+
+  for (int i = 0; i < decl.fields.size(); i++) {
+    //mandatory param missing.
+    if (decl.fields[i].default_val.empty() && !valid[i])
+      return false;
+  }
+    
+  for (int i = 0; i < def.fields.size(); i++) {
+    MGType type = def.fields[i].type;
+    if (type == MG_KEYBOARD_SLOT) {
+      def.fields[i].slot = mg->slots->keyboard;
+      continue;
+    };
+
+    //We have to get fancy and actually do yet more parsing if we want to use a default value for a translator.
+    //If we aren't using a default value, it was already parsed!
+    //If it isn't a translator, there is no need to parse beyond a flat string.
+    complex_expr* temp_expr = nullptr;
+    if (!valid[i] && (type == MG_TRANS || type == MG_KEY_TRANS || type == MG_REL_TRANS || type == MG_AXIS_TRANS)) {
+      std::vector<token> tokens = tokenize(values[i].ident);
+      auto it = tokens.begin();
+
+      temp_expr = read_expr(tokens,it);
+      values[i] = *temp_expr;
+    }
+      
+
+    if (type == MG_TRANS) def.fields[i].trans = parse_trans_expr(intype, &values[i]);
+    if (type == MG_KEY_TRANS) def.fields[i].trans = parse_trans_expr(DEV_KEY, &values[i]);
+    if (type == MG_REL_TRANS) def.fields[i].trans = parse_trans_expr(DEV_REL, &values[i]);
+    if (type == MG_AXIS_TRANS) def.fields[i].trans = parse_trans_expr(DEV_AXIS, &values[i]);
+    if (temp_expr)
+      free_complex_expr(temp_expr);
+    if (type == MG_KEY) def.fields[i].key = read_ev_code(values[i].ident, OUT_KEY);
+    if (type == MG_REL) def.fields[i].rel = read_ev_code(values[i].ident, OUT_REL);
+    if (type == MG_AXIS) def.fields[i].axis = read_ev_code(values[i].ident, OUT_ABS);
+    if (type == MG_INT) def.fields[i].integer = read_ev_code(values[i].ident, OUT_NONE);
+    if (type == MG_SLOT) {
+      output_slot* slot = mg->slots->find_slot(values[i].ident);
+      if (!slot) return false;
+      def.fields[i].slot = slot;
+    }
+    if (type == MG_BOOL) {
+      def.fields[i].integer = 0;
+      read_bool(values[i].ident, [&def, i] (bool val) {
+        def.fields[i].integer = val ? 1 : 0;
+      });
+    }
+    if (type == MG_STRING) {
+      size_t size = values[i].ident.size();
+      char* copy = (char*) calloc(size+1,sizeof(char));
+      strncpy(copy,values[i].ident.c_str(), size);
+      copy[size] = '\0';
+      def.fields[i].string = copy;
+    }
+    //TODO: float
   }
 
   return true;
@@ -757,13 +930,22 @@ struct complex_expr* read_expr(std::vector<token>& tokens, std::vector<token>::i
   if ((*it).type == TK_IDENT || (*it).type == TK_LPAREN) {
     complex_expr* expr = new complex_expr;
     //If we have ident, read it in.
-    //Otherwise, we have a paren, start reading children and leave the ident empty.
+    //If we see '=' next, then our ident was actually a name!
     if ((*it).type == TK_IDENT) {
       expr->ident = (*it).value;
       it++;
     }
 
     if (it == tokens.end()) return expr;
+
+    if ((*it).type == TK_EQUAL) {
+      it++;
+      if (it == tokens.end()) return expr;
+      expr->name = expr->ident;
+      expr->ident = (*it).value;
+      it++;
+    }
+    //Otherwise, we have a paren, start reading children
 
     if ((*it).type == TK_LPAREN) {
       it++;

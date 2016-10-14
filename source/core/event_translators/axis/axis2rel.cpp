@@ -20,7 +20,7 @@ void axis2rel::process_recurring(output_slot* out) const {
   if (value) write_out(out_ev, out);
 }
 
-const MGType axis2rel::fields[] = { MG_REL, MG_INT, MG_NULL };
+const char* axis2rel::decl = "axis = axis2rel(rel_code, int speed=10)";
 axis2rel::axis2rel(std::vector<MGField>& fields) {
   BEGIN_READ_DEF;
   READ_REL(out_rel);

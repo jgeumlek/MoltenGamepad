@@ -23,7 +23,7 @@ public:
     return new axis2axis(*this);
   }
 
-  static const MGType fields[];
+  static const char* decl;
   axis2axis(std::vector<MGField>& fields);
   virtual void fill_def(MGTransDef& def);
 };

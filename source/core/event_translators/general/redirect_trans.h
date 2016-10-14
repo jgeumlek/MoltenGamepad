@@ -23,7 +23,7 @@ public:
     return new redirect_trans(trans, redirected);
   }
 
-  static const MGType fields[];
+  static const char* decl;
   redirect_trans(std::vector<MGField>& fields);
   virtual void fill_def(MGTransDef& def);
 

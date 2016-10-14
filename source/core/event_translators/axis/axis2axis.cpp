@@ -1,7 +1,7 @@
 #include "axis2axis.h"
 #include "../event_translator_macros.h"
 
-const MGType axis2axis::fields[] = { MG_AXIS, MG_INT, MG_NULL };
+const char* axis2axis::decl = "axis = axis2axis(axis_code, int direction=1)";
 axis2axis::axis2axis(std::vector<MGField>& fields) {
   BEGIN_READ_DEF;
   READ_AXIS(out_axis);

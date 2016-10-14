@@ -18,7 +18,7 @@ public:
     return new axis2rel(*this);
   }
 
-  static const MGType fields[];
+  static const char* decl;
   axis2rel(std::vector<MGField>& fields);
   virtual void fill_def(MGTransDef& def);
 };

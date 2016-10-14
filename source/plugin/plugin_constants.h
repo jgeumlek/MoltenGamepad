@@ -32,6 +32,7 @@ enum entry_type {
   DEV_KEY,
   DEV_AXIS,
   DEV_REL,
+  DEV_ANY,
 };
 
 enum device_claim {

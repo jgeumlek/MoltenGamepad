@@ -20,7 +20,7 @@ void btn2rel::process_recurring(output_slot* out) const {
   if (value) write_out(out_ev, out);
 }
 
-const MGType btn2rel::fields[] = { MG_REL, MG_INT, MG_NULL };
+const char* btn2rel::decl = "key = btn2rel(rel_code, int speed=3)";
 btn2rel::btn2rel(std::vector<MGField>& fields) {
   BEGIN_READ_DEF;
   READ_REL(out_rel);

@@ -15,7 +15,7 @@ public:
     return new btn2axis(*this);
   }
 
-  static const MGType fields[];
+  static const char* decl;
   btn2axis(std::vector<MGField>& fields);
   virtual void fill_def(MGTransDef& def);
 };

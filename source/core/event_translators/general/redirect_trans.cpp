@@ -32,7 +32,7 @@ bool redirect_trans::wants_recurring_events() {
   return trans->wants_recurring_events();
 }
 
-const MGType redirect_trans::fields[] = { MG_TRANS, MG_SLOT, MG_NULL };
+const char* redirect_trans::decl = "event = redirect(trans, slot)";
 redirect_trans::redirect_trans(std::vector<MGField>& fields) {
   BEGIN_READ_DEF;
   READ_TRANS(trans,MG_TRANS);

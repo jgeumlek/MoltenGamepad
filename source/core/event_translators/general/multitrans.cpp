@@ -24,7 +24,7 @@ bool multitrans::wants_recurring_events() {
   return false;
 }
 
-const MGType multitrans::fields[] = { MG_TRANS, MG_TRANS, MG_NULL };
+const char* multitrans::decl = "event = multi(trans, trans)";
 multitrans::multitrans(std::vector<MGField>& fields) {
   BEGIN_READ_DEF;
   event_translator* next;

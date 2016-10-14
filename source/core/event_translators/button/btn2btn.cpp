@@ -9,8 +9,7 @@ void btn2btn::process(struct mg_ev ev, output_slot* out) {
   out_ev.value = ev.value;
   write_out(out_ev, out);
 }
-
-const MGType btn2btn::fields[] = { MG_KEY, MG_NULL };
+const char* btn2btn::decl = "key = btn2btn(key_code)";
 btn2btn::btn2btn(std::vector<MGField>& fields) {
   BEGIN_READ_DEF;
   READ_KEY(out_button);

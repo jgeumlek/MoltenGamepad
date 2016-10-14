@@ -1,6 +1,7 @@
 #include "simple_chord.h"
 #include "../event_translator_macros.h"
 
+const char* simple_chord::decl = "key, key* = chord(key_trans)";
 const MGType simple_chord::fields[] = { MG_KEY_TRANS, MG_NULL };
 simple_chord::simple_chord(std::vector<std::string> event_names, std::vector<MGField>& fields) {
   BEGIN_READ_DEF;
