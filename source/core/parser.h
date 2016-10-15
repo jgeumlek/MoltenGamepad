@@ -29,6 +29,8 @@ struct named_field {
   std::string name;
   std::string default_val;
   MGType type;
+  bool has_default;
+  bool repeating;
 };
 
 //Captures a translator declaration, so that we may parse it.

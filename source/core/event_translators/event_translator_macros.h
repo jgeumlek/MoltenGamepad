@@ -27,6 +27,7 @@
   } else { \
     TRANS_FAIL \
   } 
+#define HAS_NEXT (fields.size() > __index)
 #define READ_KEY(X) READ_DEF(X,MG_KEY,key)
 #define READ_AXIS(X) READ_DEF(X,MG_AXIS,axis)
 #define READ_REL(X) READ_DEF(X,MG_REL,rel)

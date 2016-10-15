@@ -221,7 +221,18 @@ trans_generator build_trans_decl(const char* decl_string, std::function<event_tr
     MGType type = parse_type(it->value);
     std::string name = "";
     std::string default_value = "";
+    bool has_default = false;
+    bool repeating = false;
     it++;
+    //check for [] after type name to denote a variable-length parameter.
+    //i.e. this parameter can be repeated. Similar to var_args, but it needs to be a single type.
+    if (it->type == TK_HEADER_OPEN) {
+      it++;
+      if (it->type == TK_HEADER_CLOSE) {
+        it++;
+        repeating = true;
+      }
+    }
     if (it->type == TK_IDENT) {
       name = it->value;
       it++;
@@ -229,11 +240,12 @@ trans_generator build_trans_decl(const char* decl_string, std::function<event_tr
     if (it->type == TK_EQUAL) {
       it++;
       default_value = it->value;
+      has_default = true;
       it++;
     }
     if (it->type == TK_COMMA)
       it++;
-    parsed_decl.fields.push_back({name,default_value,type});
+    parsed_decl.fields.push_back({name,default_value,type,has_default,repeating});
   }
   
 
@@ -679,6 +691,11 @@ bool MGparser::parse_decl(enum entry_type intype, const trans_decl& decl, MGTran
     values.push_back(default_val);
     valid.push_back(false);
   }
+  //compute whether the last parameter is repeating...
+  //if so, store the type.
+  MGType variadic_type = MG_NULL;
+  if (decl.fields.size() > 0 && decl.fields.back().repeating)
+    variadic_type = decl.fields.back().type;
 
   //assign each given parameter to its correct spot.
   int offset = 0;
@@ -692,6 +709,13 @@ bool MGparser::parse_decl(enum entry_type intype, const trans_decl& decl, MGTran
       if (spot == decl.fields.size())
         return false; //name not found?
     }
+    if (spot >= def.fields.size() && variadic_type != MG_NULL) {
+      //just push some dummy values to resize the list.
+      complex_expr dummy;
+      values.push_back(dummy);
+      valid.push_back(true);
+      def.fields.push_back({variadic_type,0});
+    }
     values[spot] = *(expr->params[i]);
     valid[spot] = true;
     if (spot != i-offset)
@@ -700,8 +724,9 @@ bool MGparser::parse_decl(enum entry_type intype, const trans_decl& decl, MGTran
 
   for (int i = 0; i < decl.fields.size(); i++) {
     //mandatory param missing.
-    if (decl.fields[i].default_val.empty() && !valid[i])
+    if (!decl.fields[i].has_default && !valid[i]) {
       return false;
+    }
   }
     
   for (int i = 0; i < def.fields.size(); i++) {

@@ -24,14 +24,14 @@ bool multitrans::wants_recurring_events() {
   return false;
 }
 
-const char* multitrans::decl = "event = multi(trans, trans)";
+const char* multitrans::decl = "event = multi(trans [])";
 multitrans::multitrans(std::vector<MGField>& fields) {
   BEGIN_READ_DEF;
   event_translator* next;
-  READ_TRANS(next,MG_TRANS);
-  translist.push_back(next);
-  READ_TRANS(next,MG_TRANS);
-  translist.push_back(next);
+  while(HAS_NEXT) {
+    READ_TRANS(next,MG_TRANS);
+    translist.push_back(next);
+  }
 }
 void multitrans::fill_def(MGTransDef& def) {
   BEGIN_FILL_DEF("multi");
