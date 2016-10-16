@@ -54,6 +54,7 @@ public:
   //Do we want the input_source to send recurring "ticks" for processing?
   virtual bool wants_recurring_events() { return false; };
 
+
   virtual ~event_translator() {};
 
   event_translator(std::vector<MGField>& fields) {};
@@ -68,6 +69,8 @@ class advanced_event_translator {
 public:
   //Initialize any values needed with this input source
   virtual void init(input_source* source) {};
+  //Take in a list of events to listen to.
+  virtual bool set_mapped_events(const std::vector<std::string>& event_names) {};
   //Called when the device's thread is ready for attaching.
   virtual void attach(input_source* source) {};
   //Return true to block the input source's native handling of this event.

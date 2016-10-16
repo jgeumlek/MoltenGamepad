@@ -1,11 +1,10 @@
 #include "exclusive_chord.h"
 #include "../event_translator_macros.h"
 
-const MGType exclusive_chord::fields[] = { MG_KEY_TRANS, MG_NULL };
-exclusive_chord::exclusive_chord(std::vector<std::string> event_names, std::vector<MGField>& fields) {
+const char* exclusive_chord::decl = "key [] = exclusive(key_trans)";
+exclusive_chord::exclusive_chord(std::vector<MGField>& fields) {
   BEGIN_READ_DEF;
   READ_TRANS(out_trans,MG_KEY_TRANS);
-  this->event_names = event_names;
 }
 void exclusive_chord::fill_def(MGTransDef& def) {
   BEGIN_FILL_DEF("exclusive");

@@ -36,7 +36,9 @@ struct named_field {
 //Captures a translator declaration, so that we may parse it.
 //ex. key = btn2btn(key_code, int direction=1)
 struct trans_decl {
+  const char* decl_str;
   std::vector<entry_type> mapped_events;
+  bool variadic_mapped_events;
   std::string identifier;
   std::vector<named_field> fields;
 };
@@ -45,11 +47,13 @@ class trans_generator {
 public:
   trans_decl decl;
   std::function<event_translator* (std::vector<MGField>&)> generate;
+  std::function<advanced_event_translator* (std::vector<MGField>&)> adv_generate;
   trans_generator(trans_decl decl, std::function<event_translator* (std::vector<MGField>&)> generate) : decl(decl), generate(generate) {};
+  trans_generator(trans_decl decl, std::function<advanced_event_translator* (std::vector<MGField>&)> adv_generate) : decl(decl), adv_generate(adv_generate) {};
   trans_generator() {};
 };
 
-trans_generator build_trans_decl(const char* decl_string, std::function<event_translator* (std::vector<MGField>&)> generate);
+trans_decl build_trans_decl(const char* decl_str);
 
 class MGparser {
 public:
@@ -58,7 +62,6 @@ public:
   static event_translator* parse_trans(enum entry_type intype, std::vector<token>& tokens, std::vector<token>::iterator& it);
   static event_translator* parse_special_trans(enum entry_type intype, complex_expr* expr);
   static advanced_event_translator* parse_adv_trans(const std::vector<std::string>& fields, std::vector<token>& rhs);
-  static bool parse_def(enum entry_type intype, MGTransDef& def, complex_expr* expr);
   static bool parse_decl(enum entry_type intype, const trans_decl& decl, MGTransDef& def, complex_expr* expr);
   static void print_def(enum entry_type intype, MGTransDef& def, std::ostream& output);
   static bool print_special_def(entry_type intype, MGTransDef& def, std::ostream& output);

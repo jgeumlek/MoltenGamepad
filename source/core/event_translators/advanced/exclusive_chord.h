@@ -20,7 +20,7 @@ public:
   void thread_func();
   volatile bool thread_active;
 
-  static const MGType fields[];
-  exclusive_chord(std::vector<std::string> event_names, std::vector<MGField>& fields);
+  static const char* decl;
+  exclusive_chord(std::vector<MGField>& fields);
   virtual void fill_def(MGTransDef& def);
 };

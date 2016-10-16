@@ -157,8 +157,8 @@ void do_header_line(std::vector<token>& line, std::string& header) {
 #define TRANSGEN(X) trans_gens[#X] = trans_generator(X::fields,[] (std::vector<MGField>& fields) { return new X(fields);});
 #define RENAME_TRANSGEN(name,X) trans_gens[#name] = trans_generator(X::fields,[] (std::vector<MGField>& fields) { return new X(fields);});
 #define TGEN(X) [] (std::vector<MGField>& fields) { return new X(fields);}
-#define MAKE_GEN(X) trans_gens[#X] = build_trans_decl(X::decl,TGEN(X));
-#define RENAME_GEN(name,X) trans_gens[#name] = build_trans_decl(X::decl,TGEN(X));
+#define MAKE_GEN(X) trans_gens[#X] = trans_generator(build_trans_decl(X::decl),TGEN(X));
+#define RENAME_GEN(name,X) trans_gens[#name] = trans_generator(build_trans_decl(X::decl),TGEN(X));
 
 //Need a static location for this array
 MGType mouse_fields[] = {MG_TRANS, MG_NULL};
@@ -195,10 +195,11 @@ MGType parse_type(const std::string& str) {
 }
 
 //ex. key = btn2btn(key_code, int direction=1)
-trans_generator build_trans_decl(const char* decl_string, std::function<event_translator* (std::vector<MGField>&)> generate) {
-  std::vector<token> tokens = tokenize(std::string(decl_string));
+trans_decl build_trans_decl(const char* decl_str) {
+  std::vector<token> tokens = tokenize(std::string(decl_str));
   trans_decl parsed_decl;
-
+  parsed_decl.variadic_mapped_events = false;
+  parsed_decl.decl_str = decl_str;
   auto it = tokens.begin();
   while (it->value == "key" || it->value == "axis" || it->value == "event") {
     if (it->value == "key")
@@ -210,6 +211,14 @@ trans_generator build_trans_decl(const char* decl_string, std::function<event_tr
     it++;
     if (it->type == TK_COMMA)
       it++;
+  }
+  //detect "[]"
+  if (it->type == TK_HEADER_OPEN) {
+    it++;
+    if (it->type == TK_HEADER_CLOSE) {
+      parsed_decl.variadic_mapped_events = true;
+      it++;
+    }
   }
   if (it->type == TK_EQUAL)
     it++;
@@ -247,9 +256,19 @@ trans_generator build_trans_decl(const char* decl_string, std::function<event_tr
       it++;
     parsed_decl.fields.push_back({name,default_value,type,has_default,repeating});
   }
-  
 
-  return trans_generator(parsed_decl, generate);
+  std::cout << "decl: " << parsed_decl.identifier;
+  for (auto type : parsed_decl.mapped_events)
+    std::cout << type << " ";
+  if (parsed_decl.variadic_mapped_events)
+    std::cout << "[] ";
+  std::cout <<" ";
+  std::cout << parsed_decl.identifier;
+  std::cout <<"(";
+  for (auto field : parsed_decl.fields)
+    std::cout << field.type <<(field.repeating?"[]":"")<< "\"" << field.name <<"\"";
+  std::cout <<")"<<std::endl;
+  return parsed_decl;
 
 }
 
@@ -278,6 +297,10 @@ void MGparser::load_translators(moltengamepad* mg) {
   });
   //key is just a synonym to the above. It redirects events to the keyboard slot.
   trans_gens["key"] = trans_gens["mouse"];
+
+  //add advanced_event_translators
+  RENAME_GEN(simple,simple_chord);
+  RENAME_GEN(exclusive,exclusive_chord);
 }
 
 MGparser::MGparser(moltengamepad* mg, message_protocol* output) : out("parse") {
@@ -629,52 +652,6 @@ event_translator* MGparser::parse_special_trans(enum entry_type intype, complex_
 }
 
 
-bool MGparser::parse_def(enum entry_type intype, MGTransDef& def, complex_expr* expr) {
-  if (!expr) return false;
-  if (def.identifier != expr->ident) return false;
-  int fieldsfound = expr->params.size();
-  int j = 0;
-  for (int i = 0; i < def.fields.size(); i++) {
-    MGType type = def.fields[i].type;
-    if (type == MG_KEYBOARD_SLOT) {
-      def.fields[i].slot = mg->slots->keyboard;
-      continue;
-    };
-    if (j >= fieldsfound) return false;
-
-    if (type == MG_TRANS) def.fields[i].trans = parse_trans_expr(intype, expr->params[j]);
-    if (type == MG_KEY_TRANS) def.fields[i].trans = parse_trans_expr(DEV_KEY, expr->params[j]);
-    if (type == MG_REL_TRANS) def.fields[i].trans = parse_trans_expr(DEV_REL, expr->params[j]);
-    if (type == MG_AXIS_TRANS) def.fields[i].trans = parse_trans_expr(DEV_AXIS, expr->params[j]);
-    if (type == MG_KEY) def.fields[i].key = read_ev_code(expr->params[j]->ident, OUT_KEY);
-    if (type == MG_REL) def.fields[i].rel = read_ev_code(expr->params[j]->ident, OUT_REL);
-    if (type == MG_AXIS) def.fields[i].axis = read_ev_code(expr->params[j]->ident, OUT_ABS);
-    if (type == MG_INT) def.fields[i].integer = read_ev_code(expr->params[j]->ident, OUT_NONE);
-    if (type == MG_SLOT) {
-      output_slot* slot = mg->slots->find_slot(expr->params[j]->ident);
-      if (!slot) return false;
-      def.fields[i].slot = slot;
-    }
-    if (type == MG_BOOL) {
-      def.fields[i].integer = 0;
-      read_bool(expr->params[j]->ident, [&def, i] (bool val) {
-        def.fields[i].integer = val ? 1 : 0;
-      });
-    }
-    if (type == MG_STRING) {
-      size_t size = expr->params[j]->ident.size();
-      char* copy = (char*) calloc(size+1,sizeof(char));
-      strncpy(copy,expr->params[j]->ident.c_str(), size);
-      copy[size] = '\0';
-      def.fields[i].string = copy;
-    }
-    //TODO: float
-    j++;
-  }
-
-  return true;
-}
-
 bool MGparser::parse_decl(enum entry_type intype, const trans_decl& decl, MGTransDef& def, complex_expr* expr) {
   if (!expr) return false;
 
@@ -999,45 +976,38 @@ struct complex_expr* read_expr(std::vector<token>& tokens, std::vector<token>::i
   return nullptr;
 }
 
-advanced_event_translator* build_adv_from_def(const std::vector<std::string>& event_names, MGTransDef& def) {
-  if (def.identifier == "simple") return new simple_chord(event_names, def.fields);
-  if (def.identifier == "exclusive") return new exclusive_chord(event_names, def.fields);
-  return nullptr;
-}
-
 advanced_event_translator* MGparser::parse_adv_trans(const std::vector<std::string>& event_names, std::vector<token>& rhs) {
   auto it = rhs.begin();
   event_translator* trans = parse_trans(DEV_KEY, rhs, it);
-  if (trans) return new simple_chord(event_names, trans);
+  if (trans) {
+    return new simple_chord(event_names, trans);
+  }
 
   it = rhs.begin();
   complex_expr* expr = read_expr(rhs, it);
 
   if (!expr) return nullptr;
 
-  if (expr->params.empty()) return nullptr;
+  auto generator = trans_gens.find(expr->ident);
+  if (generator == trans_gens.end())
+    return nullptr;
 
-  advanced_event_translator* adv_trans = nullptr;
-
-  const MGType(*fields) = nullptr;
-
-  if (expr->ident == "simple") fields = simple_chord::fields;
-  if (expr->ident == "exclusive") fields = exclusive_chord::fields;
-
-  if (!fields) return nullptr;
+  trans_decl& decl = generator->second.decl;
 
   MGTransDef def;
   def.identifier = expr->ident;
 
-  for (int i = 0; (fields)[i] != MG_NULL; i++) {
-    def.fields.push_back({(fields)[i], 0});
-  }
 
-  if (!parse_def(DEV_KEY, def, expr)) return nullptr;
+  if (!parse_decl(DEV_KEY, decl, def, expr)) return nullptr;
 
 
   //still need to build it!
-  adv_trans = build_adv_from_def(event_names, def);
+  advanced_event_translator* adv_trans;
+  try {
+    adv_trans = generator->second.adv_generate(def.fields);
+  } catch (...) {
+    adv_trans = nullptr;
+  }
   release_def(def);
 
   free_complex_expr(expr);
