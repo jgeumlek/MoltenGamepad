@@ -12,7 +12,7 @@ bool simple_chord::set_mapped_events(const std::vector<std::string>& event_names
 }
   
 void simple_chord::fill_def(MGTransDef& def) {
-  BEGIN_FILL_DEF("simple");
+  BEGIN_FILL_DEF("chord");
   FILL_DEF_TRANS(out_trans,MG_KEY_TRANS);
 }
 

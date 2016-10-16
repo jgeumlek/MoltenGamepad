@@ -288,7 +288,7 @@ void MGparser::load_translators(moltengamepad* mg) {
   trans_gens["key"] = trans_gens["mouse"];
 
   //add advanced_event_translators
-  RENAME_GEN(simple,simple_chord);
+  RENAME_GEN(chord,simple_chord);
   RENAME_GEN(exclusive,exclusive_chord);
 }
 
