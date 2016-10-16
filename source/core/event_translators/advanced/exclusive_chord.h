@@ -8,7 +8,7 @@ public:
   exclusive_chord(std::vector<std::string> event_names, event_translator* trans) : simple_chord(event_names, trans) {};
 
   volatile std::thread* thread = nullptr;
-  std::vector<int> chord_hits;
+  mutable std::vector<int> chord_hits;
   input_source* owner = nullptr;
 
   virtual void init(input_source* source);
@@ -18,7 +18,11 @@ public:
   }
 
   void thread_func();
-  volatile bool thread_active;
+  mutable bool chord_active;
+  mutable int tick_count;
+
+  virtual bool wants_recurring_events() { return true; };
+  virtual void process_recurring(output_slot* out) const;
 
   static const char* decl;
   exclusive_chord(std::vector<MGField>& fields);

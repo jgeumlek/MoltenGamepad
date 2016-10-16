@@ -257,17 +257,6 @@ trans_decl build_trans_decl(const char* decl_str) {
     parsed_decl.fields.push_back({name,default_value,type,has_default,repeating});
   }
 
-  std::cout << "decl: " << parsed_decl.identifier;
-  for (auto type : parsed_decl.mapped_events)
-    std::cout << type << " ";
-  if (parsed_decl.variadic_mapped_events)
-    std::cout << "[] ";
-  std::cout <<" ";
-  std::cout << parsed_decl.identifier;
-  std::cout <<"(";
-  for (auto field : parsed_decl.fields)
-    std::cout << field.type <<(field.repeating?"[]":"")<< "\"" << field.name <<"\"";
-  std::cout <<")"<<std::endl;
   return parsed_decl;
 
 }

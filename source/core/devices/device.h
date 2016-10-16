@@ -126,6 +126,7 @@ protected:
   int ff_ids[1]; //Since the physical device might hand us different ids.
 
   std::vector<recurring_info> recurring_events;
+  std::vector<const advanced_event_translator*> adv_recurring_events;
   bool do_recurring_events = false;
   timespec last_recurring_update;
 
@@ -150,6 +151,8 @@ protected:
 
   void add_recurring_event(const event_translator* trans, int id);
   void remove_recurring_event(const event_translator* trans);
+  void add_adv_recurring_event(const advanced_event_translator* trans);
+  void remove_adv_recurring_event(const advanced_event_translator* trans);
 
   void process_recurring_events();
   int64_t ms_since_last_recurring_update();

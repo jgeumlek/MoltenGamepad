@@ -77,11 +77,17 @@ public:
   virtual bool claim_event(int id, mg_ev event) {
     return false;
   };
+  //called regularly on a tick event; a certain amount of time has elapsed.
+  virtual void process_recurring(output_slot* out) const {
+  }
   //Similar to the above, acts as a prototype method.
   virtual advanced_event_translator* clone() {
     return new advanced_event_translator(*this);
   }
   virtual ~advanced_event_translator() {};
+
+  //Do we want the input_source to send recurring "ticks" for processing?
+  virtual bool wants_recurring_events() { return false; };
 
   advanced_event_translator(std::vector<MGField>& fields) {};
   advanced_event_translator() {};

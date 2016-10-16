@@ -217,6 +217,7 @@ void input_source::update_advanced(const std::vector<std::string>& evnames, adva
   msg.adv.trans = nullptr;
   if (trans) {
     msg.adv.trans = trans->clone();
+    msg.adv.trans->set_mapped_events(evnames);
     msg.adv.trans->init(this);
   }
 
@@ -258,8 +259,9 @@ void input_source::send_value(int id, int64_t value) {
   if (id < 0 || id > events.size() || events[id].value == value)
     return;
   bool blocked = false;
-  for (auto adv_trans : ev_map.at(id).attached)
+  for (auto adv_trans : ev_map.at(id).attached) {
     if (adv_trans->claim_event(id, {value})) blocked = true;
+  }
 
   
   events.at(id).value = value;
@@ -374,6 +376,7 @@ void input_source::handle_internal_message(input_internal_msg& msg) {
     //If needed, erase the previous adv. trans. with this key.
     auto it = adv_trans.find(adv_name);
     if (it != adv_trans.end()) {
+      remove_adv_recurring_event(it->second.trans);
       delete it->second.fields;
       delete it->second.trans;
       adv_trans.erase(it);
@@ -382,10 +385,13 @@ void input_source::handle_internal_message(input_internal_msg& msg) {
     if (msg.adv.trans) {
       msg.adv.trans->attach(this);
       adv_trans[adv_name] = {msg.adv.fields, msg.adv.trans};
+      if (msg.adv.trans->wants_recurring_events()) {
+        add_adv_recurring_event(msg.adv.trans);
+      }
     } else {
       delete msg.adv.fields;
     }
-
+    do_recurring_events = recurring_events.size() + adv_recurring_events.size() > 0;
     return;
   }
   if (msg.type == input_internal_msg::IN_TRANS_MSG) {
@@ -404,7 +410,7 @@ void input_source::handle_internal_message(input_internal_msg& msg) {
     if (msg.field.trans->wants_recurring_events()) {
       add_recurring_event(msg.field.trans, msg.id);
     }
-    do_recurring_events = recurring_events.size() > 0;
+    do_recurring_events = recurring_events.size() + adv_recurring_events.size() > 0;
   }
   if (msg.type == input_internal_msg::IN_EVENT_MSG) {
     //Is it an event injection message?
@@ -442,6 +448,9 @@ void input_source::process_recurring_events() {
     if (out_dev && events[rec.id].state == EVENT_ACTIVE) {
       rec.trans->process_recurring(out_dev);
     }
+  }
+  for (const advanced_event_translator* adv : adv_recurring_events) {
+    adv->process_recurring(out_dev);
   }
   send_syn_report();
   clock_gettime(CLOCK_MONOTONIC, &last_recurring_update);
@@ -498,6 +507,19 @@ void input_source::remove_recurring_event(const event_translator* trans) {
   for (auto it = recurring_events.begin(); it != recurring_events.end(); it++) {
     if (it->trans == trans) {
       recurring_events.erase(it);
+      return;
+    }
+  }
+}
+
+void input_source::add_adv_recurring_event(const advanced_event_translator* trans) {
+  adv_recurring_events.push_back(trans);
+}
+
+void input_source::remove_adv_recurring_event(const advanced_event_translator* trans) {
+  for (auto it = adv_recurring_events.begin(); it != adv_recurring_events.end(); it++) {
+    if (*it == trans) {
+      adv_recurring_events.erase(it);
       return;
     }
   }
