@@ -1,6 +1,8 @@
 #include "messages.h"
 #include "protocols.h"
 #include <unistd.h>
+#include <cstdarg>
+#include <iostream>
 
 void message_stream::add_listener(message_protocol* listener) {
   lock.lock();
@@ -46,4 +48,19 @@ void message_stream::err(std::string text) {
   std::lock_guard<std::mutex> guard(lock);
   for (auto listener : listeners)
     listener->err(0, text);
+}
+
+int DEBUG_LEVELS[] = {DEBUG_NONE, DEBUG_INFO, DEBUG_VERBOSE, -1};
+int* DEBUG_LEVEL = &DEBUG_LEVELS[0];
+void debug_print(int level, int num_args...) {
+  if (level > *DEBUG_LEVEL)
+    return;
+  va_list list;
+  va_start(list,num_args);
+  for (int i = 0; i < num_args; i++) {
+    const char* text = va_arg(list, const char*);
+    std::cerr << text;
+  }
+  va_end(list);
+  std::cerr << std::endl;
 }

@@ -45,6 +45,7 @@ device_manager::~device_manager() {
 }
 
 int device_manager::accept_device(struct udev* udev, struct udev_device* dev) {
+  debug_print(DEBUG_INFO, 2, "\tchecking manager ",name.c_str());
   if (plugin.process_udev_event)
     return plugin.process_udev_event(plug_data, udev, dev);
   return DEVICE_UNCLAIMED;

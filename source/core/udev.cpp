@@ -24,16 +24,25 @@ void udev_handler::pass_along_device(struct udev_device* new_dev) {
   std::lock_guard<std::mutex> lock(manager_lock);
   if (managers == nullptr) return;
   std::string path(udev_device_get_syspath(new_dev));
-  if (ui && ui->node_owned(path))
+  const char* action = udev_device_get_action(new_dev);
+  if (!action) action = "enumerated";
+  debug_print(DEBUG_INFO, 4, "device ",action," ",path.c_str());
+  if (ui && ui->node_owned(path)) {
+    debug_print(DEBUG_VERBOSE, 1, "\tskipped because it was made by MoltenGamepad");
     return; //Skip virtual devices we made
+  }
 
   //Give each manager a chance to claim the device.
   //Any deferred claims will be handled after going past every manager.
   for (auto it = managers->begin(); it != managers->end(); ++it) {
     device_manager* man = *it;
     int ret = man->accept_device(udev, new_dev);
-    if (ret == DEVICE_CLAIMED) return;
+    if (ret == DEVICE_CLAIMED) {
+      debug_print(DEBUG_INFO, 2, "\tclaimed by manager ",man->name.c_str());
+      return;
+    }
     if (ret == DEVICE_UNCLAIMED || ret < 0) continue;
+    debug_print(DEBUG_INFO, 4, "\tclaimed by manager ",man->name.c_str(), ", order = ", std::to_string(ret+1).c_str());
     deferred.push_back({man, ret});
   }
   if (deferred.empty())
@@ -43,7 +52,12 @@ void udev_handler::pass_along_device(struct udev_device* new_dev) {
   std::stable_sort(deferred.begin(), deferred.end(), claim_cmp);
   for (deferred_claim claim : deferred) {
     int ret = claim.manager->accept_deferred_device(udev, new_dev);
-    if (ret == DEVICE_CLAIMED) break;
+    if (ret == DEVICE_CLAIMED)  {
+      debug_print(DEBUG_INFO, 2, "\tultimately claimed by manager ", claim.manager->name.c_str());
+      break;
+    } else {
+      debug_print(DEBUG_INFO, 3, "\trejected by manager ", claim.manager->name.c_str(), ", despite previous claim");
+    }
   }
 
 }

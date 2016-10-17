@@ -95,6 +95,8 @@ std::vector<int> read_capabilities(const char* capabilities) {
     if (*ptr == '\n' || *ptr == '\0')
       continue;
     if (*ptr == ' ') {
+      if (code > next_word)
+        debug_print(DEBUG_VERBOSE,1,"\t\t events: suspicious failure when reading device capabilities. Perhaps compiled with the wrong word size?");
       code = next_word;
       next_word += WORD_SIZE;
       continue;
@@ -124,6 +126,9 @@ bool events_matched(udev* udev, udev_device* dev, const generic_driver_info* gen
   bool subset = true;
   char* buffer = new char[1024];
   memset(buffer, 0, 1024);
+  //only used to report why a match failed;
+  int superkey = -1; //a key that is evidence of a superset
+  int superabs = -1; //an abs that is evidence of a superset
   for (const gen_source_event& g_ev : gendev->events)
     gendev_events.insert(std::make_pair(g_ev.type,g_ev.code));
 
@@ -150,10 +155,7 @@ bool events_matched(udev* udev, udev_device* dev, const generic_driver_info* gen
     int found = gendev_events.erase(pair);
     if (!found) {
       subset = false;
-      if (match != device_match::EV_MATCH_SUPERSET) {
-        delete[] buffer;
-        return false;
-      }
+      superabs = code;
     }
   }
   int total_events = codes.size();
@@ -173,23 +175,52 @@ bool events_matched(udev* udev, udev_device* dev, const generic_driver_info* gen
     int found = gendev_events.erase(pair);
     if (!found) {
       subset = false;
-      if (match != device_match::EV_MATCH_SUPERSET) {
-        delete[] buffer;
-        return false;
-      }
+      superkey = code;
     }
   }
   total_events += codes.size();
   delete[] buffer;
   superset = gendev_events.empty();
+  
   if (match == device_match::EV_MATCH_SUBSET) {
     //reject the empty set as a trivial subset.
-    return subset && (total_events > 0);
+    if (!subset) {
+      if (superkey != -1)
+        debug_print(DEBUG_VERBOSE, 2, "\t\t events subset: failed because device had key ", std::to_string(superkey).c_str());
+      else if (superabs != -1)
+        debug_print(DEBUG_VERBOSE, 2, "\t\t events subset: failed because device had abs ", std::to_string(superabs).c_str());
+    }
+    if (total_events == 0)
+      debug_print(DEBUG_VERBOSE, 2, "\t\t events subset: failed because device had no detected events");
+    subset = subset && (total_events > 0);
+    if (subset)
+      debug_print(DEBUG_VERBOSE, 1, "\t\t events subset: check passed");
+    return subset;
   }
   if (match == device_match::EV_MATCH_EXACT) {
-    return subset && superset;
+    //check for both superset and subset.
+    if (!subset) {
+      if (superkey != -1)
+        debug_print(DEBUG_VERBOSE, 2, "\t\t events exact: failed because device had key ", std::to_string(superkey).c_str());
+      else if (superabs != -1)
+        debug_print(DEBUG_VERBOSE, 2, "\t\t events exact: failed because device had abs ", std::to_string(superabs).c_str());
+      return false;
+    }
+    if (!superset) {
+      const char* types[] = {"none","opt","key","abs","rel","any"};
+      debug_print(DEBUG_VERBOSE, 4, "\t\t events exact: failed because device was missing ", types[gendev_events.begin()->first], " ", std::to_string(gendev_events.begin()->second).c_str());
+      return false;
+    }
+    debug_print(DEBUG_VERBOSE, 1, "\t\t events exact: check passed");
+    return true;
   }
   if (match == device_match::EV_MATCH_SUPERSET) {
+    if (!superset) {
+      const char* types[] = {"none","opt","key","abs","rel","any"};
+      debug_print(DEBUG_VERBOSE, 4, "\t\t events superset: failed because device was missing ", types[gendev_events.begin()->first], " ", std::to_string(gendev_events.begin()->second).c_str());
+      return false;
+    }
+    debug_print(DEBUG_VERBOSE, 1, "\t\t events superset: check passed");
     return superset;
   }
   return false;
@@ -224,33 +255,45 @@ bool matched(struct udev* udev, struct udev_device* dev, const device_match& mat
   //start checking matches.
   //result is true if ALL criteria are met
   //valid is true if AT LEAST ONE criteria is valid
+  debug_print(DEBUG_VERBOSE, 1, "\t\tchecking match line...");
   if (!match.name.empty()) {
     valid = true;
     const char* name = nullptr;
     name = udev_device_get_sysattr_value(parent, "name");
-    result = result && (name && !strcmp(match.name.c_str(), name));
+    bool check = (name && !strcmp(match.name.c_str(), name));
+    result = result && check;
+    debug_print(DEBUG_VERBOSE, 4, "\t\t name: ", name ?  name : "", check ? " == " : " != ", match.name.c_str());
   }
   if (!match.uniq.empty()) {
     valid = true;
-    result = result && (uniq && !strcmp(match.uniq.c_str(), uniq));
+    bool check = (uniq && !strcmp(match.uniq.c_str(), uniq));
+    debug_print(DEBUG_VERBOSE, 4, "\t\t uniq: ", uniq ?  uniq : "", check ? " == " : " != ", match.uniq.c_str());
   }
   if (!match.phys.empty()) {
     valid = true;
-    result = result && (phys && !strcmp(match.phys.c_str(), phys));
+    bool check = (phys && !strcmp(match.phys.c_str(), phys));
+    result = result && check;
+    debug_print(DEBUG_VERBOSE, 4, "\t\t phys: ", phys ?  phys : "", check ? " == " : " != ", match.phys.c_str());
   }
   if (!match.driver.empty()) {
     valid = true;
-    result = result && (driver && !strcmp(match.driver.c_str(), driver));
+    bool check = (driver && !strcmp(match.driver.c_str(), driver));
+    result = result && check;
+    debug_print(DEBUG_VERBOSE, 4, "\t\t driver: ", driver ?  driver : "", check ? " == " : " != ", match.driver.c_str());
   }
   if (match.vendor != -1) {
     valid = true;
     int vendor = parse_hex(vendor_id);
-    result = result && (match.vendor == vendor);
+    bool check = (match.vendor == vendor);
+    result = result && check;
+    debug_print(DEBUG_VERBOSE, 4, "\t\t vendor: ",   std::to_string(vendor).c_str(), check ? " == " : " != ", std::to_string(match.vendor).c_str());
   }
   if (match.product != -1) {
     valid = true;
     int product = parse_hex(product_id);
-    result = result && (match.product == product);
+    bool check = (match.product == product);
+    result = result && check;
+    debug_print(DEBUG_VERBOSE, 4, "\t\t product: ",   std::to_string(product).c_str(), check ? " == " : " != ", std::to_string(match.product).c_str());
   }
   if (match.events != device_match::EV_MATCH_IGNORED) {
     valid = true;
@@ -287,6 +330,7 @@ int generic_manager::accept_device(struct udev* udev, struct udev_device* dev) {
       if (!strncmp(sysname, "event", 3)) {
         for (auto it = descr->matches.begin(); it != descr->matches.end(); it++) {
           if (matched(udev,dev,*it, descr)) {
+            debug_print(DEBUG_VERBOSE,2, "\t\t match passed", it->order > 0 ? (", order = " + std::to_string(it->order+1)).c_str() : "");
             //If we are claiming this, open the device and return DEVICE_CLAIMED.
             if (it->order == DEVICE_CLAIMED && open_device(udev, dev) == SUCCESS)
               return DEVICE_CLAIMED;
@@ -298,9 +342,15 @@ int generic_manager::accept_device(struct udev* udev, struct udev_device* dev) {
             } else {
               strongest_claim = (strongest_claim < it->order) ? strongest_claim : it->order;
             }
+          } else {
+            debug_print(DEBUG_VERBOSE,1, "\t\t match failed");
           }
         }
+      } else {
+        debug_print(DEBUG_VERBOSE, 1, "\t\tignored because it was not a /dev/input/event# device");
       }
+    } else {
+      debug_print(DEBUG_VERBOSE, 1, "\t\tignored because it is not in the input subsystem");
     }
   }
 

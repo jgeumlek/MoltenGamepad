@@ -99,6 +99,9 @@ int print_usage(char* execname) {
                           "--version -v\n"\
                           "\tDisplay the version string\n"\
                           "\n"\
+                          "--verbose -V\n"\
+                          "\tDisplay extra information while running. Repeat this argument to show even more detail.\n"\
+                          "\n"\
                           "--uinput-path -u\n"\
                           "\tSet where the uinput node is found on the system\n"\
                           "\n"\
@@ -171,6 +174,7 @@ int parse_opts(options& options, int argc, char* argv[]) {
     {"mimic-xpad",    0,    0,    0},
     {"daemon",        0,    0,  'd'},
     {"rumble",        0,    0,  'R'},
+    {"verbose",       0,    0,  'V'},
     {0,               0,    0,    0},
   };
   int long_index;
@@ -178,7 +182,7 @@ int parse_opts(options& options, int argc, char* argv[]) {
   //We lock the settings so that way command line args
   //take precedence over settings later read from files.
   while (c != -1) {
-    c = getopt_long(argc, argv, "u:p:g:n:c:f:P:Rmhvd", long_options, &long_index);
+    c = getopt_long(argc, argv, "u:p:g:n:c:f:P:RmhvdV", long_options, &long_index);
     switch (c) {
     case 0:
       if (long_index == 10) {
@@ -245,6 +249,11 @@ int parse_opts(options& options, int argc, char* argv[]) {
     case 'v':
       print_version();
       return 10;
+      break;
+    case 'V':
+      DEBUG_LEVEL++;
+      if (*DEBUG_LEVEL < 0) //we reached past the end of our levels!
+        DEBUG_LEVEL--;
       break;
     case 'n':
       options.set("num_gamepads",std::string(optarg));
