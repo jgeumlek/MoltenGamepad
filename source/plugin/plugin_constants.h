@@ -12,7 +12,7 @@ enum MGType {
   MG_REL,
   MG_STRING,
   MG_INT,
-  MG_FLOAT, //Not implemented...
+  MG_FLOAT,
   MG_BOOL,
   MG_SLOT,
   MG_KEYBOARD_SLOT,

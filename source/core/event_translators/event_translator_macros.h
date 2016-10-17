@@ -12,6 +12,7 @@
 #define FILL_DEF_TRANS(X,TYPE) FILL_DEF(X,TYPE,trans)
 #define FILL_DEF_SLOT(X) FILL_DEF(X,MG_SLOT,slot)
 #define FILL_DEF_KEYBOARD(X) FILL_DEF(X,MG_KEYBOARD_SLOT,slot)
+#define FILL_DEF_FLOAT(X) FILL_DEF(X,MG_FLOAT,real)
 
 // BEGIN declares some local variables to allow the other macro magic.
 #define BEGIN_READ_DEF int __index = 0; std::vector<event_translator*> __localclones;
@@ -35,3 +36,6 @@
 #define READ_TRANS(X,TYPE) READ_DEF(X,TYPE,trans); if (!X) { TRANS_FAIL }; X = X->clone(); __localclones.push_back(X);
 #define READ_SLOT(X) READ_DEF(X,MG_SLOT,slot)
 #define READ_KEYBOARD(X) READ_DEF(X,MG_KEYBOARD_SLOT,slot)
+#define READ_STRING(X) READ_DEF(X,MG_STRING,string)
+//TODO: COPY_STRING(X) if we want to actually allocate...
+#define READ_FLOAT(X) READ_DEF(X,MG_FLOAT,real)

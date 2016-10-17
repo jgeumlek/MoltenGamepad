@@ -14,3 +14,4 @@
 
 #include "advanced/simple_chord.h"
 #include "advanced/exclusive_chord.h"
+#include "advanced/thumbstick.h"

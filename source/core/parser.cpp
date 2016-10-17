@@ -2,6 +2,7 @@
 #include "parser.h"
 #include "event_translators/event_change.h"
 #include "event_translators/translators.h"
+#include <cmath>
 
 /*Want a modified INI syntax.
  * Three main line formats.
@@ -191,9 +192,30 @@ MGType parse_type(const std::string& str) {
     return MG_SLOT;
   if (str == "float")
     return MG_FLOAT;
+  std::cerr << "error building translators, " << str << " was not a type." << std::endl;
   return MG_NULL;
 }
 
+std::string read_float(std::vector<token>::iterator& it, const std::vector<token>::iterator end) {
+  //this function just builds up a string. It will be parsed to a float elsewhere.
+  std::string output;
+  if (it != end && it->type == TK_IDENT) {
+    output += it->value;
+    it++;
+  }
+  //allow for a dot
+  if (it != end && it->type == TK_DOT) {
+    output += it->value;
+    it++;
+    //allow for a portion after the dot.
+    if (it != end && it->type == TK_IDENT) {
+      output += it->value;
+      it++;
+    }
+  }
+  return output;
+}
+  
 //ex. key = btn2btn(key_code, int direction=1)
 trans_decl build_trans_decl(const char* decl_str) {
   std::vector<token> tokens = tokenize(std::string(decl_str));
@@ -249,8 +271,12 @@ trans_decl build_trans_decl(const char* decl_str) {
     if (it->type == TK_EQUAL) {
       it++;
       default_value = it->value;
+      if (type == MG_FLOAT) {
+        default_value = read_float(it, tokens.end());
+      } else {
+        it++;
+      }
       has_default = true;
-      it++;
     }
     if (it->type == TK_COMMA)
       it++;
@@ -290,6 +316,7 @@ void MGparser::load_translators(moltengamepad* mg) {
   //add advanced_event_translators
   RENAME_GEN(chord,simple_chord);
   RENAME_GEN(exclusive,exclusive_chord);
+  RENAME_GEN(stick,thumb_stick);
 }
 
 MGparser::MGparser(moltengamepad* mg, message_protocol* output) : out("parse") {
@@ -725,6 +752,13 @@ bool MGparser::parse_decl(enum entry_type intype, const trans_decl& decl, MGTran
     if (type == MG_REL) def.fields[i].rel = read_ev_code(values[i].ident, OUT_REL);
     if (type == MG_AXIS) def.fields[i].axis = read_ev_code(values[i].ident, OUT_ABS);
     if (type == MG_INT) def.fields[i].integer = read_ev_code(values[i].ident, OUT_NONE);
+    if (type == MG_FLOAT) {
+      try {
+        def.fields[i].real = std::atof(values[i].ident.c_str());
+      } catch (...) {
+        def.fields[i].real = std::nanf("");
+      }
+    }
     if (type == MG_SLOT) {
       output_slot* slot = mg->slots->find_slot(values[i].ident);
       if (!slot) return false;
@@ -743,9 +777,7 @@ bool MGparser::parse_decl(enum entry_type intype, const trans_decl& decl, MGTran
       copy[size] = '\0';
       def.fields[i].string = copy;
     }
-    //TODO: float
   }
-
   return true;
 }
 
