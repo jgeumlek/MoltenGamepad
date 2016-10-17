@@ -277,6 +277,11 @@ bool matched(struct udev* udev, struct udev_device* dev, const device_match& mat
   }
   if (!match.driver.empty()) {
     valid = true;
+    udev_device* driver_parent = parent;
+    while (driver == nullptr && driver_parent) {
+      driver = udev_device_get_driver(driver_parent);
+      driver_parent = udev_device_get_parent(driver_parent);
+    }
     bool check = (driver && !strcmp(match.driver.c_str(), driver));
     result = result && check;
     debug_print(DEBUG_VERBOSE, 4, "\t\t driver: ", driver ?  driver : "", check ? " == " : " != ", match.driver.c_str());
