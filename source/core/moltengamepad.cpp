@@ -39,7 +39,7 @@ std::vector<std::string> find_xdg_config_dirs(std::string commandline_override) 
     const char* config_home = getenv("XDG_CONFIG_HOME");
     std::string confdir;
     if (config_home && config_home[0] != '\0') {
-      confdir = std::string(confdir);
+      confdir = std::string(config_home);
     } else {
       //It was unset, so try its specified default
       if (getenv("HOME")) {
