@@ -98,14 +98,17 @@ std::string moltengamepad::locate(file_category cat, std::string path) {
     dirs.insert(dirs.begin(),commandline_override);
 
   for (auto dir : dirs) {
-    std::string fullpath = dir + category_prefix + path;
+    std::string fullpath = dir + "/" + category_prefix + path;
     if (access((fullpath).c_str(), R_OK) != -1) {
       char* resolved = realpath(fullpath.c_str(), nullptr);
       if (resolved) {
         fullpath = std::string(resolved);
         free(resolved);
       }
+      debug_print(DEBUG_VERBOSE, 2, "locate: able to read ", fullpath.c_str());
       return fullpath;
+    } else {
+      debug_print(DEBUG_VERBOSE, 2, "locate: unable to read ", fullpath.c_str());
     }
   }
 
@@ -139,14 +142,15 @@ std::vector<std::string> moltengamepad::locate_glob(file_category cat, std::stri
     dirs.insert(dirs.begin(),commandline_override);
 
   for (auto dir : dirs) {
-    std::string fullpath = dir + category_prefix + pathglob;
+    std::string fullpath = dir + "/" + category_prefix + pathglob;
     glob_t globbuffer;
     glob(fullpath.c_str(), 0, nullptr, &globbuffer);
-
+    debug_print(DEBUG_VERBOSE, 2, "glob: ", fullpath.c_str());
     for (int i = 0; i < globbuffer.gl_pathc; i++) {
       char* resolved = realpath(globbuffer.gl_pathv[i], nullptr);
       if (resolved) {
         files.push_back(std::string(resolved));
+        debug_print(DEBUG_VERBOSE, 2, "\tglob file: ", resolved);
         free(resolved);
       }
     }
@@ -240,11 +244,15 @@ int moltengamepad::init() {
   opts->lock("pidfile",true);
   opts->lock("config_dir",true);
   std::string cfgfile = locate(FILE_CONFIG,"moltengamepad.cfg");
-  std::cout << "loading " << cfgfile << std::endl;
-  loop_file(cfgfile, [this, &cfg] (std::vector<token>& tokens, context ctx) {
-    config_parse_line(this, tokens, ctx, *(this->opts), &cfg);
-    return 0;
-  });
+  if (!cfgfile.empty()) {
+    std::cout << "loading " << cfgfile << std::endl;
+    loop_file(cfgfile, [this, &cfg] (std::vector<token>& tokens, context ctx) {
+      config_parse_line(this, tokens, ctx, *(this->opts), &cfg);
+      return 0;
+    });
+  } else {
+    std::cout << "No moltengamepad.cfg found." << std::endl;
+  }
 
   //Now that we have all config parsed,
   //check for FIFO to quit early if needed.
