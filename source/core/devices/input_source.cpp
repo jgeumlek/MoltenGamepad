@@ -255,6 +255,22 @@ void input_source::inject_event(int id, int64_t value, bool skip_adv_trans) {
 
 }
 
+//Do we care enough to assign to a slot when this happens?
+//Should be indicative of user input.
+bool notable_event(const entry_type type, const int64_t value, const int64_t oldvalue) {
+  if (type == DEV_KEY && value)
+    return true; //key presses are always notable!
+  if (type == DEV_AXIS) {
+    int val_sign = -1*(value < -ABS_RANGE/2) + 1*(value > ABS_RANGE/2);
+    int oldval_sign = -1*(oldvalue < -ABS_RANGE/2) + 1*(oldvalue > ABS_RANGE/2);
+    //If oldvalue == 0, then this might be our first read! Better to assume
+    //it is not notable. Most axes will have some jitter to make this
+    //not a problem. Hats will be affected, but only at the very start.
+    return (val_sign != oldval_sign) && oldvalue != 0;
+  }
+  return false;
+}
+
 void input_source::send_value(int id, int64_t value) {
   if (id < 0 || id > events.size() || events[id].value == value)
     return;
@@ -263,11 +279,8 @@ void input_source::send_value(int id, int64_t value) {
     if (adv_trans->claim_event(id, {value})) blocked = true;
   }
 
-  
-  events.at(id).value = value;
-
-  //On a key press, try to claim a slot if we don't have one.
-  if (!out_dev && events.at(id).type == DEV_KEY && value) {
+  //On a notable event, try to claim a slot if we don't have one.
+  if (!out_dev && notable_event(events[id].type, value, events[id].value)) {
     manager->mg->slots->request_slot(this);
     //Normally moving slots sends an event queued into our private pipe.
     //out_dev won't be updated until that event is read to ensure
@@ -278,6 +291,7 @@ void input_source::send_value(int id, int64_t value) {
     std::lock_guard<std::mutex> guard(slot_lock);
     out_dev = assigned_slot;
   }
+  events.at(id).value = value;
 
   if (blocked) return;
 
@@ -298,10 +312,8 @@ void input_source::send_syn_report() {
 
 void input_source::force_value(int id, int64_t value) {
 
-  events.at(id).value = value;
-
-  //On a key press, try to claim a slot if we don't have one.
-  if (!out_dev && events.at(id).type == DEV_KEY && value) {
+  //On a notable event, try to claim a slot if we don't have one.
+  if (!out_dev && notable_event(events[id].type, value, events[id].value)) {
     manager->mg->slots->request_slot(this);
     //Normally moving slots sends an event queued into our private pipe.
     //out_dev won't be updated until that event is read to ensure
@@ -312,6 +324,8 @@ void input_source::force_value(int id, int64_t value) {
     std::lock_guard<std::mutex> guard(slot_lock);
     out_dev = assigned_slot;
   }
+
+  events.at(id).value = value;
 
   if (ev_map.at(id).trans && out_dev) ev_map.at(id).trans->process({value}, out_dev);
 
