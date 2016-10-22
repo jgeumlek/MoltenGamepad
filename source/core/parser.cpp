@@ -1015,7 +1015,7 @@ struct complex_expr* read_expr(std::vector<token>& tokens, std::vector<token>::i
 
 advanced_event_translator* MGparser::parse_adv_trans(const std::vector<std::string>& event_names, std::vector<token>& rhs, message_stream* out) {
   auto it = rhs.begin();
-  event_translator* trans = parse_trans(DEV_KEY, rhs, it, out);
+  event_translator* trans = parse_trans(DEV_KEY, rhs, it, nullptr);
   if (trans) {
     return new simple_chord(event_names, trans);
   }
@@ -1026,8 +1026,10 @@ advanced_event_translator* MGparser::parse_adv_trans(const std::vector<std::stri
   if (!expr) return nullptr;
 
   auto generator = trans_gens.find(expr->ident);
-  if (generator == trans_gens.end())
+  if (generator == trans_gens.end()) {
+    if (out) out->err("no known advanced translator \""+expr->ident+"\".");
     return nullptr;
+  }
 
   trans_decl& decl = generator->second.decl;
 
