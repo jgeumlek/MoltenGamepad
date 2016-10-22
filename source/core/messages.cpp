@@ -41,13 +41,13 @@ void message_stream::print(std::string text) {
 void message_stream::err(std::string text, std::string path, int line_number) {
   std::lock_guard<std::mutex> guard(lock);
   for (auto listener : listeners)
-    listener->err(0, text, path, line_number);
+    listener->err(0, (name.empty() ? "" : name + ": ") + text, path, line_number);
 }
 
 void message_stream::err(std::string text) {
   std::lock_guard<std::mutex> guard(lock);
   for (auto listener : listeners)
-    listener->err(0, text);
+    listener->err(0, (name.empty() ? "" : name + ": ") + text);
 }
 
 int DEBUG_LEVELS[] = {DEBUG_NONE, DEBUG_INFO, DEBUG_VERBOSE, -1};

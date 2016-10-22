@@ -8,6 +8,13 @@
 
 #define GENDEV_INCOMPLETE_INFO -1
 #define GENDEV_REJECTED_MANAGER -5
+void parse_error(moltengamepad* mg, const std::string& message, const context& context) {
+  if (message.empty()) {
+    mg->drivers.err("gendev: parsing error, entire line ignored.", context.path, context.line_number);
+  } else {
+    mg->drivers.err(message, context.path, context.line_number);
+  }
+}
 void generic_assignment_line(std::vector<token>& line, generic_driver_info*& info, moltengamepad* mg, context context) {
 
   auto it = line.begin();
@@ -19,43 +26,57 @@ void generic_assignment_line(std::vector<token>& line, generic_driver_info*& inf
 
   it++;
 
-  if (it == line.end()) return;
+  if (it == line.end()) {
+    parse_error(mg, "", context);
+    return;
+  }
 
   //If we see a dot, then what we saw so far was a prefix!
   //Like when defining a split event.
   if ((*it).type == TK_DOT) {
     it++;
-    if (it == line.end()) return;
+    if (it == line.end()) {
+      parse_error(mg, "", context);
+      return;
+    }
     prefix = field;
     field = (*it).value;
     it++;
 
   }
 
-  if (it == line.end()) return;
+  if (it == line.end()) return parse_error(mg, "", context);
   //If the next char is "(", then we are parsing
   //a numeric event code, like "key(306)".
   int numeric_literal = -1;
   if ((*it).type == TK_LPAREN) {
     it++;
-    if (it == line.end() || (*it).type != TK_IDENT)
+    if (it == line.end() || (*it).type != TK_IDENT) {
+      parse_error(mg, "gendev: expected event code number.", context);
       return;
+    }
     try {
       numeric_literal = std::stoi((*it).value);
     } catch (...) {
+      parse_error(mg, "gendev: could not parse event code number.", context);
       return;
     }
     it++;
-    if (it == line.end() || (*it).type != TK_RPAREN)
+    if (it == line.end() || (*it).type != TK_RPAREN) {
+      parse_error(mg, "", context);
       return;
+    }
     it++;
   }
 
-  if (it == line.end() || (*it).type != TK_EQUAL) return;
+  if (it == line.end() || (*it).type != TK_EQUAL) return parse_error(mg, "", context);
 
   it++; //Skip past the "="
 
-  if (it == line.end()) return;
+  if (it == line.end()) {
+    parse_error(mg, "", context);
+    return;
+  }
 
   std::string value = (*it).value;
   std::string descr = "(generic)";

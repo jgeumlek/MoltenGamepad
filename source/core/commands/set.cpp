@@ -16,8 +16,11 @@ int do_set(moltengamepad* mg, std::vector<token>& command, message_stream* out) 
   std::string opname = command.at(2).value;
   std::string opvalue = command.at(4).value;
   int ret = mg->set_option(category, opname, opvalue);
-  if (ret)
+  if (ret) {
     out->err("error setting option " + opname + " = " + opvalue);
+  } else {
+    out->take_message("option " + opname + " was set to " + opvalue);
+  }
   return ret;
 }
 

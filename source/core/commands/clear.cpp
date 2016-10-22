@@ -26,6 +26,7 @@ int do_clear(moltengamepad* mg, std::vector<token>& command, message_stream* out
     return -1;
   }
   slot->clear_outputs();
+  out->take_message("cleared output events on slot.");
   return 0;
 
 }

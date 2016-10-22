@@ -336,7 +336,7 @@ void MGparser::do_assignment(std::string header, std::string field, std::vector<
 
   if (left_type == DEV_KEY || left_type == DEV_AXIS) {
     auto it = rhs.begin();
-    event_translator* trans = parse_trans(left_type, rhs, it);
+    event_translator* trans = parse_trans(left_type, rhs, it, &out);
 
     if (!trans) {
       out.take_message("Parsing the right-hand side failed.");
@@ -382,7 +382,7 @@ void MGparser::do_adv_assignment(std::string header, std::vector<std::string>& f
     prof->set_advanced(fields, nullptr);
     return;
   }
-  advanced_event_translator* trans = parse_adv_trans(fields, rhs);
+  advanced_event_translator* trans = parse_adv_trans(fields, rhs, &out);
   if (!trans) {
     out.take_message("could not parse right hand side");
   }
@@ -514,12 +514,12 @@ void MGparser::exec_line(std::vector<token>& line, std::string& header) {
 }
 
 
-event_translator* MGparser::parse_trans(enum entry_type intype, std::vector<token>& tokens, std::vector<token>::iterator& it) {
+event_translator* MGparser::parse_trans(enum entry_type intype, std::vector<token>& tokens, std::vector<token>::iterator& it, message_stream* out) {
   //Note: this function is assumed to be called at the top of parsing a translator,
   //not as some recursive substep. If we wish to avoid the quirks, use parse_complex_trans instead.
   event_translator* trans = parse_trans_toplevel_quirks(intype, tokens, it);
   if (trans) return trans;
-  trans = parse_trans_strict(intype, tokens, it);
+  trans = parse_trans_strict(intype, tokens, it, out);
 
   return trans;
 }
@@ -541,7 +541,7 @@ event_translator* MGparser::parse_trans_toplevel_quirks(enum entry_type intype, 
     expr->params.push_back(new complex_expr);
     expr->params[0]->ident = tokens[0].value;
     expr->params[1]->ident = tokens[2].value;
-    event_translator* trans = parse_trans_expr(DEV_AXIS, expr);
+    event_translator* trans = parse_trans_expr(DEV_AXIS, expr, nullptr);
     free_complex_expr(expr);
     return trans;
   }
@@ -549,10 +549,10 @@ event_translator* MGparser::parse_trans_toplevel_quirks(enum entry_type intype, 
 }
 
 
-event_translator* MGparser::parse_trans_strict(enum entry_type intype, std::vector<token>& tokens, std::vector<token>::iterator& it) {
+event_translator* MGparser::parse_trans_strict(enum entry_type intype, std::vector<token>& tokens, std::vector<token>::iterator& it, message_stream* out) {
   auto localit = it;
   complex_expr* expr = read_expr(tokens, localit);
-  event_translator* trans =  parse_trans_expr(intype, expr);
+  event_translator* trans =  parse_trans_expr(intype, expr, out);
   free_complex_expr(expr);
   it = localit;
   return trans;
@@ -573,8 +573,11 @@ void release_def(MGTransDef& def) {
 }
 
 
-event_translator* MGparser::parse_trans_expr(enum entry_type intype, complex_expr* expr) {
-  if (!expr) return nullptr;
+event_translator* MGparser::parse_trans_expr(enum entry_type intype, complex_expr* expr, message_stream* out) {
+  if (!expr) {
+    if (out) out->err("expression not well-formed.");
+    return nullptr;
+  }
 
   event_translator* trans = parse_special_trans(intype, expr);
   if (trans) return trans;
@@ -582,8 +585,10 @@ event_translator* MGparser::parse_trans_expr(enum entry_type intype, complex_exp
   
 
   auto generator = trans_gens.find(expr->ident);
-  if (generator == trans_gens.end())
+  if (generator == trans_gens.end()) {
+    if (out) out->err("no known translator \""+expr->ident+"\".");
     return nullptr;
+  }
 
   trans_decl& decl = generator->second.decl;
 
@@ -591,13 +596,14 @@ event_translator* MGparser::parse_trans_expr(enum entry_type intype, complex_exp
   def.identifier = expr->ident;
 
 
-  if (!parse_decl(intype, decl, def, expr)) return nullptr;
+  if (!parse_decl(intype, decl, def, expr, out)) return nullptr;
 
 
   //still need to build it!
   try {
     trans = generator->second.generate(def.fields);
   } catch (...) {
+    if (out) out->err("translator constructor failed.");
     trans = nullptr;
   }
   release_def(def);
@@ -668,7 +674,7 @@ event_translator* MGparser::parse_special_trans(enum entry_type intype, complex_
 }
 
 
-bool MGparser::parse_decl(enum entry_type intype, const trans_decl& decl, MGTransDef& def, complex_expr* expr) {
+bool MGparser::parse_decl(enum entry_type intype, const trans_decl& decl, MGTransDef& def, complex_expr* expr, message_stream* out) {
   if (!expr) return false;
 
   int fieldsfound = expr->params.size();
@@ -699,8 +705,10 @@ bool MGparser::parse_decl(enum entry_type intype, const trans_decl& decl, MGTran
         if (decl.fields[spot].name == expr->params[i]->name)
           break;
       }
-      if (spot == decl.fields.size())
+      if (spot == decl.fields.size()) {
+        if (out) out->err("translator \""+expr->ident+"\" has no parameter named \""+expr->params[i]->name+"\"");
         return false; //name not found?
+      }
     }
     if (spot >= def.fields.size() && variadic_type != MG_NULL) {
       //just push some dummy values to resize the list.
@@ -718,6 +726,7 @@ bool MGparser::parse_decl(enum entry_type intype, const trans_decl& decl, MGTran
   for (int i = 0; i < decl.fields.size(); i++) {
     //mandatory param missing.
     if (!decl.fields[i].has_default && !valid[i]) {
+      if (out) out->err("required parameter missing for translator \""+expr->ident+"\"");
       return false;
     }
   }
@@ -742,12 +751,16 @@ bool MGparser::parse_decl(enum entry_type intype, const trans_decl& decl, MGTran
     }
       
 
-    if (type == MG_TRANS) def.fields[i].trans = parse_trans_expr(intype, &values[i]);
-    if (type == MG_KEY_TRANS) def.fields[i].trans = parse_trans_expr(DEV_KEY, &values[i]);
-    if (type == MG_REL_TRANS) def.fields[i].trans = parse_trans_expr(DEV_REL, &values[i]);
-    if (type == MG_AXIS_TRANS) def.fields[i].trans = parse_trans_expr(DEV_AXIS, &values[i]);
+    if (type == MG_TRANS) def.fields[i].trans = parse_trans_expr(intype, &values[i], out);
+    if (type == MG_KEY_TRANS) def.fields[i].trans = parse_trans_expr(DEV_KEY, &values[i], out);
+    if (type == MG_REL_TRANS) def.fields[i].trans = parse_trans_expr(DEV_REL, &values[i], out);
+    if (type == MG_AXIS_TRANS) def.fields[i].trans = parse_trans_expr(DEV_AXIS, &values[i], out);
     if (temp_expr)
       free_complex_expr(temp_expr);
+    if (type >= MG_KEY_TRANS && type <= MG_TRANS && !def.fields[i].trans) {
+      if (out) out->err("translator-type parameter invalid.");
+      return false;
+    }
     if (type == MG_KEY) def.fields[i].key = read_ev_code(values[i].ident, OUT_KEY);
     if (type == MG_REL) def.fields[i].rel = read_ev_code(values[i].ident, OUT_REL);
     if (type == MG_AXIS) def.fields[i].axis = read_ev_code(values[i].ident, OUT_ABS);
@@ -761,7 +774,10 @@ bool MGparser::parse_decl(enum entry_type intype, const trans_decl& decl, MGTran
     }
     if (type == MG_SLOT) {
       output_slot* slot = mg->slots->find_slot(values[i].ident);
-      if (!slot) return false;
+      if (!slot) {
+        if (out) out->err("slot-type parameter invalid.");
+        return false;
+      }
       def.fields[i].slot = slot;
     }
     if (type == MG_BOOL) {
@@ -997,9 +1013,9 @@ struct complex_expr* read_expr(std::vector<token>& tokens, std::vector<token>::i
   return nullptr;
 }
 
-advanced_event_translator* MGparser::parse_adv_trans(const std::vector<std::string>& event_names, std::vector<token>& rhs) {
+advanced_event_translator* MGparser::parse_adv_trans(const std::vector<std::string>& event_names, std::vector<token>& rhs, message_stream* out) {
   auto it = rhs.begin();
-  event_translator* trans = parse_trans(DEV_KEY, rhs, it);
+  event_translator* trans = parse_trans(DEV_KEY, rhs, it, out);
   if (trans) {
     return new simple_chord(event_names, trans);
   }
@@ -1019,7 +1035,7 @@ advanced_event_translator* MGparser::parse_adv_trans(const std::vector<std::stri
   def.identifier = expr->ident;
 
 
-  if (!parse_decl(DEV_KEY, decl, def, expr)) return nullptr;
+  if (!parse_decl(DEV_KEY, decl, def, expr, out)) return nullptr;
 
 
   //still need to build it!
