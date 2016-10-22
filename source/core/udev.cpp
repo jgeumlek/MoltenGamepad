@@ -77,7 +77,10 @@ udev_handler::~udev_handler() {
     stop_thread = true;
     int signal = 0;
     write(pipe_fd, &signal, sizeof(signal));
-    monitor_thread->join();
+    try {
+      monitor_thread->join();
+    } catch (...) {
+    }
     delete monitor_thread;
   }
   for (auto entry : grabbed_nodes) {

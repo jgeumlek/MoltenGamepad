@@ -12,12 +12,17 @@ volatile bool STOP_WORKING = true;
 volatile bool QUIT_APPLICATION = false;
 moltengamepad* app;
 void signal_handler(int signum) {
-  if (!STOP_WORKING) {
+  if (!STOP_WORKING && signum != SIGHUP && signum != SIGPIPE) {
     //A long running action is to be interrupted.
     STOP_WORKING = true;
     return;
   }
+  if (QUIT_APPLICATION) {
+    //already quitting! Not much to do other than wait.
+    return;
+  }
   //Otherwise, we want to interrupt everything! (And let them shut down appropriately)
+  STOP_WORKING = true;
   QUIT_APPLICATION = true;
   delete app;
   exit(0);
@@ -32,6 +37,7 @@ int main(int argc, char* argv[]) {
   signal(SIGINT, signal_handler);
   signal(SIGTERM, signal_handler);
   signal(SIGHUP, signal_handler);
+  signal(SIGPIPE, signal_handler);
 
   options options;
   const option_decl* opt = &general_options[0];
@@ -71,7 +77,10 @@ int main(int argc, char* argv[]) {
     } else {
       mg->init();
       shell_loop(mg, std::cin);
-      delete mg;
+      if (!QUIT_APPLICATION) {
+        QUIT_APPLICATION = true;
+        delete mg;
+      }
     }
 
   } catch (int e) {

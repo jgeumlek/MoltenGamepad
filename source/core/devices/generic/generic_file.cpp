@@ -43,7 +43,10 @@ generic_file::~generic_file() {
   if (thread) {
     int beep = 0;
     write(internal_pipe[1],&beep,sizeof(beep));
-    thread->join();
+    try {
+      thread->join();
+    } catch (...) {
+    }
     delete thread;
   }
   for (auto dev : devices) {

@@ -93,7 +93,10 @@ public:
   ~steam_controller_manager() {
     keep_scanning = false;
     if (sc_context_thread) {
-      sc_context_thread->join();
+      try {
+        sc_context_thread->join();
+      } catch (...) {
+      }
       delete sc_context_thread;
     }
   }

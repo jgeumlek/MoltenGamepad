@@ -44,6 +44,7 @@ private:
   std::thread* ff_thread;
   mutable std::mutex lock;
   volatile bool keep_looping;
+  bool safe_to_close();
 
   int setup_epoll();
   void ff_thread_loop();

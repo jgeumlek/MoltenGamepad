@@ -379,7 +379,10 @@ moltengamepad::~moltengamepad() {
     fifo << "quit" << std::endl;
     fifo.close();
     if (remote_handler) {
-      remote_handler->join();
+      try {
+        remote_handler->join();
+      } catch (...) {
+      }
       delete remote_handler;
     }
   }

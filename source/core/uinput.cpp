@@ -54,7 +54,12 @@ uinput::~uinput() {
   if (epfd >= 0)
     close(epfd);
   if (ff_thread) {
-    ff_thread->detach();
+    keep_looping = false;
+    try {
+      ff_thread->join();
+    } catch (...) {
+    }
+    delete ff_thread;
   }
 }
 
@@ -294,7 +299,10 @@ int uinput::start_ff_thread() {
   return 0;
 }
 
-
+bool uinput::safe_to_close() {
+  std::lock_guard<std::mutex> guard(lock);
+  return ff_slots.size() == 0;
+}
 
 void uinput::ff_thread_loop() {
   if (epfd < 0)
@@ -302,8 +310,9 @@ void uinput::ff_thread_loop() {
   struct epoll_event event;
   struct epoll_event events[1];
   memset(&event, 0, sizeof(event));
+  bool remaining_slots = ff_slots.size() > 0;
 
-  while ((keep_looping)) {
+  while (keep_looping || !safe_to_close()) {
     int n = epoll_wait(epfd, events, 1, 1000);
     if ((n < 0 && errno == EINTR) || n == 0) {
       continue;
