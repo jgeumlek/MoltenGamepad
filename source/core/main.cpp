@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
   QUIT_APPLICATION = false;
   signal(SIGINT, signal_handler);
   signal(SIGTERM, signal_handler);
-  //signal(SIGHUP, signal_handler);
+  signal(SIGHUP, signal_handler);
 
   options options;
   const option_decl* opt = &general_options[0];
@@ -68,8 +68,7 @@ int main(int argc, char* argv[]) {
           pf.close();
         }
       }
-    }
-    else {
+    } else {
       mg->init();
       shell_loop(mg, std::cin);
       delete mg;
