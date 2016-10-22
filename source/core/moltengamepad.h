@@ -35,7 +35,7 @@ enum file_category {
   FILE_CONFIG,       //The root config folder
   FILE_PROFILE,      //Profiles, aka mappings.
   FILE_GENDEV,       //Generic driver descriptors
-  FILE_MANAGER_SET,  //Manager-specific settings (FUTURE)
+  FILE_OPTIONS,      //Global options, each file is a category.
   FILE_DEVICE_SET,   //Device-specific settings (FUTURE)
 };
 

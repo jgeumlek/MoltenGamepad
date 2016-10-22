@@ -1,5 +1,7 @@
 #MoltenGamepad Profile Documentation
 
+This file documents the behavior and use of MoltenGamepad profiles. These profiles contain event mappings and device-level options. Profiles do not include global/driver-level options such as those reached by the `set` command.
+
 ##Overview
 
 Profiles contain a mapping from MoltenGamepad event names to output events.

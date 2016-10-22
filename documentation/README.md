@@ -4,11 +4,11 @@ This file describes the `.cfg` files used to create generic drivers. If your ker
 
 # profiles.md
 
-This file describes the syntax for setting control mappings in profiles
+This file describes the syntax for setting control mappings in profiles. Look here if you are interested in changing event mappings or device-specific options.
 
-# config_file.md
+# config_files.md
 
-This file describes the syntax and behavior of the  `moltengamepad.cfg` configuration file.
+This file describes the syntax and behavior of the  `moltengamepad.cfg` configuration file, along with describing the files in the `/options/` subdirectory. Look here if you are interested in affecting how MoltenGamepad starts or if you are interested in how MoltenGamepad reads its global settings.
 
 # wiimote.md
 
@@ -25,6 +25,6 @@ This files offers an explanation of the file permissions required by MoltenGamep
 
 # adding_driver.md
 
-This files offers a quick overview of what is needed to implement another driver for this project in C++.
+This files offers a quick overview of what is needed to implement another driver for this project in C++. Please check the `gendev` documentation first to see if it already offers the needed functionality through its generic drivers.
 
 

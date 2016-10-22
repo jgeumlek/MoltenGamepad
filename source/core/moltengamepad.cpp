@@ -88,8 +88,8 @@ std::string moltengamepad::locate(file_category cat, std::string path) {
       commandline_override = opts->get<std::string>("gendev_dir");
       category_prefix = "/gendevices/";
       break;
-    case FILE_MANAGER_SET:
-      category_prefix = "/managers/";
+    case FILE_OPTIONS:
+      category_prefix = "/options/";
       break;
   }
 
@@ -130,8 +130,8 @@ std::vector<std::string> moltengamepad::locate_glob(file_category cat, std::stri
       commandline_override = opts->get<std::string>("gendev_dir");
       category_prefix = "/gendevices/";
       break;
-    case FILE_MANAGER_SET:
-      category_prefix = "/managers/";
+    case FILE_OPTIONS:
+      category_prefix = "/options/";
       break;
   }
   
@@ -304,10 +304,17 @@ int moltengamepad::init() {
   if (!confdir.empty()) {
     if (opts->get<std::string>("profile_dir").empty()) mkdir((confdir + "/profiles/").c_str(), 0755);
     if (opts->get<std::string>("gendev_dir").empty()) mkdir((confdir + "/gendevices/").c_str(), 0755);
-    mkdir((confdir + "/managers/").c_str(), 0755);
+    mkdir((confdir + "/options/").c_str(), 0755);
   }
 
-  
+  std::string slotcfg = locate(FILE_OPTIONS, "slots.cfg");
+  if (!slotcfg.empty()) {
+    slots->log.take_message("reading slots options from " + slotcfg);
+    loop_file(slotcfg, [this] (std::vector<token>& tokens, context ctx) {
+      config_parse_line(this, tokens, ctx, this->slots->opts, nullptr);
+      return 0;
+    });
+  }
  
 
   //file glob the gendev .cfg files to add more drivers
@@ -420,11 +427,14 @@ device_manager* moltengamepad::add_manager(manager_plugin manager, void* manager
     gamepad->copy_into(man->mapprofile, true, false);
 
   if (man->has_options) {
-    auto filepath = locate(FILE_MANAGER_SET, manager_name + ".cfg");
-    loop_file(filepath, [this, man] (std::vector<token>& tokens, context ctx) {
-      config_parse_line(this, tokens, ctx, man->opts, nullptr);
-      return 0;
-    });
+    auto filepath = locate(FILE_OPTIONS, manager_name + ".cfg");
+    if (!filepath.empty()) {
+      drivers.take_message("reading driver options from " + filepath);
+      loop_file(filepath, [this, man] (std::vector<token>& tokens, context ctx) {
+        config_parse_line(this, tokens, ctx, man->opts, nullptr);
+        return 0;
+      });
+    }
   }
   if (manager.start)
     manager.start(man->plug_data);
