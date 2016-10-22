@@ -417,7 +417,7 @@ device_manager* moltengamepad::add_manager(manager_plugin manager, void* manager
   managers.push_back(man);
   add_profile(man->mapprofile.get());
   if (manager.subscribe_to_gamepad_profile)
-    gamepad->copy_into(man->mapprofile, true, true);
+    gamepad->copy_into(man->mapprofile, true, false);
 
   if (man->has_options) {
     auto filepath = locate(FILE_MANAGER_SET, manager_name + ".cfg");
