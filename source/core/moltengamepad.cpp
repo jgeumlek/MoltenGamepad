@@ -273,8 +273,6 @@ int moltengamepad::init() {
       perror("making fifo:");
       opts->set("fifo_path","");
       throw -1;
-    } else {
-      remote_handler = new std::thread(fifo_loop, this);
     }
   }
 
