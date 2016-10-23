@@ -75,7 +75,7 @@ generic_manager::~generic_manager() {
 
 //I don't have a 32 bit system to test how it reports its capability strings!
 #ifndef WORD_SIZE
-#define WORD_SIZE 64
+#define WORD_SIZE sizeof(size_t)*8
 #endif
 
 std::vector<int> read_capabilities(const char* capabilities) {
