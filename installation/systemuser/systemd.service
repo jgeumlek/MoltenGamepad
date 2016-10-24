@@ -1,4 +1,4 @@
-# Installs as /etc/systemd/user/moltengamepad.service.
+# Installs as /etc/systemd/system/moltengamepad.service.
 
 [Unit]
 Description=MoltenGamepad Event Translator

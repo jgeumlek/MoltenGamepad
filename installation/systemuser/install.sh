@@ -18,11 +18,12 @@ install -Dm0644 udev.rules /etc/udev/rules.d/90-moltengamepad.rules
 udevadm control --reload
 systemd-tmpfiles --create
 systemctl daemon-reload
+# Reload uinput to get its new permissions.
+rmmod uinput
+modprobe uinput
 systemctl enable moltengamepad.service
 
 # Tell the user we're done and what to do next.
 echo "Installation of system files complete. Install the MoltenGamepad binary"
 echo "as /usr/local/bin/moltengamepad and run systemctl start moltengamepad"
 echo "to start system-mode MoltenGamepad."
-echo ""
-echo "Restart to ensure uinput permissions have been set."
