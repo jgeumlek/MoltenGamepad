@@ -4,6 +4,8 @@
 Description=MoltenGamepad Event Translator
 
 [Service]
+User=gamepad
+Group=gamepad
 Type=forking
 PIDFile=/var/run/moltengamepad/pid
 ExecStart=/usr/local/bin/moltengamepad \
