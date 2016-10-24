@@ -1,5 +1,5 @@
 #!/bin/bash
-# Installs as /etc/profile.d/sdl2-gamecontroller.sh
+# Installs as /etc/profile.d/sdl2-gamecontroller-moltengamepad.sh
 # Creates a system-wide SDL2 mapping for MG's default configuration as well as
 # any device that mimics xpad.
 export SDL_GAMECONTROLLERCONFIG="$SDL_GAMECONTROLLERCONFIG
