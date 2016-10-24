@@ -18,6 +18,9 @@ This file offers additional documentation on the wiimote driver.
 
 This file offers additional documentation on the Steam controller driver.
 
+# rumble.md
+
+This file explains why rumble events are not processed by default.
 
 # permissions_(udev).md
 

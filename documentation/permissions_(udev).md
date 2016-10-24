@@ -1,5 +1,7 @@
 MoltenGamepad requires file permissions to function, and you are unlikely to have these permissions by default. Udev rules help to automate the setup of these permissions.
 
+See the `installation` directory for some pre-made udev rules files.
+
 # Intro to udev rules
 
 Udev rules match constraints with `==`, update and set values with `=`, and use plurals like `DRIVERS` rather than `DRIVER` to check values of parent devices.
