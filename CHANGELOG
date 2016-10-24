@@ -1,4 +1,35 @@
 ---------------------------
+0.3.1-beta
+2016-10-23
+---------------------------
+
+MoltenGamepad is close to a 1.0 release! Things are shaping up nicely. 1.0 will be a soli-but-not-complete experience, and 2.0 probably won't be far behind to clear out some cruft from these beta versions.
+
+One notable change is how trigger buttons are handled. A device with analog triggers might still have digital button events associated with the triggers as well. These button events are semantically different from purely digital triggers. Most of the time one would wish to ignore these additional button events, so they have been given separate names to distinguish them.
+
+If a controller has purely digital triggers, it should expose the "tr2" and "tl2" events.
+
+If a controller has purely analog triggers, it should expose the "tr2_axis" and "tl2_axis" events.
+
+If a controller has analog triggers with additional digital buttons on them, it should expose "tr2_axis", "tl2_axis", "tr2_axis_btn", and "tl2_axis_btn". The events "tr2" and "tl2" should NOT be present.
+
+Highlights:
+
+* MoltenGamepad's virtual devices are given informative phys identifiers.
+* A device's initial button press is no longer consumed in just allocating a controller slot.
+* Axis events can cause slot allocation as well.
+* The global options accessed via `set` can now have their values read from files on start-up.
+* Two new fields for gendev matching: driver and events. The latter allows matches based on what events the device reports.
+* gendev descriptions can reference event codes by number, such as `key(306)` or `abs(1)`.
+* gendev matches can be given an `order` to allow for flexibility in which matches get priority.
+* The `simple` chord translator has been renamed to `chord`.
+* More informative messages throughout.
+* The `--verbose` flag was added to help in debugging configuration issues. Specifying it twice provides even more information.
+* The `assign` command was added, which can tie specific phys or uniq identifiers to particular slots.
+* Fixed how XDG_CONFIG_HOME was read.
+* `alterslot` will be removed in the next version.
+
+---------------------------
 0.2.1-beta
 2016-09-17
 ---------------------------
@@ -12,6 +43,7 @@ The largest new feature is rumble support, but it carries a caveat and is disabl
 Due to the above, rumble support is not enabled by default, but is controlled by a simple `--rumble` command line flag.
 
 Highlights:
+
 * Rumble support added.
 * "make eventlists" can auto-generate the correct event lists.
 * Relevant "jsX" devices are grabbed in addition to the "eventX" devices.
