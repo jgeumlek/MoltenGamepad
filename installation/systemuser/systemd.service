@@ -1,0 +1,19 @@
+# Installs as /etc/systemd/system/moltengamepad.service.
+
+[Unit]
+Description=MoltenGamepad Event Translator
+
+[Service]
+Type=forking
+User=gamepad
+Group=gamepad
+PIDFile=/var/run/moltengamepad/pid
+ExecStart=/usr/local/bin/moltengamepad \
+ --daemon --pidfile /var/run/moltengamepad/pid \
+ --make-fifo --fifo-path /var/run/moltengamepad/fifo
+ExecStop=/usr/bin/kill $MAINPID
+StandardOutput=journal+console
+StandardError=journal+console
+
+[Install]
+WantedBy=default.target

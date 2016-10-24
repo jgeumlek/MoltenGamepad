@@ -1,0 +1,15 @@
+# udev rules for system-wide MoltenGamepad.
+# Installs as 90-gamepad.rules.
+
+# Allow gamepad user access to uinput.
+KERNEL=="uinput" RUN+="/usr/bin/setfacl -m gamepad:rw- %E{DEVNAME}"
+
+# Virtual event devices should be world-usable.
+SUBSYSTEM=="input", ACTION=="add", DEVPATH=="*virtual*", \
+ OWNER:="gamepad", GROUP:="input", MODE:="0666"
+
+# When a non-virtual gamepad device appears, hide it.
+SUBSYSTEM=="input", ACTION=="add", \
+ ENV{ID_INPUT_JOYSTICK}=="?*", DEVPATH!="*virtual*", \
+ OWNER:="gamepad", GROUP:="gamepad", MODE:="0600", \
+ RUN+="/usr/bin/setfacl -m mask:--- %E{DEVNAME}"
