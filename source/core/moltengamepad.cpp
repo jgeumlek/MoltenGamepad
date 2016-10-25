@@ -193,6 +193,7 @@ const option_decl general_options[] = {
   {"enumerate", "Check for already connected devices", "true", MG_BOOL},
   {"monitor", "Listen for device connections/disconnections", "true", MG_BOOL},
   {"rumble", "Process controller rumble effects", "false", MG_BOOL},
+  {"stay_alive", "Keep process running even after standard input is closed", "false", MG_BOOL},
   {"", "", ""},
 };
 
@@ -243,6 +244,7 @@ int moltengamepad::init() {
   opts->lock("daemon",true);
   opts->lock("pidfile",true);
   opts->lock("config_dir",true);
+  opts->lock("stay_alive",true);
   std::string cfgfile = locate(FILE_CONFIG,"moltengamepad.cfg");
   if (!cfgfile.empty()) {
     std::cout << "loading " << cfgfile << std::endl;
@@ -271,7 +273,7 @@ int moltengamepad::init() {
       stdout->err(0,"Could not locate fifo path. Use the --fifo-path command line argument.");
       throw -1; //Abort so we don't accidentally run without a means of control.
     }
-    debug_print(DEBUG_INFO,2,"Making FIFO at ", fifo_path.c_str());
+    debug_print(DEBUG_NONE,2,"Making FIFO at ", fifo_path.c_str());
     int ret = mkfifo(fifo_path.c_str(), 0660);
     if (ret < 0)  {
       perror("making fifo:");

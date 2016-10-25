@@ -51,7 +51,7 @@ int main(int argc, char* argv[]) {
 
   try {
     bool daemon = options.get<bool>("daemon");
-    bool stay_alive = daemon;
+    bool stay_alive = daemon || options.get<bool>("stay_alive");
     int pid = -1;
     if (daemon)
       pid = fork();
@@ -182,7 +182,9 @@ int print_usage(char* execname) {
                           "--daemon -d\n"\
                           "\tFork and exit immediately, leaving the daemon running in the background.\n"\
                           "--pidfile -P\n"\
-                          "\tOnly used for daemon, where store the PID of the process.\n"\
+                          "\tOnly used for --daemon, gives a path for where to store the PID of the process.\n"\
+                          "--stay-alive\n"\
+                          "\tPrevents MoltenGamepad from shutting down when its standard input is closed.\n"\
                           ;
 
   std::cout << help_text;
@@ -214,6 +216,7 @@ int parse_opts(options& options, int argc, char* argv[]) {
     {"daemon",        0,    0,  'd'},
     {"rumble",        0,    0,  'R'},
     {"verbose",       0,    0,  'V'},
+    {"stay-alive",    0,    0,    0},
     {0,               0,    0,    0},
   };
   int long_index;
@@ -243,6 +246,10 @@ int parse_opts(options& options, int argc, char* argv[]) {
       if (long_index == 14) {
         options.set("mimic_xpad","true");
         options.lock("mimic_xpad", true);
+      };
+      if (long_index == 18) {
+        options.set("stay_alive","true");
+        options.lock("stay_alive", true);
       };
       break;
     case 'd':
