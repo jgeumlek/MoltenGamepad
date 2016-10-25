@@ -259,20 +259,33 @@ int moltengamepad::init() {
   if (opts->get<bool>("make_fifo")) {
     //unlock option so we can set/clear it if needed.
     opts->lock("fifo_path",false);
+    opts->lock("make_fifo",false);
     //try to use $XDG_RUNTIME_DIR, only if set.
     const char* run_dir = getenv("XDG_RUNTIME_DIR");
-    if (opts->get<std::string>("fifo_path").empty() && run_dir) {
-      opts->set("fifo_path", std::string(run_dir) + "/moltengamepad");
+    std::string fifo_path;
+    opts->get<std::string>("fifo_path",fifo_path);
+    if (fifo_path.empty() && run_dir) {
+      fifo_path = std::string(run_dir) + "/moltengamepad";
     }
-    if (opts->get<std::string>("fifo_path").empty()) {
+    if (fifo_path.empty()) {
       stdout->err(0,"Could not locate fifo path. Use the --fifo-path command line argument.");
       throw -1; //Abort so we don't accidentally run without a means of control.
     }
-    int ret = mkfifo(opts->get<std::string>("fifo_path").c_str(), 0660);
+    debug_print(DEBUG_INFO,2,"Making FIFO at ", fifo_path.c_str());
+    int ret = mkfifo(fifo_path.c_str(), 0660);
     if (ret < 0)  {
       perror("making fifo:");
+      //clear them!
+      opts->set("make_fifo","false");
       opts->set("fifo_path","");
+      //lock them! No further changes.
+      opts->lock("make_fifo",true);
+      opts->lock("fifo_path",true);
       throw -1;
+    } else {
+      opts->set("fifo_path",fifo_path);
+      opts->lock("fifo_path",true);
+      opts->lock("make_fifo",true);
     }
   }
 
@@ -281,12 +294,14 @@ int moltengamepad::init() {
   gamepad->name = "gamepad";
   add_profile(gamepad.get());
   ids_in_use.insert("gamepad");
+
   //set up our padstyles and our slot manager
   virtpad_settings padstyle = default_padstyle;
   opts->get<bool>("dpad_as_hat",padstyle.dpad_as_hat);
   if (opts->get<bool>("mimic_xpad")) padstyle = xpad_padstyle;
   opts->get<bool>("rumble",padstyle.rumble);
   slots = new slot_manager(opts->get<int>("num_gamepads"), opts->get<bool>("make_keyboard"), padstyle);
+
   //add standard streams
   drivers.add_listener(stdout);
   plugs.add_listener(stdout);
@@ -364,20 +379,21 @@ moltengamepad::~moltengamepad() {
 
   udev.set_managers(nullptr);
 
-  //No need to print into the void...
-  if(!opts->get<bool>("daemon"))
-    std::cout << "Shutting down." << std::endl;
+
+  std::cout << "Shutting down." << std::endl;
 
   //Clean up our fifo + send a message to ensure the thread clears out.
   if (opts->get<bool>("make_fifo")) {
-    std::ofstream fifo;
     std::string path;
     fifo_looping = false;
     opts->get("fifo_path",path);
-    fifo.open(path, std::ostream::out);
+    int fifo = open(path.c_str(), O_WRONLY | O_NONBLOCK); //need O_NONBLOCK or we hang if there was no listener!
+    debug_print(DEBUG_INFO,2,"Destroying FIFO at ", path.c_str());
     unlink(path.c_str());
-    fifo << "quit" << std::endl;
-    fifo.close();
+    if (fifo >= 0) {
+      write(fifo,"\nquit\n",6);
+      close(fifo);
+    }
     if (remote_handler) {
       try {
         remote_handler->join();
@@ -386,7 +402,6 @@ moltengamepad::~moltengamepad() {
       delete remote_handler;
     }
   }
-
   //remove devices
   //done first to protect from devices assuming their manager exists.
   devices.clear();
@@ -397,9 +412,11 @@ moltengamepad::~moltengamepad() {
   }
 
   //delete output slots
-  delete slots;
+  if (slots)
+    delete slots;
 
-  delete stdout;
+  if (stdout)
+    delete stdout;
 }
 
 

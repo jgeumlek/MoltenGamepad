@@ -33,7 +33,7 @@ void signal_handler(int signum) {
 
 int main(int argc, char* argv[]) {
   STOP_WORKING = true;
-  QUIT_APPLICATION = false;
+  QUIT_APPLICATION = true;
   signal(SIGINT, signal_handler);
   signal(SIGTERM, signal_handler);
   signal(SIGHUP, signal_handler);
@@ -46,48 +46,79 @@ int main(int argc, char* argv[]) {
   }
   int ret = parse_opts(options, argc, argv);
 
-  if (ret > 0) return 0;
+  if (ret > 0) return 0; //This was something like "--help" where we don't do anything.
   if (ret < 0) return ret;
 
   try {
-
-    moltengamepad* mg = new moltengamepad(&options);
-    app = mg;
-    
-    if (options.get<bool>("daemon")) {
-      int pid = fork();
-      if(pid == 0) {
-
-        mg->init();
-
-        while(!QUIT_APPLICATION)
-          sleep(1);
-      } else if (pid == -1) {
-        std::cerr <<  "Failed to fork.\n";
-      } else {
-        std::string pidfile;
-        options.get<std::string>("pidfile",pidfile);
-        if(pidfile.size() > 0) {
-          std::ofstream pf;
-          pf.open (pidfile);
-          pf << pid << "\n";
-          pf.close();
-        }
+    bool daemon = options.get<bool>("daemon");
+    bool stay_alive = daemon;
+    int pid = -1;
+    if (daemon)
+      pid = fork();
+    if (daemon && pid == -1) {
+      std::cerr << "Failed to fork." << std::endl;
+      throw -18;
+    }
+    if (pid > 0) {
+      //We are a parent process! Just write out the pid and exit.
+      std::string pidfile;
+      options.get<std::string>("pidfile",pidfile);
+      if (!pidfile.empty()) {
+        std::ofstream pf;
+        pf.open(pidfile);
+        pf << pid << "\n";
+        pf.close();
       }
-    } else {
+      return 0;
+    }
+    //Now either we are the child process, or we never needed to fork.
+    //Either way, time to get busy!
+
+    //exit early for some errors.
+    moltengamepad* mg;
+    try {
+      mg = new moltengamepad(&options);
+      app = mg;
+    } catch (int e) {
+      return e;
+    }
+    //Any other errors will depend on us cleaning up that moltengamepad object.
+    try {
+      QUIT_APPLICATION = false;
       mg->init();
-      shell_loop(mg, std::cin);
-      if (!QUIT_APPLICATION) {
-        QUIT_APPLICATION = true;
-        delete mg;
+
+      //daemon doesn't have a useful STDIN.
+      if (!daemon)
+        shell_loop(mg, std::cin);
+
+      if (stay_alive) {
+        //just sleep. This thread has no purpose other than STDIN.
+        //We'll have to depend on other means to ultimately exit.
+        while(true)
+          pause();
       }
+
+    } catch (...) {
+      //just continue to the clean up phase
+    }
+
+    if (QUIT_APPLICATION) {
+      //it seems some other thread is in the process of exiting this program, so
+      //we should just wait it out.
+      while(true)
+        pause();
+    } else {
+      //It is up to us now to start cleaning things up.
+      QUIT_APPLICATION = true;
+      delete mg;
+      exit(0);
     }
 
   } catch (int e) {
     return e;
   }
 
-  return 0;
+  exit(0);
 }
 
 int print_version() {
