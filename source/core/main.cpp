@@ -147,6 +147,9 @@ int print_usage(char* execname) {
                           "--make-fifo -m\n"\
                           "\tCreate a fifo command channel, and exit if it can't be made.\n"\
                           "\n"\
+                          "--replace-fifo -m\n"\
+                          "\tReplace the FIFO if it exists, while telling any existing listeners to exit.\n"\
+                          "\n"\
                           "--fifo-path -f\n"\
                           "\tSet where the fifo command channel should be placed.\n"\
                           "\n"\
@@ -217,6 +220,7 @@ int parse_opts(options& options, int argc, char* argv[]) {
     {"rumble",        0,    0,  'R'},
     {"verbose",       0,    0,  'V'},
     {"stay-alive",    0,    0,    0},
+    {"replace-fifo",  0,    0,    0},
     {0,               0,    0,    0},
   };
   int long_index;
@@ -250,6 +254,10 @@ int parse_opts(options& options, int argc, char* argv[]) {
       if (long_index == 18) {
         options.set("stay_alive","true");
         options.lock("stay_alive", true);
+      };
+      if (long_index == 19) {
+        options.set("replace_fifo","true");
+        options.lock("replace_fifo", true);
       };
       break;
     case 'd':

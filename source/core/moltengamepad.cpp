@@ -173,8 +173,26 @@ int fifo_loop(moltengamepad* mg) {
     shell_loop(mg, file);
     file.close();
   }
+  return 0;
 }
 
+int clear_fifo(const char* fifo_path, bool force_remote_exit) {
+  int fifo = open(fifo_path, O_WRONLY | O_NONBLOCK); //need O_NONBLOCK or we hang if there was no listener!
+  debug_print(DEBUG_INFO,2,"Destroying FIFO at ", fifo_path);
+  unlink(fifo_path);
+  if (fifo >= 0) {
+    if (force_remote_exit) {
+      //tell the listener to stop everything
+      write(fifo,"\nexit_process_leave_fifo\n",25);
+    } else {
+      //tell the listener to refresh their fifo session and see that it is gone.
+      //(keeps process alive, but stops FIFO thread.)
+      //This is needed when we call clear_fifo() while already trying to stop everything!
+      write(fifo,"\nquit\n",6);
+    }
+    close(fifo);
+  }
+}
 
 const option_decl general_options[] = {
 
@@ -186,6 +204,7 @@ const option_decl general_options[] = {
   {"profile_dir", "A directory to check for profiles before the config directories", "", MG_STRING},
   {"gendev_dir", "A directory to check for generic driver descriptions before the config directories", "", MG_STRING},
   {"make_fifo", "Make a FIFO that processes any commands written to it", "false", MG_BOOL},
+  {"replace_fifo", "Before making the FIFO, tell any existing listeners to exit", "false", MG_BOOL},
   {"fifo_path", "Location to create the FIFO", "", MG_STRING},
   {"uinput_path", "Location of the uinput node", "", MG_STRING},
   {"daemon", "Run in daemon mode", "false", MG_BOOL},
@@ -258,10 +277,13 @@ int moltengamepad::init() {
 
   //Now that we have all config parsed,
   //check for FIFO to quit early if needed.
-  if (opts->get<bool>("make_fifo")) {
+  if (opts->get<bool>("make_fifo") || opts->get<bool>("replace_fifo")) {
     //unlock option so we can set/clear it if needed.
     opts->lock("fifo_path",false);
     opts->lock("make_fifo",false);
+    //set make_fifo so that we don't need to check replace_fifo again later.
+    //(--replace-fifo implies --make-fifo)
+    opts->set("make_fifo","true");
     //try to use $XDG_RUNTIME_DIR, only if set.
     const char* run_dir = getenv("XDG_RUNTIME_DIR");
     std::string fifo_path;
@@ -273,7 +295,12 @@ int moltengamepad::init() {
       stdout->err(0,"Could not locate fifo path. Use the --fifo-path command line argument.");
       throw -1; //Abort so we don't accidentally run without a means of control.
     }
-    debug_print(DEBUG_NONE,2,"Making FIFO at ", fifo_path.c_str());
+    if (opts->get<bool>("replace_fifo")) {
+      debug_print(DEBUG_NONE, 2, "Replacing FIFO at ", fifo_path.c_str());
+      clear_fifo(fifo_path.c_str(), true);
+    } else {
+      debug_print(DEBUG_NONE,2,"Making FIFO at ", fifo_path.c_str());
+    }
     int ret = mkfifo(fifo_path.c_str(), 0660);
     if (ret < 0)  {
       perror("making fifo:");
@@ -389,20 +416,20 @@ moltengamepad::~moltengamepad() {
     std::string path;
     fifo_looping = false;
     opts->get("fifo_path",path);
-    int fifo = open(path.c_str(), O_WRONLY | O_NONBLOCK); //need O_NONBLOCK or we hang if there was no listener!
-    debug_print(DEBUG_INFO,2,"Destroying FIFO at ", path.c_str());
-    unlink(path.c_str());
-    if (fifo >= 0) {
-      write(fifo,"\nquit\n",6);
-      close(fifo);
-    }
+    clear_fifo(path.c_str(), false); //do not force exit, as we are already exiting!
     if (remote_handler) {
       try {
         remote_handler->join();
       } catch (...) {
       }
-      delete remote_handler;
     }
+  }
+  if (remote_handler) {
+    try {
+        remote_handler->detach();
+        delete remote_handler;
+      } catch (...) {
+      }
   }
   //remove devices
   //done first to protect from devices assuming their manager exists.
