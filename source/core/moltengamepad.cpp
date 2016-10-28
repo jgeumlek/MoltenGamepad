@@ -395,6 +395,9 @@ int moltengamepad::init() {
   if (opts->get<bool>("make_fifo")) {
     fifo_looping = true;
     remote_handler = new std::thread(fifo_loop, this);
+    remote_handler->detach();
+    delete remote_handler;
+    remote_handler = nullptr;
   }
 
 
@@ -417,20 +420,8 @@ moltengamepad::~moltengamepad() {
     fifo_looping = false;
     opts->get("fifo_path",path);
     clear_fifo(path.c_str(), false); //do not force exit, as we are already exiting!
-    if (remote_handler) {
-      try {
-        remote_handler->join();
-      } catch (...) {
-      }
-    }
   }
-  if (remote_handler) {
-    try {
-        remote_handler->detach();
-        delete remote_handler;
-      } catch (...) {
-      }
-  }
+
   //remove devices
   //done first to protect from devices assuming their manager exists.
   devices.clear();

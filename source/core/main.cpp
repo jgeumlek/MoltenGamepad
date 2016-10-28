@@ -11,25 +11,26 @@ int parse_opts(options& options, int argc, char* argv[]);
 volatile bool STOP_WORKING = true;
 volatile bool QUIT_APPLICATION = false;
 moltengamepad* app;
+
 void signal_handler(int signum) {
   if (!STOP_WORKING && signum != SIGHUP && signum != SIGPIPE) {
     //A long running action is to be interrupted.
     STOP_WORKING = true;
     return;
   }
-  if (QUIT_APPLICATION) {
-    //already quitting! Not much to do other than wait.
-    return;
-  }
   //Otherwise, we want to interrupt everything! (And let them shut down appropriately)
   STOP_WORKING = true;
   QUIT_APPLICATION = true;
-  delete app;
-  exit(0);
 
   return;
 }
 
+void stdin_loop(moltengamepad* mg) {
+  shell_loop(mg, std::cin);
+  if (!mg->opts->get<bool>("stay_alive")) {
+    QUIT_APPLICATION = true;
+  }
+}
 
 int main(int argc, char* argv[]) {
   STOP_WORKING = true;
@@ -39,6 +40,7 @@ int main(int argc, char* argv[]) {
   signal(SIGHUP, signal_handler);
   signal(SIGPIPE, signal_handler);
 
+  int retcode = 0;
   options options;
   const option_decl* opt = &general_options[0];
   for (int i = 0; opt->name && *opt->name; opt = &general_options[++i]) {
@@ -52,6 +54,7 @@ int main(int argc, char* argv[]) {
   try {
     bool daemon = options.get<bool>("daemon");
     bool stay_alive = daemon || options.get<bool>("stay_alive");
+    std::thread* stdin_thread = nullptr;
     int pid = -1;
     if (daemon)
       pid = fork();
@@ -88,37 +91,29 @@ int main(int argc, char* argv[]) {
       mg->init();
 
       //daemon doesn't have a useful STDIN.
-      if (!daemon)
-        shell_loop(mg, std::cin);
-
-      if (stay_alive) {
-        //just sleep. This thread has no purpose other than STDIN.
-        //We'll have to depend on other means to ultimately exit.
-        while(true)
-          pause();
+      if (!daemon) {
+        stdin_thread = new std::thread(stdin_loop, mg);
+        stdin_thread->detach();
+        delete stdin_thread;
+        stdin_thread = nullptr;
       }
 
     } catch (...) {
-      //just continue to the clean up phase
+      retcode = -45;
     }
 
-    if (QUIT_APPLICATION) {
-      //it seems some other thread is in the process of exiting this program, so
-      //we should just wait it out.
-      while(true)
-        pause();
-    } else {
-      //It is up to us now to start cleaning things up.
-      QUIT_APPLICATION = true;
-      delete mg;
-      exit(0);
+    //Wait for the signal to quit.
+    while (retcode == 0 && !QUIT_APPLICATION) {
+      sleep(1);
     }
+    delete mg;
+    exit(0);
 
   } catch (int e) {
     return e;
   }
 
-  exit(0);
+  exit(retcode);
 }
 
 int print_version() {

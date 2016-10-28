@@ -82,8 +82,6 @@ int shell_loop(moltengamepad* mg, std::istream& in) {
       mg->opts->set("make_fifo", "false");
       mg->opts->lock("make_fifo",true);
       QUIT_APPLICATION = true;
-      delete mg;
-      exit(0);
     }
 
     parser.exec_line(tokens, header);
