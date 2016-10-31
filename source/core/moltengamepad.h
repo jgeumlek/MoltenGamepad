@@ -18,7 +18,7 @@
 #include "plugin_loader.h"
 #include "protocols.h"
 
-#define VERSION_STRING "0.3.1-beta"
+#define VERSION_STRING "0.3.2-beta"
 
 class slot_manager;
 class device_manager;
@@ -51,9 +51,9 @@ public:
   std::vector<std::weak_ptr<profile>> profiles;
   std::unordered_set<std::string> forbidden_ids; //keywords can't be ids (avoid ambiguity)
   std::unordered_set<std::string> ids_in_use; //prevent duplicate names to avoid ambiguity
-  slot_manager* slots;
+  slot_manager* slots = nullptr;
   udev_handler udev;
-  message_protocol* stdout;
+  message_protocol* stdout = nullptr;
   message_stream drivers;
   message_stream plugs;
   options* opts;

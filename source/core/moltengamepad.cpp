@@ -173,8 +173,26 @@ int fifo_loop(moltengamepad* mg) {
     shell_loop(mg, file);
     file.close();
   }
+  return 0;
 }
 
+int clear_fifo(const char* fifo_path, bool force_remote_exit) {
+  int fifo = open(fifo_path, O_WRONLY | O_NONBLOCK); //need O_NONBLOCK or we hang if there was no listener!
+  debug_print(DEBUG_INFO,2,"Destroying FIFO at ", fifo_path);
+  unlink(fifo_path);
+  if (fifo >= 0) {
+    if (force_remote_exit) {
+      //tell the listener to stop everything
+      write(fifo,"\nexit_process_leave_fifo\n",25);
+    } else {
+      //tell the listener to refresh their fifo session and see that it is gone.
+      //(keeps process alive, but stops FIFO thread.)
+      //This is needed when we call clear_fifo() while already trying to stop everything!
+      write(fifo,"\nquit\n",6);
+    }
+    close(fifo);
+  }
+}
 
 const option_decl general_options[] = {
 
@@ -186,6 +204,7 @@ const option_decl general_options[] = {
   {"profile_dir", "A directory to check for profiles before the config directories", "", MG_STRING},
   {"gendev_dir", "A directory to check for generic driver descriptions before the config directories", "", MG_STRING},
   {"make_fifo", "Make a FIFO that processes any commands written to it", "false", MG_BOOL},
+  {"replace_fifo", "Before making the FIFO, tell any existing listeners to exit", "false", MG_BOOL},
   {"fifo_path", "Location to create the FIFO", "", MG_STRING},
   {"uinput_path", "Location of the uinput node", "", MG_STRING},
   {"daemon", "Run in daemon mode", "false", MG_BOOL},
@@ -193,6 +212,7 @@ const option_decl general_options[] = {
   {"enumerate", "Check for already connected devices", "true", MG_BOOL},
   {"monitor", "Listen for device connections/disconnections", "true", MG_BOOL},
   {"rumble", "Process controller rumble effects", "false", MG_BOOL},
+  {"stay_alive", "Keep process running even after standard input is closed", "false", MG_BOOL},
   {"", "", ""},
 };
 
@@ -243,6 +263,7 @@ int moltengamepad::init() {
   opts->lock("daemon",true);
   opts->lock("pidfile",true);
   opts->lock("config_dir",true);
+  opts->lock("stay_alive",true);
   std::string cfgfile = locate(FILE_CONFIG,"moltengamepad.cfg");
   if (!cfgfile.empty()) {
     std::cout << "loading " << cfgfile << std::endl;
@@ -256,23 +277,44 @@ int moltengamepad::init() {
 
   //Now that we have all config parsed,
   //check for FIFO to quit early if needed.
-  if (opts->get<bool>("make_fifo")) {
+  if (opts->get<bool>("make_fifo") || opts->get<bool>("replace_fifo")) {
     //unlock option so we can set/clear it if needed.
     opts->lock("fifo_path",false);
+    opts->lock("make_fifo",false);
+    //set make_fifo so that we don't need to check replace_fifo again later.
+    //(--replace-fifo implies --make-fifo)
+    opts->set("make_fifo","true");
     //try to use $XDG_RUNTIME_DIR, only if set.
     const char* run_dir = getenv("XDG_RUNTIME_DIR");
-    if (opts->get<std::string>("fifo_path").empty() && run_dir) {
-      opts->set("fifo_path", std::string(run_dir) + "/moltengamepad");
+    std::string fifo_path;
+    opts->get<std::string>("fifo_path",fifo_path);
+    if (fifo_path.empty() && run_dir) {
+      fifo_path = std::string(run_dir) + "/moltengamepad";
     }
-    if (opts->get<std::string>("fifo_path").empty()) {
+    if (fifo_path.empty()) {
       stdout->err(0,"Could not locate fifo path. Use the --fifo-path command line argument.");
       throw -1; //Abort so we don't accidentally run without a means of control.
     }
-    int ret = mkfifo(opts->get<std::string>("fifo_path").c_str(), 0660);
+    if (opts->get<bool>("replace_fifo")) {
+      debug_print(DEBUG_NONE, 2, "Replacing FIFO at ", fifo_path.c_str());
+      clear_fifo(fifo_path.c_str(), true);
+    } else {
+      debug_print(DEBUG_NONE,2,"Making FIFO at ", fifo_path.c_str());
+    }
+    int ret = mkfifo(fifo_path.c_str(), 0660);
     if (ret < 0)  {
       perror("making fifo:");
+      //clear them!
+      opts->set("make_fifo","false");
       opts->set("fifo_path","");
+      //lock them! No further changes.
+      opts->lock("make_fifo",true);
+      opts->lock("fifo_path",true);
       throw -1;
+    } else {
+      opts->set("fifo_path",fifo_path);
+      opts->lock("fifo_path",true);
+      opts->lock("make_fifo",true);
     }
   }
 
@@ -281,12 +323,14 @@ int moltengamepad::init() {
   gamepad->name = "gamepad";
   add_profile(gamepad.get());
   ids_in_use.insert("gamepad");
+
   //set up our padstyles and our slot manager
   virtpad_settings padstyle = default_padstyle;
   opts->get<bool>("dpad_as_hat",padstyle.dpad_as_hat);
   if (opts->get<bool>("mimic_xpad")) padstyle = xpad_padstyle;
   opts->get<bool>("rumble",padstyle.rumble);
   slots = new slot_manager(opts->get<int>("num_gamepads"), opts->get<bool>("make_keyboard"), padstyle);
+
   //add standard streams
   drivers.add_listener(stdout);
   plugs.add_listener(stdout);
@@ -351,6 +395,9 @@ int moltengamepad::init() {
   if (opts->get<bool>("make_fifo")) {
     fifo_looping = true;
     remote_handler = new std::thread(fifo_loop, this);
+    remote_handler->detach();
+    delete remote_handler;
+    remote_handler = nullptr;
   }
 
 
@@ -364,27 +411,15 @@ moltengamepad::~moltengamepad() {
 
   udev.set_managers(nullptr);
 
-  //No need to print into the void...
-  if(!opts->get<bool>("daemon"))
-    std::cout << "Shutting down." << std::endl;
+
+  std::cout << "Shutting down." << std::endl;
 
   //Clean up our fifo + send a message to ensure the thread clears out.
   if (opts->get<bool>("make_fifo")) {
-    std::ofstream fifo;
     std::string path;
     fifo_looping = false;
     opts->get("fifo_path",path);
-    fifo.open(path, std::ostream::out);
-    unlink(path.c_str());
-    fifo << "quit" << std::endl;
-    fifo.close();
-    if (remote_handler) {
-      try {
-        remote_handler->join();
-      } catch (...) {
-      }
-      delete remote_handler;
-    }
+    clear_fifo(path.c_str(), false); //do not force exit, as we are already exiting!
   }
 
   //remove devices
@@ -397,9 +432,11 @@ moltengamepad::~moltengamepad() {
   }
 
   //delete output slots
-  delete slots;
+  if (slots)
+    delete slots;
 
-  delete stdout;
+  if (stdout)
+    delete stdout;
 }
 
 

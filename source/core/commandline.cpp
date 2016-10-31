@@ -75,6 +75,15 @@ int shell_loop(moltengamepad* mg, std::istream& in) {
       keep_looping = false;
     }
 
+    if (!tokens.empty() && tokens.front().value == "exit_process_leave_fifo") {
+      //someone else wants our FIFO. Let them have it.
+      //We have to ensure we don't try to delete it.
+      mg->opts->lock("make_fifo",false);
+      mg->opts->set("make_fifo", "false");
+      mg->opts->lock("make_fifo",true);
+      QUIT_APPLICATION = true;
+    }
+
     parser.exec_line(tokens, header);
 
 

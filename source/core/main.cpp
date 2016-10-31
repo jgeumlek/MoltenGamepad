@@ -11,34 +11,36 @@ int parse_opts(options& options, int argc, char* argv[]);
 volatile bool STOP_WORKING = true;
 volatile bool QUIT_APPLICATION = false;
 moltengamepad* app;
+
 void signal_handler(int signum) {
   if (!STOP_WORKING && signum != SIGHUP && signum != SIGPIPE) {
     //A long running action is to be interrupted.
     STOP_WORKING = true;
     return;
   }
-  if (QUIT_APPLICATION) {
-    //already quitting! Not much to do other than wait.
-    return;
-  }
   //Otherwise, we want to interrupt everything! (And let them shut down appropriately)
   STOP_WORKING = true;
   QUIT_APPLICATION = true;
-  delete app;
-  exit(0);
 
   return;
 }
 
+void stdin_loop(moltengamepad* mg) {
+  shell_loop(mg, std::cin);
+  if (!mg->opts->get<bool>("stay_alive")) {
+    QUIT_APPLICATION = true;
+  }
+}
 
 int main(int argc, char* argv[]) {
   STOP_WORKING = true;
-  QUIT_APPLICATION = false;
+  QUIT_APPLICATION = true;
   signal(SIGINT, signal_handler);
   signal(SIGTERM, signal_handler);
   signal(SIGHUP, signal_handler);
   signal(SIGPIPE, signal_handler);
 
+  int retcode = 0;
   options options;
   const option_decl* opt = &general_options[0];
   for (int i = 0; opt->name && *opt->name; opt = &general_options[++i]) {
@@ -46,48 +48,72 @@ int main(int argc, char* argv[]) {
   }
   int ret = parse_opts(options, argc, argv);
 
-  if (ret > 0) return 0;
+  if (ret > 0) return 0; //This was something like "--help" where we don't do anything.
   if (ret < 0) return ret;
 
   try {
-
-    moltengamepad* mg = new moltengamepad(&options);
-    app = mg;
-    
-    if (options.get<bool>("daemon")) {
-      int pid = fork();
-      if(pid == 0) {
-
-        mg->init();
-
-        while(!QUIT_APPLICATION)
-          sleep(1);
-      } else if (pid == -1) {
-        std::cerr <<  "Failed to fork.\n";
-      } else {
-        std::string pidfile;
-        options.get<std::string>("pidfile",pidfile);
-        if(pidfile.size() > 0) {
-          std::ofstream pf;
-          pf.open (pidfile);
-          pf << pid << "\n";
-          pf.close();
-        }
-      }
-    } else {
-      mg->init();
-      shell_loop(mg, std::cin);
-      if (!QUIT_APPLICATION) {
-        QUIT_APPLICATION = true;
-        delete mg;
-      }
+    bool daemon = options.get<bool>("daemon");
+    bool stay_alive = daemon || options.get<bool>("stay_alive");
+    std::thread* stdin_thread = nullptr;
+    int pid = -1;
+    if (daemon)
+      pid = fork();
+    if (daemon && pid == -1) {
+      std::cerr << "Failed to fork." << std::endl;
+      throw -18;
     }
+    if (pid > 0) {
+      //We are a parent process! Just write out the pid and exit.
+      std::string pidfile;
+      options.get<std::string>("pidfile",pidfile);
+      if (!pidfile.empty()) {
+        std::ofstream pf;
+        pf.open(pidfile);
+        pf << pid << "\n";
+        pf.close();
+      }
+      return 0;
+    }
+    //Now either we are the child process, or we never needed to fork.
+    //Either way, time to get busy!
+
+    //exit early for some errors.
+    moltengamepad* mg;
+    try {
+      mg = new moltengamepad(&options);
+      app = mg;
+    } catch (int e) {
+      return e;
+    }
+    //Any other errors will depend on us cleaning up that moltengamepad object.
+    try {
+      QUIT_APPLICATION = false;
+      mg->init();
+
+      //daemon doesn't have a useful STDIN.
+      if (!daemon) {
+        stdin_thread = new std::thread(stdin_loop, mg);
+        stdin_thread->detach();
+        delete stdin_thread;
+        stdin_thread = nullptr;
+      }
+
+    } catch (...) {
+      retcode = -45;
+    }
+
+    //Wait for the signal to quit.
+    while (retcode == 0 && !QUIT_APPLICATION) {
+      sleep(1);
+    }
+    delete mg;
+    exit(0);
 
   } catch (int e) {
     return e;
   }
 
-  return 0;
+  exit(retcode);
 }
 
 int print_version() {
@@ -115,6 +141,9 @@ int print_usage(char* execname) {
                           "\n"\
                           "--make-fifo -m\n"\
                           "\tCreate a fifo command channel, and exit if it can't be made.\n"\
+                          "\n"\
+                          "--replace-fifo -m\n"\
+                          "\tReplace the FIFO if it exists, while telling any existing listeners to exit.\n"\
                           "\n"\
                           "--fifo-path -f\n"\
                           "\tSet where the fifo command channel should be placed.\n"\
@@ -151,7 +180,9 @@ int print_usage(char* execname) {
                           "--daemon -d\n"\
                           "\tFork and exit immediately, leaving the daemon running in the background.\n"\
                           "--pidfile -P\n"\
-                          "\tOnly used for daemon, where store the PID of the process.\n"\
+                          "\tOnly used for --daemon, gives a path for where to store the PID of the process.\n"\
+                          "--stay-alive\n"\
+                          "\tPrevents MoltenGamepad from shutting down when its standard input is closed.\n"\
                           ;
 
   std::cout << help_text;
@@ -183,6 +214,8 @@ int parse_opts(options& options, int argc, char* argv[]) {
     {"daemon",        0,    0,  'd'},
     {"rumble",        0,    0,  'R'},
     {"verbose",       0,    0,  'V'},
+    {"stay-alive",    0,    0,    0},
+    {"replace-fifo",  0,    0,    0},
     {0,               0,    0,    0},
   };
   int long_index;
@@ -212,6 +245,14 @@ int parse_opts(options& options, int argc, char* argv[]) {
       if (long_index == 14) {
         options.set("mimic_xpad","true");
         options.lock("mimic_xpad", true);
+      };
+      if (long_index == 18) {
+        options.set("stay_alive","true");
+        options.lock("stay_alive", true);
+      };
+      if (long_index == 19) {
+        options.set("replace_fifo","true");
+        options.lock("replace_fifo", true);
       };
       break;
     case 'd':

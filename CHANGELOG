@@ -1,4 +1,15 @@
 ---------------------------
+0.3.2-beta
+2016-10-31
+---------------------------
+
+A small update that improves the start up and shut down of MoltenGamepad.
+
+* Added `--stay-alive` to prevent MG from quiting when standard input is closed.
+* Added `--replace-fifo` to forcefully clear out the FIFO on the filesystem if it already exists.
+* Various bug fixes and code clean ups in these code paths.
+
+---------------------------
 0.3.1-beta
 2016-10-23
 ---------------------------
@@ -52,7 +63,6 @@ Highlights:
 * The `move` command can use `auto` as a slot destination.
 * A plug-in API is forming for adding support for more devices.
 * `alterslot` deprecated, to be removed in future version.
-
 
 ---------------------------
 0.1.1-beta
