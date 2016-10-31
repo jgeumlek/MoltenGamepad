@@ -1,5 +1,5 @@
 # udev rules for system-wide MoltenGamepad.
-# Installs as 90-moltengamepad.rules.
+# Installs as 72-moltengamepad.rules.
 
 # Allow gamepad user access to uinput.
 KERNEL=="uinput" RUN+="/usr/bin/setfacl -m gamepad:rw- %E{DEVNAME}"
@@ -12,7 +12,7 @@ SUBSYSTEM=="input", ACTION=="add", ATTRS{phys}=="moltengamepad*", \
 SUBSYSTEM=="input", ACTION=="add", \
  ENV{ID_INPUT_JOYSTICK}=="?*", ATTRS{phys}!="moltengamepad*", \
  OWNER:="gamepad", GROUP:="gamepad", MODE:="0600", \
- RUN+="/usr/bin/setfacl -m mask:--- %E{DEVNAME}"
+ TAG-="uaccess", TAG-="seat"
 
 # Wiimote rules, as they do not match ID_INPUT_JOYSTICK.
 SUBSYSTEM=="leds", ACTION=="add", DRIVERS=="wiimote", \
@@ -21,4 +21,4 @@ SUBSYSTEM=="leds", ACTION=="add", DRIVERS=="wiimote", \
 
 SUBSYSTEM=="input", DRIVERS=="wiimote", MODE="0666", \
  OWNER:="gamepad", GROUP:="gamepad", MODE:="0600", \
- RUN+="/usr/bin/setfacl -m mask:--- %E{DEVNAME}"
+ TAG-="uaccess", TAG-="seat"

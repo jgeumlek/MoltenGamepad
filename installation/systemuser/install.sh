@@ -10,14 +10,15 @@ useradd -r -U gamepad
 # Install the files contained in the repo.
 cd "$(dirname "$0")"
 install -Dm0644 profile-sdl2.sh /etc/profile.d/sdl2-gamecontroller-moltengamepad.sh
-install -Dm0644 systemd.service /etc/systemd/system/moltengamepad.service 
+install -Dm0644 systemd.service /etc/systemd/system/moltengamepad.service
 install -Dm0644 tmpfiles.conf /etc/tmpfiles.d/moltengamepad.conf
-install -Dm0644 udev.rules /etc/udev/rules.d/90-moltengamepad.rules
+install -Dm0644 udev.rules /etc/udev/rules.d/72-moltengamepad.rules
 
 # Reload the various services we have affected.
 udevadm control --reload
 systemd-tmpfiles --create
 systemctl daemon-reload
+
 # Reload uinput to get its new permissions.
 rmmod uinput
 modprobe uinput
