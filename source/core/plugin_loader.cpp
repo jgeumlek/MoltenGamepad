@@ -67,7 +67,7 @@ void init_plugin_api() {
     return man->mg->remove_device(dev);
   };
   plugin_methods.manager.print = [] (device_manager* man, const char* message) -> int {
-    man->log.take_message(std::string(message));
+    man->log.take_message(0,std::string(message));
     return 0;
   };
 

@@ -7,7 +7,7 @@
 
 
 #define MOVE_USAGE "USAGE:\n\tmove <device> to <slot>\n\t\"all\" can be used to refer to all devices\n\t\"nothing\" can be used as a slot name to remove from all slots\n\t\"auto\" can be used as a slot name to let the slot manager decide"
-int do_move(moltengamepad* mg, std::vector<token>& command, message_stream* out) {
+int do_move(moltengamepad* mg, std::vector<token>& command, response_stream* out) {
   if (command.size() < 4) {
     out->print(MOVE_USAGE);
     return -1;

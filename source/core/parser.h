@@ -58,25 +58,25 @@ trans_decl build_trans_decl(const char* decl_str);
 class MGparser {
 public:
   MGparser(moltengamepad* mg, message_protocol* output);
-  void exec_line(std::vector<token>& line, std::string& header);
-  static event_translator* parse_trans(enum entry_type intype, std::vector<token>& tokens, std::vector<token>::iterator& it, message_stream* out);
+  void exec_line(std::vector<token>& line, std::string& header, int resp_id);
+  static event_translator* parse_trans(enum entry_type intype, std::vector<token>& tokens, std::vector<token>::iterator& it, response_stream* out);
   static event_translator* parse_special_trans(enum entry_type intype, complex_expr* expr);
-  static advanced_event_translator* parse_adv_trans(const std::vector<std::string>& fields, std::vector<token>& rhs, message_stream* out);
-  static bool parse_decl(enum entry_type intype, const trans_decl& decl, MGTransDef& def, complex_expr* expr, message_stream* out);
+  static advanced_event_translator* parse_adv_trans(const std::vector<std::string>& fields, std::vector<token>& rhs, response_stream* out);
+  static bool parse_decl(enum entry_type intype, const trans_decl& decl, MGTransDef& def, complex_expr* expr, response_stream* out);
   static void print_def(enum entry_type intype, MGTransDef& def, std::ostream& output);
   static bool print_special_def(entry_type intype, MGTransDef& def, std::ostream& output);
   static void load_translators(moltengamepad* mg);
   static moltengamepad* mg;
 private:
-  static event_translator* parse_trans_strict(enum entry_type intype, std::vector<token>& tokens, std::vector<token>::iterator& it, message_stream* out);
-  static event_translator* parse_trans_expr(enum entry_type intype, complex_expr* expr, message_stream* out);
-  void do_assignment(std::string header, std::string field, std::vector<token> rhs);
-  void do_adv_assignment(std::string header, std::vector<std::string>& fields, std::vector<token> rhs);
-  void do_assignment_line(std::vector<token>& line, std::string& header);
-  void parse_line(std::vector<token>& line, std::string& header);
+  static event_translator* parse_trans_strict(enum entry_type intype, std::vector<token>& tokens, std::vector<token>::iterator& it, response_stream* out);
+  static event_translator* parse_trans_expr(enum entry_type intype, complex_expr* expr, response_stream* out);
+  void do_assignment(std::string header, std::string field, std::vector<token> rhs, response_stream& out);
+  void do_adv_assignment(std::string header, std::vector<std::string>& fields, std::vector<token> rhs, response_stream& out);
+  void do_assignment_line(std::vector<token>& line, std::string& header, response_stream& out);
+  void parse_line(std::vector<token>& line, std::string& header, response_stream& out);
   static event_translator* parse_trans_toplevel_quirks(enum entry_type intype, std::vector<token>& tokens, std::vector<token>::iterator& it);
   static std::map<std::string,trans_generator> trans_gens;
-  message_stream out;
+  message_stream messages;
 };
 
 
@@ -88,12 +88,12 @@ void free_complex_expr(complex_expr* expr);
 
 
 
-int do_command(moltengamepad* mg, std::vector<token>& command, message_stream* out);
+int do_command(moltengamepad* mg, std::vector<token>& command, response_stream* out);
 
 int shell_loop(moltengamepad* mg, std::istream& in);
 
 bool find_token_type(enum tokentype type, std::vector<token>& tokens);
 
-void do_header_line(std::vector<token>& line, std::string& header);
+bool do_header_line(std::vector<token>& line, std::string& header);
 
 #endif

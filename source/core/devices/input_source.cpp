@@ -575,7 +575,7 @@ std::string input_source::get_type() const {
 }
   
 void input_source::print(std::string message) {
-  manager->log.take_message(name + ": " + message);
+  manager->log.take_message(0,name + ": " + message);
 }
 
 int input_source::upload_ff(ff_effect effect) {

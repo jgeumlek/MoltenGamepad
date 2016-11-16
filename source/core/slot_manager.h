@@ -7,7 +7,7 @@
 #include "uinput.h"
 #include "output_slot.h"
 #include "devices/device.h"
-#include "messages.h"
+#include "protocols/message_stream.h"
 #include "options.h"
 
 class input_source;

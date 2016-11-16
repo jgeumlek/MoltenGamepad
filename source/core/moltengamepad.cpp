@@ -351,7 +351,7 @@ int moltengamepad::init() {
 
   std::string slotcfg = locate(FILE_OPTIONS, "slots.cfg");
   if (!slotcfg.empty()) {
-    slots->log.take_message("reading slots options from " + slotcfg);
+    slots->log.take_message(0,"reading slots options from " + slotcfg);
     loop_file(slotcfg, [this] (std::vector<token>& tokens, context ctx) {
       config_parse_line(this, tokens, ctx, this->slots->opts, nullptr);
       return 0;
@@ -445,11 +445,11 @@ device_manager* moltengamepad::add_manager(manager_plugin manager, void* manager
   std::string manager_name(manager.name);
   bool destroyed = false;
   if (forbidden_ids.find(manager_name) != forbidden_ids.end()) {
-    drivers.err("manager name " + manager_name + " is invalid.");
+    drivers.err(0,"manager name " + manager_name + " is invalid.");
     destroyed = true;
   }
   if (ids_in_use.find(manager_name) != ids_in_use.end()) {
-    drivers.err("redundant manager " + manager_name + " ignored.");
+    drivers.err(0,"redundant manager " + manager_name + " ignored.");
     destroyed = true;
   }
   if (destroyed) {
@@ -467,7 +467,7 @@ device_manager* moltengamepad::add_manager(manager_plugin manager, void* manager
   if (man->has_options) {
     auto filepath = locate(FILE_OPTIONS, manager_name + ".cfg");
     if (!filepath.empty()) {
-      drivers.take_message("reading driver options from " + filepath);
+      drivers.take_message(0,"reading driver options from " + filepath);
       loop_file(filepath, [this, man] (std::vector<token>& tokens, context ctx) {
         config_parse_line(this, tokens, ctx, man->opts, nullptr);
         return 0;
@@ -476,7 +476,7 @@ device_manager* moltengamepad::add_manager(manager_plugin manager, void* manager
   }
   if (manager.start)
     manager.start(man->plug_data);
-  drivers.take_message(man->name + " driver initialized.");
+  drivers.take_message(0,man->name + " driver initialized.");
   ids_in_use.insert(man->name);
   return man;
 };
@@ -518,14 +518,14 @@ std::shared_ptr<input_source> moltengamepad::add_device(input_source* source, de
   }
   
   if (!available) {
-    plugs.err("could not find available name for " + name_stem);
+    plugs.err(0,"could not find available name for " + name_stem);
     return nullptr;
   }
   //Set the device and profile name, send a message, link the profile, and finally start the device thread.
   ptr->set_name(proposal);
   ids_in_use.insert(proposal);
   devices.push_back(ptr);
-  plugs.take_message("device " + source->get_name() + " added.");
+  plugs.take_message(0,"device " + source->get_name() + " added.");
   auto devprof = source->get_profile();
   devprof->name = source->get_name();
   add_profile(devprof.get());
@@ -548,7 +548,7 @@ int moltengamepad::remove_device(input_source* source) {
   std::lock_guard<std::mutex> guard(id_list_lock);
   for (int i = 0; i < devices.size(); i++) {
     if (source == devices[i].get()) {
-      plugs.take_message("device " + source->get_name() + " removed.");
+      plugs.take_message(0,"device " + source->get_name() + " removed.");
       remove_profile(devices[i]->get_profile().get());
       ids_in_use.erase(source->get_name());
       devices.erase(devices.begin() + i);

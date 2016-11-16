@@ -76,9 +76,9 @@ void slot_manager::move_device(input_source* dev, output_slot* target) {
   if (!dev) return;
   dev->set_slot(target);
   if (target) {
-    log.take_message(dev->get_name() + " assigned to slot " + target->name);
+    log.take_message(0,dev->get_name() + " assigned to slot " + target->name);
   } else {
-    log.take_message(dev->get_name() + " not assigned to any slot");
+    log.take_message(0,dev->get_name() + " not assigned to any slot");
   }
 }
 

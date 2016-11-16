@@ -3,7 +3,7 @@
 
 
 #define SET_USAGE "USAGE:\n\tset <category> <option name> = <value>\n\tuse \"print options\" to see available categories."
-int do_set(moltengamepad* mg, std::vector<token>& command, message_stream* out) {
+int do_set(moltengamepad* mg, std::vector<token>& command, response_stream* out) {
   if (command.size() < 5) {
     out->print(SET_USAGE);
     return -1;

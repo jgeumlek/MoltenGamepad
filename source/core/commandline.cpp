@@ -6,14 +6,14 @@
 #include "parser.h"
 
 
-int do_save(moltengamepad* mg, std::vector<token>& command, message_stream* out);
-int do_print(moltengamepad* mg, std::vector<token>& command, message_stream* out);
-int do_load(moltengamepad* mg, std::vector<token>& command, message_stream* out);
-int do_move(moltengamepad* mg, std::vector<token>& command, message_stream* out);
-int do_alterslot(moltengamepad* mg, std::vector<token>& command, message_stream* out);
-int do_assign(moltengamepad* mg, std::vector<token>& command, message_stream* out);
-int do_clear(moltengamepad* mg, std::vector<token>& command, message_stream* out);
-int do_set(moltengamepad* mg, std::vector<token>& command, message_stream* out);
+int do_save(moltengamepad* mg, std::vector<token>& command, response_stream* out);
+int do_print(moltengamepad* mg, std::vector<token>& command, response_stream* out);
+int do_load(moltengamepad* mg, std::vector<token>& command, response_stream* out);
+int do_move(moltengamepad* mg, std::vector<token>& command, response_stream* out);
+int do_alterslot(moltengamepad* mg, std::vector<token>& command, response_stream* out);
+int do_assign(moltengamepad* mg, std::vector<token>& command, response_stream* out);
+int do_clear(moltengamepad* mg, std::vector<token>& command, response_stream* out);
+int do_set(moltengamepad* mg, std::vector<token>& command, response_stream* out);
 
 #define HELP_TEXT "available commands:\n"\
 "\tprint:\tprint out lists and information\n"\
@@ -28,7 +28,7 @@ int do_set(moltengamepad* mg, std::vector<token>& command, message_stream* out);
 "\t\tchange the event mapping for <event> to <outevent> in the profile <profile>\n"\
 "\t<profile>.?<option> = <value>\n"\
 "\t\tchange a local option for a profile"
-int do_command(moltengamepad* mg, std::vector<token>& command, message_stream* out) {
+int do_command(moltengamepad* mg, std::vector<token>& command, response_stream* out) {
   if (command.empty()) return 0;
   if (command.front().type == TK_ENDL) return 0;
   if (command.back().type == TK_ENDL) command.pop_back();
@@ -84,7 +84,9 @@ int shell_loop(moltengamepad* mg, std::istream& in) {
       QUIT_APPLICATION = true;
     }
 
-    parser.exec_line(tokens, header);
+    //arbitrary response id of 1.
+    //Response ids are only needed when communicating from another process.
+    parser.exec_line(tokens, header,1);
 
 
     if (in.eof()) break;

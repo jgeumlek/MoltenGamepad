@@ -8,7 +8,7 @@
 int do_print_profile(moltengamepad* mg, std::string name, std::ostream& out);
 
 #define SAVE_USAGE "USAGE:\n\tsave profiles [profile name, ...] to <filename>\n\tFile will be placed in the profile directory"
-int do_save(moltengamepad* mg, std::vector<token>& command, message_stream* out) {
+int do_save(moltengamepad* mg, std::vector<token>& command, response_stream* out) {
   if (command.size() < 4) {
     out->print(SAVE_USAGE);
     return -1;

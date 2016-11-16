@@ -1,4 +1,4 @@
-#include "messages.h"
+#include "message_stream.h"
 #include "protocols.h"
 #include <unistd.h>
 #include <cstdarg>
@@ -22,32 +22,58 @@ void message_stream::remove_listener(message_protocol* listener) {
 void message_stream::flush() {
 }
 
-void message_stream::take_message(std::string text) {
+void message_stream::take_message(int resp_id, std::string text) {
   lock.lock();
   std::ostringstream buffer;
   buffer << name << ": " << text;
   for (auto listener : listeners)
-    listener->text_message(0,buffer.str());
+    listener->text_message(resp_id,buffer.str());
   lock.unlock();
 }
 
-void message_stream::print(std::string text) {
+void message_stream::print(int resp_id, std::string text) {
   lock.lock();
   for (auto listener : listeners)
-    listener->text_message(0,text);
+    listener->text_message(resp_id,text);
   lock.unlock();
 }
 
-void message_stream::err(std::string text, std::string path, int line_number) {
+void message_stream::err(int resp_id, std::string text, std::string path, int line_number) {
   std::lock_guard<std::mutex> guard(lock);
   for (auto listener : listeners)
-    listener->err(0, (name.empty() ? "" : name + ": ") + text, path, line_number);
+    listener->err(resp_id, (name.empty() ? "" : name + ": ") + text, path, line_number);
 }
 
-void message_stream::err(std::string text) {
+void message_stream::err(int resp_id, std::string text) {
   std::lock_guard<std::mutex> guard(lock);
   for (auto listener : listeners)
-    listener->err(0, (name.empty() ? "" : name + ": ") + text);
+    listener->err(resp_id, (name.empty() ? "" : name + ": ") + text);
+}
+
+void message_stream::end_response(int resp_id, int ret_val) {
+  std::lock_guard<std::mutex> guard(lock);
+  for (auto listener : listeners)
+    listener->end_response(resp_id, ret_val);
+}
+
+void response_stream::take_message(std::string text) {
+  stream->take_message(response_id,text);
+}
+
+void response_stream::print(std::string text) {
+  stream->print(response_id,text);
+}
+
+void response_stream::err(std::string text, std::string path, int line_number) {
+  stream->err(response_id,text,path,line_number);
+}
+
+void response_stream::err(std::string text) {
+  stream->err(response_id,text);
+}
+
+void response_stream::end_response(int ret_val) {
+  stream->end_response(response_id,ret_val);
 }
 
 int DEBUG_LEVELS[] = {DEBUG_NONE, DEBUG_INFO, DEBUG_VERBOSE, -1};

@@ -7,7 +7,7 @@
 
 
 #define CLEAR_USAGE "USAGE:\n\tclear <slot> \n\t\"allpads\" may be used as a slot name to refer to all gamepad slots"
-int do_clear(moltengamepad* mg, std::vector<token>& command, message_stream* out) {
+int do_clear(moltengamepad* mg, std::vector<token>& command, response_stream* out) {
   if (command.size() < 2) {
     out->print(CLEAR_USAGE);
     return -1;

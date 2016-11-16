@@ -132,23 +132,24 @@ bool find_token_type(enum tokentype type, std::vector<token>& tokens) {
 
 }
 
-void do_header_line(std::vector<token>& line, std::string& header) {
-  if (line.empty()) return;
-  if (line.at(0).type != TK_HEADER_OPEN) return;
+bool do_header_line(std::vector<token>& line, std::string& header) {
+  if (line.empty()) return false;
+  if (line.at(0).type != TK_HEADER_OPEN) return false;
   std::string newheader;
   for (auto it = ++line.begin(); it != line.end(); it++) {
 
-    if ((*it).type == TK_HEADER_OPEN) return; //abort.
+    if ((*it).type == TK_HEADER_OPEN) return false; //abort.
 
     if ((*it).type == TK_HEADER_CLOSE) {
-      if (newheader.empty()) return;
+      if (newheader.empty()) return false;
       header = newheader;
-      return;
+      return true;
     }
     if (!newheader.empty()) newheader.push_back(' ');
     newheader += (*it).value;
 
   }
+  return false;
 }
 
 //Some lazy macros to build some function pointers with associated name strings.
@@ -319,11 +320,11 @@ void MGparser::load_translators(moltengamepad* mg) {
   RENAME_GEN(stick,thumb_stick);
 }
 
-MGparser::MGparser(moltengamepad* mg, message_protocol* output) : out("parse") {
-  out.add_listener(output);
+MGparser::MGparser(moltengamepad* mg, message_protocol* output) : messages("parse") {
+  messages.add_listener(output);
 }
 
-void MGparser::do_assignment(std::string header, std::string field, std::vector<token> rhs) {
+void MGparser::do_assignment(std::string header, std::string field, std::vector<token> rhs, response_stream& out) {
   enum entry_type left_type = NO_ENTRY;
   
   auto prof = mg->find_profile(header);
@@ -370,7 +371,7 @@ void MGparser::do_assignment(std::string header, std::string field, std::vector<
 
 
 
-void MGparser::do_adv_assignment(std::string header, std::vector<std::string>& fields, std::vector<token> rhs) {
+void MGparser::do_adv_assignment(std::string header, std::vector<std::string>& fields, std::vector<token> rhs, response_stream& out) {
   if (rhs.empty()) return;
   auto prof = mg->find_profile(header);
   if (!prof) {
@@ -402,7 +403,7 @@ void MGparser::do_adv_assignment(std::string header, std::vector<std::string>& f
 
 }
 
-void MGparser::do_assignment_line(std::vector<token>& line, std::string& header) {
+void MGparser::do_assignment_line(std::vector<token>& line, std::string& header, response_stream& out) {
   std::string effective_header = "";
   std::string effective_field;
   std::string chord1 = "";
@@ -480,41 +481,43 @@ void MGparser::do_assignment_line(std::vector<token>& line, std::string& header)
   }
 
   if (multifield.size() > 0) {
-    do_adv_assignment(effective_header, multifield, rightside);
+    do_adv_assignment(effective_header, multifield, rightside, out);
     return;
   }
 
   if (effective_field.empty() || rightside.empty()) return;
 
 
-  do_assignment(effective_header, effective_field, rightside);
+  do_assignment(effective_header, effective_field, rightside, out);
 
 
 
 }
 
-void MGparser::parse_line(std::vector<token>& line, std::string& header) {
+void MGparser::parse_line(std::vector<token>& line, std::string& header, response_stream& out) {
 
   if (find_token_type(TK_HEADER_OPEN, line)) {
-    do_header_line(line, header);
-    out.take_message("header is " + header);
+    if (do_header_line(line, header))
+      out.take_message("header is " + header);
     return;
   }
 
   if (find_token_type(TK_EQUAL, line) && line[0].value != "set") {
-    do_assignment_line(line, header);
+    do_assignment_line(line, header, out);
   } else {
     do_command(mg, line, &out);
   }
 
 }
 
-void MGparser::exec_line(std::vector<token>& line, std::string& header) {
-  parse_line(line, header);
+void MGparser::exec_line(std::vector<token>& line, std::string& header, int response_id) {
+  response_stream out(response_id, &messages);
+  parse_line(line, header, out);
+  out.end_response(0); //Always have return value 0 for now.
 }
 
 
-event_translator* MGparser::parse_trans(enum entry_type intype, std::vector<token>& tokens, std::vector<token>::iterator& it, message_stream* out) {
+event_translator* MGparser::parse_trans(enum entry_type intype, std::vector<token>& tokens, std::vector<token>::iterator& it, response_stream* out) {
   //Note: this function is assumed to be called at the top of parsing a translator,
   //not as some recursive substep. If we wish to avoid the quirks, use parse_complex_trans instead.
   event_translator* trans = parse_trans_toplevel_quirks(intype, tokens, it);
@@ -549,7 +552,7 @@ event_translator* MGparser::parse_trans_toplevel_quirks(enum entry_type intype, 
 }
 
 
-event_translator* MGparser::parse_trans_strict(enum entry_type intype, std::vector<token>& tokens, std::vector<token>::iterator& it, message_stream* out) {
+event_translator* MGparser::parse_trans_strict(enum entry_type intype, std::vector<token>& tokens, std::vector<token>::iterator& it, response_stream* out) {
   auto localit = it;
   complex_expr* expr = read_expr(tokens, localit);
   event_translator* trans =  parse_trans_expr(intype, expr, out);
@@ -573,7 +576,7 @@ void release_def(MGTransDef& def) {
 }
 
 
-event_translator* MGparser::parse_trans_expr(enum entry_type intype, complex_expr* expr, message_stream* out) {
+event_translator* MGparser::parse_trans_expr(enum entry_type intype, complex_expr* expr, response_stream* out) {
   if (!expr) {
     if (out) out->err("expression not well-formed.");
     return nullptr;
@@ -674,7 +677,7 @@ event_translator* MGparser::parse_special_trans(enum entry_type intype, complex_
 }
 
 
-bool MGparser::parse_decl(enum entry_type intype, const trans_decl& decl, MGTransDef& def, complex_expr* expr, message_stream* out) {
+bool MGparser::parse_decl(enum entry_type intype, const trans_decl& decl, MGTransDef& def, complex_expr* expr, response_stream* out) {
   if (!expr) return false;
 
   int fieldsfound = expr->params.size();
@@ -1013,7 +1016,7 @@ struct complex_expr* read_expr(std::vector<token>& tokens, std::vector<token>::i
   return nullptr;
 }
 
-advanced_event_translator* MGparser::parse_adv_trans(const std::vector<std::string>& event_names, std::vector<token>& rhs, message_stream* out) {
+advanced_event_translator* MGparser::parse_adv_trans(const std::vector<std::string>& event_names, std::vector<token>& rhs, response_stream* out) {
   auto it = rhs.begin();
   event_translator* trans = parse_trans(DEV_KEY, rhs, it, nullptr);
   if (trans) {

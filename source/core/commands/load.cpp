@@ -7,7 +7,7 @@
 
 
 #define LOAD_USAGE "USAGE:\n\tload profiles from <filename>\n\tFile will be searched for in the profile directory"
-int do_load(moltengamepad* mg, std::vector<token>& command, message_stream* out) {
+int do_load(moltengamepad* mg, std::vector<token>& command, response_stream* out) {
   if (command.size() < 4) {
     out->print(LOAD_USAGE);
     return -1;

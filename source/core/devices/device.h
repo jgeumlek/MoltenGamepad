@@ -11,7 +11,7 @@
 #include "../event_translators/event_change.h"
 #include "../moltengamepad.h"
 #include "../profile.h"
-#include "../messages.h"
+#include "../protocols/message_stream.h"
 #include "../../plugin/plugin.h"
 
 

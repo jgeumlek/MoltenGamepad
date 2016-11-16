@@ -187,7 +187,7 @@ int do_print_assignments(moltengamepad* mg, std::string name, std::ostream& out)
 "\ttypes recognized: drivers, devices, profiles, slots, options, assignments\n"\
 "\tprint <type> will list all elements of that type\n"\
 "\tprint <type> [element] will show detailed info on that element\n"
-int do_print(moltengamepad* mg, std::vector<token>& command, message_stream* out) {
+int do_print(moltengamepad* mg, std::vector<token>& command, response_stream* out) {
   if (command.size() < 2) {
     out->print(PRINT_USAGE);
     return -1;
