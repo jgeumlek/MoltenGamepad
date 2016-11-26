@@ -7,6 +7,7 @@
 #include "devices/generic/generic.h"
 #include "parser.h"
 #include "protocols/ostream_protocol.h"
+#include "protocols/socket/socket_in.h"
 
 //FUTURE WORK: Make it easier to specify additional virtpad styles.
 
@@ -213,6 +214,8 @@ const option_decl general_options[] = {
   {"monitor", "Listen for device connections/disconnections", "true", MG_BOOL},
   {"rumble", "Process controller rumble effects", "false", MG_BOOL},
   {"stay_alive", "Keep process running even after standard input is closed", "false", MG_BOOL},
+  {"make_socket", "Make a socket to communicate with clients", "false", MG_BOOL},
+  {"socket_path", "Location to create the socket", "", MG_STRING},
   {"", "", ""},
 };
 
@@ -318,6 +321,24 @@ int moltengamepad::init() {
     }
   }
 
+  struct sockaddr_un address;
+  memset(&address, 0, sizeof(address));
+  if (opts->get<bool>("make_socket")) {
+    this->sock = make_socket(opts->get<std::string>("socket_path"), address);
+    if (sock < 0) {
+      debug_print(DEBUG_NONE,1,"Making socket failed. Perhaps --socket-path is needed.");
+      opts->lock("socket_path",false);
+      opts->set("socket_path","");
+      opts->lock("socket_path",true);
+      opts->lock("make_socket",false);
+      opts->set("make_socket","false");
+      opts->lock("make_socket",true);
+      throw -1;
+    }
+  }
+      
+      
+
   //build the gamepad profile
   gamepad->gamepad_defaults();
   gamepad->name = "gamepad";
@@ -400,6 +421,10 @@ int moltengamepad::init() {
     remote_handler = nullptr;
   }
 
+  if (opts->get<bool>("make_socket")) {
+    start_socket_listener(this, address);
+  }
+
 
 
 }
@@ -420,6 +445,11 @@ moltengamepad::~moltengamepad() {
     fifo_looping = false;
     opts->get("fifo_path",path);
     clear_fifo(path.c_str(), false); //do not force exit, as we are already exiting!
+  }
+
+  //clean up socket
+  if (opts->get<bool>("make_socket")) {
+    unlink(opts->get<std::string>("socket_path").c_str());
   }
 
   //remove devices

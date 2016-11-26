@@ -57,6 +57,7 @@ public:
   message_stream drivers;
   message_stream plugs;
   options* opts;
+  int sock = -1; //socket fd
   std::shared_ptr<profile> gamepad = std::make_shared<profile>();
 
   moltengamepad(options* opts) : drivers("driver"), plugs("hotplug"), opts(opts) {};

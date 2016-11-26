@@ -183,6 +183,10 @@ int print_usage(char* execname) {
                           "\tOnly used for --daemon, gives a path for where to store the PID of the process.\n"\
                           "--stay-alive\n"\
                           "\tPrevents MoltenGamepad from shutting down when its standard input is closed.\n"\
+                          "--make-socket\n"\
+                          "\tCreate a UNIX socket, and exit if it can't be made.\n"\
+                          "--socket-path -S\n"\
+                          "\tSet where the socket should be placed.\n"\
                           ;
 
   std::cout << help_text;
@@ -216,6 +220,8 @@ int parse_opts(options& options, int argc, char* argv[]) {
     {"verbose",       0,    0,  'V'},
     {"stay-alive",    0,    0,    0},
     {"replace-fifo",  0,    0,    0},
+    {"make-socket",   0,    0,    0},
+    {"socket-path",   1,    0,  'S'},
     {0,               0,    0,    0},
   };
   int long_index;
@@ -223,7 +229,7 @@ int parse_opts(options& options, int argc, char* argv[]) {
   //We lock the settings so that way command line args
   //take precedence over settings later read from files.
   while (c != -1) {
-    c = getopt_long(argc, argv, "u:p:g:n:c:f:P:RmhvdV", long_options, &long_index);
+    c = getopt_long(argc, argv, "u:p:g:n:c:f:P:RmhvdVS", long_options, &long_index);
     switch (c) {
     case 0:
       if (long_index == 10) {
@@ -253,6 +259,10 @@ int parse_opts(options& options, int argc, char* argv[]) {
       if (long_index == 19) {
         options.set("replace_fifo","true");
         options.lock("replace_fifo", true);
+      };
+      if (long_index == 20) {
+        options.set("make_socket","true");
+        options.lock("make_socket", true);
       };
       break;
     case 'd':
@@ -290,6 +300,10 @@ int parse_opts(options& options, int argc, char* argv[]) {
     case 'R':
       options.set("rumble","true");
       options.lock("rumble", true);
+      break;
+    case 'S':
+      options.set("socket_path",std::string(optarg));
+      options.lock("socket_path", true);
       break;
     case 'h':
       print_usage(argv[0]);
