@@ -292,7 +292,7 @@ int moltengamepad::init() {
     std::string fifo_path;
     opts->get<std::string>("fifo_path",fifo_path);
     if (fifo_path.empty() && run_dir) {
-      fifo_path = std::string(run_dir) + "/moltengamepad";
+      fifo_path = std::string(run_dir) + "/mg.fifo";
     }
     if (fifo_path.empty()) {
       stdout->err(0,"Could not locate fifo path. Use the --fifo-path command line argument.");
