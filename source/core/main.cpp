@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <csignal>
 #include <fstream>
+#include <sys/stat.h>
 
 
 int parse_opts(options& options, int argc, char* argv[]);
@@ -39,6 +40,10 @@ int main(int argc, char* argv[]) {
   signal(SIGTERM, signal_handler);
   signal(SIGHUP, signal_handler);
   signal(SIGPIPE, signal_handler);
+  //set a more permissive umask:
+  //compared to default, we are adding group write permissions.
+  //This makes MoltenGamepad as a system service more usable.
+  umask(S_IWOTH);
 
   int retcode = 0;
   options options;
