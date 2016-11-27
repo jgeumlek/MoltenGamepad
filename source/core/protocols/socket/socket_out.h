@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../protocols.h"
+#include <mutex>
 class socket_out : public message_protocol {
 public:
   int fd;
@@ -11,4 +12,5 @@ public:
 
   virtual void end_response(int resp_id, int ret_val);
   virtual ~socket_out() {};
+  std::mutex write_lock;
 };

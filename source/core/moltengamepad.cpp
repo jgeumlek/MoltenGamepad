@@ -324,7 +324,9 @@ int moltengamepad::init() {
   struct sockaddr_un address;
   memset(&address, 0, sizeof(address));
   if (opts->get<bool>("make_socket")) {
-    this->sock = make_socket(opts->get<std::string>("socket_path"), address);
+    std::string socket_path;
+    opts->get<std::string>("socket_path",socket_path);
+    this->sock = make_socket(socket_path, address);
     if (sock < 0) {
       debug_print(DEBUG_NONE,1,"Making socket failed. Perhaps --socket-path is needed.");
       opts->lock("socket_path",false);
@@ -334,6 +336,10 @@ int moltengamepad::init() {
       opts->set("make_socket","false");
       opts->lock("make_socket",true);
       throw -1;
+    } else {
+      opts->lock("socket_path",false);
+      opts->set("socket_path",socket_path);
+      opts->lock("socket_path",true);
     }
   }
       
@@ -449,6 +455,8 @@ moltengamepad::~moltengamepad() {
 
   //clean up socket
   if (opts->get<bool>("make_socket")) {
+    debug_print(DEBUG_INFO,3,"cleaning up socket at \"",opts->get<std::string>("socket_path").c_str(),"\"");
+    close(sock);
     unlink(opts->get<std::string>("socket_path").c_str());
   }
 

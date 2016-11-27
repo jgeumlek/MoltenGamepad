@@ -28,7 +28,8 @@ int socket_server_loop(moltengamepad* mg, struct sockaddr_un* address) {
 }
 
 
-int make_socket(std::string path, sockaddr_un& address) {
+
+int make_socket(std::string& path, sockaddr_un& address) {
   const char* run_dir = getenv("XDG_RUNTIME_DIR");
   if (path.empty() && run_dir) {
     path = std::string(run_dir) + "/mg.sock";
@@ -72,6 +73,7 @@ int socket_connection_loop(moltengamepad* mg, int fd) {
   state.parse = &parse;
   state.mg = mg;
   state.fd = fd;
+  state.out = &out;
   while (state.keep_looping && !QUIT_APPLICATION) {
     int size = 0;
     num_read = read(fd, &size, sizeof(size));
@@ -93,18 +95,8 @@ int socket_connection_loop(moltengamepad* mg, int fd) {
 }
 
 void bad_command(protocol_state& state, int resp_id) {
-  oscpkt::PacketWriter pw;
-  oscpkt::Message reply;
-  reply.init("/error").pushInt32(resp_id).pushStr("invalid OSC request");
-  pw.init().addMessage(reply);
-  uint32_t size = pw.packetSize();
-  write(state.fd, &size, sizeof(size));
-  write(state.fd, pw.packetData(), size);
-  reply.init("/done").pushInt32(resp_id).pushInt32(-1);
-  pw.init().addMessage(reply);
-  size = pw.packetSize();
-  write(state.fd, &size, sizeof(size));
-  write(state.fd, pw.packetData(), size);
+  state.out->err(resp_id,"invalid OSC request");
+  state.out->end_response(resp_id, -1);
 }
 
 int handle_message(oscpkt::Message* msg, protocol_state& state) {
