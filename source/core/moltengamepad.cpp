@@ -563,12 +563,12 @@ std::shared_ptr<input_source> moltengamepad::add_device(input_source* source, de
   ptr->set_name(proposal);
   ids_in_use.insert(proposal);
   devices.push_back(ptr);
-  plugs.take_message(0,"device " + source->get_name() + " added.");
   auto devprof = source->get_profile();
   devprof->name = source->get_name();
   add_profile(devprof.get());
   devprof->add_device(ptr);
   manager->mapprofile->copy_into(devprof, true, true);
+  plugs.device_plug(0, source, "add");
   device_list_lock.unlock();
   ptr->start_thread();
   if (slots->opts.get<bool>("auto_assign"))
@@ -586,7 +586,7 @@ int moltengamepad::remove_device(input_source* source) {
   std::lock_guard<std::mutex> guard(id_list_lock);
   for (int i = 0; i < devices.size(); i++) {
     if (source == devices[i].get()) {
-      plugs.take_message(0,"device " + source->get_name() + " removed.");
+      plugs.device_plug(0, source, "remove");
       remove_profile(devices[i]->get_profile().get());
       ids_in_use.erase(source->get_name());
       devices.erase(devices.begin() + i);
