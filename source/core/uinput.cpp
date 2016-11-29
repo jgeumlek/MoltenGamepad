@@ -156,13 +156,15 @@ int uinput::make_keyboard(const uinput_ids& ids) {
 
 
 
-  /*Just set all possible keys up to BTN_TASK
+  /*Just set all possible keys up to and including BTN_TASK (0x117)
    * This should cover all reasonable keyboard and mouse keys.*/
   ioctl(fd, UI_SET_EVBIT, EV_KEY);
-  for (i = KEY_ESC; i <= BTN_TASK; i++) {
+  for (i = KEY_ESC; i <= 0x117; i++) {
     ioctl(fd, UI_SET_KEYBIT, i);
   }
-  for (i = KEY_OK; i < KEY_KBDINPUTASSIST_CANCEL; i++) {
+  //set the keys that occur after the joystick/gamepad events.
+  //KEY_OK (0x160) up to (but not including) BTN_TRIGGER_HAPPY (0x2c0)
+  for (i = 0x160; i < 0x2c0; i++) {
     ioctl(fd, UI_SET_KEYBIT, i);
   }
 
