@@ -11,13 +11,13 @@ void message_stream::add_listener(message_protocol* listener) {
 }
 
 void message_stream::remove_listener(message_protocol* listener) {
-  lock.lock();
+  std::lock_guard<std::mutex> guard(lock);
   for (auto it = listeners.begin(); it != listeners.end(); it++) {
-    while (it != listeners.end() && *it == listener) {
+    if (*it == listener) {
       listeners.erase(it);
+      return;
     }
   }
-  lock.unlock();
 }
 void message_stream::flush() {
 }

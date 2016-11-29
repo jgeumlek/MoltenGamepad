@@ -90,6 +90,9 @@ int socket_connection_loop(moltengamepad* mg, int fd) {
     }
   }
   close(fd);
+  //hardcoded list of things to unsubscribe from...
+  mg->plugs.remove_listener(&out);
+  mg->slots->log.remove_listener(&out);
   debug_print(DEBUG_INFO, 1, "remote client connection closed.");
   return 0;
 }
@@ -122,6 +125,30 @@ int handle_message(oscpkt::Message* msg, protocol_state& state) {
     } else {
       bad_command(state, resp_id);
     }
+    return 0;
+  }
+
+  if (msg->match("/listen")) {
+    std::string stream_name;
+    bool listen;
+    if (arg.popStr(stream_name).popBool(listen).isOkNoMoreArgs()) {
+      if (stream_name == "plug") {
+        if (listen)
+          state.mg->plugs.add_listener(state.out);
+        else
+          state.mg->plugs.remove_listener(state.out);
+        state.out->end_response(resp_id,0);
+        return 0;
+      } else if (stream_name == "slot") {
+        if (listen)
+          state.mg->slots->log.add_listener(state.out);
+        else
+          state.mg->slots->log.remove_listener(state.out);
+        state.out->end_response(resp_id,0);
+        return 0;
+      }
+    }
+    bad_command(state,resp_id);
     return 0;
   }
   bad_command(state,resp_id);

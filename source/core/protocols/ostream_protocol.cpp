@@ -16,9 +16,9 @@ void ostream_protocol::err(int resp_id, const std::string& text) {
 
 void ostream_protocol::device_slot(int resp_id, input_source* device, output_slot* slot) {
   if (slot) {
-    out << "slots: " << device->get_name() << " assigned to slot " << slot->name << std::endl;
+    out << "slot: " << device->get_name() << " assigned to slot " << slot->name << std::endl;
   } else {
-    out << "slots: " << device->get_name() << " not assigned to any slot" << std::endl;
+    out << "slot: " << device->get_name() << " not assigned to any slot" << std::endl;
   }
 }
 
