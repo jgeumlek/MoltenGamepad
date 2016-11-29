@@ -1,7 +1,7 @@
 
 #uncomment the lines below to include those plugins
 MG_BUILT_INS+=wiimote
-#MG_BUILT_INS+=steamcontroller
+MG_BUILT_INS+=steamcontroller
 
 #If you need to run "make eventlists" and it failed to find your
 #input header where all the key codes are defined, put the
@@ -17,10 +17,12 @@ SRCS:=$(shell echo source/core/*.cpp source/core/*/*.cpp source/core/*/*/*.cpp s
 
 
 
-SRCS:=$(SRCS) $(shell echo $(MG_BUILT_IN_PATHS))
+SRCS:=$(SRCS)
 OBJS=$(subst .cpp,.o,$(SRCS))
+BUILT_IN_PLUGS=$(patsubst %,source/plugin/%/plug.a,$(MG_BUILT_INS))
 
-include $(patsubst %,source/plugin/%/Makefile,$(MG_BUILT_INS))
+BUILT_IN_NEEDED_LIBS=$(patsubst %,source/plugin/%/ldlibs,$(MG_BUILT_INS))
+LDLIBS+=$(shell cat $(BUILT_IN_NEEDED_LIBS))
 
 #Borrowed magic to handle using gcc to generate build dependencies.
 
@@ -57,14 +59,25 @@ $(DEPDIR)/%.d: ;
 
 
 
-moltengamepad : $(OBJS)
+moltengamepad : source/core/mg_core.a $(BUILT_IN_PLUGS)
 	@echo "The following plugins are being statically included:"
 	@echo "    " $(MG_BUILT_INS)
-	$(CXX) $(LDFLAGS) -o moltengamepad $(OBJS) $(LDLIBS)
+	$(CXX) $(LDFLAGS) -o moltengamepad source/core/mg_core.a -Wl,--whole-archive $(BUILT_IN_PLUGS) -Wl,--no-whole-archive $(LDLIBS)
+
+source/core/mg_core.a : $(OBJS)
+	ar rcs $@ $^
+
+.SECONDEXPANSION:
+source/plugin/%/plug.a : force_look
+	cd source/plugin/$*; $(MAKE) $(MFLAGS) plug.a
+
+force_look:
+	true
 
 clean :
 	$(RM) moltengamepad
 	$(RM) $(OBJS)
+	$(RM) source/core/mg_core.a
 
 .PHONY: debug
 debug : CPPFLAGS+=-DDEBUG -g

@@ -2,3 +2,4 @@ moltengamepad
 *.o
 .d
 *.so
+*.a

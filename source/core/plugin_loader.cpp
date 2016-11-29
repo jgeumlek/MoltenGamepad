@@ -5,7 +5,13 @@ plugin_api plugin_methods;
 
 std::vector<std::function<int (plugin_api)>> builtin_plugins;
 
-int register_builtin_plugin( int (*init) (plugin_api)) {
+/*int register_builtin_plugin( int (*init) (plugin_api)) {
+  if (init) {
+    builtin_plugins.push_back(init);
+  }
+};*/
+
+int register_plugin( int (*init) (plugin_api)) {
   if (init) {
     builtin_plugins.push_back(init);
   }

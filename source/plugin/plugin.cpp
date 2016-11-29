@@ -9,11 +9,6 @@ int register_plugin( int (*init) (plugin_api)) {
 
 #else
 
-#include "../core/plugin_loader.h"
-
-int register_plugin( int (*init) (plugin_api)) {
-  return register_builtin_plugin(init);
-};
-
+//use the one linked in from the core, as we are being built in.
 #endif
 

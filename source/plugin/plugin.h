@@ -209,7 +209,7 @@ struct plugin_api {
 
 //call this with a function pointer to be ran when loading this plugin.
 //This function should call add_manager as appropriate.
-int register_plugin( int (*init) (plugin_api));
+extern int register_plugin( int (*init) (plugin_api));
 //If you include a line like
 //     int loaded = register_plugin(my_init_function)
 //that declares a static global int, then the my_init_function
