@@ -13,13 +13,12 @@ To avoid documentation going stale, check the comments within `plugin/plugin.h` 
 
 For now, the hack-ish build system imposes these constraints:
 
-* All code must be located in a folder `source/plugin/<plugin name>` with no subdirectories.
-* A file named `Makefile` should at minimum contain a line
-    SRCS:=$(SRCS) <the list of files to be compiled for this plugin, relative the root of this repo>
-* That same file can optionally include a line like
-    LDLIBS:=$(LDLIBS) <the list of libraries to be linked for this plugin>
+* The plugin  must be located in a folder `source/plugin/<plugin name>`.
+* A Makefile should have a target `plug.a` that is a static archive of all `.o` files for the plugin.
+* If the plugin requires linking with additional libraries, create a file `source/plugin/<plugin name>/ldlibs` that has only a single line: the appropriate linker arguments with a trailing space.   Example: `-lscraw `. Do not put a newline, and do not forget the trailing whitespace.
 
-The name of the plugin can then be added to the variable `MG_BUILT_INS` in the main Makefile of this project to request.
+
+The name of the plugin can then be added to the variable `MG_BUILT_INS` in the main Makefile of this project to request that it be built and included.
 
 In the future, these plugins will be optionally built as dynamically linked libraries.
 
