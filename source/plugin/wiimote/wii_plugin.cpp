@@ -2,7 +2,7 @@
 
 device_plugin wiidev;
 
-int wiimote_plugin_init(plugin_api api) {
+PLUGIN_INIT(wiimote)(plugin_api api) {
   //set static vars
   wiimote_manager::methods = *(api.head.manager);
   wiimote::methods = *(api.head.device);
@@ -71,7 +71,3 @@ int wiimote_plugin_init(plugin_api api) {
   api.mg.add_manager(wiiman, manager);
   return 0;
 }
-
-
-
-int wiimote_loaded = register_plugin(&wiimote_plugin_init);

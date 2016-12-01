@@ -60,7 +60,7 @@ public:
   ~steam_controller();
 
   input_source* ref;
-  friend int sc_plugin_init(plugin_api api);
+  friend PLUGIN_INIT_FUNC(steamcontroller)(plugin_api api);
   static device_methods methods;
 
 protected:
@@ -102,6 +102,7 @@ public:
   }
 
   friend int sc_plugin_init(plugin_api api);
+  friend int plugin_init(plugin_api api);
   static manager_methods methods;
 private:
   scraw::context sc_context;

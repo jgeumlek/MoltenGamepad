@@ -1,7 +1,6 @@
-
 #uncomment the lines below to include those plugins
 MG_BUILT_INS+=wiimote
-MG_BUILT_INS+=steamcontroller
+#MG_BUILT_INS+=steamcontroller
 
 #If you need to run "make eventlists" and it failed to find your
 #input header where all the key codes are defined, put the
@@ -9,7 +8,7 @@ MG_BUILT_INS+=steamcontroller
 #(if you can compile successfully, you do not need to do anything here.)
 INPUT_HEADER:=""
 
-LDLIBS=-ludev -lpthread
+LDLIBS=-ludev -lpthread -ldl
 CPPFLAGS+=-std=c++14
 
 SRCS:=$(shell echo source/core/*.cpp source/core/*/*.cpp source/core/*/*/*.cpp source/plugin/*.cpp)
@@ -22,7 +21,7 @@ OBJS=$(subst .cpp,.o,$(SRCS))
 BUILT_IN_PLUGS=$(patsubst %,source/plugin/%/plug.a,$(MG_BUILT_INS))
 
 BUILT_IN_NEEDED_LIBS=$(patsubst %,source/plugin/%/ldlibs,$(MG_BUILT_INS))
-LDLIBS+=$(shell cat $(BUILT_IN_NEEDED_LIBS))
+LDLIBS+=$(shell echo "" | cat $(BUILT_IN_NEEDED_LIBS))
 
 #Borrowed magic to handle using gcc to generate build dependencies.
 

@@ -12,3 +12,5 @@ int register_plugin( int (*init) (plugin_api));
 void init_plugin_api();
 
 int load_builtins(moltengamepad* mg);
+
+int load_plugin(const std::string& path);

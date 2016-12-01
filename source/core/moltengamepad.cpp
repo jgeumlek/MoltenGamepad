@@ -92,6 +92,9 @@ std::string moltengamepad::locate(file_category cat, std::string path) {
     case FILE_OPTIONS:
       category_prefix = "/options/";
       break;
+    case FILE_PLUGIN:
+      category_prefix = "/plugins/";
+      break;
   }
 
   std::vector<std::string> dirs = xdg_config_dirs;
@@ -133,6 +136,9 @@ std::vector<std::string> moltengamepad::locate_glob(file_category cat, std::stri
       break;
     case FILE_OPTIONS:
       category_prefix = "/options/";
+      break;
+    case FILE_PLUGIN:
+      category_prefix = "/plugins/";
       break;
   }
   
@@ -366,6 +372,7 @@ int moltengamepad::init() {
   //add built in drivers
   init_plugin_api();
   init_generic_callbacks();
+  //even with no built ins, this does some needed initialization...
   load_builtins(this);
 
 
@@ -374,6 +381,7 @@ int moltengamepad::init() {
     if (opts->get<std::string>("profile_dir").empty()) mkdir((confdir + "/profiles/").c_str(), 0755);
     if (opts->get<std::string>("gendev_dir").empty()) mkdir((confdir + "/gendevices/").c_str(), 0755);
     mkdir((confdir + "/options/").c_str(), 0755);
+    mkdir((confdir + "/plugins/").c_str(), 0755);
   }
 
   std::string slotcfg = locate(FILE_OPTIONS, "slots.cfg");
@@ -384,7 +392,13 @@ int moltengamepad::init() {
       return 0;
     });
   }
- 
+
+  //load our dynamic plugins.
+  //They have priority over gendev drivers.
+  auto plugin_files = locate_glob(FILE_PLUGIN,"*.so");
+  for (auto path : plugin_files) {
+    load_plugin(path);
+  }
 
   //file glob the gendev .cfg files to add more drivers
   auto gendev_files = locate_glob(FILE_GENDEV,"*.cfg");

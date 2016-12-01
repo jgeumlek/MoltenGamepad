@@ -207,17 +207,53 @@ struct plugin_api {
   struct device_methods device;
 };
 
-//call this with a function pointer to be ran when loading this plugin.
-//This function should call add_manager as appropriate.
-extern int register_plugin( int (*init) (plugin_api));
-//If you include a line like
-//     int loaded = register_plugin(my_init_function)
-//that declares a static global int, then the my_init_function
-//will be called automatically when MoltenGamepad starts up.
-//Otherwise, nothing at all will happen!
+//We define two helper macros PLUGIN_INIT and PLUGIN_INIT_FUNC.
+//PLUGIN_INIT should be used when defining your plugin init function,
+//like so:
+//
+//   PLUGIN_INIT(plugin_name)(plugin_api api) {
+//     ...
+//   }
+//
+//The "(plugin_api api)" portion is simply the parameter section for your init function.
+//This section was excluded from the macro for clarity.
+//Note that this macro handles defining the return type of the function.
+//
+//When compiling as an external plugin, this resolves to the appropriate
+//standard entry point name.
+//
+//When compiling as a static plugin, this uses the given plugin_name and
+//resolves to a unique name for this init function to avoid conflicts.
+//It also causes the plugin to be loaded automatically by statically calling
+//a function to register the plugin.
+//
+//PLUGIN_INIT_FUNC simply resolves to the function name and return type, without
+//adding any extern qualifiers or auto-registration features.
+//It is useful if you need to refer to this function as a friend elsewhere.
+//
+//    friend PLUGIN_INIT_FUNC(plugin_name)(plugin_api api);
+//
+//It includes the return type but excludes the parameters so as to match
+//the behaviour of the PLUGIN_INIT macro.
 
-//Leave this alone, it will be handled automatically
-extern int (*plugin_init) (plugin_api);
-  
-  
-  
+#ifdef PLUGIN
+
+#define PLUGIN_INIT(X) extern "C" int plugin_init
+#define PLUGIN_INIT_FUNC(X) int plugin_init
+
+#else
+
+
+#define PLUGIN_INIT(X) \
+int X##_plugin_init(plugin_api);\
+int X##_loaded = register_plugin(&X##_plugin_init);\
+int X##_plugin_init
+
+#define PLUGIN_INIT_FUNC(X)  int X##_plugin_init
+#endif
+
+
+
+//Leave this alone, it will be handled automatically. It is the entry point for loading dynamic plugins.
+extern "C" int plugin_init(plugin_api);
+extern int register_plugin( int (*init) (plugin_api));

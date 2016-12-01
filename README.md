@@ -41,7 +41,7 @@ If you get undefined KEY_* errors, you'll need to remove those lines from the ev
 
     make eventlists
 
-The only linked libraries under this default target are libudev and libpthread.
+The only linked libraries under this default target are libudev, libpthread, and libdl.
 
 Currently two plugins can optionally be built into MoltenGamepad when compiling, `wiimote` and `steamcontroller`. By default, only the former is set to be built. Modify the lines at the beginning of the Makefile to control whether these plugins are included.
 

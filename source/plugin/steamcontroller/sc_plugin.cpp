@@ -3,11 +3,7 @@
 
 device_plugin scdev;
 
-
-
-
-
-int sc_plugin_init(plugin_api api) {  
+PLUGIN_INIT(steamcontroller)(plugin_api api) {
   //set static vars
   steam_controller_manager::methods = *(api.head.manager);
   steam_controller::methods = *(api.head.device);
@@ -70,6 +66,3 @@ int sc_plugin_init(plugin_api api) {
   api.mg.add_manager(scman,  manager);
   return 0;
 }
-
-
-int sc_loaded = register_plugin(&sc_plugin_init);
