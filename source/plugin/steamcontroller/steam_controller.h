@@ -9,7 +9,6 @@
 #include <mutex>
 #include "../plugin.h"
 
-extern int sc_loaded;
 extern device_plugin scdev;
 
 enum sc_keys {
