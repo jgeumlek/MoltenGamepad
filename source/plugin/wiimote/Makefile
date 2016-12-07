@@ -8,7 +8,7 @@ CXXFLAGS+=-std=c++14
 
 COMPILE.cpp = $(CXX) $(DEPFLAGS) $(CXXFLAGS) $(CPPFLAGS) $(TARGET_ARCH) -c
 
-wiimote.so : $(PLUGOBJS)
+plug.so : $(PLUGOBJS)
 	$(CXX) $(LDFLAGS) -DPLUGIN  $^  -shared -o $@ $(LDLIBS)
 
 plug.a : $(OBJS)
@@ -19,3 +19,9 @@ plug.a : $(OBJS)
 
 %.po : %.cpp $(SRCS)
 	$(COMPILE.cpp) -fPIC -DPLUGIN -o $@ $<
+
+clean :
+	$(RM) plug.a
+	$(RM) plug.so
+	$(RM) $(OBJS)
+	$(RM) $(PLUGOBJS)

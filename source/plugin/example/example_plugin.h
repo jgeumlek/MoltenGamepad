@@ -17,7 +17,7 @@ public:
   friend PLUGIN_INIT_FUNC(example)(plugin_api api);
   static device_methods methods;
 
-  static char* name = "ex";
+  constexpr static const char* name_stem = "ex";
 protected:
   void process(void*);
   int process_option(const char* opname, const MGField value);
@@ -42,7 +42,7 @@ public:
 
   friend PLUGIN_INIT_FUNC(example)(plugin_api api);
   static manager_methods methods;
-  static char* name = "example";
+  constexpr static const char* name = "example";
 private:
   device_manager* ref;
 };
