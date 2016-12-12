@@ -646,10 +646,15 @@ event_translator* MGparser::parse_special_trans(enum entry_type intype, complex_
     std::string outevent = expr->ident;
     int direction = 1;
     if (outevent.size() > 0) {
-      if (outevent[0] == '+') {
+      if (outevent.back() == '+') {
+        outevent.pop_back();
+      } else if (outevent.back() == '-') {
+        outevent.pop_back();
+        direction = -1;
+      } else if (outevent[0] == '+') {
+        //For backwards compatibility, allow +/- to be in front as well.
         outevent.erase(outevent.begin());
-      }
-      if (outevent[0] == '-') {
+      } else if (outevent[0] == '-') {
         outevent.erase(outevent.begin());
         direction = -1;
       }
@@ -767,6 +772,21 @@ bool MGparser::parse_decl(enum entry_type intype, const trans_decl& decl, MGTran
     if (type == MG_KEY) def.fields[i].key = read_ev_code(values[i].ident, OUT_KEY);
     if (type == MG_REL) def.fields[i].rel = read_ev_code(values[i].ident, OUT_REL);
     if (type == MG_AXIS) def.fields[i].axis = read_ev_code(values[i].ident, OUT_ABS);
+    if (type == MG_AXIS_DIR) {
+      std::string axis = values[1].ident;
+      bool negative = false;
+      if (axis.size() > 0) {
+        if (axis.back() == '+') {
+          axis.pop_back();
+        } else if (axis[0] == '-') {
+          axis.pop_back();
+          negative = true;
+        }
+      }
+      def.fields[i].axis = read_ev_code(axis,OUT_ABS);
+      if (def.fields[i].axis >= 0 && negative)
+        def.fields[i].axis |= NEGATIVE_AXIS_DIR;
+    }
     if (type == MG_INT) def.fields[i].integer = read_ev_code(values[i].ident, OUT_NONE);
     if (type == MG_FLOAT) {
       try {
@@ -826,6 +846,17 @@ void MGparser::print_def(entry_type intype, MGTransDef& def, std::ostream& outpu
         output << field.axis;
       }
     }
+    if (type == MG_AXIS_DIR) {
+      int dir = EXTRACT_DIR(field.axis);
+      int axis = EXTRACT_AXIS(field.axis);
+      const char* name = get_axis_name(axis);
+      const char* suffix = dir > 0 ? "+" : "-";
+      if (name) {
+        output << name << suffix;
+      } else {
+        output << field.axis << suffix;
+      }
+    }
     if (type == MG_REL) {
       const char* name = get_rel_name(field.rel);
       if (name) {
@@ -876,31 +907,31 @@ bool MGparser::print_special_def(entry_type intype, MGTransDef& def, std::ostrea
     || (intype == DEV_AXIS && (def.identifier == "axis2axis" || def.identifier == "axis2rel"))) {
     if (def.fields.size() >= 2 &&  def.fields[1].type == MG_INT) {
       const char* name = nullptr;
-      const char* prefix = "";
+      const char* suffix = "";
       //Axis: get axis name and check for default speeds of +/- one.
       if (def.fields[0].type == MG_AXIS) {
         name = get_axis_name(def.fields[0].axis);
         if (def.fields[1].integer == -1) {
-          prefix = "-";
+          suffix = "-";
         }
         if (def.fields[1].integer == +1) {
-          prefix = "+";
+          suffix = "+";
         }
       } else if (def.fields[0].type == MG_REL) {
         //Rel: default speeds depend on the intype as well!
         name = get_rel_name(def.fields[0].axis);
         int speed = def.fields[1].integer;
         if ((intype == DEV_KEY && speed == -SPEC_REL_BTN) || (intype == DEV_AXIS && speed == -SPEC_REL_AXIS)) {
-          prefix = "-";
+          suffix = "-";
         }
         if ((intype == DEV_KEY && speed == SPEC_REL_BTN) || (intype == DEV_AXIS && speed == SPEC_REL_AXIS)) {
-          prefix = "+";
+          suffix = "+";
         }
       }
       
-      if (!prefix) return false;
+      if (!suffix) return false;
       if (!name) return false;
-      output << prefix << name;
+      output << name << suffix;
       return true;
     }
   }
