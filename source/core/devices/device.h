@@ -23,20 +23,14 @@ class moltengamepad;
 
 class device_manager;
 
-
-
-struct source_event {
-  int id;
-  const char* name;
-  const char* descr;
-  enum entry_type type;
-  int64_t value;
-  event_state state;
+struct adv_listener {
+  advanced_event_translator* trans;
+  int index;
 };
 
 struct event_mapping {
   event_translator* trans;
-  std::vector<advanced_event_translator*> attached;
+  std::vector<adv_listener> attached;
 };
 
 struct recurring_info {
@@ -45,7 +39,8 @@ struct recurring_info {
 };
 
 struct adv_entry {
-  std::vector<std::string>* fields;
+  std::string* key;
+  std::vector<int>* fields;
   advanced_event_translator* trans;
 };
 
@@ -80,7 +75,7 @@ public:
   
   void inject_event(int id, int64_t value, bool skip_adv_trans);
 
-  void add_listener(int id, advanced_event_translator* trans);
+  void add_listener(int id, advanced_event_translator* trans, int trans_index);
   void remove_listener(int id, advanced_event_translator* trans);
 
   int upload_ff(ff_effect effect);

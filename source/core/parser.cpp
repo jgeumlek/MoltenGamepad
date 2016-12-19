@@ -1018,8 +1018,13 @@ struct complex_expr* read_expr(std::vector<token>& tokens, std::vector<token>::i
       expr->ident = (*it).value;
       it++;
     }
+    //just append idents and dots to blindly cover the case of recombining numeric values.
+    // "-5" "." "3"  ---> "-5.3"
+    while((*it).type == TK_IDENT || (*it).type == TK_DOT) {
+      expr->ident += (*it).value;
+      it++;
+    }
     //Otherwise, we have a paren, start reading children
-
     if ((*it).type == TK_LPAREN) {
       it++;
       complex_expr* subexpr = read_expr(tokens, it);
@@ -1051,7 +1056,7 @@ advanced_event_translator* MGparser::parse_adv_trans(const std::vector<std::stri
   auto it = rhs.begin();
   event_translator* trans = parse_trans(DEV_KEY, rhs, it, nullptr);
   if (trans) {
-    return new simple_chord(event_names, trans);
+    return new simple_chord(trans);
   }
 
   it = rhs.begin();

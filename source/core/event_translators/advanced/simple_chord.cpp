@@ -7,8 +7,14 @@ simple_chord::simple_chord(std::vector<MGField>& fields) {
   READ_TRANS(out_trans,MG_KEY_TRANS);
 }
 
-bool simple_chord::set_mapped_events(const std::vector<std::string>& event_names) {
-  this->event_names = event_names;
+bool simple_chord::set_mapped_events(const std::vector<source_event>& listened) {
+  num_events = listened.size();
+  for (auto ev : listened) {
+    if (ev.type != DEV_KEY)
+      return false;
+    event_vals.push_back(ev.value);
+  }
+  return true;
 }
   
 void simple_chord::fill_def(MGTransDef& def) {
@@ -17,50 +23,22 @@ void simple_chord::fill_def(MGTransDef& def) {
 }
 
 void simple_chord::init(input_source* source) {
-  //Stash the actual event ids this device has for the names we are interested in.
-  auto events = source->get_events();
-
-  for (auto name : event_names) {
-    event_ids.push_back(-1);
-    event_vals.push_back(0);
-  }
-  for (int i = 0; i < event_names.size(); i++) {
-    std::string looking_for = event_names[i];
-    std::string alias = source->get_alias(looking_for);
-    if (!alias.empty()) looking_for = alias;
-    for (auto event : events) {
-      if (!strcmp(event.name, looking_for.c_str())) {
-        event_ids[i] = event.id;
-        event_vals[i] = event.value;
-        break;
-      }
-    }
-  }
 
 };
 
 void simple_chord::attach(input_source* source) {
-  for (int id : event_ids)
-    source->add_listener(id, this);
 
   this->owner = source;
 };
 
 simple_chord::~simple_chord() {
-  if (owner) {
-    for (int id : event_ids) {
-      owner->remove_listener(id, this);
-    }
-  }
   if (out_trans) delete out_trans;
 }
 
 bool simple_chord::claim_event(int id, mg_ev event) {
   bool output = true;
-  for (int i = 0; i < event_ids.size(); i++) {
-    if (id == event_ids[i]) {
-      event_vals[i] = event.value;
-    }
+  event_vals[id] = event.value;
+  for (int i = 0; i < event_vals.size(); i++) {
     output = output && (event_vals[i]);
   }
   if (output != output_cache) {

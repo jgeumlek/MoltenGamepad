@@ -53,6 +53,8 @@ public:
   
   //Do we want the input_source to send recurring "ticks" for processing?
   virtual bool wants_recurring_events() { return false; };
+  //Do we want to be "the one" interpeter for this event?
+  virtual bool wants_exclusive() { return true; };
 
 
   virtual ~event_translator() {};
@@ -63,24 +65,28 @@ public:
   }
   event_translator() {};
 };
+  
 
 //A more complicated event translator. It can request to listen to multiple events.
 class advanced_event_translator {
 public:
   //Initialize any values needed with this input source
   virtual void init(input_source* source) {};
-  //Take in a list of events to listen to.
-  virtual bool set_mapped_events(const std::vector<std::string>& event_names) {};
+  //Take in a list of event types that this translator will be listening to.
+  //TODO: also pass in current values at this point.
+  virtual bool set_mapped_events(const std::vector<source_event>& listened_events) {};
   //Called when the device's thread is ready for attaching.
   virtual void attach(input_source* source) {};
   //Return true to block the input source's native handling of this event.
-  virtual bool claim_event(int id, mg_ev event) {
+  //index is with respect to this translators list of mapped inputs.
+  virtual bool claim_event(int index, mg_ev event) {
     return false;
   };
   //called regularly on a tick event; a certain amount of time has elapsed.
-  virtual void process_recurring(output_slot* out) const {
-  }
-  //Similar to the above, acts as a prototype method.
+  virtual void process_recurring(output_slot* out) const {};
+  //called on a SYN_REPORT, to allow processing multiple events at an appropriate time.
+  virtual void process_syn_report(output_slot* out) {};
+  //Similar to event_translator::clone(), acts as a prototype method.
   virtual advanced_event_translator* clone() {
     return new advanced_event_translator(*this);
   }
@@ -88,6 +94,9 @@ public:
 
   //Do we want the input_source to send recurring "ticks" for processing?
   virtual bool wants_recurring_events() { return false; };
+
+  //Do we want to prevent overlapping with regular event_translators? 
+  virtual bool wants_exclusive(int index) { return true; };
 
   advanced_event_translator(std::vector<MGField>& fields) {};
   advanced_event_translator() {};

@@ -5,19 +5,18 @@
 class exclusive_chord : public simple_chord {
 public:
 
-  exclusive_chord(std::vector<std::string> event_names, event_translator* trans) : simple_chord(event_names, trans) {};
-
-  volatile std::thread* thread = nullptr;
+  exclusive_chord(event_translator* trans) : simple_chord(trans) {};
   mutable std::vector<int> chord_hits;
-  input_source* owner = nullptr;
+  std::vector<int> event_ids; //this translator needs to store source ids to re-inject events.
 
   virtual void init(input_source* source);
   virtual bool claim_event(int id, mg_ev event);
   virtual advanced_event_translator* clone() {
-    return new exclusive_chord(event_names, out_trans->clone());
+    return new exclusive_chord(out_trans->clone());
   }
 
-  void thread_func();
+  virtual bool set_mapped_events(const std::vector<source_event>& listened);
+
   mutable bool chord_active;
   mutable int tick_count;
 
