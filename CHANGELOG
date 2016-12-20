@@ -1,4 +1,15 @@
 ---------------------------
+0.3.3-beta
+2016-12-19
+---------------------------
+
+A small update to address some issues before the next development version is ready.
+
+* Remove reliance on certain key codes to aid in compiling on older systems.
+* Remove the use of UI_GET_SYSNAME as the new phys strings can handle that. (Multiple instances of MG is not a supported use case.)
+* Fix the constant used for scaling the nunchuk's thumb stick.
+
+---------------------------
 0.3.2-beta
 2016-10-31
 ---------------------------
