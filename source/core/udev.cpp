@@ -27,7 +27,17 @@ void udev_handler::pass_along_device(struct udev_device* new_dev) {
   const char* action = udev_device_get_action(new_dev);
   if (!action) action = "enumerated";
   debug_print(DEBUG_INFO, 4, "device ",action," ",path.c_str());
-  if (ui && ui->node_owned(path)) {
+  struct udev_device* hidparent = udev_device_get_parent_with_subsystem_devtype(new_dev,"hid",NULL);
+  struct udev_device* parent = udev_device_get_parent(new_dev);
+  const char* phys = udev_device_get_sysattr_value(new_dev,"phys");
+  if (!phys && hidparent) {
+    phys = udev_device_get_property_value(hidparent, "HID_PHYS");
+  }
+  while (!phys && parent) {
+    phys = udev_device_get_sysattr_value(parent,"phys");
+    parent = udev_device_get_parent(parent);
+  }
+  if (phys && !strncmp(phys,"moltengamepad",13)) {
     debug_print(DEBUG_VERBOSE, 1, "\tskipped because it was made by MoltenGamepad");
     return; //Skip virtual devices we made
   }
