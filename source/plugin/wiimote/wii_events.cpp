@@ -236,7 +236,7 @@ void wiimote::process_classic(int fd) {
   if (ret < 0) perror("read classic ext");
 }
 
-#define NUNCHUK_STICK_SCALE ABS_RANGE/24
+#define NUNCHUK_STICK_SCALE ABS_RANGE/85
 #define NUNCHUK_ACCEL_SCALE ABS_RANGE/90
 void wiimote::process_nunchuk(int fd) {
   struct input_event ev;
