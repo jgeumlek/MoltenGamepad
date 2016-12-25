@@ -298,6 +298,8 @@ void profile::copy_into(std::shared_ptr<profile> target, bool add_subscription, 
 }
 
 void profile::build_default_gamepad_profile() {
+  bool do_adv = false;
+
   default_gamepad_profile.lock.lock();
   if (default_gamepad_profile.mapping.empty()) {
     auto map = &default_gamepad_profile.mapping;
@@ -319,10 +321,10 @@ void profile::build_default_gamepad_profile() {
     (*map)["thumbl"] =   {new btn2btn(BTN_THUMBL), DEV_KEY};
     (*map)["thumbr"] =   {new btn2btn(BTN_THUMBR), DEV_KEY};
 
-    (*map)["left_x"] = {new axis2axis(ABS_X, 1), DEV_AXIS};
-    (*map)["left_y"] = {new axis2axis(ABS_Y, 1), DEV_AXIS};
-    (*map)["right_x"] = {new axis2axis(ABS_RX, 1), DEV_AXIS};
-    (*map)["right_y"] = {new axis2axis(ABS_RY, 1), DEV_AXIS};
+    (*map)["left_x"] = {new event_translator(), DEV_AXIS};
+    (*map)["left_y"] = {new event_translator(), DEV_AXIS};
+    (*map)["right_x"] = {new event_translator(), DEV_AXIS};
+    (*map)["right_y"] = {new event_translator(), DEV_AXIS};
     (*map)["tl2_axis"] = {new axis2axis(ABS_Z, 1), DEV_AXIS};
     (*map)["tr2_axis"] = {new axis2axis(ABS_RZ, 1), DEV_AXIS};
     (*map)["tl2_axis_btn"] = {new event_translator(), DEV_KEY};
@@ -331,8 +333,19 @@ void profile::build_default_gamepad_profile() {
     //For devices with the dpad as a hat.
     (*map)["updown"] =   {new axis2btns(BTN_DPAD_UP,BTN_DPAD_DOWN), DEV_AXIS};
     (*map)["leftright"] =   {new axis2btns(BTN_DPAD_LEFT,BTN_DPAD_RIGHT), DEV_AXIS};
+
+    do_adv = true;
   }
   default_gamepad_profile.lock.unlock();
+  if (do_adv) {
+    //easier to reuse code and do this with functions that will also affect the lock.
+    std::vector<std::string> evnames({"left_x","left_y"});
+    std::vector<int8_t> directions({1,1});
+    default_gamepad_profile.set_advanced(evnames,directions,new thumb_stick(ABS_X,ABS_Y));
+    evnames[0] = "right_x";
+    evnames[1] = "right_y";
+    default_gamepad_profile.set_advanced(evnames,directions,new thumb_stick(ABS_RX,ABS_RY));
+  }
 }
 
 profile profile::default_gamepad_profile;
@@ -345,6 +358,28 @@ void profile::gamepad_defaults() {
     std::string alias = get_alias(entry.first);
     alias = alias.empty() ? entry.first : alias;
     mapping[alias] = {entry.second.trans->clone(), entry.second.type};
+  }
+  for (auto entry : default_gamepad_profile.adv_trans) {
+    std::vector<std::string> aliases;
+    std::vector<int8_t> directions;
+    for (int i = 0; i < entry.second.fields.size(); i++) {
+      std::string alias = get_alias(entry.second.fields[i]);
+      aliases.push_back(alias.empty() ? entry.second.fields[i] : alias);
+      directions.push_back(entry.second.directions[i]);
+    }
+    
+    auto it = aliases.begin();
+    //this key creation is still not ideal.
+    std::string key = *it;
+    it++;
+    for (; it != aliases.end(); it++) {
+      key += "," + (*it);
+    }
+    adv_map new_entry;
+    new_entry.fields = aliases;
+    new_entry.trans = entry.second.trans->clone();
+    new_entry.directions = directions;
+    adv_trans[key] = new_entry;
   }
   lock.unlock();
 }

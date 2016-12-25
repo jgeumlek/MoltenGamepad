@@ -10,6 +10,7 @@ public:
   int y_axis;
   input_source* owner = nullptr;
 
+  thumb_stick(int x_axis, int y_axis) : x_axis(x_axis), y_axis(y_axis), deadzone(.1), outzone(.01), angle_snap(0) {};
   virtual ~thumb_stick();
 
   virtual void init(input_source* source);

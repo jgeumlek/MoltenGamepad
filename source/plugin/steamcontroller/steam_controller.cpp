@@ -27,12 +27,12 @@ const event_decl steamcont_events[] = {
   {"left_pad_touch","Left Touch Pad Touch Detected",BTN,""},
   {"right_pad_touch","Right Touch Pad Touch Detected",BTN,""},
 
-  {"stick_x","Thumb Stick X-axis", ABS,"+left_x"},
-  {"stick_y","Thumb Stick Y-axis", ABS,"+left_y"},
+  {"stick_x","Thumb Stick X-axis", ABS,""},
+  {"stick_y","Thumb Stick Y-axis", ABS,""},
   {"left_pad_x","Left Touch Pad X-axis", ABS,"(left,right)"},
   {"left_pad_y","Left Touch Pad Y-axis", ABS,"(up,down)"},
-  {"right_pad_x","Right Touch Pad X-axis", ABS,"+right_x"},
-  {"right_pad_y","Right Touch Pad Y-axis", ABS,"+right_y"},
+  {"right_pad_x","Right Touch Pad X-axis", ABS,""},
+  {"right_pad_y","Right Touch Pad Y-axis", ABS,""},
   {"tl2_axis","Right Trigger Analog Values", ABS,"tl2_axis"},
   {"tr2_axis","Right Trigger Analog Values", ABS,"tr2_axis"},
   {nullptr, nullptr, NO_ENTRY, nullptr}

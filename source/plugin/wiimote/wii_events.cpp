@@ -61,10 +61,10 @@ const event_decl wiimote_events[] = {
   {EVNAME(cc_thumbl), "Classic Controller Left Stick Click (Wii U Pro only)", BTN, "thumbl"},
   {EVNAME(cc_thumbr), "Classic Controller Right Stick Click  (Wii U Pro only)", BTN, "thumbr"},
 
-  {EVNAME(cc_left_x), "Classic Controller Left Stick X", ABS, "+left_x"},
-  {EVNAME(cc_left_y), "Classic Controller Left Stick Y", ABS, "+left_y"},
-  {EVNAME(cc_right_x), "Classic Controller Right Stick X", ABS, "+right_x"},
-  {EVNAME(cc_right_y), "Classic Controller Right Stick Y", ABS, "+right_y"},
+  {EVNAME(cc_left_x), "Classic Controller Left Stick X", ABS, ""},
+  {EVNAME(cc_left_y), "Classic Controller Left Stick Y", ABS, ""},
+  {EVNAME(cc_right_x), "Classic Controller Right Stick X", ABS, ""},
+  {EVNAME(cc_right_y), "Classic Controller Right Stick Y", ABS, ""},
 
   {EVNAME(wm_accel_x), "Wiimote X acceleration ((-) <--> (+) axis)", ABS, ""},
   {EVNAME(wm_accel_y), "Wiimote Y acceleration (plug <--> pointer axis)", ABS, ""},
