@@ -13,7 +13,7 @@ int device_manager::register_event(event_decl ev) {
   std::vector<token> tokens = tokenize(std::string(ev.default_mapping));
   auto it = tokens.begin();
   event_translator* trans = MGparser::parse_trans(ev.type, tokens, it, nullptr);
-  mapprofile->set_mapping(std::string(ev.name), trans ? trans : new event_translator(), ev.type, true);
+  mapprofile->set_mapping(std::string(ev.name), 1, trans ? trans : new event_translator(), ev.type, true);
   return 0;
 }
 

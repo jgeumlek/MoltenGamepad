@@ -113,7 +113,7 @@ void input_source::watch_file(int fd, void* tag) {
 }
 
 
-void input_source::update_map(const char* evname, event_translator* trans) {
+void input_source::update_map(const char* evname, int8_t direction, event_translator* trans) {
   std::string name(evname);
   auto alias = devprofile->aliases.find(name);
   if (alias != devprofile->aliases.end())
@@ -121,7 +121,7 @@ void input_source::update_map(const char* evname, event_translator* trans) {
 
   for (int i = 0; i < events.size(); i++) {
     if (!strcmp(evname, events[i].name)) {
-      set_trans(i, trans->clone());
+      set_trans(i, direction, trans->clone());
       return;
     }
   }
@@ -186,12 +186,13 @@ void input_source::list_options(std::vector<option_info>& list) const {
 
 
 
-void input_source::update_advanced(const std::vector<std::string>& evnames, advanced_event_translator* trans) {
+void input_source::update_advanced(const std::vector<std::string>& evnames, const std::vector<int8_t> directions, advanced_event_translator* trans) {
   struct input_internal_msg msg;
   memset(&msg, 0, sizeof(msg));
 
   std::vector<std::string> local_names = evnames;
   msg.adv.fields = new std::vector<int>();
+  msg.adv.directions = new std::vector<int8_t>(directions);
   
   //First, translate event names using this device's aliases into the local names.
   for (int i = 0; i < local_names.size(); i++) {
@@ -243,13 +244,14 @@ void input_source::update_advanced(const std::vector<std::string>& evnames, adva
 
 
 
-void input_source::set_trans(int id, event_translator* trans) {
+void input_source::set_trans(int id, int8_t direction, event_translator* trans) {
   if (id < 0 || id >= events.size()) return;
 
   struct input_internal_msg msg;
   memset(&msg, 0, sizeof(msg));
   msg.id = id;
   msg.field.trans = trans;
+  msg.value = direction;
   msg.type = input_internal_msg::IN_TRANS_MSG;
   write(priv_pipe, &msg, sizeof(msg));
 };
@@ -283,12 +285,22 @@ bool notable_event(const entry_type type, const int64_t value, const int64_t old
   return false;
 }
 
+int64_t apply_direction(entry_type type, int64_t value, int8_t direction) {
+  if (type == DEV_AXIS && direction == -1)
+    return -value;
+  if (type == DEV_KEY && direction == -1)
+    return !value;
+  return value;
+}
+
 void input_source::send_value(int id, int64_t value) {
   if (id < 0 || id > events.size() || events[id].value == value)
     return;
   bool blocked = false;
   for (auto adv_trans : ev_map.at(id).attached) {
-    if (adv_trans.trans->claim_event(adv_trans.index, {value})) blocked = true;
+    
+    if (adv_trans.trans->claim_event(adv_trans.index, {apply_direction(events[id].type,value,adv_trans.direction)}))
+      blocked = true;
   }
 
   //On a notable event, try to claim a slot if we don't have one.
@@ -306,6 +318,8 @@ void input_source::send_value(int id, int64_t value) {
   events.at(id).value = value;
 
   if (blocked) return;
+
+  value = apply_direction(events[id].type, value, ev_map[id].direction);
 
   if (ev_map.at(id).trans && out_dev) ev_map.at(id).trans->process({value}, out_dev);
     
@@ -341,6 +355,8 @@ void input_source::force_value(int id, int64_t value) {
   }
 
   events.at(id).value = value;
+
+  value = apply_direction(events[id].type, value, ev_map[id].direction);
 
   if (ev_map.at(id).trans && out_dev) ev_map.at(id).trans->process({value}, out_dev);
 
@@ -413,11 +429,12 @@ void input_source::handle_internal_message(input_internal_msg& msg) {
       std::vector<source_event> listened;
       for (int trans_index = 0; trans_index < msg.adv.fields->size(); trans_index++) {
         int ev_id = (*msg.adv.fields)[trans_index];
-        add_listener(ev_id, msg.adv.trans, trans_index);
+        int8_t direction = (*msg.adv.directions)[trans_index];
+        add_listener(ev_id, direction, msg.adv.trans, trans_index);
         listened.push_back(events[ev_id]);
       }
       msg.adv.trans->set_mapped_events(listened);
-      adv_trans[adv_name] = {msg.adv.key, msg.adv.fields, msg.adv.trans};
+      adv_trans[adv_name] = {msg.adv.key, msg.adv.fields, msg.adv.directions, msg.adv.trans};
       if (msg.adv.trans->wants_recurring_events()) {
         add_adv_recurring_event(msg.adv.trans);
       }
@@ -425,6 +442,7 @@ void input_source::handle_internal_message(input_internal_msg& msg) {
       //setting to null, which is used to clear the old mapping.
       //no need to store this null value, so clean up these pointers.
       delete msg.adv.fields;
+      delete msg.adv.directions;
       if (msg.adv.key) delete msg.adv.key;
     }
     do_recurring_events = recurring_events.size() + adv_recurring_events.size() > 0;
@@ -442,6 +460,7 @@ void input_source::handle_internal_message(input_internal_msg& msg) {
     remove_recurring_event(*trans);
     delete *trans;
     *(trans) = msg.field.trans;
+    ev_map.at(msg.id).direction = (int8_t) msg.value;
     msg.field.trans->attach(this);
     if (msg.field.trans->wants_recurring_events()) {
       add_recurring_event(msg.field.trans, msg.id);
@@ -519,9 +538,9 @@ void input_source::end_thread() {
   }
 }
 
-void input_source::add_listener(int id, advanced_event_translator* trans, int trans_index) {
+void input_source::add_listener(int id, int8_t direction, advanced_event_translator* trans, int trans_index) {
   if (id < 0 || id >= events.size()) return;
-  ev_map[id].attached.push_back({trans, trans_index});
+  ev_map[id].attached.push_back({trans, trans_index, direction});
 }
 
 void input_source::remove_listener(int id, advanced_event_translator* trans) {

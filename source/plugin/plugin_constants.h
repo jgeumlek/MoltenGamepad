@@ -40,7 +40,6 @@ enum entry_type {
   DEV_AXIS,
   DEV_REL,
   DEV_ANY,
-  DEV_INVERTED_AXIS, //a way to indicate a desire for the axis values to be negated.
 };
 
 enum device_claim {

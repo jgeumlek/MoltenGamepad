@@ -8,14 +8,21 @@
 void print_profile(profile& profile, std::ostream& out) {
   profile.lock.lock();
   for (auto it = profile.mapping.begin(); it != profile.mapping.end(); it++) {
-    out << profile.name << "." << it->first << " = ";
+    out << profile.name << "." << it->first << (it->second.direction == -1 ? "-" : "") << " = ";
     MGTransDef def;
     it->second.trans->fill_def(def);
     MGparser::print_def(it->second.type, def, out);
     out << std::endl;
   }
   for (auto entry : profile.adv_trans) {
-    out << profile.name << ".(" << entry.first << ") = ";
+    out << profile.name << ".(";
+    if (entry.second.fields.size() >= 1) {
+      out << entry.second.fields[0] << (entry.second.directions[0] == -1 ? "-" : "");
+    }
+    for (int i = 1; i < entry.second.fields.size(); i++) {
+      out << "," << entry.second.fields[i] << (entry.second.directions[i] == -1 ? "-" : "");
+    }
+    out << ") = ";
     MGTransDef def;
     entry.second.trans->fill_def(def);
     MGparser::print_def(NO_ENTRY, def, out);

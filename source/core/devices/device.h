@@ -26,10 +26,12 @@ class device_manager;
 struct adv_listener {
   advanced_event_translator* trans;
   int index;
+  int8_t direction;
 };
 
 struct event_mapping {
   event_translator* trans;
+  int8_t direction;
   std::vector<adv_listener> attached;
 };
 
@@ -41,6 +43,7 @@ struct recurring_info {
 struct adv_entry {
   std::string* key;
   std::vector<int>* fields;
+  std::vector<int8_t>* directions;
   advanced_event_translator* trans;
 };
 
@@ -61,10 +64,10 @@ public:
   void set_slot(output_slot* outdev);
   output_slot* get_slot();
 
-  void update_map(const char* evname, event_translator* trans);
+  void update_map(const char* evname, int8_t direction, event_translator* trans);
   void update_option(const char* opname, const MGField field);
   void remove_option(std::string option_name);
-  void update_advanced(const std::vector<std::string>& evnames, advanced_event_translator* trans);
+  void update_advanced(const std::vector<std::string>& evnames, std::vector<int8_t> directions, advanced_event_translator* trans);
 
   void start_thread();
   void end_thread();
@@ -75,7 +78,7 @@ public:
   
   void inject_event(int id, int64_t value, bool skip_adv_trans);
 
-  void add_listener(int id, advanced_event_translator* trans, int trans_index);
+  void add_listener(int id, int8_t direction, advanced_event_translator* trans, int trans_index);
   void remove_listener(int id, advanced_event_translator* trans);
 
   int upload_ff(ff_effect effect);
@@ -130,7 +133,7 @@ protected:
   void toggle_event(int id, event_state state);
   void register_option(option_info opt);
   void watch_file(int fd, void* tag);
-  void set_trans(int id, event_translator* trans);
+  void set_trans(int id, int8_t direction, event_translator* trans);
   void force_value(int id, int64_t value);
   void send_value(int id, int64_t value);
   void send_syn_report();

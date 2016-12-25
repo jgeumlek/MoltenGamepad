@@ -197,6 +197,31 @@ MGType parse_type(const std::string& str) {
   return MG_NULL;
 }
 
+//detects "left_x+" vs. "left_x-"
+//modifies the passed in string to remove the +/- as well.
+int8_t read_direction(std::string& name) {
+  //positive direction (1) is the default!
+  if (name.empty()) return 1;
+  if (name.back() == '+') {
+    name.pop_back();
+    return 1;
+  }
+  if (name.back() == '-') {
+    name.pop_back();
+    return -1;
+  }
+  //backwards compat/liberal input acceptance: +/- at the beginning
+  if (name.front() == '+') {
+    name.erase(name.begin());
+    return 1;
+  }
+  if (name.front() == '-') {
+    name.erase(name.begin());
+    return -1;
+  }
+  return 1;
+}
+
 std::string read_float(std::vector<token>::iterator& it, const std::vector<token>::iterator end) {
   //this function just builds up a string. It will be parsed to a float elsewhere.
   std::string output;
@@ -332,7 +357,7 @@ void MGparser::do_assignment(std::string header, std::string field, std::vector<
     out.take_message("could not locate profile " + header);
     return;
   }
-  
+  int8_t direction = read_direction(field);
   left_type = prof->get_entry_type(field);
 
   if (left_type == DEV_KEY || left_type == DEV_AXIS) {
@@ -345,13 +370,14 @@ void MGparser::do_assignment(std::string header, std::string field, std::vector<
     }
 
     if (trans)  {
-      prof->set_mapping(field, trans->clone(), left_type, false);
+      prof->set_mapping(field, direction, trans->clone(), left_type, false);
       std::stringstream ss;
       MGTransDef def;
       trans->fill_def(def);
       print_def(left_type, def, ss);
       delete trans;
-      out.take_message("setting " + header + "." + field + " = " + ss.str());
+      std::string suffix = (direction == -1) ? "-" : "";
+      out.take_message("setting " + header + "." + field + suffix + " = " + ss.str());
       return;
     }
   }
@@ -378,9 +404,13 @@ void MGparser::do_adv_assignment(std::string header, std::vector<std::string>& f
     out.take_message("could not locate profile " + header);
     return;
   }
+  std::vector<int8_t> directions;
+  for (std::string& field : fields) {
+    directions.push_back(read_direction(field));
+  }
 
   if (rhs.front().value == "nothing") {
-    prof->set_advanced(fields, nullptr);
+    prof->set_advanced(fields, directions, nullptr);
     return;
   }
   advanced_event_translator* trans = parse_adv_trans(fields, rhs, &out);
@@ -388,7 +418,7 @@ void MGparser::do_adv_assignment(std::string header, std::vector<std::string>& f
     out.take_message("could not parse right hand side");
   }
   if (trans) {
-    prof->set_advanced(fields, trans->clone());
+    prof->set_advanced(fields, directions, trans->clone());
     std::stringstream ss;
     MGTransDef def;
     trans->fill_def(def);

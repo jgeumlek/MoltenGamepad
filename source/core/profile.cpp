@@ -48,7 +48,7 @@ event_translator* profile::copy_mapping(std::string in_event_name) {
   return (it->second.trans->clone());
 }
 
-void profile::set_mapping(std::string in_event_name, event_translator* mapper, entry_type type, bool add_new) {
+void profile::set_mapping(std::string in_event_name, int8_t direction, event_translator* mapper, entry_type type, bool add_new) {
   std::lock_guard<std::mutex> guard(lock);
   auto alias = aliases.find(in_event_name);
   if (alias != aliases.end())
@@ -62,14 +62,14 @@ void profile::set_mapping(std::string in_event_name, event_translator* mapper, e
 
   if (oldmap.trans) delete oldmap.trans;
   mapping.erase(in_event_name);
-  mapping[in_event_name] = {mapper, type};
+  mapping[in_event_name] = {mapper, type, direction};
   for (auto prof : subscribers) {
     auto ptr = prof.lock();
-    if (ptr) ptr->set_mapping(in_event_name,mapper->clone(), type, add_new);
+    if (ptr) ptr->set_mapping(in_event_name, direction, mapper->clone(), type, add_new);
   }
   for (auto dev : devices) {
     auto ptr = dev.lock();
-    if (ptr) ptr->update_map(in_event_name.c_str(),mapper);
+    if (ptr) ptr->update_map(in_event_name.c_str(), direction, mapper);
   }
 }
 
@@ -161,7 +161,7 @@ void profile::remove_option(std::string option_name) {
   }
 }
 
-void profile::set_advanced(std::vector<std::string> names, advanced_event_translator* trans) {
+void profile::set_advanced(std::vector<std::string> names, std::vector<int8_t> directions, advanced_event_translator* trans) {
   if (names.empty()) return;
   std::lock_guard<std::mutex> guard(lock);
   for (int i = 0; i < names.size(); i++) {
@@ -187,15 +187,16 @@ void profile::set_advanced(std::vector<std::string> names, advanced_event_transl
     adv_map entry;
     entry.fields = names;
     entry.trans = trans;
+    entry.directions = directions;
     adv_trans[key] = entry;
   }
   for (auto prof : subscribers) {
     auto ptr = prof.lock();
-    if (ptr) ptr->set_advanced(names,trans->clone());
+    if (ptr) ptr->set_advanced(names, directions, trans->clone());
   }
   for (auto dev : devices) {
     auto ptr = dev.lock();
-    if (ptr) ptr->update_advanced(names,trans);
+    if (ptr) ptr->update_advanced(names, directions, trans);
   }
 }
 
@@ -281,9 +282,9 @@ void profile::copy_into(std::shared_ptr<profile> target, bool add_subscription, 
   for (auto entry : aliases)
     target->set_alias(entry.first,entry.second);
   for (auto entry : mapping)
-    target->set_mapping(entry.first, entry.second.trans->clone(), entry.second.type, add_new);
+    target->set_mapping(entry.first, entry.second.direction, entry.second.trans->clone(), entry.second.type, add_new);
   for (auto entry : adv_trans)
-    target->set_advanced(entry.second.fields, entry.second.trans->clone());
+    target->set_advanced(entry.second.fields, entry.second.directions, entry.second.trans->clone());
   std::vector<option_info> optionlist;
   opts.list_options(optionlist);
   for (auto opt : optionlist) {

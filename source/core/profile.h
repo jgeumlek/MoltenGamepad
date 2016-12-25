@@ -16,12 +16,14 @@ class input_source;
 
 struct adv_map {
   std::vector<std::string> fields;
+  std::vector<int8_t> directions; //holds info on whether each field is inverted or not.
   advanced_event_translator* trans;
 };
 
 struct trans_map {
   event_translator* trans;
   entry_type type;
+  int8_t direction; //holds info on source event being inverted.
 };
 
 
@@ -39,9 +41,9 @@ public:
 
   event_translator* copy_mapping(std::string in_event_name);
 
-  void set_mapping(std::string in_event_name, event_translator* mapper, entry_type type, bool add_new);
+  void set_mapping(std::string in_event_name, int8_t direction, event_translator* mapper, entry_type type, bool add_new);
 
-  void set_advanced(std::vector<std::string> names, advanced_event_translator* trans);
+  void set_advanced(std::vector<std::string> names, std::vector<int8_t> directions, advanced_event_translator* trans);
 
   void remove_event(std::string event_name);
   void register_option(const option_info opt);
