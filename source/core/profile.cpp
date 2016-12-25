@@ -32,8 +32,10 @@ trans_map profile::get_mapping(std::string in_event_name) {
 entry_type profile::get_entry_type(std::string in_event_name) {
   std::lock_guard<std::mutex> guard(lock);
   auto alias = aliases.find(in_event_name);
-  if (alias != aliases.end())
+  if (alias != aliases.end()) {
     in_event_name = alias->second;
+    int8_t dir = read_direction(in_event_name);
+  }
   auto it = mapping.find(in_event_name);
   if (it == mapping.end()) return NO_ENTRY;
   return (it->second.type);
@@ -41,8 +43,10 @@ entry_type profile::get_entry_type(std::string in_event_name) {
 
 event_translator* profile::copy_mapping(std::string in_event_name) {
   auto alias = aliases.find(in_event_name);
-  if (alias != aliases.end())
+  if (alias != aliases.end()) {
     in_event_name = alias->second;
+    int8_t dir = read_direction(in_event_name);
+  }
   auto it = mapping.find(in_event_name);
   if (it == mapping.end()) return new event_translator();
   return (it->second.trans->clone());
@@ -51,8 +55,10 @@ event_translator* profile::copy_mapping(std::string in_event_name) {
 void profile::set_mapping(std::string in_event_name, int8_t direction, event_translator* mapper, entry_type type, bool add_new) {
   std::lock_guard<std::mutex> guard(lock);
   auto alias = aliases.find(in_event_name);
-  if (alias != aliases.end())
+  if (alias != aliases.end()) {
     in_event_name = alias->second;
+    direction *= read_direction(in_event_name);
+  }
   trans_map oldmap = get_mapping(in_event_name);
 
   if (!add_new && oldmap.type == NO_ENTRY) {
@@ -76,8 +82,10 @@ void profile::set_mapping(std::string in_event_name, int8_t direction, event_tra
 void profile::remove_event(std::string event_name) {
   std::lock_guard<std::mutex> guard(lock);
   auto alias = aliases.find(event_name);
-  if (alias != aliases.end())
+  if (alias != aliases.end()) {
     event_name = alias->second;
+    int8_t dir = read_direction(event_name);
+  }
   trans_map oldmap = get_mapping(event_name);
 
   if (oldmap.type == NO_ENTRY) {
@@ -166,8 +174,10 @@ void profile::set_advanced(std::vector<std::string> names, std::vector<int8_t> d
   std::lock_guard<std::mutex> guard(lock);
   for (int i = 0; i < names.size(); i++) {
     auto alias = aliases.find(names[i]);
-    if (alias != aliases.end())
+    if (alias != aliases.end()) {
       names[i] = alias->second;
+      directions[i] *= read_direction(names[i]);
+    }
   }
   auto it = names.begin();
   //this key creation is not ideal.
@@ -356,16 +366,18 @@ void profile::gamepad_defaults() {
     build_default_gamepad_profile();
   for (auto entry : default_gamepad_profile.mapping) {
     std::string alias = get_alias(entry.first);
+    int8_t dir = read_direction(alias)*entry.second.direction;
     alias = alias.empty() ? entry.first : alias;
-    mapping[alias] = {entry.second.trans->clone(), entry.second.type};
+    mapping[alias] = {entry.second.trans->clone(), entry.second.type, dir};
   }
   for (auto entry : default_gamepad_profile.adv_trans) {
     std::vector<std::string> aliases;
     std::vector<int8_t> directions;
     for (int i = 0; i < entry.second.fields.size(); i++) {
       std::string alias = get_alias(entry.second.fields[i]);
+      int8_t dir = read_direction(alias);
       aliases.push_back(alias.empty() ? entry.second.fields[i] : alias);
-      directions.push_back(entry.second.directions[i]);
+      directions.push_back(entry.second.directions[i]*dir);
     }
     
     auto it = aliases.begin();
@@ -384,3 +396,27 @@ void profile::gamepad_defaults() {
   lock.unlock();
 }
 
+//detects "left_x+" vs. "left_x-"
+//modifies the passed in string to remove the +/- as well.
+int8_t read_direction(std::string& name) {
+  //positive direction (1) is the default!
+  if (name.empty()) return 1;
+  if (name.back() == '+') {
+    name.pop_back();
+    return 1;
+  }
+  if (name.back() == '-') {
+    name.pop_back();
+    return -1;
+  }
+  //backwards compat/liberal input acceptance: +/- at the beginning
+  if (name.front() == '+') {
+    name.erase(name.begin());
+    return 1;
+  }
+  if (name.front() == '-') {
+    name.erase(name.begin());
+    return -1;
+  }
+  return 1;
+}

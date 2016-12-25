@@ -197,31 +197,6 @@ MGType parse_type(const std::string& str) {
   return MG_NULL;
 }
 
-//detects "left_x+" vs. "left_x-"
-//modifies the passed in string to remove the +/- as well.
-int8_t read_direction(std::string& name) {
-  //positive direction (1) is the default!
-  if (name.empty()) return 1;
-  if (name.back() == '+') {
-    name.pop_back();
-    return 1;
-  }
-  if (name.back() == '-') {
-    name.pop_back();
-    return -1;
-  }
-  //backwards compat/liberal input acceptance: +/- at the beginning
-  if (name.front() == '+') {
-    name.erase(name.begin());
-    return 1;
-  }
-  if (name.front() == '-') {
-    name.erase(name.begin());
-    return -1;
-  }
-  return 1;
-}
-
 std::string read_float(std::vector<token>::iterator& it, const std::vector<token>::iterator end) {
   //this function just builds up a string. It will be parsed to a float elsewhere.
   std::string output;

@@ -84,4 +84,5 @@ private:
 
 };
 
+int8_t read_direction(std::string& name);
 #endif

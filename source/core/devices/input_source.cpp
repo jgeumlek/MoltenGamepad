@@ -116,9 +116,10 @@ void input_source::watch_file(int fd, void* tag) {
 void input_source::update_map(const char* evname, int8_t direction, event_translator* trans) {
   std::string name(evname);
   auto alias = devprofile->aliases.find(name);
-  if (alias != devprofile->aliases.end())
-    evname = alias->second.c_str();
-
+  if (alias != devprofile->aliases.end()) {
+    direction *= read_direction(alias->second);
+  }
+  evname = name.c_str();
   for (int i = 0; i < events.size(); i++) {
     if (!strcmp(evname, events[i].name)) {
       set_trans(i, direction, trans->clone());
@@ -197,8 +198,11 @@ void input_source::update_advanced(const std::vector<std::string>& evnames, cons
   //First, translate event names using this device's aliases into the local names.
   for (int i = 0; i < local_names.size(); i++) {
     auto alias = devprofile->aliases.find(std::string(local_names.at(i)));
-    if (alias != devprofile->aliases.end())
-      local_names[i] = alias->second.c_str();
+    if (alias != devprofile->aliases.end()) {
+      std::string local_name = alias->second;
+      (*msg.adv.directions)[i] *= read_direction(local_name);
+      local_names[i] = local_name;
+    }
   }
   //Next, check that all referenced events are present. Abort if not.
   for (std::string name : local_names) {
