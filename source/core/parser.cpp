@@ -701,11 +701,12 @@ bool MGparser::parse_decl(enum entry_type intype, const trans_decl& decl, MGTran
   int fieldsfound = expr->params.size();
 
   //initialize two vectors to match our number of fields.
+  //set all to default
   std::vector<complex_expr> values;
   std::vector<bool> valid;
   def.fields.clear();
   for (int i = 0; i < decl.fields.size(); i++) {
-    def.fields.push_back({decl.fields[i].type,0});
+    def.fields.push_back({decl.fields[i].type,0,FLAG_DEFAULT});
     complex_expr default_val;
     default_val.ident = decl.fields[i].default_val;
     values.push_back(default_val);
@@ -718,13 +719,21 @@ bool MGparser::parse_decl(enum entry_type intype, const trans_decl& decl, MGTran
     variadic_type = decl.fields.back().type;
 
   //assign each given parameter to its correct spot.
+  //do this by maintaining a count of which positional parameter we are on,
+  //while allowing named parameters to find their spot without affecting that count.
+  //Also: store metadata like whether each param was positional/defaulted/named.
   int offset = 0;
+  bool named = false;
   for (int i = 0; i < fieldsfound; i++) {
     int spot = i - offset;
+    named = false;
     if (!expr->params[i]->name.empty()) {
       for (spot = 0; spot < decl.fields.size(); spot++) {
-        if (decl.fields[spot].name == expr->params[i]->name)
+        if (decl.fields[spot].name == expr->params[i]->name) {
+          //we have a name and found its spot!
+          named = true;
           break;
+        }
       }
       if (spot == decl.fields.size()) {
         if (out) out->err("translator \""+expr->ident+"\" has no parameter named \""+expr->params[i]->name+"\"");
@@ -732,6 +741,7 @@ bool MGparser::parse_decl(enum entry_type intype, const trans_decl& decl, MGTran
       }
     }
     if (spot >= def.fields.size() && variadic_type != MG_NULL) {
+      //we got more than the decl, but this decl was flexible.
       //just push some dummy values to resize the list.
       complex_expr dummy;
       values.push_back(dummy);
@@ -740,6 +750,9 @@ bool MGparser::parse_decl(enum entry_type intype, const trans_decl& decl, MGTran
     }
     values[spot] = *(expr->params[i]);
     valid[spot] = true;
+    def.fields[spot].flags = 0; //clear the default flag, as we do have a value given.
+    if (named)
+      def.fields[spot].flags |= FLAG_NAMED;
     if (spot != i-offset)
       offset++; //stay at current spot for the next loop.
   }
@@ -837,12 +850,31 @@ void MGparser::print_def(entry_type intype, MGTransDef& def, std::ostream& outpu
   //Check for the possibility of some automagic.
   if (print_special_def(intype, def, output)) return;
 
+  trans_decl* decl = nullptr;
+  bool decl_failed = false;
   output << def.identifier;
   if (def.fields.size() > 0) output << "(";
   bool needcomma = false;
-  for (auto field : def.fields) {
+  for (int i = 0; i < def.fields.size(); i++) {
+    auto field = def.fields[i];
+    if (field.flags & FLAG_DEFAULT)
+      continue; //apparently we made this without specifying a value. It'd be wrong to remove that flexibility.
     if (needcomma) output << ",";
     MGType type = field.type;
+
+    if (field.flags & FLAG_NAMED) {
+      //gotta look up that trans_decl to actually get the field name...
+      if (!decl && !decl_failed) {
+        auto finder = trans_gens.find(def.identifier);
+        if (finder != trans_gens.end()) {
+          decl = &(finder->second.decl);
+        } else {
+          decl_failed = true;
+        }
+      }
+      if (decl && decl->fields.size() > i)
+        output << decl->fields[i].name << "=";
+    }
     if (type == MG_KEY) {
       const char* name = get_key_name(field.key);
       if (name) {

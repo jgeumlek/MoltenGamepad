@@ -28,7 +28,12 @@ struct MGField {
     float real;
     output_slot* slot;
   };
+  int16_t flags; //a set of flags, that may be contextual. Field meta-data.
 };
+
+#define FLAG_NAMED 1
+#define FLAG_DEFAULT 2
+#define FLAG_INVERT 4
 
 //These declaration structs will be used to register events and options to be exposed.
 

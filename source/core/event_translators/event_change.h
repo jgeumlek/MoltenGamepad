@@ -64,6 +64,9 @@ public:
     def.identifier = "nothing";
   }
   event_translator() {};
+
+  //vector of parameter meta-data. The macros will deal with it.
+  std::vector<int16_t> field_flags;
 };
   
 
@@ -103,6 +106,9 @@ public:
   virtual void fill_def(MGTransDef& def) {
     def.identifier = "nothing";
   }
+
+  //vector of parameter meta-data. The macros will deal with it.
+  std::vector<int16_t> field_flags;
 };
 
 #endif
