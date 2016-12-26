@@ -170,6 +170,7 @@ public:
   int register_device_option(option_decl opt);
   int register_manager_option(option_decl opt);
   int register_alias(const char* external, const char* local);
+  int register_event_group(event_group_decl decl);
   input_source* add_device(device_plugin dev, void* dev_plug_data);
 
   int accept_device(struct udev* udev, struct udev_device* dev);

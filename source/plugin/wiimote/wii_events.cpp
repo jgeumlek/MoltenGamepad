@@ -81,8 +81,8 @@ const event_decl wiimote_events[] = {
   {EVNAME(nk_accel_x), "Nunchuk X acceleration", ABS, ""},
   {EVNAME(nk_accel_y), "Nunchuk Y acceleration", ABS, ""},
   {EVNAME(nk_accel_z), "Nunchuk Z acceleration", ABS, ""},
-  {EVNAME(nk_stick_x), "Nunchuk stick X", ABS, "+left_x"},
-  {EVNAME(nk_stick_y), "Nunchuk stick Y", ABS, "+left_y"},
+  {EVNAME(nk_stick_x), "Nunchuk stick X", ABS, ""},
+  {EVNAME(nk_stick_y), "Nunchuk stick Y", ABS, ""},
 
 
   {EVNAME(bal_x), "Balance Board Center of Gravity X", ABS, ""},

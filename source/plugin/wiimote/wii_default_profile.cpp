@@ -34,6 +34,9 @@ void wiimote_manager::init_profile() {
   set_alias("right_y","cc_right_y");
   
 
+  //set default group translators by declaring event groups
+  methods.register_event_group(ref, {"nk_stick","nk_stick_x,nk_stick_y","Nunchuk stick","stick(left_x,left_y)"});
+
   const option_decl* opt = &wiimote_options[0];
   for (int i = 0; opt->name && *opt->name; opt = &wiimote_options[++i]) {
     methods.register_dev_option(ref, *opt);

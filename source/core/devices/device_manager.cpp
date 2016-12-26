@@ -39,6 +39,28 @@ int device_manager::register_alias(const char* external, const char* local) {
   return 0;
 }
 
+int device_manager::register_event_group(event_group_decl ev) {
+  if (!ev.namelist || !ev.group_name) return -1;
+  std::string names(ev.namelist);
+  std::string group(ev.group_name);
+  //convert commas to spaces, as spaces make sense internally,
+  //but commas make sense for the plugin API.
+  for (int i = 0; i < names.size(); i++) {
+    if (names[i] == ',')
+      names[i] = ' ';
+  }
+  mapprofile->set_group_alias(group, names);
+  std::vector<token> tokens = tokenize(std::string(ev.default_mapping));
+  advanced_event_translator* trans = MGparser::parse_adv_trans(tokens, nullptr);
+  if (trans) {
+    std::vector<std::string> fields;
+    fields.push_back(group);
+    std::vector<int8_t> directions({1});
+    mapprofile->set_advanced(fields, directions, trans);
+  }
+  return 0;
+}
+
 device_manager::~device_manager() {
   if (plugin.destroy)
     plugin.destroy(plug_data);

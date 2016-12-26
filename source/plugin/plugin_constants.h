@@ -40,6 +40,7 @@ enum entry_type {
   DEV_AXIS,
   DEV_REL,
   DEV_ANY,
+  DEV_EVENT_GROUP,
 };
 
 enum device_claim {

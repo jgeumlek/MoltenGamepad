@@ -104,6 +104,9 @@ void init_plugin_api() {
     man->log.take_message(0,std::string(message));
     return 0;
   };
+  plugin_methods.manager.register_event_group = [] (device_manager* man, event_group_decl decl) {
+    return man->register_event_group(decl);
+  };
 
   plugin_methods.device.plug_data = [] (const input_source* dev) {
     return dev->plug_data;

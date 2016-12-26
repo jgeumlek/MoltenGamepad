@@ -335,6 +335,14 @@ void MGparser::do_assignment(std::string header, std::string field, std::vector<
   int8_t direction = read_direction(field);
   left_type = prof->get_entry_type(field);
 
+  if (left_type == DEV_EVENT_GROUP) {
+    //whoops! this actually an advanced translation! Switch over to do_adv_assignment
+    std::vector<std::string> fields;
+    fields.push_back(field);
+    do_adv_assignment(header, fields, rhs, out);
+    return;
+  }
+
   if (left_type == DEV_KEY || left_type == DEV_AXIS) {
     auto it = rhs.begin();
     event_translator* trans = parse_trans(left_type, rhs, it, &out);
@@ -388,7 +396,7 @@ void MGparser::do_adv_assignment(std::string header, std::vector<std::string>& f
     prof->set_advanced(fields, directions, nullptr);
     return;
   }
-  advanced_event_translator* trans = parse_adv_trans(fields, rhs, &out);
+  advanced_event_translator* trans = parse_adv_trans(rhs, &out);
   if (!trans) {
     out.take_message("could not parse right hand side");
   }
@@ -1057,7 +1065,7 @@ struct complex_expr* read_expr(std::vector<token>& tokens, std::vector<token>::i
   return nullptr;
 }
 
-advanced_event_translator* MGparser::parse_adv_trans(const std::vector<std::string>& event_names, std::vector<token>& rhs, response_stream* out) {
+advanced_event_translator* MGparser::parse_adv_trans(std::vector<token>& rhs, response_stream* out) {
   auto it = rhs.begin();
   event_translator* trans = parse_trans(DEV_KEY, rhs, it, nullptr);
   if (trans) {

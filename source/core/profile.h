@@ -54,6 +54,9 @@ public:
   void set_alias(std::string external, std::string local);
   std::string get_alias(std::string name);
 
+  void set_group_alias(std::string external, std::string local);
+  std::string get_group_alias(std::string name);
+
   option_info get_option(std::string opname);
   void list_options(std::vector<option_info>& list) const;
   

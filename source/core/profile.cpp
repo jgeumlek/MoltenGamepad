@@ -2,6 +2,7 @@
 #include "event_translators/event_change.h"
 #include "event_translators/translators.h"
 #include "devices/device.h"
+#include "parser.h"
 profile::profile() {
 }
 
@@ -33,6 +34,8 @@ entry_type profile::get_entry_type(std::string in_event_name) {
   std::lock_guard<std::mutex> guard(lock);
   auto alias = aliases.find(in_event_name);
   if (alias != aliases.end()) {
+    if (alias->second.size() > 0 && alias->second.front() == ' ')
+      return DEV_EVENT_GROUP;
     in_event_name = alias->second;
     int8_t dir = read_direction(in_event_name);
   }
@@ -56,6 +59,8 @@ void profile::set_mapping(std::string in_event_name, int8_t direction, event_tra
   std::lock_guard<std::mutex> guard(lock);
   auto alias = aliases.find(in_event_name);
   if (alias != aliases.end()) {
+    //we don't bother with checking for a group alias.
+    //It's doomed to fail anyway.
     in_event_name = alias->second;
     direction *= read_direction(in_event_name);
   }
@@ -172,11 +177,40 @@ void profile::remove_option(std::string option_name) {
 void profile::set_advanced(std::vector<std::string> names, std::vector<int8_t> directions, advanced_event_translator* trans) {
   if (names.empty()) return;
   std::lock_guard<std::mutex> guard(lock);
+  int total_op = 0; //a little counter to avoid infinite loops.
   for (int i = 0; i < names.size(); i++) {
+    total_op++;
     auto alias = aliases.find(names[i]);
     if (alias != aliases.end()) {
-      names[i] = alias->second;
-      directions[i] *= read_direction(names[i]);
+      const std::string& local = alias->second;
+      if (local.size() > 0 && local.front() == ' ') {
+        //this was a group alias! we need to insert the real events.
+        //this is a bit obnoxious to do.
+        //The 200 limit is to avoid silly infinite loops if someone is careless with aliases...
+        std::vector<token> tokens = tokenize(local);
+        if (tokens.empty() || tokens.size() + names.size() > 50 || total_op > 100)
+          return; //abort
+        //we need to delete this alias from our lists, and insert the new names in order at its old spot.
+        //the first new name is pulled out of the loop to just overwrite the old alias spot.
+        //We ignore the old alias direction value. What even is a negative event group?
+        names[i] = tokens[0].value;
+        directions[i] = read_direction(names[i]);
+        auto name_it = names.begin()+i+1;
+        auto dir_it = directions.begin()+i+1;
+        //the last token is an end-of-line we should ignore.
+        for (int j = 1; j < tokens.size()-1; j++) {
+          directions.insert(dir_it, read_direction(tokens[j].value));
+          names.insert(name_it, tokens[j].value);
+          name_it++;
+          dir_it++;
+        }
+        //decrement i to get us ready to reread the overwritten spot on the next loop.
+        i--;
+      } else {
+        //whew. Just a simple alias!
+        names[i] = alias->second;
+        directions[i] *= read_direction(names[i]);
+      }
     }
   }
   auto it = names.begin();
@@ -210,8 +244,19 @@ void profile::set_advanced(std::vector<std::string> names, std::vector<int8_t> d
   }
 }
 
+//a group alias is denoted by a leading space on the stored local name.
+//This was chosen as a group alias is a space-separated list
+//that will be passed through a tokenizer that'll remove it and
+//a non-group alias is useless with a leading space.
+
+//It is also invalid anyways to have the same external name
+//for two aliases, including both group and non-group aliases.
+//Thus storing both in the same map makes sense.
+
 void profile::set_alias(std::string external, std::string local) {
   std::lock_guard<std::mutex> guard(lock);
+  while(local.size() > 0 && local.front() == ' ')
+    local.erase(local.begin());
   if (local.empty()) {
     aliases.erase(external);
   } else {
@@ -221,7 +266,25 @@ void profile::set_alias(std::string external, std::string local) {
 
 std::string profile::get_alias(std::string name) {
   auto alias = aliases.find(name);
-  if (alias != aliases.end())
+  if (alias != aliases.end() && alias->second.size() > 0 && alias->second.front() != ' ')
+    return alias->second;
+  return "";
+}
+
+void profile::set_group_alias(std::string external, std::string local) {
+  std::lock_guard<std::mutex> guard(lock);
+  if (local.empty()) {
+    aliases.erase(external);
+  } else {
+    if (local.front() != ' ')
+      local.insert(local.begin(),' ');
+    aliases[external] = local;
+  }
+}
+
+std::string profile::get_group_alias(std::string name) {
+  auto alias = aliases.find(name);
+  if (alias != aliases.end() && alias->second.size() > 0 && alias->second.front() == ' ')
     return alias->second;
   return "";
 }

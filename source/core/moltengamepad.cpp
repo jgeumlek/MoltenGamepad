@@ -354,6 +354,8 @@ int moltengamepad::init() {
   //build the gamepad profile
   gamepad->gamepad_defaults();
   gamepad->name = "gamepad";
+  gamepad->set_group_alias("left_stick","left_x left_y");
+  gamepad->set_group_alias("right_stick","right_x right_y");
   add_profile(gamepad.get());
   ids_in_use.insert("gamepad");
 

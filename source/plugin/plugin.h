@@ -41,6 +41,17 @@ struct event_decl {
   const char* default_mapping; //will be read by the parser to generate an event translator
 };
 
+struct event_group_decl {
+  //a name for this event group. It'll be used as an alias for assignment purposes to refer to the events in namelist.
+  const char* group_name;
+  //the namelist argument is simply a comma separated string of previously registered event names (not aliases).
+  //The listed names may include a direction modifier.
+  // Ex: "touch_x,touch_y" or "tilt_y,tilt_x-" or "l,r,select,start"
+  const char* namelist;
+  const char* descr;
+  const char* default_mapping; //will be read by the parser to generate an advanced event translator
+};
+
 struct option_decl {
   const char* name;
   const char* descr;
@@ -122,7 +133,7 @@ struct manager_methods {
   int (*register_dev_option) (device_manager*, option_decl opt);
   //register an event alias, such as "primary" -> "a"
   int (*register_alias) (device_manager*, const char* external, const char* local);
-  //(UNIMPLEMENTED) register an option that applies to the device manager as a whole.
+  //register an option that applies to the device manager as a whole.
   int (*register_manager_option) (device_manager*, option_decl opt);
   //Adds a new input source using the device_plugin callbacks and set its plug_data.
   input_source* (*add_device) (device_manager*, device_plugin, void* dev_plug_data);
@@ -130,6 +141,8 @@ struct manager_methods {
   int (*remove_device) (device_manager*, input_source*);
   //Print a message coming from this manager.
   int (*print) (device_manager*, const char* message);
+  //register a group of events and provide a default advanced translator for them.
+  int (*register_event_group) (device_manager*, event_group_decl);
 };
 
 struct manager_plugin {
