@@ -394,6 +394,7 @@ void MGparser::do_adv_assignment(std::string header, std::vector<std::string>& f
 
   if (rhs.front().value == "nothing") {
     prof->set_advanced(fields, directions, nullptr);
+    out.take_message("clearing advanced translator");
     return;
   }
   advanced_event_translator* trans = parse_adv_trans(rhs, &out);
@@ -1045,7 +1046,10 @@ struct complex_expr* read_expr(std::vector<token>& tokens, std::vector<token>::i
   bool abort = false;
 
 
-  if ((*it).type == TK_IDENT || (*it).type == TK_LPAREN) {
+  //Are we an IDENT, a string of some sort?
+  //Or perhaps an LPAREN, that we might want to recurse?
+  //Or maybe even a dot, in the off chance of a numeric literal like ".7" instead of "0.7"
+  if ((*it).type == TK_IDENT || (*it).type == TK_LPAREN || (*it).type == TK_DOT) {
     complex_expr* expr = new complex_expr;
     //If we have ident, read it in.
     //If we see '=' next, then our ident was actually a name!

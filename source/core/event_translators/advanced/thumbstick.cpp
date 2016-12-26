@@ -2,7 +2,7 @@
 #include "../event_translator_macros.h"
 #include <cmath>
 
-const char* thumb_stick::decl = "axis, axis = stick(axis_code x, axis_code y, float deadzone=.1, float outzone=.01, float angle_snap=0)";
+const char* thumb_stick::decl = "axis, axis = stick(axis_code x, axis_code y, float deadzone=.15, float outzone=.1)";
 thumb_stick::thumb_stick(std::vector<MGField>& fields) {
   BEGIN_READ_DEF;
   READ_AXIS(x_axis);
@@ -10,7 +10,6 @@ thumb_stick::thumb_stick(std::vector<MGField>& fields) {
 
   READ_FLOAT(deadzone);
   READ_FLOAT(outzone);
-  READ_FLOAT(angle_snap);
 }
 
 bool thumb_stick::set_mapped_events(const std::vector<source_event>& listened) {
@@ -22,7 +21,6 @@ void thumb_stick::fill_def(MGTransDef& def) {
   FILL_DEF_AXIS(y_axis);
   FILL_DEF_FLOAT(deadzone);
   FILL_DEF_FLOAT(outzone);
-  FILL_DEF_FLOAT(angle_snap);
 }
 
 void thumb_stick::init(input_source* source) {

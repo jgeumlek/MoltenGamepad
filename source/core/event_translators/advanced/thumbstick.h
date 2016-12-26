@@ -10,7 +10,14 @@ public:
   int y_axis;
   input_source* owner = nullptr;
 
-  thumb_stick(int x_axis, int y_axis) : x_axis(x_axis), y_axis(y_axis), deadzone(.1), outzone(.01), angle_snap(0) {};
+  //setting field_flags is optional, but this surpresses printing out those default values later.
+  //note that this constructor is only called in hard-coded situations, not during parsing.
+  thumb_stick(int x_axis, int y_axis) : x_axis(x_axis), y_axis(y_axis), deadzone(.15), outzone(.1) {
+    field_flags.push_back(0); //x_axis
+    field_flags.push_back(0); //y_axis
+    field_flags.push_back(FLAG_DEFAULT); //deadzone
+    field_flags.push_back(FLAG_DEFAULT); //outzone
+  };
   virtual ~thumb_stick();
 
   virtual void init(input_source* source);
@@ -27,5 +34,5 @@ public:
   static const char* decl;
   thumb_stick(std::vector<MGField>& fields);
   virtual void fill_def(MGTransDef& def);
-  float deadzone,outzone,angle_snap;
+  float deadzone,outzone;
 };

@@ -236,7 +236,7 @@ void profile::set_advanced(std::vector<std::string> names, std::vector<int8_t> d
   }
   for (auto prof : subscribers) {
     auto ptr = prof.lock();
-    if (ptr) ptr->set_advanced(names, directions, trans->clone());
+    if (ptr) ptr->set_advanced(names, directions, trans ? trans->clone() : nullptr);
   }
   for (auto dev : devices) {
     auto ptr = dev.lock();
