@@ -13,6 +13,10 @@ thumb_stick::thumb_stick(std::vector<MGField>& fields) {
 }
 
 bool thumb_stick::set_mapped_events(const std::vector<source_event>& listened) {
+  if (listened.size() >= 2) {
+    event_vals[0] = listened[0].value;
+    event_vals[1] = listened[1].value;
+  }
 }
   
 void thumb_stick::fill_def(MGTransDef& def) {
