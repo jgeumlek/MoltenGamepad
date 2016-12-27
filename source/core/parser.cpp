@@ -301,6 +301,7 @@ void MGparser::load_translators(moltengamepad* mg) {
   //add a quick mouse redirect
   trans_decl mouse_decl;
   mouse_decl.identifier = "mouse";
+  mouse_decl.decl_str = "event = mouse(trans)";
   mouse_decl.mapped_events.push_back(DEV_KEY);
   mouse_decl.fields.push_back({"","",MG_TRANS});
   trans_gens["mouse"] = trans_generator( mouse_decl, [mg] (std::vector<MGField>& fields) {
@@ -313,6 +314,7 @@ void MGparser::load_translators(moltengamepad* mg) {
   });
   //key is just a synonym to the above. It redirects events to the keyboard slot.
   trans_gens["key"] = trans_gens["mouse"];
+  trans_gens["key"].decl.decl_str = "event = key(trans)";
 
   //add advanced_event_translators
   RENAME_GEN(chord,simple_chord);

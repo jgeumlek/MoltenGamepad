@@ -46,8 +46,8 @@ struct trans_decl {
 class trans_generator {
 public:
   trans_decl decl;
-  std::function<event_translator* (std::vector<MGField>&)> generate;
-  std::function<advanced_event_translator* (std::vector<MGField>&)> adv_generate;
+  std::function<event_translator* (std::vector<MGField>&)> generate = nullptr;
+  std::function<advanced_event_translator* (std::vector<MGField>&)> adv_generate = nullptr;
   trans_generator(trans_decl decl, std::function<event_translator* (std::vector<MGField>&)> generate) : decl(decl), generate(generate) {};
   trans_generator(trans_decl decl, std::function<advanced_event_translator* (std::vector<MGField>&)> adv_generate) : decl(decl), adv_generate(adv_generate) {};
   trans_generator() {};
@@ -67,6 +67,7 @@ public:
   static bool print_special_def(entry_type intype, MGTransDef& def, std::ostream& output);
   static void load_translators(moltengamepad* mg);
   static moltengamepad* mg;
+  static std::map<std::string,trans_generator> trans_gens;
 private:
   static event_translator* parse_trans_strict(enum entry_type intype, std::vector<token>& tokens, std::vector<token>::iterator& it, response_stream* out);
   static event_translator* parse_trans_expr(enum entry_type intype, complex_expr* expr, response_stream* out);
@@ -75,7 +76,6 @@ private:
   void do_assignment_line(std::vector<token>& line, std::string& header, response_stream& out);
   void parse_line(std::vector<token>& line, std::string& header, response_stream& out);
   static event_translator* parse_trans_toplevel_quirks(enum entry_type intype, std::vector<token>& tokens, std::vector<token>::iterator& it);
-  static std::map<std::string,trans_generator> trans_gens;
   message_stream messages;
 };
 

@@ -352,8 +352,12 @@ void profile::remove_device(input_source* dev) {
 
 void profile::copy_into(std::shared_ptr<profile> target, bool add_subscription, bool add_new) {
   std::lock_guard<std::mutex> guard(lock);
-  for (auto entry : aliases)
-    target->set_alias(entry.first,entry.second);
+  for (auto entry : aliases) {
+    if (entry.second.size() > 0 && entry.second.front() == ' ')
+      target->set_group_alias(entry.first,entry.second);
+    else
+      target->set_alias(entry.first,entry.second);
+  }
   for (auto entry : mapping)
     target->set_mapping(entry.first, entry.second.direction, entry.second.trans->clone(), entry.second.type, add_new);
   for (auto entry : adv_trans)

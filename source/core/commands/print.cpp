@@ -182,6 +182,70 @@ int do_print_options(moltengamepad* mg, std::string name, std::ostream& out) {
 
 }
 
+int do_print_trans(moltengamepad* mg, std::string name, std::ostream& out) {
+  if (name.empty()) {
+    out << "event translators" << std::endl;
+    for (auto gen : MGparser::trans_gens) {
+      if (gen.second.generate && gen.second.decl.decl_str) out << "\t" << gen.second.decl.decl_str <<  std::endl;
+    }
+    out << "advanced event translators" << std::endl;
+    for (auto gen : MGparser::trans_gens) {
+      if (gen.second.adv_generate && gen.second.decl.decl_str) out << "\t" << gen.second.decl.decl_str <<  std::endl;
+    }
+    return 0;
+  }
+
+  auto it = MGparser::trans_gens.find(name);
+  if (it != MGparser::trans_gens.end()) {
+    if (it->second.decl.decl_str)
+      out << it->second.decl.decl_str << std::endl;
+  } else {
+    out << "could not find translator \"" << name << "\"" << std::endl;
+    return -1;
+  }
+  return 0;
+
+}
+
+int do_print_alias(moltengamepad* mg, std::string name, std::ostream& out) {
+  if (name.empty()) {
+    out << "USAGE: print aliases <profile>\nA profile must be specified." << std::endl;
+    return 1;
+  }
+
+  auto prof = mg->find_profile(name);
+  if (prof) {
+    std::lock_guard<std::mutex> guard(prof->lock);
+    out << "aliases used by " << name << std::endl;
+    for (auto pair : prof->aliases) {
+      std::string local = pair.second;
+      if (local.empty())
+        continue;
+      if (local.front() != ' ') {
+        //simple alias
+        out << "\t" << pair.first << "\t->\t" << local << std::endl;
+      } else {
+        //group alias
+        std::vector<token> tokens = tokenize(local);
+        tokens.pop_back(); //ignore endline.
+        out << "\t" << pair.first << "\t->\t(";
+        bool comma = false;
+        for (auto token : tokens) {
+          if (comma) out << ",";
+          out << token.value;
+          comma = true;
+        }
+        out << ")" << std::endl;
+      }
+    }
+  } else {
+    out << "could not find profile" << std::endl;
+    return -1;
+  }
+  return 0;
+
+}
+
 const char* id_types[] = {"name", "uniq", "phys"};
 int do_print_assignments(moltengamepad* mg, std::string name, std::ostream& out) {
   mg->slots->for_all_assignments([&out] (slot_manager::id_type type, std::string id, output_slot* slot) {
@@ -191,7 +255,7 @@ int do_print_assignments(moltengamepad* mg, std::string name, std::ostream& out)
 
 #define PRINT_USAGE ""\
 "USAGE:\n\tprint <type> [element]\n"\
-"\ttypes recognized: drivers, devices, profiles, slots, options, assignments\n"\
+"\ttypes recognized: drivers, devices, profiles, slots, options, assignments, translators, aliases\n"\
 "\tprint <type> will list all elements of that type\n"\
 "\tprint <type> [element] will show detailed info on that element\n"
 int do_print(moltengamepad* mg, std::vector<token>& command, response_stream* out) {
@@ -225,6 +289,14 @@ int do_print(moltengamepad* mg, std::vector<token>& command, response_stream* ou
   }
   if (command.at(1).value.compare(0, 6, "assign") == 0) {
     do_print_assignments(mg, arg, ss);
+    matched = true;
+  }
+  if (command.at(1).value.compare(0, 5, "trans") == 0) {
+    do_print_trans(mg, arg, ss);
+    matched = true;
+  }
+  if (command.at(1).value.compare(0, 5, "alias") == 0) {
+    do_print_alias(mg, arg, ss);
     matched = true;
   }
 
