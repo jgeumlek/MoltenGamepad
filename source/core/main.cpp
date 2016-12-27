@@ -27,6 +27,7 @@ void signal_handler(int signum) {
 }
 
 void stdin_loop(moltengamepad* mg) {
+  std::cout << "stdin: ready to read commands from standard input." << std::endl;
   shell_loop(mg, std::cin);
   if (!mg->opts->get<bool>("stay_alive")) {
     QUIT_APPLICATION = true;
@@ -97,7 +98,6 @@ int main(int argc, char* argv[]) {
 
       //daemon doesn't have a useful STDIN.
       if (!daemon) {
-        std::cout << "stdin: ready to read commands from standard input." << std::endl;
         stdin_thread = new std::thread(stdin_loop, mg);
         stdin_thread->detach();
         delete stdin_thread;

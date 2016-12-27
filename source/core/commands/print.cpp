@@ -210,7 +210,7 @@ int do_print_trans(moltengamepad* mg, std::string name, std::ostream& out) {
 int do_print_alias(moltengamepad* mg, std::string name, std::ostream& out) {
   if (name.empty()) {
     out << "USAGE: print aliases <profile>\nA profile must be specified." << std::endl;
-    return 1;
+    return -1;
   }
 
   auto prof = mg->find_profile(name);

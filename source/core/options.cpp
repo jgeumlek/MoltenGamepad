@@ -1,5 +1,5 @@
 #include "options.h"
-
+#include <cstring>
 
 int read_bool(const std::string value, std::function<void (bool)> process) {
   if (value == "true") {
@@ -42,9 +42,11 @@ void options::register_option(const option_decl opt) {
     return; //unsupported.
 
   option_info opt_info;
+  memset(&opt_info.value,0,sizeof(opt_info.value));
   opt_info.name = std::string(opt.name);
   opt_info.descr = std::string(opt.descr);
   opt_info.value.type = opt.type;
+  opt_info.value.flags = 0;
   opts[opt.name] = opt_info;
   std::string strval(opt.value);
   int ret = set_locked(opt_info.name, strval);
@@ -71,7 +73,9 @@ int options::set_locked(std::string& opname, std::string& value) {
     return -1;
   MGType type = opts[opname].value.type;
   MGField newval;
+  memset(&newval, 0, sizeof(newval));
   newval.type = type;
+  newval.flags = 0;
   //Weed out some bad values.
   if (type == MG_BOOL) {
     if (value == "true") {

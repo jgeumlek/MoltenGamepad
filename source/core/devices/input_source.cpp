@@ -47,6 +47,8 @@ input_source::~input_source() {
   for (auto it : adv_trans) {
     if (it.second.trans) delete it.second.trans;
     if (it.second.fields) delete it.second.fields;
+    if (it.second.key) delete it.second.key;
+    if (it.second.directions) delete it.second.directions;
   }
 
   if (assigned_slot) {
@@ -218,6 +220,7 @@ void input_source::update_advanced(const std::vector<std::string>& evnames, cons
     }
     if (!found) {
       delete msg.adv.fields;
+      delete msg.adv.directions;
       return; //Abort!
     }
   }
@@ -412,8 +415,12 @@ void input_source::thread_loop() {
 void input_source::handle_internal_message(input_internal_msg& msg) {
   //Is it an advanced_event_translator message?
   if (msg.type == input_internal_msg::IN_ADV_TRANS_MSG) {
-    if (!msg.adv.fields || msg.adv.fields->empty())
+    if (!msg.adv.fields || msg.adv.fields->empty() || !msg.adv.key || !msg.adv.directions) {
+      if (msg.adv.key) delete msg.adv.key;
+      if (msg.adv.fields) delete msg.adv.fields;
+      if (msg.adv.directions) delete msg.adv.directions;
       return;
+    }
     
     std::string adv_name = *msg.adv.key;
     //If needed, erase the previous adv. trans. with this key.
@@ -425,6 +432,7 @@ void input_source::handle_internal_message(input_internal_msg& msg) {
       delete it->second.fields;
       delete it->second.trans;
       delete it->second.key;
+      delete it->second.directions;
       adv_trans.erase(it);
     }
     //Attach and store the new one.
