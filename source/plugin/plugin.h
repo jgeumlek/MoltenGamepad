@@ -225,6 +225,20 @@ struct plugin_api {
   struct device_methods device;
 };
 
+//A quick helper macro to check all sizes are in agreement
+#define API_EXACT(X) \
+  (X.head.size == sizeof(plugin_api_header) && \
+    X.head.mg->size == sizeof(moltengamepad_methods) && \
+    X.head.manager->size == sizeof(manager_methods) && \
+    X.head.device->size == sizeof(device_methods))
+//Another helper macro to check sizes are compatible.
+//Care must be taken to still initialize all values!
+#define API_COMPAT(X) \
+  (X.head.size >= sizeof(plugin_api_header) && \
+    X.head.mg->size >= sizeof(moltengamepad_methods) && \
+    X.head.manager->size >= sizeof(manager_methods) && \
+    X.head.device->size >= sizeof(device_methods))
+
 //We define two helper macros PLUGIN_INIT and PLUGIN_INIT_FUNC.
 //PLUGIN_INIT should be used when defining your plugin init function,
 //like so:

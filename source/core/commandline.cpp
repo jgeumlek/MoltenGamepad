@@ -47,7 +47,7 @@ int do_command(moltengamepad* mg, std::vector<token>& command, response_stream* 
   if (command.front().value == "clear") return do_clear(mg, command, out);
   if (command.front().value == "set") return do_set(mg, command, out);
   if (command.front().value == "assign") return do_assign(mg, command, out);
-  if (command.front().value == "help") {
+  if (command.front().value == "help" || command.front().value == "?") {
     out->print(HELP_TEXT);
     return 0;
   };

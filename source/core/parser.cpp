@@ -374,6 +374,8 @@ void MGparser::do_assignment(std::string header, std::string field, std::vector<
     int ret = prof->set_option(field, rhs.front().value);
     if (ret)
       out.take_message(field + " is not a registered option");
+    else
+      out.take_message("option \"" + field + "\" set.");
     return;
   }
 

@@ -3,6 +3,8 @@
 device_plugin wiidev;
 
 PLUGIN_INIT(wiimote)(plugin_api api) {
+  if (!API_EXACT(api))
+    return -1;
   //set static vars
   wiimote_manager::methods = *(api.head.manager);
   wiimote::methods = *(api.head.device);

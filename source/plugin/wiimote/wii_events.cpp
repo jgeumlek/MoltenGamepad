@@ -98,7 +98,8 @@ const option_decl wiimote_options[] = {
   {"wm_ir_active", "Enable IR data when no extension is present", "false", MG_BOOL},
   {"nk_ir_active", "Enable IR data when nunchuk is present", "false", MG_BOOL},
   {"grab_exclusive", "Grab device events via ioctl EVIOCGRAB", "true", MG_BOOL},
-  {"grab_permissions", "Grab device via blocking all read permissions", "false", MG_BOOL},
+  {"grab_permissions", "Grab device via blocking all read permissions", "true", MG_BOOL},
+  //grab_permissions = "true" only really needed for Wii U Pro, but it doesn't hurt the others.
   {nullptr, nullptr, nullptr, MG_NULL},
 };
 

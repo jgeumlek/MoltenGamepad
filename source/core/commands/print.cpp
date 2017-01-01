@@ -71,6 +71,18 @@ void print_driver_dev_list(device_manager* man, std::ostream& out) {
   
 }
 
+//shortened so that they are under 8 characters when padded by 2. Allows for nicer tab stops.
+const char* event_type_str[] = {"null","opt","btn","axis","rel", "unk", "group"};
+
+void print_event(const char* name, const char* descr, entry_type type, event_state state, std::ostream& out) {
+  if (state == EVENT_DISABLED)
+    return; //EVENT_DISABLED is a hack since we can't delete them. Any attempt to print them should be wrong.
+  if (type >= 0 && type < DEV_EVENT_GROUP)
+          out << "  " << event_type_str[type];
+  const char* evstate = (state == EVENT_INACTIVE) ? " (inactive)" : "";
+  out << "\t" << name << ":\t" << descr << evstate << std::endl;
+}
+
 int do_print_devs(moltengamepad* mg, std::string name, std::ostream& out) {
   if (!name.empty()) {
     std::shared_ptr<input_source> dev = mg->find_device(name.c_str());
@@ -87,8 +99,7 @@ int do_print_devs(moltengamepad* mg, std::string name, std::ostream& out) {
       
       const std::vector<source_event>& events = dev->get_events();
       for (auto v : events) {
-        const char* evstate = (v.state == EVENT_INACTIVE) ? " (inactive)" : "";
-        if (v.state != EVENT_DISABLED) out << v.name << ":\t" << v.descr << evstate << std::endl;
+        print_event(v.name, v.descr, v.type, v.state, out);
       }
 
       std::vector<option_info> list;
@@ -124,6 +135,11 @@ int do_print_drivers(moltengamepad* mg, std::string name, std::ostream& out) {
   device_manager* man = mg->find_manager(name.c_str());
   if (man) {
     print_driver_dev_list(man, out);
+    //we could also print out this driver's registered events/options, but
+    //I think that would be too verbose, and would obscure the useful device list.
+    //Perhaps managers should have a description field too.
+
+    //It might be worth printing driver-level options here.
   }
 
   return 0;
@@ -246,6 +262,58 @@ int do_print_alias(moltengamepad* mg, std::string name, std::ostream& out) {
 
 }
 
+
+
+int do_print_events(moltengamepad* mg, std::string name, std::ostream& out) {
+  if (name.empty()) {
+    out << "USAGE: print events <driver or device>\nA driver or a device must be specified." << std::endl;
+    return -1;
+  }
+
+  //we won't print out the registered options here.
+  //They aren't events, and they are already handled nicely via "print profile ..."
+
+  //printing events for devices is already done for "print devices <device name>"
+  //So this is a little redundant. Here we do a little more work to separate out active/inactive events.
+  auto dev = mg->find_device(name.c_str());
+  if (dev) {
+    //a device has a notion of events being active or inactive.
+    auto events = dev->get_events();
+    out << "active events:" << std::endl;
+    bool has_inactive = false;
+    for (source_event &ev : events) {
+      if (ev.state == EVENT_ACTIVE) {
+        print_event(ev.name, ev.descr, ev.type, ev.state, out);
+      }
+      if (ev.state == EVENT_INACTIVE)
+        has_inactive = true;
+    }
+    if (has_inactive) {
+      out << "inactive events:" << std::endl;
+      for (source_event &ev : events) {
+        if (ev.state == EVENT_INACTIVE) {
+          print_event(ev.name, ev.descr, ev.type, ev.state, out);
+        }
+      }
+    }
+    return 0;
+  }
+  //there is no other way to print out a manager's events.
+  //This is where "print events ..." is not redundant.
+  auto man = mg->find_manager(name.c_str());
+  if (man) {
+    //a manager has no notion of inactive events, and it uses a different struct.
+    auto events = man->get_events();
+    for (event_decl &ev : events) {
+        print_event(ev.name, ev.descr, ev.type, EVENT_ACTIVE, out);
+    }
+    return 0;
+  }
+  out << "could not find driver or device" << std::endl;
+  return -1;
+}
+
+
 const char* id_types[] = {"name", "uniq", "phys"};
 int do_print_assignments(moltengamepad* mg, std::string name, std::ostream& out) {
   mg->slots->for_all_assignments([&out] (slot_manager::id_type type, std::string id, output_slot* slot) {
@@ -255,7 +323,8 @@ int do_print_assignments(moltengamepad* mg, std::string name, std::ostream& out)
 
 #define PRINT_USAGE ""\
 "USAGE:\n\tprint <type> [element]\n"\
-"\ttypes recognized: drivers, devices, profiles, slots, options, assignments, translators, aliases\n"\
+"\ttypes recognized: drivers, devices, profiles, slots,\n"\
+"\t\toptions, events, aliases, assignments, translators\n"\
 "\tprint <type> will list all elements of that type\n"\
 "\tprint <type> [element] will show detailed info on that element\n"
 int do_print(moltengamepad* mg, std::vector<token>& command, response_stream* out) {
@@ -297,6 +366,10 @@ int do_print(moltengamepad* mg, std::vector<token>& command, response_stream* ou
   }
   if (command.at(1).value.compare(0, 5, "alias") == 0) {
     do_print_alias(mg, arg, ss);
+    matched = true;
+  }
+  if (command.at(1).value.compare(0, 5, "event") == 0) {
+    do_print_events(mg, arg, ss);
     matched = true;
   }
 

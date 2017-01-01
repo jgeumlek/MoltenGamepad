@@ -4,6 +4,8 @@
 device_plugin scdev;
 
 PLUGIN_INIT(steamcontroller)(plugin_api api) {
+  if (!API_EXACT(api))
+    return -1;
   //set static vars
   steam_controller_manager::methods = *(api.head.manager);
   steam_controller::methods = *(api.head.device);

@@ -14,6 +14,8 @@
 device_plugin example_dev;
 
 PLUGIN_INIT(example)(plugin_api api) {
+  if (!API_EXACT(api))
+    return -1;
   //set static vars
   example_manager::methods = *(api.head.manager);
   example_device::methods = *(api.head.device);

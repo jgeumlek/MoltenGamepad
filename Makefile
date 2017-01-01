@@ -17,7 +17,7 @@ INPUT_HEADER:=""
 LDLIBS=-ludev -lpthread -ldl
 CPPFLAGS+=-std=c++14
 
-SRCS:=$(shell echo source/core/*.cpp source/core/*/*.cpp source/core/*/*/*.cpp source/plugin/*.cpp)
+SRCS:=$(shell echo source/core/*.cpp source/core/*/*.cpp source/core/*/*/*.cpp)
 
 
 

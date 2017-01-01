@@ -2,7 +2,8 @@
 #include "../parser.h"
 
 
-#define SET_USAGE "USAGE:\n\tset <category> <option name> = <value>\n\tuse \"print options\" to see available categories."
+#define SET_USAGE "USAGE:\n\tset <category> <option name> = <value>\n\tuse \"print options\" to see available categories.\n"\
+"\tuse \"print options <category>\" to see available options in a category."
 int do_set(moltengamepad* mg, std::vector<token>& command, response_stream* out) {
   if (command.size() < 5) {
     out->print(SET_USAGE);

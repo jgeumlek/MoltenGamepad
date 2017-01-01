@@ -6,16 +6,11 @@ plugin_api plugin_methods;
 
 std::vector<std::function<int (plugin_api)>> builtin_plugins;
 
-/*int register_builtin_plugin( int (*init) (plugin_api)) {
-  if (init) {
-    builtin_plugins.push_back(init);
-  }
-};*/
-
 int register_plugin( int (*init) (plugin_api)) {
   if (init) {
     builtin_plugins.push_back(init);
   }
+  return 0;
 };
 
 moltengamepad* loader_mg;
@@ -28,9 +23,11 @@ int load_builtins(moltengamepad* mg) {
     plugin_methods = reset;
     func(plugin_methods);
   }
+  return 0;
 };
 
 int load_plugin(const std::string& path) {
+#ifndef NO_PLUGIN_LOADING
   char* err = dlerror();
   void* handle = dlopen(path.c_str(),RTLD_LAZY | RTLD_NODELETE);
   if (!handle) {
@@ -49,8 +46,12 @@ int load_plugin(const std::string& path) {
   }
   debug_print(DEBUG_INFO, 2, "plugin: initializing ", path.c_str());
   plugin_api api = plugin_methods;
-  (*plugin_init)(api);
+  int ret = (*plugin_init)(api);
+  if (ret)
+    debug_print(DEBUG_NONE, 3, "plugin: init ", path.c_str(), " failed.");
   dlclose(handle);
+#endif
+  return 0;
 }
 
 void init_plugin_api() {
