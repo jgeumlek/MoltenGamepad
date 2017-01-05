@@ -320,6 +320,7 @@ void MGparser::load_translators(moltengamepad* mg) {
   RENAME_GEN(chord,simple_chord);
   RENAME_GEN(exclusive,exclusive_chord);
   RENAME_GEN(stick,thumb_stick);
+  RENAME_GEN(dpad,stick_dpad);
 }
 
 MGparser::MGparser(moltengamepad* mg, message_protocol* output) : messages("parse") {

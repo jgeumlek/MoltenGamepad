@@ -51,15 +51,15 @@ void thumb_stick::process_syn_report(output_slot* out) {
   float y = ((float) event_vals[1])/ABS_RANGE;
   float radius =sqrt(x*x + y*y);
   if (radius > 1-outzone) radius = 1-outzone;
-  float angle = atan2(x,y);
+  float angle = atan2(y,x);
   if (radius <= deadzone) {
     output[0] = 0;
     output[1] = 0;
   } else {
     float scaled_radius = (radius - deadzone)/(1-outzone - deadzone);
     //todo: angle snap
-    output[0] = ABS_RANGE*scaled_radius*sin(angle);
-    output[1] = ABS_RANGE*scaled_radius*cos(angle);
+    output[0] = ABS_RANGE*scaled_radius*cos(angle);
+    output[1] = ABS_RANGE*scaled_radius*sin(angle);
   }
   if (output[0] != cached_output[0] || output[1] != cached_output[1]) {
     cached_output[0] = output[0];

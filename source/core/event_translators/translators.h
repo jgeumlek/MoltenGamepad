@@ -15,3 +15,4 @@
 #include "advanced/simple_chord.h"
 #include "advanced/exclusive_chord.h"
 #include "advanced/thumbstick.h"
+#include "advanced/stick_dpad.h"
