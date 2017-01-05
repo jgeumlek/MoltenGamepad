@@ -222,6 +222,7 @@ const option_decl general_options[] = {
   {"stay_alive", "Keep process running even after standard input is closed", "false", MG_BOOL},
   {"make_socket", "Make a socket to communicate with clients", "false", MG_BOOL},
   {"socket_path", "Location to create the socket", "", MG_STRING},
+  {"auto_profile_subdir", "automatically load profiles in this subdir. of the profile dir. on start-up", "auto/", MG_STRING},
   {"", "", ""},
 };
 
@@ -415,6 +416,19 @@ int moltengamepad::init() {
   }
 
   //Run any startup profiles before beginning the udev searches
+
+  //First, check the auto profile subdir.
+  //Insert them to the front of startup_profiles.
+  //The ones read from moltengamepad.cfg were specified explicitly,
+  //so they should take precedence (and be read later).
+  std::string auto_prof_dir = opts->get<std::string>("auto_profile_subdir");
+  if (!auto_prof_dir.empty()) {
+    std::vector<std::string> auto_profiles = locate_glob(FILE_PROFILE,auto_prof_dir+"/*");
+    cfg.startup_profiles.insert(cfg.startup_profiles.begin(), auto_profiles.begin(), auto_profiles.end());
+  }
+
+  //profiles specified explicitly in moltengamepad.cfg take precedence,
+  //so read them later.
   for (auto profile_path : cfg.startup_profiles) {
     std::string fullpath = locate(FILE_PROFILE,profile_path);
     std::ifstream file;
