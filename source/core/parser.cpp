@@ -918,7 +918,11 @@ void MGparser::print_def(entry_type intype, MGTransDef& def, std::ostream& outpu
     }
     if (type == MG_INT) output << field.integer;
     if (type == MG_FLOAT) output << field.real;
-    if (type == MG_STRING) output << "\""<<field.string<<"\"";
+    if (type == MG_STRING)  {
+      std::string str = field.string;
+      escape_string(str);
+      output << "\""<<str<<"\"";
+    }
     if (type == MG_SLOT) output << field.slot->name;
     if (type == MG_BOOL) output << (field.integer ? "true":"false");
     if (type == MG_TRANS || type == MG_KEY_TRANS || type == MG_AXIS_TRANS || type == MG_REL_TRANS) {

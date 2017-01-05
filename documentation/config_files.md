@@ -24,7 +24,11 @@ Most long-form command line arguments can be specified in this file instead. Com
 * Instead of hyphens, underscores are used
 * True or false values are assigned instead of negation prefixes (i.e. `enumerate=false` instead of `no_enumerate`)
 
-The `daemon` and `pidfile` settings can not be specified in this file. They are exclusively commandline arguments.
+The `daemon`,`pidfile`, and `stay-alive` settings can not be specified in this file. They are exclusively commandline arguments.
+
+The full list of available options can be seen by running
+
+    moltengamepad --print-cfg
 
 ##Loading Profiles at Start-up
 

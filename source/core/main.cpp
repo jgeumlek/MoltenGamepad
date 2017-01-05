@@ -193,6 +193,8 @@ int print_usage(char* execname) {
                           "\tCreate a UNIX socket, and exit if it can't be made.\n"\
                           "--socket-path -S\n"\
                           "\tSet where the socket should be placed.\n"\
+                          "--print-cfg\n"\
+                          "\tPrint out an example moltengamepad.cfg, showing all available options.\n"
                           ;
 
   std::cout << help_text;
@@ -228,9 +230,13 @@ int parse_opts(options& options, int argc, char* argv[]) {
     {"replace-fifo",  0,    0,    0},
     {"make-socket",   0,    0,    0},
     {"socket-path",   1,    0,  'S'},
+    {"print-cfg",     0,    0,    0},
     {0,               0,    0,    0},
   };
   int long_index;
+  //predeclare things needed for some arg processing.
+  std::vector<option_info> list;
+  std::string value;
 
   //We lock the settings so that way command line args
   //take precedence over settings later read from files.
@@ -269,6 +275,30 @@ int parse_opts(options& options, int argc, char* argv[]) {
       if (long_index == 20) {
         options.set("make_socket","true");
         options.lock("make_socket", true);
+      };
+      if (long_index == 22) {
+        //print-cfg
+        options.list_options(list);
+        for (option_info& info : list) {
+          if (info.name == "pidfile" || info.name == "config_dir" || info.name == "stay_alive" || info.name == "daemon")
+            continue; //hack to gloss over the fact these can't be set via moltengamepad.cfg
+          std::cout << info.name << " = ";
+          if (info.value.type == MG_INT)
+            std::cout << info.value.integer;
+          if (info.value.type == MG_BOOL)
+            std::cout << (info.value.boolean ? "true" : "false");
+          if (info.value.type == MG_STRING) {
+            value = info.stringval;
+            escape_string(value);
+            std::cout << "\"" << value << "\"";
+          }
+          std::cout << std::endl;
+          if (!info.descr.empty())
+            std::cout << "  #  " << info.descr << std::endl;
+        }
+        std::cout << std::endl << "## You can specify profiles to load at start up with lines like the following:" << std::endl;
+        std::cout << "# load profiles from <profile>" << std::endl;
+        return 10;
       };
       break;
     case 'd':

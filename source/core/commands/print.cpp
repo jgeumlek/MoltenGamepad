@@ -31,7 +31,14 @@ void print_profile(profile& profile, std::ostream& out) {
   std::vector<option_info> opts;
   profile.list_options(opts);
   for (auto opt : opts) {
-    out << profile.name << ".?" << opt.name << " = " << opt.stringval << std::endl;
+    out << profile.name << ".?" << opt.name << " = ";
+    if (opt.value.type != MG_STRING) {
+      out << opt.stringval << std::endl;
+    } else {
+      std::string str = opt.stringval;
+      escape_string(str);
+      out << "\"" << str << "\"" << std::endl;
+    }
     out << "   #  " << opt.descr << std::endl;
   }
   if (profile.mapping.empty() && profile.adv_trans.empty() && opts.empty())
@@ -190,7 +197,14 @@ int do_print_options(moltengamepad* mg, std::string name, std::ostream& out) {
   std::vector<option_info> list;
   mg->list_options(name, list);
   for (auto opt : list) {
-    out << opt.name << " = " << opt.stringval << std::endl;
+    if (opt.value.type != MG_STRING) {
+      out << opt.name << " = " << opt.stringval << std::endl;
+    } else {
+      out << opt.name << " = ";
+      std::string val = opt.stringval;
+      escape_string(val);
+      out << "\"" << val << "\"" << std::endl;
+    }
     out << "\t" << opt.descr << std::endl;
   }
 

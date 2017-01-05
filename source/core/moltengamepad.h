@@ -112,6 +112,7 @@ struct context {
 
 int shell_loop(moltengamepad* mg, std::istream& in);
 
+void escape_string(std::string& string);
 
 
 struct token;

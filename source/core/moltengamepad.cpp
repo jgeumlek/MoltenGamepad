@@ -222,7 +222,7 @@ const option_decl general_options[] = {
   {"stay_alive", "Keep process running even after standard input is closed", "false", MG_BOOL},
   {"make_socket", "Make a socket to communicate with clients", "false", MG_BOOL},
   {"socket_path", "Location to create the socket", "", MG_STRING},
-  {"auto_profile_subdir", "automatically load profiles in this subdir. of the profile dir. on start-up", "auto/", MG_STRING},
+  {"auto_profile_subdir", "automatically load profiles in this subdir. of the profile dir. on start up", "auto/", MG_STRING},
   {"", "", ""},
 };
 
@@ -719,3 +719,22 @@ void moltengamepad::run_on_options(std::string& category, std::function<void (op
     return;
   }
 };
+
+void escape_string(std::string& str) {
+  auto it = str.begin();
+  while (it != str.end()) {
+    if (*it == '\\') {
+      str.insert(it,'\\');
+      it++;
+    }
+    it++;
+  }
+  it = str.begin();
+  while (it != str.end()) {
+    if (*it == '"') {
+      str.insert(it,'\\');
+      it++;
+    }
+    it++;
+  }
+}
