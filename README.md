@@ -4,7 +4,7 @@
 (Tested only on Arch Linux, 64-bit)
 ##Motivation
 
-You have input devices. You have software waiting for input events. Unfortunately, for one reason or another, they aren't speaking the same language of events. Perhaps you recently swapped out your input device. Perhaps the software has hardcoded inputs. MoltenGamepad acts as an translation layer by reading the input device and outputting new events.
+You have input devices. You have software waiting for input events. Unfortunately, for one reason or another, they aren't speaking the same language of events. Perhaps you recently swapped out your input device. Perhaps the software has hardcoded inputs. MoltenGamepad can solve many of these situations by acting as a translation layer that reads the input device and outputs new events.
 
 Possible use cases include:
 
@@ -12,9 +12,9 @@ Possible use cases include:
 * Getting around software limits, such as using a keyboard in a game that requires gamepads, or vice versa.
 * Handling split event devices, allowing multiple input sources to act as one synthetic device.
 * Handling combined event devices, allowing a single input device to appear as multiple input sources.
-* Empowering unorthodox input solutions and behaviors, such as for an art installation.
+* Empowering unorthodox input solutions and behaviors.
 
-For example, perhaps you have a Wii remote and you want to play some games. Unfortunately, the games expect to see controllers that look like an XBox 360 controller, not the multitude of separate event devices created by the Wii remote driver in the linux kernel. MoltenGamepad can translate that Wii remote's events and present a virtual controller to the games. 
+For example, perhaps you have a Wii remote and you want to play some games. Unfortunately, the games expect to see controllers that look like an XBox 360 controller, not the multitude of separate event devices created by the Wii remote driver in the linux kernel. MoltenGamepad can translate that Wii remote's events and present a virtual controller to the games. Or maybe you have a keyboard device, but your game only allows multiplayer with multiple game controllers.
 
 Specialized drivers can be made for certain input devices enabling smarter features than just plain event translation. For example, the included wiimote driver handles extensions being inserted or removed, and can change event mappings dependent on the current extension.
 
@@ -44,6 +44,8 @@ If you get undefined KEY_* errors, you'll need to remove those lines from the ev
 The only linked libraries under this default target are libudev, libpthread, and libdl.
 
 Currently two plugins can optionally be built into MoltenGamepad when compiling, `wiimote` and `steamcontroller`. By default, only the former is set to be built. Modify the lines at the beginning of the Makefile to control whether these plugins are included.
+
+Plugins can also be set to be built as external plugins. These plugins will need to be moved to a `plugins` folder inside MG's config directory in order to be found and loaded.
 
 Note that the Steam Controller plugin requires the [scraw](https://gitlab.com/dennis-hamester/scraw) and [scrawpp](https://gitlab.com/dennis-hamester/scrawpp) libraries.
 
@@ -105,7 +107,7 @@ For use with most games, use the `--mimic-xpad` option to make the virtual outpu
 
     ./moltengamepad --mimic-xpad
 
-Rumble support is disabled by default. Use `--rumble` to enable it.
+Rumble support is disabled by default. Use `--rumble` to enable it, and see `documentation/rumble.md` for the reason why this is disabled by default.
 
 Another useful option is `--make-fifo`, which creates a named pipe so that the running instance can be controlled from scripts and such.
 
@@ -206,7 +208,7 @@ Since all event codes are recognized, one may use `btn_south` instead of `primar
 
 ###How do I connect a wiimote?
 
-That is outside the scope of MoltenGamepad. Your bluetooth system handles this. This software assumes your bluetooth stack and kernel wiimote driver are already working and usable. A simple session with `bluetoothctl` works well, and wiimotes can be paired to connect automatically.
+That is outside the scope of MoltenGamepad. Your bluetooth system handles this. This software assumes your bluetooth stack and kernel wiimote driver are already working and usable. A simple session with `bluetoothctl` works well. It is possible to pair wiimotes such that they remember your bluetooth adapter and will attempt to connect to it when any button is pressed.
 
 See https://wiki.archlinux.org/index.php/XWiimote for more information on connecting wiimotes. (Do not install the X.Org wiimote driver, it is not needed, and would conflict somewhat with MoltenGamepad. The xwiimote library is not needed, but its utilities can be useful for inspecting wiimotes)
 

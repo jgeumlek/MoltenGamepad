@@ -26,8 +26,8 @@ This file explains why rumble events are not processed by default.
 
 This files offers an explanation of the file permissions required by MoltenGamepad and some example udev rules to achieve them.
 
-# adding_driver.md
+# plugin.md
 
-This files offers a quick overview of what is needed to implement another driver for this project in C++. Please check the `gendev` documentation first to see if it already offers the needed functionality through its generic drivers.
+This file describes the MG plugin system and offers a quick overview of what is needed to implement another driver for this project in C++. Please check the `gendev` documentation first to see if it already offers the needed functionality through its generic drivers.
 
 
