@@ -30,4 +30,6 @@ This files offers an explanation of the file permissions required by MoltenGamep
 
 This file describes the MG plugin system and offers a quick overview of what is needed to implement another driver for this project in C++. Please check the `gendev` documentation first to see if it already offers the needed functionality through its generic drivers.
 
+# socket.md
 
+Describes the protocol used for clients to connect to MoltenGamepad via its socket.
