@@ -63,5 +63,9 @@ void steam_controller_manager::init_profile() {
   set_alias("right_x","right_pad_x");
   set_alias("right_y","right_pad_y");
 
+  methods.register_event_group(ref, {"left_pad","left_pad_x,left_pad_y","Left Touch Pad","dpad()"});
+  methods.register_event_group(ref, {"stick","stick_x,stick_y","Thumb stick","stick(left_x,left_y)"});
+  methods.register_event_group(ref, {"right_pad","right_pad_x,right_pad_y","Right Touch Pad","stick(right_x,right_y)"});
+
 };
 
