@@ -49,7 +49,7 @@ if [[ "$UDEV_VERSION" == "" || "$UDEV_VERSION" -lt "217" ]]; then
   echo -e '\tSUBSYSTEM=="input", ENV{ID_INPUT_JOYSTICK}=="?*", TAG+="uaccess"'
   echo ""
   echo "A modified version can be placed at /etc/udev/rules.d/70-uaccess.rules to shadow the original file in /lib/."
-  echo "The provided script modify_uaccess_rules.sh will perfrom this for you."
+  echo "The provided script modify_uaccess_rules.sh will perform this for you."
   echo ""
 fi
 
