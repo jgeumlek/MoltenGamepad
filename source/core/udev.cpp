@@ -202,12 +202,17 @@ int udev_handler::grab_permissions(udev_device* dev, bool grabbed) {
     if (grabbed_nodes.find(devnodepath) != grabbed_nodes.end())
       return FAILURE;
     struct stat filestat;
-    stat(devnode, &filestat);
-    node_permissions base_node;
-    base_node.node = udev_device_ref(dev);
-    base_node.orig_mode = filestat.st_mode;
-    grabbed_nodes[devnodepath].children.push_back(base_node);
-    chmod(devnode, 0);
+    int ret = stat(devnode, &filestat);
+    if (!ret)
+      ret = chmod(devnode, 0);
+    if (ret) {
+      debug_print(DEBUG_NONE,3,"device hiding: changing permissions of ",devnode," failed.");
+    } else {
+      node_permissions base_node;
+      base_node.node = udev_device_ref(dev);
+      base_node.orig_mode = filestat.st_mode;
+      grabbed_nodes[devnodepath].children.push_back(base_node);
+    }
 
     //This device might have a js device we also want to grab...
     auto parent = udev_device_get_parent(dev);
@@ -221,12 +226,17 @@ int udev_handler::grab_permissions(udev_device* dev, bool grabbed) {
       if (!subdev)
         continue;
       devnode = udev_device_get_devnode(subdev);
-      stat(devnode, &filestat);
+      ret = stat(devnode, &filestat);
       node_permissions sub_node;
-      sub_node.node = udev_device_ref(subdev);
-      sub_node.orig_mode = filestat.st_mode;
-      grabbed_nodes[devnodepath].children.push_back(sub_node);
-      chmod(devnode, 0);
+      if(!ret)
+        ret = chmod(devnode, 0);
+      if (ret) {
+        debug_print(DEBUG_NONE,3,"device hiding: changing permissions of ",devnode," failed.");
+      } else {
+        sub_node.node = udev_device_ref(subdev);
+        sub_node.orig_mode = filestat.st_mode;
+        grabbed_nodes[devnodepath].children.push_back(sub_node);
+      }
       udev_device_unref(subdev);
     }
 
@@ -239,7 +249,9 @@ int udev_handler::grab_permissions(udev_device* dev, bool grabbed) {
       return FAILURE;
     for (auto entry : it->second.children) {
       devnode = udev_device_get_devnode(entry.node);
-      chmod(devnode, entry.orig_mode);
+      int ret = chmod(devnode, entry.orig_mode);
+      if (ret)
+        debug_print(DEBUG_NONE,3,"device hiding: restoring permissions of ",devnode," failed.");
       udev_device_unref(entry.node);
     }
     grabbed_nodes.erase(devnodepath);

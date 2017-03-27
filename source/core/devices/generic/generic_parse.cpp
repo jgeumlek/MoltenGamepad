@@ -367,6 +367,41 @@ int generic_config_loop(moltengamepad* mg, std::istream& in, std::string& path) 
   return 0;
 }
 
+void check_driver_warnings(const generic_driver_info& info) {
+  bool trigger_axes[2] = {false,false};
+  bool trigger_btns[2] = {false,false};
+  for (auto ev : info.events) {
+    if (ev.name == "tr2_axis")
+      trigger_axes[0] = true;
+    else if (ev.name == "tl2_axis")
+      trigger_axes[1] = true;
+    else if (ev.name == "tr2")
+      trigger_btns[0] = true;
+    else if (ev.name == "tl2")
+      trigger_btns[1] = true;
+  }
+  for (auto pair : info.aliases) {
+    const std::string& name = pair.first;
+    if (name == "tr2_axis")
+      trigger_axes[0] = true;
+    else if (name == "tl2_axis")
+      trigger_axes[1] = true;
+    else if (name == "tr2")
+      trigger_btns[0] = true;
+    else if (name == "tl2")
+      trigger_btns[1] = true;
+  }
+  //It is hard to generically describe this error to the user. Much clearer when concretely saying "tr2" rather than "tr2/tl2".
+  if (trigger_axes[0] && trigger_btns[0]) {
+    debug_print(DEBUG_NONE,3, "driver: generic driver ", info.name, " exposes both tr2 and tr2_axis. This is likely an error, as tr2 is only for devices without analog trigger values. tr2_axis_btn can be used instead.");
+  }
+  //Should we only print one case when both occur? It is likely both will occur at the same time.
+  //Decided to just print both to further encourage the user to change things.
+  if (trigger_axes[1] && trigger_btns[1]) {
+    debug_print(DEBUG_NONE,3, "driver: generic driver ", info.name, " exposes both tl2 and tl2_axis. This is likely an error, as tl2 is only for devices without analog trigger values. tl2_axis_btn can be used instead.");
+  }
+}
+
 int add_generic_manager(moltengamepad* mg, generic_driver_info& info) {
   if (info.events.size() > 0 && !info.name.empty() && !info.devname.empty()) {
     if (info.rumble && info.flatten) {
@@ -375,6 +410,8 @@ int add_generic_manager(moltengamepad* mg, generic_driver_info& info) {
     }
     generic_manager* manager = new generic_manager(mg, info);
     auto man = mg->add_manager(manager->get_plugin(), manager);
+    if (man)
+      check_driver_warnings(info);
     if (!man)
       return GENDEV_REJECTED_MANAGER;
     return 0;
@@ -447,4 +484,5 @@ int init_generic_callbacks() {
     return ((generic_device*)ref)->play_ff(id, repetitions);
   };
 }
+
 

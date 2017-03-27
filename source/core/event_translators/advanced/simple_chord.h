@@ -21,10 +21,6 @@ public:
     return new simple_chord(out_trans->clone());
   }
 
-  //allow chords to be set without clearing other translations.
-  //index is relative to the list of mapped events.
-  virtual bool wants_exclusive(int index) { return false; };
-
   static const char* decl;
   simple_chord(std::vector<MGField>& fields);
   virtual void fill_def(MGTransDef& def);

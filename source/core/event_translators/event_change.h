@@ -53,8 +53,6 @@ public:
   
   //Do we want the input_source to send recurring "ticks" for processing?
   virtual bool wants_recurring_events() { return false; };
-  //Do we want to be "the one" interpeter for this event?
-  virtual bool wants_exclusive() { return true; };
 
 
   virtual ~event_translator() {};
@@ -97,9 +95,6 @@ public:
 
   //Do we want the input_source to send recurring "ticks" for processing?
   virtual bool wants_recurring_events() { return false; };
-
-  //Do we want to prevent overlapping with regular event_translators? 
-  virtual bool wants_exclusive(int index) { return true; };
 
   advanced_event_translator(std::vector<MGField>& fields) {};
   advanced_event_translator() {};

@@ -213,11 +213,19 @@ void profile::set_advanced(std::vector<std::string> names, std::vector<int8_t> d
       }
     }
   }
+  
+  //two purposes here: loop over all event names and 
+  // 1) build up the key used to index this translator by concatenating the vent names
+  // 2) verify that this profile actually has the event being named.
   auto it = names.begin();
   //this key creation is not ideal.
   std::string key = *it;
+  if (mapping.find(key) == mapping.end())
+    return; //abort! event not found.
   it++;
   for (; it != names.end(); it++) {
+    if (mapping.find(*it) == mapping.end())
+      return; //abort! event not found.
     key += "," + (*it);
   }
 
@@ -276,6 +284,15 @@ void profile::set_group_alias(std::string external, std::string local) {
   if (local.empty()) {
     aliases.erase(external);
   } else {
+    std::vector<token> tokens = tokenize(local);
+    tokens.pop_back(); //end of line token ignored.
+    for (auto token : tokens) {
+      std::string alias = get_alias(token.value);
+      if (!alias.empty())
+        token.value = alias;
+      if (mapping.find(token.value) == mapping.end())
+        return; //abort! no sense including an alias we don't support.
+    }
     if (local.front() != ' ')
       local.insert(local.begin(),' ');
     aliases[external] = local;
@@ -353,10 +370,13 @@ void profile::remove_device(input_source* dev) {
 void profile::copy_into(std::shared_ptr<profile> target, bool add_subscription, bool add_new) {
   std::lock_guard<std::mutex> guard(lock);
   for (auto entry : aliases) {
-    if (entry.second.size() > 0 && entry.second.front() == ' ')
-      target->set_group_alias(entry.first,entry.second);
-    else
+    //aliases are needed for copying events along,
+    //and it is mandatory for all subscribers to at least have their parents' aliases.
+    //recall that we hackishly denote group aliases by a leading space.
+    if (entry.second.size() > 0 && entry.second.front() != ' ')
       target->set_alias(entry.first,entry.second);
+    //group aliases shouldn't be handled yet, as we wish to allow subscribers to potentially ignore them,
+    //as they might refer to events the subscriber does not have.
   }
   for (auto entry : mapping)
     target->set_mapping(entry.first, entry.second.direction, entry.second.trans->clone(), entry.second.type, add_new);
@@ -367,6 +387,12 @@ void profile::copy_into(std::shared_ptr<profile> target, bool add_subscription, 
   for (auto opt : optionlist) {
     if (add_new)  target->register_option(opt);
     if (!add_new) target->set_option(opt.name,opt.stringval);
+  }
+  for (auto entry : aliases) {
+    //now is the time to set group aliases
+    //the subscriber will ignore them if appropriate.
+    if (entry.second.size() > 0 && entry.second.front() == ' ')
+      target->set_group_alias(entry.first,entry.second);
   }
   if (add_subscription) {
     subscribers.push_back(target);

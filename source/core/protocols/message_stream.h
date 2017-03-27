@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 #include <mutex>
-
+#include "debug_messages.h"
 
 //For connections to another process, the client gives us a response id
 //with every request. Output related to that request is sent back with the same response id.
@@ -53,15 +53,5 @@ public:
 
   void end_response(int ret_val);
 };
-
-
-#define DEBUG_NONE 0
-#define DEBUG_INFO 5
-#define DEBUG_VERBOSE 10
-extern int DEBUG_LEVELS[];
-extern int* DEBUG_LEVEL;
-//pass the number of args, and then that number of strings aftwerwards to print.
-//No newline is necessary.
-void debug_print(int level, int num_args...);
 
 #endif
