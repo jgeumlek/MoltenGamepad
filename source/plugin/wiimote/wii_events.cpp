@@ -99,7 +99,7 @@ const option_decl wiimote_options[] = {
   {"nk_ir_active", "Enable IR data when nunchuk is present", "false", MG_BOOL},
   {"grab_exclusive", "Grab device events via ioctl EVIOCGRAB", "true", MG_BOOL},
   {"grab_permissions", "Grab device via blocking all read permissions", "false", MG_BOOL},
-  {nullptr, nullptr, nullptr},
+  {nullptr, nullptr, nullptr, MG_NULL},
 };
 
 

@@ -26,6 +26,7 @@ void signal_handler(int signum) {
 }
 
 void stdin_loop(moltengamepad* mg) {
+  std::cout << "stdin: ready to read commands from standard input. Try \"help\" for more info." << std::endl;
   shell_loop(mg, std::cin);
   if (!mg->opts->get<bool>("stay_alive")) {
     QUIT_APPLICATION = true;
