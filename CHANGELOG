@@ -1,4 +1,15 @@
 ---------------------------
+0.3.4-beta
+2017-03-28
+---------------------------
+
+Another small update fixing some issues while the devel branch slowly churns along.
+
+* Fix Wii Remote IR data, which was previously reported as always positive.
+* Fix bug where a newly connected wiimote would try to open its IR devnode when discovering its accel devnode.
+* Usability: More informative messages about profile loading and STDIN usage during start up.
+
+---------------------------
 0.3.3-beta
 2016-12-19
 ---------------------------

@@ -2,7 +2,7 @@
 # Installs as 90-moltengamepad.rules.
 
 # Allow user access to uinput.
-KERNEL=="uinput", MODE="0660", RUN+="/usr/bin/setfacl -m SINGLEUSER:rw- %E{DEVNAME}", GROUP="SINGLEUSER", OPTIONS+="static_node=uinput"
+KERNEL=="uinput", MODE="0660", GROUP="SINGLEUSER", OPTIONS+="static_node=uinput", RUN+="/usr/bin/setfacl -m SINGLEUSER:rw- %E{DEVNAME}"
 
 # Match standard game pads
 SUBSYSTEM=="input", ACTION=="add", \

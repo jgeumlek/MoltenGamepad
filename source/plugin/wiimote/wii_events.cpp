@@ -312,7 +312,7 @@ void wiimote::process_accel(int fd) {
   if (ret < 0) perror("read accel");
 }
 
-#define IR_X_SCALE ABS_RANGE/500
+#define IR_X_SCALE ABS_RANGE/450
 #define IR_Y_SCALE ABS_RANGE/350
 #define NO_IR_DATA 1023
 void wiimote::process_ir(int fd) {
@@ -376,8 +376,11 @@ void wiimote::compute_ir() {
     }
   }
   if (num != 0) {
-    send_value(offset + 0, x * IR_X_SCALE);
-    send_value(offset + 1, y * IR_Y_SCALE);
+    //x axis appears to be 0-1022, y axis reported 0-800
+    //invert x axis to match user movements: aiming left makes IR dots move right on camera
+    //y-axis is already correct, likely due to y-axis/screen conventions (positive is lower)
+    send_value(offset + 0, (511-x) * IR_X_SCALE);
+    send_value(offset + 1, (y-400) * IR_Y_SCALE);
   }
 
 }

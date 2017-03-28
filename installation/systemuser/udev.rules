@@ -19,8 +19,6 @@ SUBSYSTEM=="leds", ACTION=="add", DRIVERS=="wiimote", \
  RUN+="/bin/sh -c 'chgrp gamepad /sys%p/brightness'", \
  RUN+="/bin/sh -c 'chmod g+w /sys%p/brightness'"
 
-DRIVERS=="wiimote", MODE="0600", OWNER:="gamepad", GROUP:="gamepad"
-
 SUBSYSTEM=="input", DRIVERS=="wiimote", \
  OWNER:="gamepad", GROUP:="gamepad", MODE:="0600", \
  TAG-="uaccess", TAG-="seat"

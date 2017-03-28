@@ -154,7 +154,7 @@ void wiimote::store_node(struct udev_device* dev, const char* name) {
     methods.print(ref,"added accelerometers");
     accel.dev = udev_device_ref(dev);
     if ((mode == NO_EXT && wm_accel_active) || (mode == NUNCHUK_EXT && nk_accel_active)) {
-      open_node(&ir);
+      open_node(&accel);
     } else {
       //we aren't using it now, but grab it so that it is hidden if desired.
       wiimote_manager::grab_permissions(dev,true);
