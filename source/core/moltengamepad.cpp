@@ -374,12 +374,18 @@ int moltengamepad::init() {
   //Run any startup profiles before beginning the udev searches
   for (auto profile_path : cfg.startup_profiles) {
     std::string fullpath = locate(FILE_PROFILE,profile_path);
+    if (fullpath.empty() || profile_path.empty()) {
+      std::cout << "Could not locate profile file \"" << profile_path << "\"" << std::endl;
+      continue;
+    }
     std::ifstream file;
     if (!fullpath.empty()) {
       file.open(fullpath, std::ifstream::in);
       if (!file.fail()) {
         std::cout << "Loading profiles from " << fullpath << std::endl;
         shell_loop(this, file);
+      } else {
+        std::cout << "Failed to open profile file " << fullpath << std::endl;
       }
        file.close();
     }
