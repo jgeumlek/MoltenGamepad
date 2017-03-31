@@ -3,6 +3,7 @@
 #include "event_translators/translators.h"
 #include "devices/device.h"
 #include "parser.h"
+#include <unordered_set>
 profile::profile() {
 }
 
@@ -24,10 +25,10 @@ profile::~profile() {
 }
 
 //This is private, called only while locked.
-trans_map profile::get_mapping(std::string in_event_name) {
+trans_map* profile::get_mapping(std::string in_event_name) {
   auto it = mapping.find(in_event_name);
-  if (it == mapping.end()) return {nullptr, NO_ENTRY};
-  return (it->second);
+  if (it == mapping.end()) return nullptr;
+  return &(it->second);
 }
 
 entry_type profile::get_entry_type(std::string in_event_name) {
@@ -64,14 +65,16 @@ void profile::set_mapping(std::string in_event_name, int8_t direction, event_tra
     in_event_name = alias->second;
     direction *= read_direction(in_event_name);
   }
-  trans_map oldmap = get_mapping(in_event_name);
+  trans_map* oldmap = get_mapping(in_event_name);
 
-  if (!add_new && oldmap.type == NO_ENTRY) {
+  if (!add_new && oldmap == nullptr) {
     delete mapper;
     return; //We don't recognize this event, and we don't want to!
   }
 
-  if (oldmap.trans) delete oldmap.trans;
+  if (oldmap && oldmap->trans) delete oldmap->trans;
+  if (oldmap)
+    clear_group_mapping(oldmap->active_group);
   mapping.erase(in_event_name);
   mapping[in_event_name] = {mapper, type, direction};
   for (auto prof : subscribers) {
@@ -91,13 +94,14 @@ void profile::remove_event(std::string event_name) {
     event_name = alias->second;
     int8_t dir = read_direction(event_name);
   }
-  trans_map oldmap = get_mapping(event_name);
+  trans_map* oldmap = get_mapping(event_name);
 
-  if (oldmap.type == NO_ENTRY) {
+  if (oldmap == nullptr) {
     return; //Nothing to do?
   }
 
-  if (oldmap.trans) delete oldmap.trans;
+  if (oldmap->trans) delete oldmap->trans;
+  clear_group_mapping(oldmap->active_group);
   mapping.erase(event_name);
 
   for (auto prof : subscribers) {
@@ -231,8 +235,7 @@ void profile::set_advanced(std::vector<std::string> names, std::vector<int8_t> d
 
   auto stored = adv_trans.find(key);
   if (stored != adv_trans.end()) {
-    delete stored->second.trans;
-    adv_trans.erase(stored);
+    clear_group_mapping(&(stored->second));
   }
 
   if (trans) {
@@ -240,7 +243,27 @@ void profile::set_advanced(std::vector<std::string> names, std::vector<int8_t> d
     entry.fields = names;
     entry.trans = trans;
     entry.directions = directions;
+    entry.clear_other_translations = trans->clear_other_translations();
     adv_trans[key] = entry;
+    if (entry.clear_other_translations) {
+      //go through and clear the other translations!
+      std::unordered_set<std::pair<const std::string,trans_map>*> uniq_maps;
+      for (auto name : names) {
+        //due to aliasing, do the unique set after lookup.
+        auto lookup = mapping.find(name);
+        
+        if (lookup != mapping.end())
+          uniq_maps.insert(&(*lookup));
+      }
+      adv_map* this_map = &(adv_trans.find(key)->second);
+      //for each unique individual event involved:
+      //clear any previous individual translation and
+      //set this group translator as the active group
+      for (auto map : uniq_maps) {
+        clear_mapping(map);
+        map->second.active_group = this_map;
+      }
+    }
   }
   for (auto prof : subscribers) {
     auto ptr = prof.lock();
@@ -325,6 +348,57 @@ void profile::remember_subscription(profile* parent) {
   if (parent == this) return;
   std::lock_guard<std::mutex> guard(lock);
   subscriptions.push_back(parent->get_shared_ptr());
+}
+
+//These next two helper functions are only called while the profile is locked.
+void profile::clear_mapping(std::pair<const std::string,trans_map>* event_mapping) {
+  if (!event_mapping)
+    return;
+  clear_group_mapping(event_mapping->second.active_group);
+  if (event_mapping->second.trans)
+    delete event_mapping->second.trans;
+  event_mapping->second.trans = new event_translator;
+  event_mapping->second.direction = 0;
+  event_mapping->second.active_group = nullptr;
+  //still need to propagate new mapping
+  auto type = event_mapping->second.type;
+  for (auto prof : subscribers) {
+    auto ptr = prof.lock();
+    if (ptr) ptr->set_mapping(event_mapping->first, 0, event_mapping->second.trans->clone(), type, false);
+  }
+  for (auto dev : devices) {
+    auto ptr = dev.lock();
+    if (ptr) ptr->update_map(event_mapping->first.c_str(), 0, event_mapping->second.trans);
+  }
+}
+void profile::clear_group_mapping(adv_map* group_mapping) {
+  if (!group_mapping)
+    return;
+  //First, clear all back pointers
+  for (auto field : group_mapping->fields) {
+    trans_map* map = get_mapping(field);
+    if (map)
+      map->active_group = nullptr;
+  }
+  if (group_mapping->trans)
+    delete group_mapping->trans;
+  for (const auto& pair : adv_trans) {
+    if (&(pair.second) == group_mapping) {
+      //propagate the change before deleting the metadata we need...
+      for (auto prof : subscribers) {
+        auto ptr = prof.lock();
+        if (ptr) ptr->set_advanced(group_mapping->fields, group_mapping->directions, nullptr);
+      }
+      for (auto dev : devices) {
+        auto ptr = dev.lock();
+        if (ptr) ptr->update_advanced(group_mapping->fields, group_mapping->directions, nullptr);
+      }
+      adv_trans.erase(pair.first);
+      break;
+    }
+  }
+  //still need to propagate new mapping.
+  
 }
 
 std::shared_ptr<profile> profile::get_shared_ptr() {

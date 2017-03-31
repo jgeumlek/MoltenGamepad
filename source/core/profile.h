@@ -18,12 +18,18 @@ struct adv_map {
   std::vector<std::string> fields;
   std::vector<int8_t> directions; //holds info on whether each field is inverted or not.
   advanced_event_translator* trans;
+  //Is this group translation mutually exclusive with individual translations?
+  //Should we prevent letting these events be translated by other translators?
+  bool clear_other_translations; 
 };
 
 struct trans_map {
   event_translator* trans;
   entry_type type;
   int8_t direction; //holds info on source event being inverted.
+  adv_map* active_group; //Is this event currently participating in a blocking event group?
+  //The rules of blocking imply any event should be in at most one blocking group at any time.
+  //If active_group is not null, this trans should be the NOOP "nothing" translation.
 };
 
 
@@ -83,7 +89,11 @@ private:
   std::vector<std::weak_ptr<profile>> subscribers;
   std::vector<std::weak_ptr<input_source>> devices;
 
-  trans_map get_mapping(std::string in_event_name);
+  trans_map* get_mapping(std::string in_event_name);
+
+  //called while locked
+  void clear_mapping(std::pair<const std::string,trans_map>*);
+  void clear_group_mapping(adv_map* group_mapping);
 
 };
 

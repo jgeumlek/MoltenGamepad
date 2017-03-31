@@ -21,6 +21,9 @@ public:
     return new simple_chord(out_trans->clone());
   }
 
+  //chords coexist peacefully with other translations.
+  virtual bool clear_other_translations() { return false; };
+
   static const char* decl;
   simple_chord(std::vector<MGField>& fields);
   virtual void fill_def(MGTransDef& def);

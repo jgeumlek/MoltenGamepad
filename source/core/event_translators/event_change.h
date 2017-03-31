@@ -80,6 +80,7 @@ public:
   virtual void attach(input_source* source) {};
   //Return true to block the input source's native handling of this event.
   //index is with respect to this translators list of mapped inputs.
+  //This function should be where we handle any incoming events.
   virtual bool claim_event(int index, mg_ev event) {
     return false;
   };
@@ -95,6 +96,8 @@ public:
 
   //Do we want the input_source to send recurring "ticks" for processing?
   virtual bool wants_recurring_events() { return false; };
+  //Do we want to clear other translators for our events?
+  virtual bool clear_other_translations() { return true; };
 
   advanced_event_translator(std::vector<MGField>& fields) {};
   advanced_event_translator() {};
