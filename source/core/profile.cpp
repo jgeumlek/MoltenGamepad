@@ -24,6 +24,12 @@ profile::~profile() {
   mapping.clear();
 }
 
+event_translator* nullsafe_clone(event_translator* trans) {
+  if (trans)
+    return trans->clone();
+  return nullptr;
+}
+
 //This is private, called only while locked.
 trans_map* profile::get_mapping(std::string in_event_name) {
   auto it = mapping.find(in_event_name);
@@ -45,17 +51,6 @@ entry_type profile::get_entry_type(std::string in_event_name) {
   return (it->second.type);
 }
 
-event_translator* profile::copy_mapping(std::string in_event_name) {
-  auto alias = aliases.find(in_event_name);
-  if (alias != aliases.end()) {
-    in_event_name = alias->second;
-    int8_t dir = read_direction(in_event_name);
-  }
-  auto it = mapping.find(in_event_name);
-  if (it == mapping.end()) return new event_translator();
-  return (it->second.trans->clone());
-}
-
 void profile::set_mapping(std::string in_event_name, int8_t direction, event_translator* mapper, entry_type type, bool add_new) {
   std::lock_guard<std::mutex> guard(lock);
   auto alias = aliases.find(in_event_name);
@@ -68,18 +63,18 @@ void profile::set_mapping(std::string in_event_name, int8_t direction, event_tra
   trans_map* oldmap = get_mapping(in_event_name);
 
   if (!add_new && oldmap == nullptr) {
-    delete mapper;
+    if (mapper)
+      delete mapper;
     return; //We don't recognize this event, and we don't want to!
   }
 
   if (oldmap && oldmap->trans) delete oldmap->trans;
   if (oldmap)
     clear_group_mapping(oldmap->active_group);
-  mapping.erase(in_event_name);
-  mapping[in_event_name] = {mapper, type, direction};
+  mapping[in_event_name] = {mapper, type, direction, nullptr};
   for (auto prof : subscribers) {
     auto ptr = prof.lock();
-    if (ptr) ptr->set_mapping(in_event_name, direction, mapper->clone(), type, add_new);
+    if (ptr) ptr->set_mapping(in_event_name, direction, mapper ? mapper->clone() : nullptr, type, add_new);
   }
   for (auto dev : devices) {
     auto ptr = dev.lock();
@@ -357,18 +352,18 @@ void profile::clear_mapping(std::pair<const std::string,trans_map>* event_mappin
   clear_group_mapping(event_mapping->second.active_group);
   if (event_mapping->second.trans)
     delete event_mapping->second.trans;
-  event_mapping->second.trans = new event_translator;
+  event_mapping->second.trans = nullptr;
   event_mapping->second.direction = 0;
   event_mapping->second.active_group = nullptr;
   //still need to propagate new mapping
   auto type = event_mapping->second.type;
   for (auto prof : subscribers) {
     auto ptr = prof.lock();
-    if (ptr) ptr->set_mapping(event_mapping->first, 0, event_mapping->second.trans->clone(), type, false);
+    if (ptr) ptr->set_mapping(event_mapping->first, 0, nullptr, type, false);
   }
   for (auto dev : devices) {
     auto ptr = dev.lock();
-    if (ptr) ptr->update_map(event_mapping->first.c_str(), 0, event_mapping->second.trans);
+    if (ptr) ptr->update_map(event_mapping->first.c_str(), 0, nullptr);
   }
 }
 void profile::clear_group_mapping(adv_map* group_mapping) {
@@ -453,7 +448,7 @@ void profile::copy_into(std::shared_ptr<profile> target, bool add_subscription, 
     //as they might refer to events the subscriber does not have.
   }
   for (auto entry : mapping)
-    target->set_mapping(entry.first, entry.second.direction, entry.second.trans->clone(), entry.second.type, add_new);
+    target->set_mapping(entry.first, entry.second.direction, nullsafe_clone(entry.second.trans), entry.second.type, add_new);
   for (auto entry : adv_trans)
     target->set_advanced(entry.second.fields, entry.second.directions, entry.second.trans->clone());
   std::vector<option_info> optionlist;
@@ -498,14 +493,14 @@ void profile::build_default_gamepad_profile() {
     (*map)["thumbl"] =   {new btn2btn(BTN_THUMBL), DEV_KEY};
     (*map)["thumbr"] =   {new btn2btn(BTN_THUMBR), DEV_KEY};
 
-    (*map)["left_x"] = {new event_translator(), DEV_AXIS};
-    (*map)["left_y"] = {new event_translator(), DEV_AXIS};
-    (*map)["right_x"] = {new event_translator(), DEV_AXIS};
-    (*map)["right_y"] = {new event_translator(), DEV_AXIS};
+    (*map)["left_x"] = {nullptr, DEV_AXIS};
+    (*map)["left_y"] = {nullptr, DEV_AXIS};
+    (*map)["right_x"] = {nullptr, DEV_AXIS};
+    (*map)["right_y"] = {nullptr, DEV_AXIS};
     (*map)["tl2_axis"] = {new axis2axis(ABS_Z, 1), DEV_AXIS};
     (*map)["tr2_axis"] = {new axis2axis(ABS_RZ, 1), DEV_AXIS};
-    (*map)["tl2_axis_btn"] = {new event_translator(), DEV_KEY};
-    (*map)["tr2_axis_btn"] = {new event_translator(), DEV_KEY};
+    (*map)["tl2_axis_btn"] = {nullptr, DEV_KEY};
+    (*map)["tr2_axis_btn"] = {nullptr, DEV_KEY};
 
     //For devices with the dpad as a hat.
     (*map)["updown"] =   {new axis2btns(BTN_DPAD_UP,BTN_DPAD_DOWN), DEV_AXIS};
@@ -535,7 +530,8 @@ void profile::gamepad_defaults() {
     std::string alias = get_alias(entry.first);
     int8_t dir = read_direction(alias)*entry.second.direction;
     alias = alias.empty() ? entry.first : alias;
-    mapping[alias] = {entry.second.trans->clone(), entry.second.type, dir};
+    event_translator* mapper = entry.second.trans ? entry.second.trans->clone() : nullptr;
+    mapping[alias] = {mapper, entry.second.type, dir};
   }
   for (auto entry : default_gamepad_profile.adv_trans) {
     std::vector<std::string> aliases;
@@ -546,7 +542,7 @@ void profile::gamepad_defaults() {
       aliases.push_back(alias.empty() ? entry.second.fields[i] : alias);
       directions.push_back(entry.second.directions[i]*dir);
     }
-    
+
     auto it = aliases.begin();
     //this key creation is still not ideal.
     std::string key = *it;
@@ -558,7 +554,28 @@ void profile::gamepad_defaults() {
     new_entry.fields = aliases;
     new_entry.trans = entry.second.trans->clone();
     new_entry.directions = directions;
+    new_entry.clear_other_translations = new_entry.trans->clear_other_translations();
     adv_trans[key] = new_entry;
+    if (new_entry.clear_other_translations) {
+      //go through and clear the other translations!
+      std::unordered_set<std::pair<const std::string,trans_map>*> uniq_maps;
+      for (auto name : new_entry.fields) {
+        //due to aliasing, do the unique set after lookup.
+        auto lookup = mapping.find(name);
+
+        if (lookup != mapping.end())
+          uniq_maps.insert(&(*lookup));
+      }
+      adv_map* this_map = &(adv_trans.find(key)->second);
+      //for each unique individual event involved:
+      //clear any previous individual translation and
+      //set this group translator as the active group
+      for (auto map : uniq_maps) {
+        clear_mapping(map);
+        map->second.active_group = this_map;
+      }
+    }
+
   }
   lock.unlock();
 }

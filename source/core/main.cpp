@@ -66,7 +66,8 @@ int main(int argc, char* argv[]) {
       pid = fork();
     if (daemon && pid == -1) {
       std::cerr << "Failed to fork." << std::endl;
-      throw -18;
+      std::runtime_error e("fork failure");
+      throw e;
     }
     if (pid > 0) {
       //We are a parent process! Just write out the pid and exit.
@@ -104,7 +105,8 @@ int main(int argc, char* argv[]) {
         stdin_thread = nullptr;
       }
 
-    } catch (...) {
+    } catch (std::exception& e) {
+      std::cout << e.what() << std::endl;
       retcode = -45;
     }
 
@@ -115,8 +117,8 @@ int main(int argc, char* argv[]) {
     delete mg;
     exit(0);
 
-  } catch (int e) {
-    return e;
+  } catch (std::exception& e) {
+    return -46;
   }
 
   exit(retcode);

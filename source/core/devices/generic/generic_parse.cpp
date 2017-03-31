@@ -57,7 +57,7 @@ void generic_assignment_line(std::vector<token>& line, generic_driver_info*& inf
     }
     try {
       numeric_literal = std::stoi((*it).value);
-    } catch (...) {
+    } catch (std::exception& e) {
       parse_error(mg, "gendev: could not parse event code number.", context);
       return;
     }
@@ -143,10 +143,12 @@ void generic_assignment_line(std::vector<token>& line, generic_driver_info*& inf
   if (field == "split") {
     try {
       int split_count  = std::stoi(value);
+      if (split_count <= 0)
+        throw std::runtime_error("invalid split");
       info->split = split_count;
       info->split_types.clear();
       info->split_types.assign(split_count,"gamepad");
-    } catch (...) {
+    } catch (std::exception& e) {
       mg->drivers.err(0,"gendev: split value invalid.", context.path, context.line_number);
     }
     return;
@@ -157,8 +159,9 @@ void generic_assignment_line(std::vector<token>& line, generic_driver_info*& inf
     try {
       split_id  = std::stoi(prefix);
       if (split_id <= 0 || split_id > info->split)
-        throw -1;
-    } catch (...) {
+        throw std::runtime_error("invalid split");
+    } catch (std::exception& e) {
+      //catches both parse errors and out-of-range issues...
       mg->drivers.err(0,"gendev: split value invalid.", context.path, context.line_number);
     }
   }
@@ -206,7 +209,7 @@ void generic_assignment_line(std::vector<token>& line, generic_driver_info*& inf
 int parse_hex(const std::string& text) {
   try {
     return std::stoi(text,0,16);
-  } catch(...) {
+  } catch(std::exception& e) {
   }
   return -1;
 }
@@ -214,7 +217,7 @@ int parse_hex(const std::string& text) {
 int parse_dec(const std::string& text) {
   try {
     return std::stoi(text,0,10);
-  } catch(...) {
+  } catch(std::exception& e) {
   }
   return -1;
 }

@@ -124,7 +124,7 @@ virtual_gamepad::virtual_gamepad(std::string name, std::string descr, virtpad_se
   set_face_map(settings.facemap_1234);
   settings.u_ids.phys = "moltengamepad/" + name;
   uinput_fd = ui->make_gamepad(settings.u_ids, dpad_as_hat, analog_triggers, settings.rumble);
-  if (uinput_fd < 0) throw - 5;
+  if (uinput_fd < 0) throw std::runtime_error("No uinput node available.");
   if (settings.rumble)
     ui->watch_for_ff(uinput_fd, this);
   options["dpad_as_hat"] = boolstrings[dpad_as_hat];
@@ -140,14 +140,14 @@ virtual_gamepad::virtual_gamepad(std::string name, std::string descr, virtpad_se
 
 virtual_keyboard::virtual_keyboard(std::string name, std::string descr, uinput_ids keyboard_ids, uinput_ids mouse_ids, uinput* ui) : output_slot(name, descr) {
   uinput_fd = ui->make_keyboard(keyboard_ids);
-  if (uinput_fd < 0) throw -5;
+  if (uinput_fd < 0) throw std::runtime_error("No uinput node available.");
   options["device_string"] = keyboard_ids.device_string;
   options["vendor_id"] = std::to_string(keyboard_ids.vendor_id);
   options["product_id"] = std::to_string(keyboard_ids.product_id);
   options["version_id"] = std::to_string(keyboard_ids.version_id);
   
   mouse_fd = ui->make_mouse(mouse_ids);
-  if (mouse_fd < 0) throw -5;
+  if (mouse_fd < 0) throw std::runtime_error("Making uinput mouse failed.");
   
   this->u_ids = keyboard_ids;
   this->ui = ui;

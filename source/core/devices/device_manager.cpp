@@ -11,9 +11,16 @@ device_manager::device_manager(moltengamepad* mg, manager_plugin plugin, void* p
 int device_manager::register_event(event_decl ev) {
   events.push_back(ev);
   std::vector<token> tokens = tokenize(std::string(ev.default_mapping));
+  tokens.pop_back(); //remove the endline token.
   auto it = tokens.begin();
-  event_translator* trans = MGparser::parse_trans(ev.type, tokens, it, nullptr);
-  mapprofile->set_mapping(std::string(ev.name), 1, trans ? trans : new event_translator(), ev.type, true);
+  event_translator* trans = nullptr;
+  try {
+    if (it != tokens.end())
+      trans = MGparser::parse_trans(ev.type, tokens, it, nullptr);
+  } catch (std::exception& e) {
+    //just use nullptr, it gets treated sensibly as a NOOP.
+  }
+  mapprofile->set_mapping(std::string(ev.name), 1, trans, ev.type, true);
   return 0;
 }
 

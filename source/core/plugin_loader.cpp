@@ -20,8 +20,12 @@ int load_builtins(moltengamepad* mg) {
   plugin_api reset = plugin_methods;
   for (auto func : builtin_plugins) {
     //Be overly cautious, keep one plugin from clearing methods for others.
-    plugin_methods = reset;
-    func(plugin_methods);
+    try {
+      plugin_methods = reset;
+      func(plugin_methods);
+    } catch (std::exception& e) {
+      std::cout << "PLGIN: " << e.what() << std::endl;
+    }
   }
   return 0;
 };

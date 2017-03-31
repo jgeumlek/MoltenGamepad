@@ -45,8 +45,6 @@ public:
 
   entry_type get_entry_type(std::string in_event_name);
 
-  event_translator* copy_mapping(std::string in_event_name);
-
   void set_mapping(std::string in_event_name, int8_t direction, event_translator* mapper, entry_type type, bool add_new);
 
   void set_advanced(std::vector<std::string> names, std::vector<int8_t> directions, advanced_event_translator* trans);

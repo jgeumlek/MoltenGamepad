@@ -94,7 +94,7 @@ public:
     if (sc_context_thread) {
       try {
         sc_context_thread->join();
-      } catch (...) {
+      } catch (std::exception& e) {
       }
       delete sc_context_thread;
     }

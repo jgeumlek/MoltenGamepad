@@ -122,6 +122,8 @@ void input_source::update_map(const char* evname, int8_t direction, event_transl
     direction *= read_direction(alias->second);
   }
   evname = name.c_str();
+  if (!trans)
+    trans = new event_translator();
   for (int i = 0; i < events.size(); i++) {
     if (!strcmp(evname, events[i].name)) {
       set_trans(i, direction, trans->clone());

@@ -284,7 +284,6 @@ int moltengamepad::init() {
   } else {
     std::cout << "No moltengamepad.cfg found." << std::endl;
   }
-
   //Now that we have all config parsed,
   //check for FIFO to quit early if needed.
   if (opts->get<bool>("make_fifo") || opts->get<bool>("replace_fifo")) {
@@ -303,7 +302,7 @@ int moltengamepad::init() {
     }
     if (fifo_path.empty()) {
       stdout->err(0,"Could not locate fifo path. Use the --fifo-path command line argument.");
-      throw -1; //Abort so we don't accidentally run without a means of control.
+      throw std::runtime_error("FIFO failed."); //Abort so we don't accidentally run without a means of control.
     }
     if (opts->get<bool>("replace_fifo")) {
       debug_print(DEBUG_NONE, 2, "Replacing FIFO at ", fifo_path.c_str());
@@ -320,7 +319,7 @@ int moltengamepad::init() {
       //lock them! No further changes.
       opts->lock("make_fifo",true);
       opts->lock("fifo_path",true);
-      throw -1;
+      throw std::runtime_error("FIFO failed.");
     } else {
       opts->set("fifo_path",fifo_path);
       opts->lock("fifo_path",true);
@@ -342,15 +341,13 @@ int moltengamepad::init() {
       opts->lock("make_socket",false);
       opts->set("make_socket","false");
       opts->lock("make_socket",true);
-      throw -1;
+      throw std::runtime_error("Socket failed.");
     } else {
       opts->lock("socket_path",false);
       opts->set("socket_path",socket_path);
       opts->lock("socket_path",true);
     }
   }
-      
-      
 
   //build the gamepad profile
   gamepad->gamepad_defaults();

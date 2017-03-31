@@ -76,7 +76,7 @@ void udev_handler::pass_along_device(struct udev_device* new_dev) {
 
 udev_handler::udev_handler() {
   udev = udev_new();
-  if (udev == nullptr) throw - 11;
+  if (udev == nullptr) throw std::runtime_error("udev failed.");
 
   monitor = nullptr;
   monitor_thread = nullptr;
@@ -89,7 +89,7 @@ udev_handler::~udev_handler() {
     write(pipe_fd, &signal, sizeof(signal));
     try {
       monitor_thread->join();
-    } catch (...) {
+    } catch (std::exception& e) {
     }
     delete monitor_thread;
   }

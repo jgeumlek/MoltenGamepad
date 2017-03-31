@@ -55,6 +55,20 @@ public:
 
 trans_decl build_trans_decl(const char* decl_str);
 
+class MGParseException : public std::exception {
+  virtual const char* what() const throw()
+  {
+    return "Parsing input failed.";
+  }
+};
+
+class MGParseTransException : public MGParseException {
+  virtual const char* what() const throw()
+  {
+    return "Parsing translator failed.";
+  }
+};
+
 class MGparser {
 public:
   MGparser(moltengamepad* mg, message_protocol* output);

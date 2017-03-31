@@ -106,7 +106,7 @@ int options::set_locked(std::string& opname, std::string& value) {
       if (callback)
         callback(opname, newval);
       return 0;
-    } catch(...) {
+    } catch(std::exception& e) {
       return -1;
     }
   }

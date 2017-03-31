@@ -24,7 +24,7 @@
 // On failure we need to destroy our local event_translator clones.
 #define TRANS_FAIL \
   for (auto trans : __localclones) { delete trans; };\
-  throw -5;
+  throw std::runtime_error("translator construction failed.");
 
 #define READ_DEF(X,TYPE,LOC)  \
   if (fields.size() > __index && fields.at(__index).type == TYPE) { \

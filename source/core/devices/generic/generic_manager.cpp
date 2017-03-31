@@ -378,7 +378,7 @@ int generic_manager::open_device(struct udev* udev, struct udev_device* dev) {
       openfiles.push_back(new generic_file(mg, dev, descr->grab_ioctl, descr->grab_chmod, descr->rumble));
       create_inputs(openfiles.back());
     }
-  } catch (...) {
+  } catch (std::exception& e) {
     return FAILURE; //Something went wrong opening this device...
   }
   return SUCCESS;

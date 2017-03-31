@@ -29,7 +29,7 @@ generic_file::generic_file(moltengamepad* mg, struct udev_device* node, bool gra
   int ret = epoll_ctl(epfd, EPOLL_CTL_ADD, internal_pipe[0], &event);
   if (ret < 0) perror("epoll add");
   
-  if (fds.empty()) throw - 1;
+  if (fds.empty()) throw std::runtime_error("Generic device node opening failed.");
 
   thread = new std::thread(&generic_file::thread_loop, this);
 }
@@ -45,7 +45,7 @@ generic_file::~generic_file() {
     write(internal_pipe[1],&beep,sizeof(beep));
     try {
       thread->join();
-    } catch (...) {
+    } catch (std::exception& e) {
     }
     delete thread;
   }

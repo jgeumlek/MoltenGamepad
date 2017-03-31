@@ -7,12 +7,20 @@
 
 void print_profile(profile& profile, std::ostream& out) {
   profile.lock.lock();
+  std::vector<std::string> unmapped_events;
   for (auto it = profile.mapping.begin(); it != profile.mapping.end(); it++) {
-    out << profile.name << "." << it->first << (it->second.direction == -1 ? "-" : "") << " = ";
-    MGTransDef def;
-    it->second.trans->fill_def(def);
-    MGparser::print_def(it->second.type, def, out);
-    out << std::endl;
+    if (!it->second.active_group) {
+      //if it has an active group translation, don't print it out separately.
+      if (it->second.trans) {
+        out << profile.name << "." << it->first << (it->second.direction == -1 ? "-" : "") << " = ";
+        MGTransDef def;
+        it->second.trans->fill_def(def);
+        MGparser::print_def(it->second.type, def, out);
+        out << std::endl;
+      } else {
+        unmapped_events.push_back(it->first);
+      }
+    }
   }
   for (auto entry : profile.adv_trans) {
     out << profile.name << ".(";
@@ -26,6 +34,13 @@ void print_profile(profile& profile, std::ostream& out) {
     MGTransDef def;
     entry.second.trans->fill_def(def);
     MGparser::print_def(NO_ENTRY, def, out);
+    out << std::endl;
+  }
+  if (!unmapped_events.empty()) {
+    out << "#unmapped events:";
+    for (auto event : unmapped_events) {
+      out << " " << event;
+    }
     out << std::endl;
   }
   std::vector<option_info> opts;
