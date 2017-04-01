@@ -7,7 +7,7 @@
 class input_source;
 class device_manager;
 class event_translator;
-class advanced_event_translator;
+class group_translator;
 class output_slot;
 
 
@@ -18,7 +18,7 @@ struct MGField {
   MGType type;
   union {
     event_translator* trans;
-    advanced_event_translator* adv_trans;
+    group_translator* group_trans;
     int key;
     int axis;
     int rel;
@@ -54,7 +54,7 @@ struct event_group_decl {
   // Ex: "touch_x,touch_y" or "tilt_y,tilt_x-" or "l,r,select,start"
   const char* namelist;
   const char* descr;
-  const char* default_mapping; //will be read by the parser to generate an advanced event translator
+  const char* default_mapping; //will be read by the parser to generate a group translator
 };
 
 struct option_decl {
@@ -146,7 +146,7 @@ struct manager_methods {
   int (*remove_device) (device_manager*, input_source*);
   //Print a message coming from this manager.
   int (*print) (device_manager*, const char* message);
-  //register a group of events and provide a default advanced translator for them.
+  //register a group of events and provide a default group translator for them.
   int (*register_event_group) (device_manager*, event_group_decl);
 };
 

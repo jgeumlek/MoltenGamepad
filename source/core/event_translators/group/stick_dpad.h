@@ -1,7 +1,7 @@
 #pragma once
 #include "../event_change.h"
 
-class stick_dpad : public advanced_event_translator {
+class stick_dpad : public group_translator {
 public:
   int event_ids[2];
   int64_t event_vals[2];
@@ -25,7 +25,7 @@ public:
   virtual bool claim_event(int id, mg_ev event);
   virtual void process_syn_report(output_slot* out);
 
-  virtual advanced_event_translator* clone() {
+  virtual group_translator* clone() {
     return new stick_dpad(*this);
   }
 

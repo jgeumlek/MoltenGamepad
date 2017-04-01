@@ -22,7 +22,7 @@ void print_profile(profile& profile, std::ostream& out) {
       }
     }
   }
-  for (auto entry : profile.adv_trans) {
+  for (auto entry : profile.group_trans) {
     out << profile.name << ".(";
     if (entry.second.fields.size() >= 1) {
       out << entry.second.fields[0] << (entry.second.directions[0] == -1 ? "-" : "");
@@ -56,7 +56,7 @@ void print_profile(profile& profile, std::ostream& out) {
     }
     out << "   #  " << opt.descr << std::endl;
   }
-  if (profile.mapping.empty() && profile.adv_trans.empty() && opts.empty())
+  if (profile.mapping.empty() && profile.group_trans.empty() && opts.empty())
     out << "#(empty profile)" << std::endl;
   profile.lock.unlock();
 }
@@ -233,9 +233,9 @@ int do_print_trans(moltengamepad* mg, std::string name, std::ostream& out) {
     for (auto gen : MGparser::trans_gens) {
       if (gen.second.generate && gen.second.decl.decl_str) out << "\t" << gen.second.decl.decl_str <<  std::endl;
     }
-    out << "advanced event translators" << std::endl;
+    out << "group translators" << std::endl;
     for (auto gen : MGparser::trans_gens) {
-      if (gen.second.adv_generate && gen.second.decl.decl_str) out << "\t" << gen.second.decl.decl_str <<  std::endl;
+      if (gen.second.group_generate && gen.second.decl.decl_str) out << "\t" << gen.second.decl.decl_str <<  std::endl;
     }
     return 0;
   }

@@ -11,13 +11,13 @@
 typedef std::pair<std::string, std::string> str_pair;
 
 class event_translator;
-class advanced_event_translator;
+class group_translator;
 class input_source;
 
-struct adv_map {
+struct group_map {
   std::vector<std::string> fields;
   std::vector<int8_t> directions; //holds info on whether each field is inverted or not.
-  advanced_event_translator* trans;
+  group_translator* trans;
   //Is this group translation mutually exclusive with individual translations?
   //Should we prevent letting these events be translated by other translators?
   bool clear_other_translations; 
@@ -27,7 +27,7 @@ struct trans_map {
   event_translator* trans;
   entry_type type;
   int8_t direction; //holds info on source event being inverted.
-  adv_map* active_group; //Is this event currently participating in a blocking event group?
+  group_map* active_group; //Is this event currently participating in a blocking event group?
   //The rules of blocking imply any event should be in at most one blocking group at any time.
   //If active_group is not null, this trans should be the NOOP "nothing" translation.
 };
@@ -39,7 +39,7 @@ public:
   std::unordered_map<std::string, trans_map> mapping;
   options opts;
   std::unordered_map<std::string, std::string> aliases;
-  std::map<std::string, adv_map> adv_trans;
+  std::map<std::string, group_map> group_trans;
   mutable std::mutex lock;
 
 
@@ -47,7 +47,7 @@ public:
 
   void set_mapping(std::string in_event_name, int8_t direction, event_translator* mapper, entry_type type, bool add_new);
 
-  void set_advanced(std::vector<std::string> names, std::vector<int8_t> directions, advanced_event_translator* trans);
+  void set_group_mapping(std::vector<std::string> names, std::vector<int8_t> directions, group_translator* trans);
 
   void remove_event(std::string event_name);
   void register_option(const option_info opt);
@@ -91,7 +91,7 @@ private:
 
   //called while locked
   void clear_mapping(std::pair<const std::string,trans_map>*);
-  void clear_group_mapping(adv_map* group_mapping);
+  void clear_group_mapping(group_map* group_mapping);
 
 };
 

@@ -58,12 +58,12 @@ int device_manager::register_event_group(event_group_decl ev) {
   }
   mapprofile->set_group_alias(group, names);
   std::vector<token> tokens = tokenize(std::string(ev.default_mapping));
-  advanced_event_translator* trans = MGparser::parse_adv_trans(tokens, nullptr);
+  group_translator* trans = MGparser::parse_group_trans(tokens, nullptr);
   if (trans) {
     std::vector<std::string> fields;
     fields.push_back(group);
     std::vector<int8_t> directions({1});
-    mapprofile->set_advanced(fields, directions, trans);
+    mapprofile->set_group_mapping(fields, directions, trans);
   }
   return 0;
 }

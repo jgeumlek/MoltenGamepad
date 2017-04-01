@@ -12,7 +12,7 @@
 #include "general/multitrans.h"
 #include "general/redirect_trans.h"
 
-#include "advanced/simple_chord.h"
-#include "advanced/exclusive_chord.h"
-#include "advanced/thumbstick.h"
-#include "advanced/stick_dpad.h"
+#include "group/simple_chord.h"
+#include "group/exclusive_chord.h"
+#include "group/thumbstick.h"
+#include "group/stick_dpad.h"

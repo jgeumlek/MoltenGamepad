@@ -17,14 +17,14 @@
 
 
 class event_translator;
-class advanced_event_translator;
+class group_translator;
 class moltengamepad;
 
 
 class device_manager;
 
-struct adv_listener {
-  advanced_event_translator* trans;
+struct group_listener {
+  group_translator* trans;
   int index;
   int8_t direction;
 };
@@ -32,7 +32,7 @@ struct adv_listener {
 struct event_mapping {
   event_translator* trans;
   int8_t direction;
-  std::vector<adv_listener> attached;
+  std::vector<group_listener> attached;
 };
 
 struct recurring_info {
@@ -40,11 +40,11 @@ struct recurring_info {
   int id;
 };
 
-struct adv_entry {
+struct group_entry {
   std::string* key;
   std::vector<int>* fields;
   std::vector<int8_t>* directions;
-  advanced_event_translator* trans;
+  group_translator* trans;
 };
 
 //Struct used internally, not designed for public consumption.
@@ -67,7 +67,7 @@ public:
   void update_map(const char* evname, int8_t direction, event_translator* trans);
   void update_option(const char* opname, const MGField field);
   void remove_option(std::string option_name);
-  void update_advanced(const std::vector<std::string>& evnames, std::vector<int8_t> directions, advanced_event_translator* trans);
+  void update_group(const std::vector<std::string>& evnames, std::vector<int8_t> directions, group_translator* trans);
 
   void start_thread();
   void end_thread();
@@ -76,10 +76,10 @@ public:
     return events;
   };
   
-  void inject_event(int id, int64_t value, bool skip_adv_trans);
+  void inject_event(int id, int64_t value, bool skip_group_trans);
 
-  void add_listener(int id, int8_t direction, advanced_event_translator* trans, int trans_index);
-  void remove_listener(int id, advanced_event_translator* trans);
+  void add_listener(int id, int8_t direction, group_translator* trans, int trans_index);
+  void remove_listener(int id, group_translator* trans);
 
   int upload_ff(ff_effect effect);
   int erase_ff(int id);
@@ -111,7 +111,7 @@ protected:
   std::vector<source_event> events;
   std::vector<event_mapping> ev_map;
   std::map<std::string, option_info> options;
-  std::map<std::string, adv_entry> adv_trans;
+  std::map<std::string, group_entry> group_trans;
   std::shared_ptr<profile> devprofile = std::make_shared<profile>();
   std::thread* thread = nullptr;
   volatile bool keep_looping = true;
@@ -124,7 +124,7 @@ protected:
   int ff_ids[1]; //Since the physical device might hand us different ids.
 
   std::vector<recurring_info> recurring_events;
-  std::vector<const advanced_event_translator*> adv_recurring_events;
+  std::vector<const group_translator*> group_recurring_events;
   bool do_recurring_events = false;
   timespec last_recurring_update;
 
@@ -149,8 +149,8 @@ protected:
 
   void add_recurring_event(const event_translator* trans, int id);
   void remove_recurring_event(const event_translator* trans);
-  void add_adv_recurring_event(const advanced_event_translator* trans);
-  void remove_adv_recurring_event(const advanced_event_translator* trans);
+  void add_group_recurring_event(const group_translator* trans);
+  void remove_group_recurring_event(const group_translator* trans);
 
   void process_recurring_events();
   int64_t ms_since_last_recurring_update();

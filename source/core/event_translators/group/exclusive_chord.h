@@ -11,7 +11,7 @@ public:
 
   virtual void init(input_source* source);
   virtual bool claim_event(int id, mg_ev event);
-  virtual advanced_event_translator* clone() {
+  virtual group_translator* clone() {
     return new exclusive_chord(out_trans->clone());
   }
 

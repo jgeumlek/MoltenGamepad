@@ -17,7 +17,7 @@ profile::~profile() {
     if (it->second.trans) delete it->second.trans;
   }
 
-  for (auto e : adv_trans) {
+  for (auto e : group_trans) {
     if (e.second.trans) delete e.second.trans;
   }
 
@@ -173,7 +173,7 @@ void profile::remove_option(std::string option_name) {
   }
 }
 
-void profile::set_advanced(std::vector<std::string> names, std::vector<int8_t> directions, advanced_event_translator* trans) {
+void profile::set_group_mapping(std::vector<std::string> names, std::vector<int8_t> directions, group_translator* trans) {
   if (names.empty()) return;
   std::lock_guard<std::mutex> guard(lock);
   int total_op = 0; //a little counter to avoid infinite loops.
@@ -228,18 +228,18 @@ void profile::set_advanced(std::vector<std::string> names, std::vector<int8_t> d
     key += "," + (*it);
   }
 
-  auto stored = adv_trans.find(key);
-  if (stored != adv_trans.end()) {
+  auto stored = group_trans.find(key);
+  if (stored != group_trans.end()) {
     clear_group_mapping(&(stored->second));
   }
 
   if (trans) {
-    adv_map entry;
+    group_map entry;
     entry.fields = names;
     entry.trans = trans;
     entry.directions = directions;
     entry.clear_other_translations = trans->clear_other_translations();
-    adv_trans[key] = entry;
+    group_trans[key] = entry;
     if (entry.clear_other_translations) {
       //go through and clear the other translations!
       std::unordered_set<std::pair<const std::string,trans_map>*> uniq_maps;
@@ -250,7 +250,7 @@ void profile::set_advanced(std::vector<std::string> names, std::vector<int8_t> d
         if (lookup != mapping.end())
           uniq_maps.insert(&(*lookup));
       }
-      adv_map* this_map = &(adv_trans.find(key)->second);
+      group_map* this_map = &(group_trans.find(key)->second);
       //for each unique individual event involved:
       //clear any previous individual translation and
       //set this group translator as the active group
@@ -262,11 +262,11 @@ void profile::set_advanced(std::vector<std::string> names, std::vector<int8_t> d
   }
   for (auto prof : subscribers) {
     auto ptr = prof.lock();
-    if (ptr) ptr->set_advanced(names, directions, trans ? trans->clone() : nullptr);
+    if (ptr) ptr->set_group_mapping(names, directions, trans ? trans->clone() : nullptr);
   }
   for (auto dev : devices) {
     auto ptr = dev.lock();
-    if (ptr) ptr->update_advanced(names, directions, trans);
+    if (ptr) ptr->update_group(names, directions, trans);
   }
 }
 
@@ -366,7 +366,7 @@ void profile::clear_mapping(std::pair<const std::string,trans_map>* event_mappin
     if (ptr) ptr->update_map(event_mapping->first.c_str(), 0, nullptr);
   }
 }
-void profile::clear_group_mapping(adv_map* group_mapping) {
+void profile::clear_group_mapping(group_map* group_mapping) {
   if (!group_mapping)
     return;
   //First, clear all back pointers
@@ -377,18 +377,18 @@ void profile::clear_group_mapping(adv_map* group_mapping) {
   }
   if (group_mapping->trans)
     delete group_mapping->trans;
-  for (const auto& pair : adv_trans) {
+  for (const auto& pair : group_trans) {
     if (&(pair.second) == group_mapping) {
       //propagate the change before deleting the metadata we need...
       for (auto prof : subscribers) {
         auto ptr = prof.lock();
-        if (ptr) ptr->set_advanced(group_mapping->fields, group_mapping->directions, nullptr);
+        if (ptr) ptr->set_group_mapping(group_mapping->fields, group_mapping->directions, nullptr);
       }
       for (auto dev : devices) {
         auto ptr = dev.lock();
-        if (ptr) ptr->update_advanced(group_mapping->fields, group_mapping->directions, nullptr);
+        if (ptr) ptr->update_group(group_mapping->fields, group_mapping->directions, nullptr);
       }
-      adv_trans.erase(pair.first);
+      group_trans.erase(pair.first);
       break;
     }
   }
@@ -449,8 +449,8 @@ void profile::copy_into(std::shared_ptr<profile> target, bool add_subscription, 
   }
   for (auto entry : mapping)
     target->set_mapping(entry.first, entry.second.direction, nullsafe_clone(entry.second.trans), entry.second.type, add_new);
-  for (auto entry : adv_trans)
-    target->set_advanced(entry.second.fields, entry.second.directions, entry.second.trans->clone());
+  for (auto entry : group_trans)
+    target->set_group_mapping(entry.second.fields, entry.second.directions, entry.second.trans->clone());
   std::vector<option_info> optionlist;
   opts.list_options(optionlist);
   for (auto opt : optionlist) {
@@ -470,7 +470,7 @@ void profile::copy_into(std::shared_ptr<profile> target, bool add_subscription, 
 }
 
 void profile::build_default_gamepad_profile() {
-  bool do_adv = false;
+  bool do_group = false;
 
   default_gamepad_profile.lock.lock();
   if (default_gamepad_profile.mapping.empty()) {
@@ -506,17 +506,17 @@ void profile::build_default_gamepad_profile() {
     (*map)["updown"] =   {new axis2btns(BTN_DPAD_UP,BTN_DPAD_DOWN), DEV_AXIS};
     (*map)["leftright"] =   {new axis2btns(BTN_DPAD_LEFT,BTN_DPAD_RIGHT), DEV_AXIS};
 
-    do_adv = true;
+    do_group = true;
   }
   default_gamepad_profile.lock.unlock();
-  if (do_adv) {
+  if (do_group) {
     //easier to reuse code and do this with functions that will also affect the lock.
     std::vector<std::string> evnames({"left_x","left_y"});
     std::vector<int8_t> directions({1,1});
-    default_gamepad_profile.set_advanced(evnames,directions,new thumb_stick(ABS_X,ABS_Y));
+    default_gamepad_profile.set_group_mapping(evnames,directions,new thumb_stick(ABS_X,ABS_Y));
     evnames[0] = "right_x";
     evnames[1] = "right_y";
-    default_gamepad_profile.set_advanced(evnames,directions,new thumb_stick(ABS_RX,ABS_RY));
+    default_gamepad_profile.set_group_mapping(evnames,directions,new thumb_stick(ABS_RX,ABS_RY));
   }
 }
 
@@ -533,7 +533,7 @@ void profile::gamepad_defaults() {
     event_translator* mapper = entry.second.trans ? entry.second.trans->clone() : nullptr;
     mapping[alias] = {mapper, entry.second.type, dir};
   }
-  for (auto entry : default_gamepad_profile.adv_trans) {
+  for (auto entry : default_gamepad_profile.group_trans) {
     std::vector<std::string> aliases;
     std::vector<int8_t> directions;
     for (int i = 0; i < entry.second.fields.size(); i++) {
@@ -550,12 +550,12 @@ void profile::gamepad_defaults() {
     for (; it != aliases.end(); it++) {
       key += "," + (*it);
     }
-    adv_map new_entry;
+    group_map new_entry;
     new_entry.fields = aliases;
     new_entry.trans = entry.second.trans->clone();
     new_entry.directions = directions;
     new_entry.clear_other_translations = new_entry.trans->clear_other_translations();
-    adv_trans[key] = new_entry;
+    group_trans[key] = new_entry;
     if (new_entry.clear_other_translations) {
       //go through and clear the other translations!
       std::unordered_set<std::pair<const std::string,trans_map>*> uniq_maps;
@@ -566,13 +566,16 @@ void profile::gamepad_defaults() {
         if (lookup != mapping.end())
           uniq_maps.insert(&(*lookup));
       }
-      adv_map* this_map = &(adv_trans.find(key)->second);
-      //for each unique individual event involved:
-      //clear any previous individual translation and
-      //set this group translator as the active group
-      for (auto map : uniq_maps) {
-        clear_mapping(map);
-        map->second.active_group = this_map;
+      auto lookup = group_trans.find(key);
+      if (lookup != group_trans.end()) {
+        group_map* this_map = &(lookup->second);
+        //for each unique individual event involved:
+        //clear any previous individual translation and
+        //set this group translator as the active group
+        for (auto map : uniq_maps) {
+          clear_mapping(map);
+          map->second.active_group = this_map;
+        }
       }
     }
 

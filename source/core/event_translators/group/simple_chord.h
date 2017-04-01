@@ -1,7 +1,7 @@
 #pragma once
 #include "../event_change.h"
 
-class simple_chord : public advanced_event_translator {
+class simple_chord : public group_translator {
 public:
   std::vector<int> event_vals;
   int output_cache = 0;
@@ -17,7 +17,7 @@ public:
   virtual bool set_mapped_events(const std::vector<source_event>& listened);
 
   virtual bool claim_event(int id, mg_ev event);
-  virtual advanced_event_translator* clone() {
+  virtual group_translator* clone() {
     return new simple_chord(out_trans->clone());
   }
 

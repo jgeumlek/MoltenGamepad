@@ -175,8 +175,8 @@ MGType parse_type(const std::string& str) {
     return MG_KEY_TRANS;
   if (str == "axis_trans")
     return MG_AXIS_TRANS;
-  if (str == "adv_trans")
-    return MG_ADVANCED_TRANS;
+  if (str == "group_trans")
+    return MG_GROUP_TRANS;
   if (str == "key_code")
     return MG_KEY;
   if (str == "axis_code")
@@ -316,7 +316,7 @@ void MGparser::load_translators(moltengamepad* mg) {
   trans_gens["key"] = trans_gens["mouse"];
   trans_gens["key"].decl.decl_str = "event = key(trans)";
 
-  //add advanced_event_translators
+  //add group_translators
   RENAME_GEN(chord,simple_chord);
   RENAME_GEN(exclusive,exclusive_chord);
   RENAME_GEN(stick,thumb_stick);
@@ -339,10 +339,10 @@ void MGparser::do_assignment(std::string header, std::string field, std::vector<
   left_type = prof->get_entry_type(field);
 
   if (left_type == DEV_EVENT_GROUP) {
-    //whoops! this actually an advanced translation! Switch over to do_adv_assignment
+    //whoops! this actually a group translation! Switch over to do_group_assignment
     std::vector<std::string> fields;
     fields.push_back(field);
-    do_adv_assignment(header, fields, rhs, out);
+    do_group_assignment(header, fields, rhs, out);
     return;
   }
 
@@ -394,7 +394,7 @@ void MGparser::do_assignment(std::string header, std::string field, std::vector<
 
 
 
-void MGparser::do_adv_assignment(std::string header, std::vector<std::string>& fields, std::vector<token> rhs, response_stream& out) {
+void MGparser::do_group_assignment(std::string header, std::vector<std::string>& fields, std::vector<token> rhs, response_stream& out) {
   if (rhs.empty()) return;
   auto prof = mg->find_profile(header);
   if (!prof) {
@@ -407,21 +407,21 @@ void MGparser::do_adv_assignment(std::string header, std::vector<std::string>& f
   }
 
   if (rhs.front().value == "nothing") {
-    prof->set_advanced(fields, directions, nullptr);
-    out.take_message("clearing advanced translator");
+    prof->set_group_mapping(fields, directions, nullptr);
+    out.take_message("clearing group translator");
     return;
   }
-  advanced_event_translator* trans = parse_adv_trans(rhs, &out);
+  group_translator* trans = parse_group_trans(rhs, &out);
   if (!trans) {
     out.take_message("could not parse right hand side");
   }
   if (trans) {
-    prof->set_advanced(fields, directions, trans->clone());
+    prof->set_group_mapping(fields, directions, trans->clone());
     std::stringstream ss;
     MGTransDef def;
     trans->fill_def(def);
     print_def(DEV_KEY, def, ss);
-    out.take_message("setting advanced translator to " + ss.str());
+    out.take_message("setting group translator to " + ss.str());
   }
 
   if (trans) delete trans;
@@ -509,7 +509,7 @@ void MGparser::do_assignment_line(std::vector<token>& line, std::string& header,
   }
 
   if (multifield.size() > 0) {
-    do_adv_assignment(effective_header, multifield, rightside, out);
+    do_group_assignment(effective_header, multifield, rightside, out);
     return;
   }
 
@@ -614,8 +614,8 @@ void release_def(MGTransDef& def) {
   for (auto entry : def.fields) {
     if ((entry.type == MG_TRANS || entry.type == MG_KEY_TRANS || entry.type == MG_AXIS_TRANS || entry.type == MG_REL_TRANS) && entry.trans)
       delete entry.trans;
-    if (entry.type == MG_ADVANCED_TRANS && entry.adv_trans)
-      delete entry.adv_trans;
+    if (entry.type == MG_GROUP_TRANS && entry.group_trans)
+      delete entry.group_trans;
     if (entry.type == MG_STRING && entry.string)
       free((char*)entry.string);
   }
@@ -1150,7 +1150,7 @@ struct complex_expr* read_expr(std::vector<token>& tokens, std::vector<token>::i
   return nullptr;
 }
 
-advanced_event_translator* MGparser::parse_adv_trans(std::vector<token>& rhs, response_stream* out) {
+group_translator* MGparser::parse_group_trans(std::vector<token>& rhs, response_stream* out) {
   auto it = rhs.begin();
   try {
     event_translator* trans = parse_trans(DEV_KEY, rhs, it, nullptr);
@@ -1168,7 +1168,7 @@ advanced_event_translator* MGparser::parse_adv_trans(std::vector<token>& rhs, re
 
   auto generator = trans_gens.find(expr->ident);
   if (generator == trans_gens.end()) {
-    if (out) out->err("no known advanced translator \""+expr->ident+"\".");
+    if (out) out->err("no known group translator \""+expr->ident+"\".");
     return nullptr;
   }
 
@@ -1182,15 +1182,15 @@ advanced_event_translator* MGparser::parse_adv_trans(std::vector<token>& rhs, re
 
 
   //still need to build it!
-  advanced_event_translator* adv_trans;
+  group_translator* group_trans;
   try {
-    adv_trans = generator->second.adv_generate(def.fields);
+    group_trans = generator->second.group_generate(def.fields);
   } catch (std::exception& e) {
-    adv_trans = nullptr;
+    group_trans = nullptr;
   }
   release_def(def);
 
   free_complex_expr(expr);
 
-  return adv_trans;
+  return group_trans;
 }

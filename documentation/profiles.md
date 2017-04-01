@@ -172,7 +172,7 @@ Similar to the button-to-relative mapping, these events are generated at a fixed
 
 ###Mapping a thumb stick
 
-To generate events for a thumb stick, one generally wants to consider the two axes simultaneously to make a decision. This requires using "advanced translators" that can read from multiple events.
+To generate events for a thumb stick, one generally wants to consider the two axes simultaneously to make a decision. This requires using "group translators" that can read from multiple events.
 
     wiimote.(cc_left_x,cc_left_y) = stick(left_x,left_y)
     wiimote.(cc_right_x,cc_right_y) = dpad
@@ -180,7 +180,7 @@ To generate events for a thumb stick, one generally wants to consider the two ax
 The former maps to the left stick of the virtual output device. The latter maps to the dpad of the virtual output device.
 This more-complicated dpad-mapping is only needed for analog axes like a thumb stick. For an input device with the dpad represented as a hat, the section "mapping an axis to buttons" suffices.
 
-Note how the multiple input events are simply listed inside parentheses. To clear an "advanced translator", just set its input combination to "nothing". The mapping is ordering-sensitive!
+Note how the multiple input events are simply listed inside parentheses. To clear a "group translator", just set its input combination to "nothing". The mapping is ordering-sensitive!
 
     wiimote.(cc_left_x,cc_left_y) = nothing
 
@@ -340,7 +340,7 @@ This makes it so that a `thumbl` event is generated everytime both `wm_a` and `w
 
 Chords must use events located on the same input source. Chords DO NOT prevent the original events from firing. (ex. pressing both `wm_a` and `wm_b` would lead to 3 presses, each individually plus the chord event).
 
-If you want a chord that prevents the original events, an implementation is offered via specifying a full `exclusive` advanced translator.
+If you want a chord that prevents the original events, an implementation is offered via specifying a full `exclusive` group translator.
 
     wiimote.(wm_a,wm_b) = exclusive(thumbl)
 

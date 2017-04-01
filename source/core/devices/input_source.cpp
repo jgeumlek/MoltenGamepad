@@ -44,7 +44,7 @@ input_source::~input_source() {
 
 
 
-  for (auto it : adv_trans) {
+  for (auto it : group_trans) {
     if (it.second.trans) delete it.second.trans;
     if (it.second.fields) delete it.second.fields;
     if (it.second.key) delete it.second.key;
@@ -60,12 +60,12 @@ input_source::~input_source() {
 }
 
 struct input_internal_msg {
-  enum input_msg_type { IN_TRANS_MSG, IN_ADV_TRANS_MSG, IN_EVENT_MSG, IN_OPTION_MSG, IN_SLOT_MSG, IN_END_THREAD_MSG } type;
+  enum input_msg_type { IN_TRANS_MSG, IN_GROUP_TRANS_MSG, IN_EVENT_MSG, IN_OPTION_MSG, IN_SLOT_MSG, IN_END_THREAD_MSG } type;
   int id;
   int64_t value;
   MGField field;
-  adv_entry adv;
-  bool skip_adv_trans;
+  group_entry group;
+  bool skip_group_trans;
   char* name;
 };
 
@@ -191,20 +191,20 @@ void input_source::list_options(std::vector<option_info>& list) const {
 
 
 
-void input_source::update_advanced(const std::vector<std::string>& evnames, const std::vector<int8_t> directions, advanced_event_translator* trans) {
+void input_source::update_group(const std::vector<std::string>& evnames, const std::vector<int8_t> directions, group_translator* trans) {
   struct input_internal_msg msg;
   memset(&msg, 0, sizeof(msg));
 
   std::vector<std::string> local_names = evnames;
-  msg.adv.fields = new std::vector<int>();
-  msg.adv.directions = new std::vector<int8_t>(directions);
+  msg.group.fields = new std::vector<int>();
+  msg.group.directions = new std::vector<int8_t>(directions);
   
   //First, translate event names using this device's aliases into the local names.
   for (int i = 0; i < local_names.size(); i++) {
     auto alias = devprofile->aliases.find(std::string(local_names.at(i)));
     if (alias != devprofile->aliases.end()) {
       std::string local_name = alias->second;
-      (*msg.adv.directions)[i] *= read_direction(local_name);
+      (*msg.group.directions)[i] *= read_direction(local_name);
       local_names[i] = local_name;
     }
   }
@@ -216,36 +216,36 @@ void input_source::update_advanced(const std::vector<std::string>& evnames, cons
       if (!strcmp(name.c_str(), ev.name)) {
         found = true;
         //store event index
-        msg.adv.fields->push_back(i);
+        msg.group.fields->push_back(i);
         break;
       }
     }
     if (!found) {
-      delete msg.adv.fields;
-      delete msg.adv.directions;
+      delete msg.group.fields;
+      delete msg.group.directions;
       return; //Abort!
     }
   }
 
   //build the key to store this under.
   auto its = local_names.begin();
-  std::string adv_name = *its;
+  std::string group_name = *its;
   its++;
   for (; its != local_names.end(); its++) {
-    adv_name += "," + (*its);
+    group_name += "," + (*its);
   }
-  msg.adv.key = new std::string(adv_name);
+  msg.group.key = new std::string(group_name);
 
   //Finally, instantiate the translator from it's prototype.
-  msg.adv.trans = nullptr;
+  msg.group.trans = nullptr;
   if (trans) {
-    msg.adv.trans = trans->clone();
-    msg.adv.trans->init(this);
+    msg.group.trans = trans->clone();
+    msg.group.trans->init(this);
   }
 
   msg.id = -1;
   
-  msg.type = input_internal_msg::IN_ADV_TRANS_MSG;
+  msg.type = input_internal_msg::IN_GROUP_TRANS_MSG;
 
   write(priv_pipe, &msg, sizeof(msg));
 }
@@ -265,14 +265,14 @@ void input_source::set_trans(int id, int8_t direction, event_translator* trans) 
   write(priv_pipe, &msg, sizeof(msg));
 };
 
-void input_source::inject_event(int id, int64_t value, bool skip_adv_trans) {
+void input_source::inject_event(int id, int64_t value, bool skip_group_trans) {
   if (id < 0 || id >= events.size()) return;
 
   struct input_internal_msg msg;
   memset(&msg, 0, sizeof(msg));
   msg.id = id;
   msg.value = value;
-  msg.skip_adv_trans = skip_adv_trans;
+  msg.skip_group_trans = skip_group_trans;
   msg.type = input_internal_msg::IN_EVENT_MSG;
   write(priv_pipe, &msg, sizeof(msg));
 
@@ -306,9 +306,9 @@ void input_source::send_value(int id, int64_t value) {
   if (id < 0 || id > events.size() || events[id].value == value)
     return;
   bool blocked = false;
-  for (auto adv_trans : ev_map.at(id).attached) {
-    
-    if (adv_trans.trans->claim_event(adv_trans.index, {apply_direction(events[id].type,value,adv_trans.direction)}))
+  for (auto group_trans : ev_map.at(id).attached) {
+    //check to see if an attached group translator "claims" this event, blocking further translation.
+    if (group_trans.trans->claim_event(group_trans.index, {apply_direction(events[id].type,value,group_trans.direction)}))
       blocked = true;
   }
 
@@ -337,7 +337,7 @@ void input_source::send_value(int id, int64_t value) {
 
 void input_source::send_syn_report() {
   if (out_dev) {
-    for (auto pair : adv_trans) {
+    for (auto pair : group_trans) {
       pair.second.trans->process_syn_report(out_dev);
     }
     input_event ev;
@@ -415,51 +415,51 @@ void input_source::thread_loop() {
 }
 
 void input_source::handle_internal_message(input_internal_msg& msg) {
-  //Is it an advanced_event_translator message?
-  if (msg.type == input_internal_msg::IN_ADV_TRANS_MSG) {
-    if (!msg.adv.fields || msg.adv.fields->empty() || !msg.adv.key || !msg.adv.directions) {
-      if (msg.adv.key) delete msg.adv.key;
-      if (msg.adv.fields) delete msg.adv.fields;
-      if (msg.adv.directions) delete msg.adv.directions;
+  //Is it a group_translator message?
+  if (msg.type == input_internal_msg::IN_GROUP_TRANS_MSG) {
+    if (!msg.group.fields || msg.group.fields->empty() || !msg.group.key || !msg.group.directions) {
+      if (msg.group.key) delete msg.group.key;
+      if (msg.group.fields) delete msg.group.fields;
+      if (msg.group.directions) delete msg.group.directions;
       return;
     }
     
-    std::string adv_name = *msg.adv.key;
-    //If needed, erase the previous adv. trans. with this key.
-    auto it = adv_trans.find(adv_name);
-    if (it != adv_trans.end()) {
-      remove_adv_recurring_event(it->second.trans);
+    std::string group_name = *msg.group.key;
+    //If needed, erase the previous group trans. with this key.
+    auto it = group_trans.find(group_name);
+    if (it != group_trans.end()) {
+      remove_group_recurring_event(it->second.trans);
       for (int ev_id : *(it->second.fields))
         remove_listener(ev_id, it->second.trans);
       delete it->second.fields;
       delete it->second.trans;
       delete it->second.key;
       delete it->second.directions;
-      adv_trans.erase(it);
+      group_trans.erase(it);
     }
     //Attach and store the new one.
-    if (msg.adv.trans) {
-      msg.adv.trans->attach(this);
+    if (msg.group.trans) {
+      msg.group.trans->attach(this);
       std::vector<source_event> listened;
-      for (int trans_index = 0; trans_index < msg.adv.fields->size(); trans_index++) {
-        int ev_id = (*msg.adv.fields)[trans_index];
-        int8_t direction = (*msg.adv.directions)[trans_index];
-        add_listener(ev_id, direction, msg.adv.trans, trans_index);
+      for (int trans_index = 0; trans_index < msg.group.fields->size(); trans_index++) {
+        int ev_id = (*msg.group.fields)[trans_index];
+        int8_t direction = (*msg.group.directions)[trans_index];
+        add_listener(ev_id, direction, msg.group.trans, trans_index);
         listened.push_back(events[ev_id]);
       }
-      msg.adv.trans->set_mapped_events(listened);
-      adv_trans[adv_name] = {msg.adv.key, msg.adv.fields, msg.adv.directions, msg.adv.trans};
-      if (msg.adv.trans->wants_recurring_events()) {
-        add_adv_recurring_event(msg.adv.trans);
+      msg.group.trans->set_mapped_events(listened);
+      group_trans[group_name] = {msg.group.key, msg.group.fields, msg.group.directions, msg.group.trans};
+      if (msg.group.trans->wants_recurring_events()) {
+        add_group_recurring_event(msg.group.trans);
       }
     } else {
       //setting to null, which is used to clear the old mapping.
       //no need to store this null value, so clean up these pointers.
-      delete msg.adv.fields;
-      delete msg.adv.directions;
-      if (msg.adv.key) delete msg.adv.key;
+      delete msg.group.fields;
+      delete msg.group.directions;
+      if (msg.group.key) delete msg.group.key;
     }
-    do_recurring_events = recurring_events.size() + adv_recurring_events.size() > 0;
+    do_recurring_events = recurring_events.size() + group_recurring_events.size() > 0;
     return;
   }
   if (msg.type == input_internal_msg::IN_TRANS_MSG) {
@@ -479,13 +479,13 @@ void input_source::handle_internal_message(input_internal_msg& msg) {
     if (msg.field.trans->wants_recurring_events()) {
       add_recurring_event(msg.field.trans, msg.id);
     }
-    do_recurring_events = recurring_events.size() + adv_recurring_events.size() > 0;
+    do_recurring_events = recurring_events.size() + group_recurring_events.size() > 0;
   }
   if (msg.type == input_internal_msg::IN_EVENT_MSG) {
     //Is it an event injection message?
     if (msg.id < 0) return;
 
-    if (msg.skip_adv_trans) {
+    if (msg.skip_group_trans) {
       force_value(msg.id, msg.value);
     } else {
       send_value(msg.id, msg.value);
@@ -518,8 +518,8 @@ void input_source::process_recurring_events() {
       rec.trans->process_recurring(out_dev);
     }
   }
-  for (const advanced_event_translator* adv : adv_recurring_events) {
-    adv->process_recurring(out_dev);
+  for (const group_translator* group : group_recurring_events) {
+    group->process_recurring(out_dev);
   }
   send_syn_report();
   clock_gettime(CLOCK_MONOTONIC, &last_recurring_update);
@@ -552,12 +552,12 @@ void input_source::end_thread() {
   }
 }
 
-void input_source::add_listener(int id, int8_t direction, advanced_event_translator* trans, int trans_index) {
+void input_source::add_listener(int id, int8_t direction, group_translator* trans, int trans_index) {
   if (id < 0 || id >= events.size()) return;
   ev_map[id].attached.push_back({trans, trans_index, direction});
 }
 
-void input_source::remove_listener(int id, advanced_event_translator* trans) {
+void input_source::remove_listener(int id, group_translator* trans) {
   if (id < 0 || id >= ev_map.size()) return;
   for (auto it = ev_map[id].attached.begin(); it != ev_map[id].attached.end(); it++) {
     if (it->trans == trans) {
@@ -581,14 +581,14 @@ void input_source::remove_recurring_event(const event_translator* trans) {
   }
 }
 
-void input_source::add_adv_recurring_event(const advanced_event_translator* trans) {
-  adv_recurring_events.push_back(trans);
+void input_source::add_group_recurring_event(const group_translator* trans) {
+  group_recurring_events.push_back(trans);
 }
 
-void input_source::remove_adv_recurring_event(const advanced_event_translator* trans) {
-  for (auto it = adv_recurring_events.begin(); it != adv_recurring_events.end(); it++) {
+void input_source::remove_group_recurring_event(const group_translator* trans) {
+  for (auto it = group_recurring_events.begin(); it != group_recurring_events.end(); it++) {
     if (*it == trans) {
-      adv_recurring_events.erase(it);
+      group_recurring_events.erase(it);
       return;
     }
   }
