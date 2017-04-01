@@ -8,8 +8,6 @@
 #include <map>
 #include <memory>
 
-#define OPTION_ACCEPTED 0
-
 class input_source;
 
 enum slot_state { SLOT_ACTIVE, SLOT_INACTIVE, SLOT_CLOSED, SLOT_DISABLED};
@@ -32,12 +30,6 @@ public:
   int erase_ff(int id);
   int play_ff(int id, int reptitions);
 
-  void update_option(std::string option, std::string value) {
-    if (options.find(option) == options.end()) return;
-    if (process_option(option, value) == OPTION_ACCEPTED)
-      options[option] = value;
-  }
-
   virtual void clear_outputs();
   virtual void close_virt_device();
   void for_all_devices(std::function<void (std::shared_ptr<input_source>&)> func);
@@ -52,10 +44,6 @@ protected:
   std::mutex lock;
   bool device_opened = true;
   uinput* ui = nullptr;
-
-  virtual int process_option(std::string name, std::string value) {
-    return -1;
-  };
 };
 
 
@@ -65,7 +53,6 @@ struct virtpad_settings {
   bool dpad_as_hat;
   bool analog_triggers;
   bool rumble;
-  std::string facemap_1234;
 };
 
 class virtual_gamepad : public output_slot {
@@ -76,13 +63,10 @@ public:
   virtual void take_event(struct input_event in);
   virtual bool accept_device(std::shared_ptr<input_source> dev);
 protected:
-  virtual int process_option(std::string name, std::string value);
 
   virtpad_settings padstyle;
 
   int face_1234[4] = {BTN_SOUTH, BTN_EAST, BTN_WEST, BTN_NORTH};
-  void set_face_map(std::string map);
-  std::string get_face_map();
 
 };
 
@@ -95,7 +79,6 @@ protected:
 
   uinput_ids u_ids;
   int mouse_fd = -1;
-  virtual int process_option(std::string name, std::string value);
 };
 
 class debug_device : public output_slot {

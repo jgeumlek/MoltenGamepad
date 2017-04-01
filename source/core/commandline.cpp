@@ -10,7 +10,6 @@ int do_save(moltengamepad* mg, std::vector<token>& command, response_stream* out
 int do_print(moltengamepad* mg, std::vector<token>& command, response_stream* out);
 int do_load(moltengamepad* mg, std::vector<token>& command, response_stream* out);
 int do_move(moltengamepad* mg, std::vector<token>& command, response_stream* out);
-int do_alterslot(moltengamepad* mg, std::vector<token>& command, response_stream* out);
 int do_assign(moltengamepad* mg, std::vector<token>& command, response_stream* out);
 int do_clear(moltengamepad* mg, std::vector<token>& command, response_stream* out);
 int do_set(moltengamepad* mg, std::vector<token>& command, response_stream* out);
@@ -43,7 +42,6 @@ int do_command(moltengamepad* mg, std::vector<token>& command, response_stream* 
 
   if (command.front().value == "save") return do_save(mg, command, out);
   if (command.front().value == "load") return do_load(mg, command, out);
-  if (command.front().value == "alterslot") return do_alterslot(mg, command, out);
   if (command.front().value == "clear") return do_clear(mg, command, out);
   if (command.front().value == "set") return do_set(mg, command, out);
   if (command.front().value == "assign") return do_assign(mg, command, out);

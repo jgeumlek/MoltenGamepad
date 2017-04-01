@@ -16,7 +16,6 @@ const virtpad_settings default_padstyle = {
   false, //dpad_as_hat
   true, //analog_triggers
   false, //rumble
-  "SEWN", //facemap_1234
 };
 
 const virtpad_settings xpad_padstyle = {
@@ -24,7 +23,6 @@ const virtpad_settings xpad_padstyle = {
   true, //dpad_as_hat
   true, //analog_triggers
   false, //rumble
-  "SEWN", //facemap_1234
 };
 
 
