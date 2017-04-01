@@ -16,7 +16,7 @@ A Profile contains all the information one might want to configure about a devic
 
 Naturally every input source carries its own profile, where the profile has the same name as the device.
 
-Each driver also carries a profile. This profile is inherited by all the devices arising from that driver, and changes to the driver profile are propagated to its connected devices. The driver profile is very useful for setting up devices that haven't been connected yet. Remember that driver-level options are stored elsewhere; the driver profile is specifically for device-level information!
+Each driver also carries a profile. This profile is inherited by all the devices arising from that driver. Changes to the driver profile are propagated to the relevant devices. The driver profile is very useful for setting up devices that haven't been connected yet. Remember that driver-level options are stored in a profile; the driver profile is specifically for device-level information!
 
 There is also a special profile, "gamepad", that acts like a root profile. Drivers can optionally subscribe to the gamepad profile. Thus changes to the gamepad profile can propagate to all gamepad devices in MoltenGamepad, even though they may belong to different drivers.
 
@@ -41,13 +41,17 @@ would set all wiimotes to emit a select button event when their "a" button is pr
 
     wm2.wm_a = start
 
-Would set `wm2` to emit a start button event when its "a" button is pressed, while `wm1` would still send a primary event.
+Would set `wm2` to emit a start button event when its "a" button is pressed, while `wm1`'s profile would be unmodified.
+
+An event's mapping can be cleared by setting it to `nothing`.
+
+    wiimote.wm_a = nothing
 
 ###Listing Profiles
 
     print profiles
 
-will list all profiles currently in use. At the moment, this will simply be a list of all drivers and their devices.
+will list all profiles currently in use. At the moment, this will simply be a list of all drivers and their devices, plus the special gamepad profile.
 
     print profiles <profile name>
 
@@ -72,8 +76,8 @@ This prints out information of a device, which also includes its event list.
 
 The following are specially recognized as gamepad button events for output. The entries are in this order (event code, MoltenGamepad name, description):
 
-*  {BTN_SOUTH, "primary", "Primary face button (Confirm)"},
-*  {BTN_EAST, "secondary", "Second face button (Go Back)"},
+*  {BTN_SOUTH, "first", "Primary face button (Confirm)"},
+*  {BTN_EAST, "second", "Second face button (Go Back)"},
 *  {BTN_WEST, "third", "Third face button"},
 *  {BTN_NORTH, "fourth", "Fourth face button"},
 *  {BTN_START, "start", "Start button"},
@@ -189,7 +193,7 @@ Aliases can also map to input event lists, making this easier. The following two
     wiimote.(cc_left_x,cc_left_y) = dpad
     wiimote.left_stick = dpad
 
-When using these combined translators, the individual translators on the axes should be set to "nothing".
+When using these combined translators, the individual translators on the axes should be set to "nothing". Certain group translators, such as `stick` and `dpad`, will enforce this automatically (setting the group to `dpad` clears the individual mappings, and setting any individual mapping will clear out the group `dpad` mapping.)
 
 ###Inverted mapping
 
@@ -288,7 +292,7 @@ A `[]` after an argument represents that it is variadic. It is thus a place hold
 
 where `multi(btn_start)`, `multi(btn_start,btn_select)`, `multi(btn_start,btn_select,btn_mode)` are all valid.
 
-The following are all equivalent, noting that `ABS_X` is axis 0 and is also `left_x`:
+The following are all equivalent, noting that `ABS_X` is axis 0 and is the same as `left_x`:
 
     btn2axis(0)
     btn2axis(abs_x,1)
@@ -324,12 +328,7 @@ Specifying a profile name in square brackets will set the implicit profile name 
     
 Note how `wm_a` sufficed, instead of `wiimote.wm_a`
 
-##EXPERIMENTAL FEATURES. USE AT YOUR OWN RISK
 
-These features are in development, and the syntax is subject to change, and full functionality not guaranteed:
-
-###Recursive load
- Profile files are allowed to use the load command, allowing for a form of inheritance, along with a bag of worms. Might be disabled in the future.
 
 
 ###Chords
@@ -344,4 +343,14 @@ If you want a chord that prevents the original events, an implementation is offe
 
     wiimote.(wm_a,wm_b) = exclusive(thumbl)
 
-Exclusive chords DO NOT support creating a complicated hierarchy of chords, as two exclusive chords sharing a button or overlapping will not be able to prevent each other's events. Exclusive chords inherhently add some input latency, as to do otherwise would require being able to see the future. Further, making many chords rely on the same button is not recommended.
+Exclusive chords DO NOT support creating a complicated hierarchy of chords, as two exclusive chords sharing a button or overlapping will not be able to prevent each other's events. Exclusive chords inherhently add some input latency, as to do otherwise would require being able to see the future.
+
+Unlike the `dpad` and `stick` group translators, these chord group translators can coexist with individual translators for these events. (e.g. `wm_a` can still make events even though it is participating in a chord.)
+
+
+##EXPERIMENTAL FEATURES. USE AT YOUR OWN RISK
+
+These features are in development, and the syntax is subject to change, and full functionality not guaranteed:
+
+###Recursive load
+ Profile files are allowed to use the load command, allowing for a form of inheritance, along with a bag of worms. This will likely be disabled in the future. 

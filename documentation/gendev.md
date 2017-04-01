@@ -213,8 +213,8 @@ Here is a longer file, showing a configuration for a Dualshock 4 controller.
     #But the gamepad profile uses some different event names.
     #So these aliases let us inherit the appropriate event mappings.
     
-    alias primary cross
-    alias secondary circle
+    alias first cross
+    alias second circle
     alias third square
     alias fourth triangle
     

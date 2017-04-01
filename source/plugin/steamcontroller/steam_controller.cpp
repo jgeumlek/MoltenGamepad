@@ -8,8 +8,8 @@
 device_methods steam_controller::methods;
 
 const event_decl steamcont_events[] = {
-  {"a","A Button",BTN,"primary"},
-  {"b","B Button",BTN,"secondary"},
+  {"a","A Button",BTN,"first"},
+  {"b","B Button",BTN,"second"},
   {"x","X Button",BTN,"third"},
   {"y","Y Button",BTN,"fourth"},
   {"forward","Forward Button (right middle button)",BTN,"start"},

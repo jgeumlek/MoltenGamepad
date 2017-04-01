@@ -48,8 +48,8 @@ void steam_controller_manager::init_profile() {
   };
 
   //Init some aliases to act like a standardized game pad
-  set_alias("primary","a");
-  set_alias("secondary","b");
+  set_alias("first","a");
+  set_alias("second","b");
   set_alias("third","x");
   set_alias("fourth","y");
   set_alias("leftright","left_pad_x");

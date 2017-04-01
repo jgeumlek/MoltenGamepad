@@ -10,8 +10,8 @@ device_methods example_device::methods;
 //static array of event declarations, loaded by example_manager init_profile();
 //{"name","description",type,"default mapping"}
 const event_decl example_events[] = {
-  {"one","First Button",BTN,"primary"},
-  {"two","Second Button",BTN,"secondary"},
+  {"one","First Button",BTN,"first"},
+  {"two","Second Button",BTN,"second"},
   {"three","Third Button",BTN,"third"},
   {"fourth","Fourth Button",BTN,"fourth"},
   {"up","Up Button",BTN,"up"},

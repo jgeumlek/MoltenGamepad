@@ -11,8 +11,8 @@ void wiimote_manager::init_profile() {
     methods.register_alias(ref, external, internal);
   };
   //Init some aliases to act like a standardized game pad
-  set_alias("primary","cc_a");
-  set_alias("secondary","cc_b");
+  set_alias("first","cc_a");
+  set_alias("second","cc_b");
   set_alias("third","cc_x");
   set_alias("fourth","cc_y");
   set_alias("left","cc_left");

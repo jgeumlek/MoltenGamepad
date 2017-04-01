@@ -2,8 +2,8 @@
 
 
 const event_listing gamepad_btn_list[] = {
-  {BTN_SOUTH, "primary", "Primary face button (Confirm)"},
-  {BTN_EAST, "secondary", "Second face button (Go Back)"},
+  {BTN_SOUTH, "first", "Primary face button (Confirm)"},
+  {BTN_EAST, "second", "Second face button (Go Back)"},
   {BTN_WEST, "third", "Third face button"},
   {BTN_NORTH, "fourth", "Fourth face button"},
   {BTN_START, "start", "Start button"},
@@ -21,6 +21,8 @@ const event_listing gamepad_btn_list[] = {
   {BTN_DPAD_LEFT, "left", "Left on the dpad"},
   {BTN_DPAD_RIGHT, "right", "Right on the dpad"},
 #endif
+  {BTN_SOUTH, "primary", "Primary face button (Confirm)"},
+  {BTN_EAST, "secondary", "Second face button (Go Back)"},
   { -1, nullptr, nullptr},
 };
 

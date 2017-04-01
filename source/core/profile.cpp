@@ -286,6 +286,13 @@ void profile::set_alias(std::string external, std::string local) {
   if (local.empty()) {
     aliases.erase(external);
   } else {
+    auto lookup = aliases.find(local);
+    int total_aliasing = 0;
+    while (lookup != aliases.end() && total_aliasing < 50) {
+      local = lookup->second;
+      lookup = aliases.find(local);
+      total_aliasing++;
+    }
     aliases[external] = local;
   }
 }
@@ -475,8 +482,8 @@ void profile::build_default_gamepad_profile() {
   default_gamepad_profile.lock.lock();
   if (default_gamepad_profile.mapping.empty()) {
     auto map = &default_gamepad_profile.mapping;
-    (*map)["primary"] =    {new btn2btn(BTN_SOUTH), DEV_KEY};
-    (*map)["secondary"] =    {new btn2btn(BTN_EAST), DEV_KEY};
+    (*map)["first"] =    {new btn2btn(BTN_SOUTH), DEV_KEY};
+    (*map)["second"] =    {new btn2btn(BTN_EAST), DEV_KEY};
     (*map)["third"] =    {new btn2btn(BTN_WEST), DEV_KEY};
     (*map)["fourth"] =    {new btn2btn(BTN_NORTH), DEV_KEY};
     (*map)["left"] = {new btn2btn(BTN_DPAD_LEFT), DEV_KEY};
@@ -506,6 +513,10 @@ void profile::build_default_gamepad_profile() {
     (*map)["updown"] =   {new axis2btns(BTN_DPAD_UP,BTN_DPAD_DOWN), DEV_AXIS};
     (*map)["leftright"] =   {new axis2btns(BTN_DPAD_LEFT,BTN_DPAD_RIGHT), DEV_AXIS};
 
+    //for backwards compatability
+    default_gamepad_profile.aliases["primary"] = "first";
+    default_gamepad_profile.aliases["secondary"] = "second";
+
     do_group = true;
   }
   default_gamepad_profile.lock.unlock();
@@ -526,6 +537,9 @@ void profile::gamepad_defaults() {
   lock.lock();
   if (this != &default_gamepad_profile && default_gamepad_profile.mapping.empty())
     build_default_gamepad_profile();
+  //for backwards compatability
+  aliases["primary"] = "first";
+  aliases["secondary"] = "second";
   for (auto entry : default_gamepad_profile.mapping) {
     std::string alias = get_alias(entry.first);
     int8_t dir = read_direction(alias)*entry.second.direction;

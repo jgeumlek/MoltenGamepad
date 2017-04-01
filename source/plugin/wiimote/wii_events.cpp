@@ -20,16 +20,16 @@ const event_decl wiimote_events[] = {
   {EVNAME(wm_b), "Wiimote B button", BTN, "fourth"},
   {EVNAME(wm_plus), "Wiimote + button", BTN, "start"},
   {EVNAME(wm_minus), "Wiimote - button", BTN, "select"},
-  {EVNAME(wm_1), "Wiimote 1 button", BTN, "secondary"},
-  {EVNAME(wm_2), "Wiimote 2 button", BTN, "primary"},
+  {EVNAME(wm_1), "Wiimote 1 button", BTN, "second"},
+  {EVNAME(wm_2), "Wiimote 2 button", BTN, "first"},
   {EVNAME(wm_home), "Wiimote home button", BTN, "mode"},
   {EVNAME(wm_left), "Wiimote Dpad left", BTN, "down"}, //default mapping assumes wiimote is horizontal
   {EVNAME(wm_right), "Wiimote Dpad right", BTN, "up"}, //like a NES pad
   {EVNAME(wm_up), "Wiimote Dpad up", BTN, "left"},
   {EVNAME(wm_down), "Wiimote Dpad down", BTN, "right"},
 
-  {EVNAME(nk_a), "Wiimote A button with Nunchuk", BTN, "primary"},
-  {EVNAME(nk_b), "Wiimote B button with Nunchuk", BTN, "secondary"},
+  {EVNAME(nk_a), "Wiimote A button with Nunchuk", BTN, "first"},
+  {EVNAME(nk_b), "Wiimote B button with Nunchuk", BTN, "second"},
   {EVNAME(nk_plus), "Wiimote + button with Nunchuk", BTN, "start"},
   {EVNAME(nk_minus), "Wiimote - button with Nunchuk", BTN, "select"},
   {EVNAME(nk_1), "Wiimote 1 button with Nunchuk", BTN, "tl"},
@@ -42,8 +42,8 @@ const event_decl wiimote_events[] = {
   {EVNAME(nk_c), "Nunchuk C button", BTN, "third"},
   {EVNAME(nk_z), "Nunchuk Z button", BTN, "fourth"},
 
-  {EVNAME(cc_a), "Classic Controller A button", BTN, "primary"},
-  {EVNAME(cc_b), "Classic Controller B button", BTN, "secondary"},
+  {EVNAME(cc_a), "Classic Controller A button", BTN, "first"},
+  {EVNAME(cc_b), "Classic Controller B button", BTN, "second"},
   {EVNAME(cc_x), "Classic Controller X button", BTN, "third"},
   {EVNAME(cc_y), "Classic Controller Y button", BTN, "fourth"},
   {EVNAME(cc_plus), "Classic Controller + button", BTN, "start"},

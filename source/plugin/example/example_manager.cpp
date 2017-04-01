@@ -57,8 +57,8 @@ void example_manager::init_profile() {
   };
 
   //Init some aliases...
-  set_alias("primary","one");
-  set_alias("secondary","two");
+  set_alias("first","one");
+  set_alias("second","two");
   set_alias("third","three");
   set_alias("fourth","four");
   //... as needed.

@@ -42,7 +42,18 @@ int device_manager::process_manager_option(const std::string& name, MGField valu
 }
 
 int device_manager::register_alias(const char* external, const char* local) {
-  mapprofile->set_alias(std::string(external), std::string(local));
+  std::string external_str(external);
+  //hack to maintain backwards compatability:
+  if (plugin.subscribe_to_gamepad_profile) {
+    if (external_str == "primary")
+      external_str = "first";
+    if (external_str == "secondary")
+      external_str = "second";
+    //the gamepad profile will also alias primary->first and secondary->second.
+    //so if the user tries to set a mapping for primary,
+    //the aliases go primary->first->(appropriate local event)
+  }
+  mapprofile->set_alias(external_str, std::string(local));
   return 0;
 }
 
