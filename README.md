@@ -193,18 +193,18 @@ Need to find a device name or slot name?
 
 
 
-###Primary, Secondary, Third, Fourth? What are those?
+###First, Second, Third, Fourth? What are those?
 
 These are the face buttons on a controller. Commonly labelled A,B,X,Y. The default mapping looks like:
 
-* primary == BTN_SOUTH (BTN_A)
-* secondary == BTN_EAST (BTN_B)
+* first == BTN_SOUTH (BTN_A)
+* second == BTN_EAST (BTN_B)
 * third == BTN_NORTH (BTN_X)
 * fourth == BTN_WEST (BTN_Y)
 
 Names in parentheses are deprecated event names for these event codes, and do not necessarily correlate with the printed labels seen on controllers. The names in MoltenGamepad were chosen to reflect intuitive purposes for the buttons, and avoid the quagmire of the inconsistent/ambiguous labels A,B,X,Y.
 
-Since all event codes are recognized, one may use `btn_south` instead of `primary` in one's profiles.
+Since all event codes are recognized, one may use `btn_south` instead of `first` in one's profiles.
 
 ###How do I connect a wiimote?
 
