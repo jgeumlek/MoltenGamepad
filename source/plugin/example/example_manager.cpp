@@ -91,6 +91,7 @@ int example_manager::accept_device(struct udev* udev, struct udev_device* dev) {
 
   //Otherwise...
   //  return DEVICE_UNCLAIMED;
+  return DEVICE_UNCLAIMED;
 }
 
 int example_manager::process_option(const char* name, const MGField value) {

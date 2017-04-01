@@ -396,12 +396,12 @@ void check_driver_warnings(const generic_driver_info& info) {
   }
   //It is hard to generically describe this error to the user. Much clearer when concretely saying "tr2" rather than "tr2/tl2".
   if (trigger_axes[0] && trigger_btns[0]) {
-    debug_print(DEBUG_NONE,3, "driver: generic driver ", info.name, " exposes both tr2 and tr2_axis. This is likely an error, as tr2 is only for devices without analog trigger values. tr2_axis_btn can be used instead.");
+    debug_print(DEBUG_NONE,3, "driver: generic driver ", info.name.c_str(), " exposes both tr2 and tr2_axis. This is likely an error, as tr2 is only for devices without analog trigger values. tr2_axis_btn can be used instead.");
   }
   //Should we only print one case when both occur? It is likely both will occur at the same time.
   //Decided to just print both to further encourage the user to change things.
   if (trigger_axes[1] && trigger_btns[1]) {
-    debug_print(DEBUG_NONE,3, "driver: generic driver ", info.name, " exposes both tl2 and tl2_axis. This is likely an error, as tl2 is only for devices without analog trigger values. tl2_axis_btn can be used instead.");
+    debug_print(DEBUG_NONE,3, "driver: generic driver ", info.name.c_str(), " exposes both tl2 and tl2_axis. This is likely an error, as tl2 is only for devices without analog trigger values. tl2_axis_btn can be used instead.");
   }
 }
 

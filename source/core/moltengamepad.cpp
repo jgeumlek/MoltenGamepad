@@ -146,14 +146,30 @@ std::vector<std::string> moltengamepad::locate_glob(file_category cat, std::stri
   if (!commandline_override.empty())
     dirs.insert(dirs.begin(),commandline_override);
 
+  //we want higher precedence files to "shadow" those with lesser precedence.
+  //This is achieved by checking to see if we have seen this filename before.
+  std::unordered_set<std::string> unique_finds;
   for (auto dir : dirs) {
-    std::string fullpath = dir + "/" + category_prefix + pathglob;
+    std::string fullpath = dir + "/" + category_prefix + "/";
     glob_t globbuffer;
-    glob(fullpath.c_str(), 0, nullptr, &globbuffer);
-    debug_print(DEBUG_VERBOSE, 2, "glob: ", fullpath.c_str());
+    glob((fullpath+pathglob).c_str(), 0, nullptr, &globbuffer);
+    debug_print(DEBUG_VERBOSE, 2, "glob: ", (fullpath+pathglob).c_str());
     for (int i = 0; i < globbuffer.gl_pathc; i++) {
+      
       char* resolved = realpath(globbuffer.gl_pathv[i], nullptr);
       if (resolved) {
+        //try to strip off our directory path, to see the part matched by the glob.
+        if (strstr(globbuffer.gl_pathv[i], fullpath.c_str()) == globbuffer.gl_pathv[i]) {
+          //then we have detected our directory prefix successfully.
+          const char* extracted = globbuffer.gl_pathv[i] + fullpath.size();
+          auto check = unique_finds.insert(std::string(extracted));
+          if (check.second == false) {
+            //this is a duplicate!
+            debug_print(DEBUG_INFO, 2, "\tglob file shadowed by higher precedence file: ", resolved);
+            free(resolved);
+            continue;
+          }
+        }
         files.push_back(std::string(resolved));
         debug_print(DEBUG_VERBOSE, 2, "\tglob file: ", resolved);
         free(resolved);
