@@ -1,39 +1,32 @@
-#MoltenGamepad
+# MoltenGamepad
 *Flexible input device remapper, geared towards gamepads*
 
 (Tested only on Arch Linux, 64-bit)
-##Motivation
 
-You have input devices. You have software waiting for input events. Unfortunately, for one reason or another, they aren't speaking the same language of events. Perhaps you recently swapped out your input device. Perhaps the software has hardcoded inputs. MoltenGamepad can solve many of these situations by acting as a translation layer that reads the input device and outputs new events.
+## Motivation
 
-Possible use cases include:
+Do you have input devices that you wish sent different events? MoltenGamepad is a daemon that can replace input devices with virtual ones while providing a way to translate or remap events.
 
-* Making a wide variety of input devices all appear to be the same, allowing software configurations to be agnostic of the currently used device.
-* Getting around software limits, such as using a keyboard in a game that requires gamepads, or vice versa.
-* Handling split event devices, allowing multiple input sources to act as one synthetic device.
-* Handling combined event devices, allowing a single input device to appear as multiple input sources.
-* Empowering unorthodox input solutions and behaviors.
+It's main focus is on game controllers. They come in many shapes with many features, but most games make a lot of assumptions about what a controller should look like. MoltenGamepad allows for the diverse real input devices to all appear virtually as a "standard" game pad that most games understand.
 
-For example, perhaps you have a Wii remote and you want to play some games. Unfortunately, the games expect to see controllers that look like an XBox 360 controller, not the multitude of separate event devices created by the Wii remote driver in the linux kernel. MoltenGamepad can translate that Wii remote's events and present a virtual controller to the games. Or maybe you have a keyboard device, but your game only allows multiplayer with multiple game controllers.
-
-Specialized drivers can be made for certain input devices enabling smarter features than just plain event translation. For example, the included wiimote driver handles extensions being inserted or removed, and can change event mappings dependent on the current extension.
+The goal is to make any controller "just work", even as they are inserted or removed from the system. For complicated input devices, this can even involve writing specialized support to fully exploit their features.
 
 
-##Features
+## Features
 
-* Create virtual gamepads that match the expectations of most modern games.
-* Persistent virtual devices, allowing hotswapping of controllers in software that doesn't natively.
-* Specialized wiimote support for such an unusual input device, making wiimotes incredibly easy to use for gaming.
-* Flexible generic device driver for translating most input devices, with very easy configuration.
+* Create virtual gamepads that almost all games can use.
+* Virtual gamepads are persistent, which fixes the numerous games that break when controllers are disconnected.
+* Flexible generic device driver framework, where only a text file is needed to support input sources that don't need special features.
 * All configuration files are designed to be human-readable and editable.
-* Easy loading and saving of event mapping profiles.
-* Profiles can be changed at run time, of course.
-* Supports a command FIFO for controlling a running instance of MoltenGamepad via scripting.
+* Easy loading and saving of event mappings that can be changed at run time.
+* Specialized userspace driver for Wii remotes that make full use of extension controller hotswapping.
+* Supports a command FIFO or socket for controlling a running instance of MoltenGamepad via scripting.
+* Can handle cases where one event device represents multiple logical controllers (like an arcade stick), or vice versa.
 * Virtual devices can process rumble events (but this is disabled by default. See `documentation/rumble.md`.)
 
 MoltenGamepad targets a set-it-and-forget-it daemon-like usage pattern,  where devices can connect or disconnect freely. Its main purpose is letting a user "standardize" their software to expect just one type of controller, and then automagically transform connected input devices to match that standardized abstraction. 
 
-##Building
+## Building
 
     make
 
@@ -45,17 +38,17 @@ The only linked libraries under this default target are libudev, libpthread, and
 
 Currently two plugins can optionally be built into MoltenGamepad when compiling, `wiimote` and `steamcontroller`. By default, only the former is set to be built. Modify the lines at the beginning of the Makefile to control whether these plugins are included.
 
-Plugins can also be set to be built as external plugins. These plugins will need to be moved to a `plugins` folder inside MG's config directory in order to be found and loaded.
+Plugins can also be set to be built as external plugins. These plugins will need to be moved to a `plugins` folder inside MG's config directory in order to be found and loaded. (Plugins will only be loaded if MG is started with the `--load-plugins` option).
 
 Note that the Steam Controller plugin requires the [scraw](https://gitlab.com/dennis-hamester/scraw) and [scrawpp](https://gitlab.com/dennis-hamester/scrawpp) libraries.
 
-##Installing
+## Installing
 
 The `installation` directory has files and scripts to help you get MoltenGamepad up and running quickly. Look in there for the udev rules required to give MoltenGamepad the appropriate permissions.
 
 The installation above is bare-bones, and MoltenGamepad won't know very many devices. See the [MG-Files repo](https://github.com/jgeumlek/MG-Files) and get the crowd-sourced device configs to fully enjoy the MoltenGamepad experience.
 
-##Running
+## Running
 
     ./moltengamepad
 
@@ -65,12 +58,21 @@ MoltenGamepad will start up, search existing devices, and wait for devices to sh
 
 to see the available command line arguments.
 
+Type `help` into MG to see the available runtime commands.
 
 You'll need appropriate permissions on the uinput device node, as well as any device nodes you wish MoltenGamepad to work with. See the `installation` folder for more details.
 
 You might need to use `--uinput-path` to tell MoltenGamepad where the uinput device is on your system. (You might even need to modprobe uinput.)
 
-##Configuration Locations
+## Sending Commands
+
+As MoltenGamepad might be running as a background task, there are two additional ways to send commands to MoltenGamepad.
+
+A FIFO can be made with `--make-fifo`. It acts as a special file where commands written to it will be read by MG. There is not bidirectional; MG cannot send any information back through the FIFO.
+
+A socket can be made with `--make-socket`. This also creates a special file, one that supports sending and receiving data. You'll need a client such [moltengamepadctl](https://github.com/jgeumlek/moltengamepadctl) that knows the appropriate way to communicate with MG.
+
+## Configuration Locations
 
 Configuration files follow the XDG specification.  `$XDG_CONFIG_HOME` is checked first before falling back to check the listed directories in `$XDG_CONFIG_DIRS`. A `moltengamepad` folder is used within these directories.
  
@@ -83,7 +85,7 @@ Profiles are located in a `profiles` subdirectory of a configuration directory.
 
 Generic driver specifications are in a `gendevices` subdirectory of a configuration directory.
 
-##Quick Summary: The Big Picture
+## Quick Summary: The Big Picture
 
 MoltenGamepad creates virtual game pad devices, known as output slots. These output slots are what will ultimately be read by your other software.
 
@@ -95,7 +97,9 @@ Input sources can be assigned to and moved from output slots freely.
 
 This is the big picture of MoltenGamepad: input sources being translated according to profiles into the output slots they have been assigned. The profiles and the slot assignments can be changed while MoltenGamepad is running.
 
-##Getting Started
+## Getting Started
+
+This is just a very quick introduction to get you on your feet and a little more able to discover what MG can do for you.
 
 When started, MoltenGamepad will create its virtual outputs, wait for input sources it recognizes, and will assign them to a slot upon their first event.
 
@@ -103,33 +107,60 @@ WARNING: Out of the box, MoltenGamepad will only have the included wiimote drive
 
 MoltenGamepad will also listen on stdin for user commands, such as changing a mapping or moving an input source to a different virtual output.
 
-For use with most games, use the `--mimic-xpad` option to make the virtual outputs appear as a wired 360 controller, which often has premade support in games (and notably Steam)
+Useful command options:
 
-    ./moltengamepad --mimic-xpad
-
-Rumble support is disabled by default. Use `--rumble` to enable it, and see `documentation/rumble.md` for the reason why this is disabled by default.
-
-Another useful option is `--make-fifo`, which creates a named pipe so that the running instance can be controlled from scripts and such.
-
-The command FIFO is placed at `$XDG_RUNTIME_DIR/moltengamepad` by default, and can be set with `--fifo-path`.
+* `--mimic-xpad` Make the virtual controllers appear to be wired Xbox 360 controllers, which most games (and Steam) expect.
+* `--rumble` if you want rumble and understand the risks
+* `--load-plugins` if you have any external plugins you wish to load.
 
 
-##Additional Documentation
+When MoltenGamepad starts, take a moment to look over what is printed to get an idea of how MG initializes.
+
+Run `print drivers` to see the drivers you have loaded. Pick one and try printing its profile, ex `print profiles wiimote`.
+
+Next, go a head and connect a recognized input device. You should see it be identified and given a name.
+
+Try pressing a button on your input device, and you should see it get assigned an output slot.
+
+Try `print profiles`, and notice how there are profiles for each driver and each device. Changes to a driver profile will propagate to all connected devices and future connected devices! The `gamepad` profile will propagate changes to the appropriate driver profiles. 
+
+Try changing an input mapping
+
+    wiimote.wm_a = start
+
+or 
+
+    wiimote.wm_a = key(key_a)
+
+Try changing the output slot assignment:
+
+    move <device name> to virtpad2 
+
+Try printing out the event name aliases of a device or driver
+
+    print aliases wiimote
+
+Or print the events to see their descriptions
+
+    print events wiimote
+
+
+
+## Additional Documentation
 
 See this README, the various files in the `documentation` folder, the output of `./moltengamepad --help`, and the output of the `help` command while running MoltenGamepad.
 
 
 
-##Known Issues
+## Known Issues
 
 * Changing input mappings does not clear out previous values, potentially leading to stuck inputs.
 * Multiple inputs mapped to the same output event clobber each other. Desired behavior uncertain.
 * Will likely add some amount of input latency, though it hasn't been measured beyond playtests.
-* Automagic configuration can lead to minor undesired behavior with aliases for events.
 
-##Troubleshooting FAQ-ish Section
+## Troubleshooting FAQ-ish Section
 
-###What's this about file permissions for the devices?
+### What's this about file permissions for the devices?
 MoltenGamepad will fail if you don't have the right permissions, and you likely won't have the right permissions unless you do some extra work. Though not recommended for regular use, running MoltenGamepad as a super-user can be a useful way to try it out before you have the permissions sorted out.
 
 You need write access to uinput to create the virtual gamepads.
@@ -140,7 +171,7 @@ If you enable rumble support, you need write access to the various event devices
 
 See the `udev.rules` files in the `installation` directory for more information.
 
-###What is a MoltenGamepad driver?
+### What is a MoltenGamepad driver?
 
 A driver handles a certain class of input devices. Its responsibilities include identifying appropriate devices and knowing when they are removed. A driver also includes an implementation of an input source, providing the code to actually read and process input events.
 
@@ -152,7 +183,7 @@ The dream here is to have a variety of drivers, enabling interesting features of
 
 REMINDER: At the moment, only the wiimote driver will be active on a default installation of MoltenGamepad.
 
-###How does setting a mapping work?
+### How does setting a mapping work?
 
 The general syntax is
 
@@ -174,7 +205,7 @@ The profiles form a tree-shaped hierarchy, where a change to a mapping in one is
      +<driver profile>
        +<device profile>
 
-###Slots?
+### Slots?
 
 Slots refer to the virtual output devices, so named to echo the "player slots" seen on game consoles as well as avoiding using the word "device" everywhere in every context. By default, MoltenGamepad creates 4 virtual gamepad slots, one virtual keyboard slot and one blank dummy slot. Input sources are assigned to the first virtual gamepad that has no connected devices. If none are available, the input source is placed onto the dummy slot.
 
@@ -193,7 +224,7 @@ Need to find a device name or slot name?
 
 
 
-###First, Second, Third, Fourth? What are those?
+### First, Second, Third, Fourth? What are those?
 
 These are the face buttons on a controller. Commonly labelled A,B,X,Y. The default mapping looks like:
 
@@ -206,7 +237,7 @@ Names in parentheses are deprecated event names for these event codes, and do no
 
 Since all event codes are recognized, one may use `btn_south` instead of `first` in one's profiles.
 
-###How do I connect a wiimote?
+### How do I connect a wiimote?
 
 That is outside the scope of MoltenGamepad. Your bluetooth system handles this. This software assumes your bluetooth stack and kernel wiimote driver are already working and usable. A simple session with `bluetoothctl` works well. It is possible to pair wiimotes such that they remember your bluetooth adapter and will attempt to connect to it when any button is pressed.
 

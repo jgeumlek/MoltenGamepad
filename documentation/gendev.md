@@ -8,14 +8,14 @@ A configuration file has four main parts/purposes:
 
 1. Specify what criteria a device must meet for this generic driver to apply.
 2. Specify information about this generic driver, including options
-3. Specify raw events read the device and appropriate names to be exposed for these events.
+3. Specify raw events read from the device and appropriate names to be exposed for these events.
 4. Specify any event name aliases the device needs.
 
 Default event mappings are NOT handled by these configs. That is to be handled by loading the desired profile at start up.
 
 The format for these config files is designed to be simple yet flexible. There is a lot of flexibility required for generic drivers, so the full spec can be daunting. Look at the example files to get a good idea of how this all works.
 
-##Generic Driver Config File
+## Generic Driver Config File
 
 A generic driver can be specified by creating a `<filename>.cfg` file in a `gendevices` config directory.
 
@@ -134,14 +134,14 @@ Remember that multiple match lines can be used, in which a device matches the dr
 
 The `order` property of matches is for cases where a device might match two separate generic drivers.
 
-##Finding Event Codes and Name Strings
+## Finding Event Codes and Name Strings
 
 The `evtest` utility (not included with MoltenGamepad) is incredibly useful for this. Run it to see all devices you currently have read access to. Select a device, and it will print out events as they happen. Interact with your input device, and make note of the events generated.
 
 Near the top of the `evtest` output will be the vendor and product ids as well.
 
 
-##Example 1
+## Example 1
     
 Here is a short example using the split functionality:
 
@@ -160,7 +160,7 @@ This creates a driver named `touchpad`. When an `AlpsPS/2 ALPS GlidePoint` devic
 
 Splitting is useful for arcade panels and some controller hubs, which can appear as a single event device.
 
-##Example 2
+## Example 2
 
 Here is a longer file, showing a configuration for a Dualshock 4 controller.
 
@@ -232,6 +232,6 @@ Here is a longer file, showing a configuration for a Dualshock 4 controller.
     alias tr2_axis r2_axis
     alias tl2_axis l2_axis
 
-##More Examples
+## More Examples
 
 See the [MG-Files repo](https://github.com/jgeumlek/MG-Files) for more contributed generic driver cfgs.
