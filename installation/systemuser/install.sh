@@ -5,7 +5,7 @@ set -e
 [[ $EUID -ne 0 ]] && exec sudo "$0"
 
 # Create system user and group for MG.
-useradd -r -U gamepad
+useradd -r -U gamepad || echo "gamepad user already existed, continuing..."
 
 # Install the files contained in the repo.
 cd "$(dirname "$0")"

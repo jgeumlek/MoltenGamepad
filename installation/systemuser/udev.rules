@@ -2,7 +2,7 @@
 # Installs as 72-moltengamepad.rules.
 
 # Allow gamepad user access to uinput.
-KERNEL=="uinput" RUN+="/usr/bin/setfacl -m gamepad:rw- %E{DEVNAME}"
+KERNEL=="uinput",  GROUP:="gamepad", OPTIONS+="static_node=uinput"
 
 # Virtual event devices should be world-usable.
 SUBSYSTEM=="input", ACTION=="add", ATTRS{phys}=="moltengamepad*", \
