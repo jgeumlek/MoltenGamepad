@@ -75,11 +75,7 @@ void slot_manager::move_device(input_source* dev, output_slot* target) {
   //private, should only be called with lock acquired
   if (!dev) return;
   dev->set_slot(target);
-  if (target) {
-    log.take_message(dev->get_name() + " assigned to slot " + target->name);
-  } else {
-    log.take_message(dev->get_name() + " not assigned to any slot");
-  }
+  log.device_slot(0, dev, target);
 }
 
 void slot_manager::id_based_assign(slot_manager::id_type type, std::string id, output_slot* slot) {

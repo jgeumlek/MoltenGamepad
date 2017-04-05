@@ -1,4 +1,4 @@
-#Rumble and the Uinput Bug
+# Rumble and the Uinput Bug
 
 Rumble processing in MoltenGamepad can be enabled with the `--rumble` flag.
 

@@ -2,11 +2,12 @@
 
 
 enum MGType {
+  MG_NULL,
   MG_KEY_TRANS,
   MG_REL_TRANS,
   MG_AXIS_TRANS,
   MG_TRANS,
-  MG_ADVANCED_TRANS,
+  MG_GROUP_TRANS,
   MG_KEY,
   MG_AXIS,
   MG_REL,
@@ -16,8 +17,14 @@ enum MGType {
   MG_BOOL,
   MG_SLOT,
   MG_KEYBOARD_SLOT,
-  MG_NULL,
+  MG_AXIS_DIR,
 };
+
+#define NEGATIVE_AXIS_DIR (1<<12)
+
+#define EXTRACT_AXIS(axis_dir) (axis_dir & (NEGATIVE_AXIS_DIR - 1))
+
+#define EXTRACT_DIR(axis_dir) ( (axis_dir & NEGATIVE_AXIS_DIR) ? -1 : 1)
 
 enum event_state { 
   EVENT_ACTIVE, //Device can currently send this event.
@@ -33,6 +40,7 @@ enum entry_type {
   DEV_AXIS,
   DEV_REL,
   DEV_ANY,
+  DEV_EVENT_GROUP,
 };
 
 enum device_claim {

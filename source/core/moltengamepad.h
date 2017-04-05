@@ -13,12 +13,13 @@
 #include "uinput.h"
 #include "udev.h"
 #include "signalflags.h"
-#include "messages.h"
+#include "protocols/message_stream.h"
 #include "profile.h"
 #include "plugin_loader.h"
-#include "protocols.h"
+#include "protocols/protocols.h"
 
-#define VERSION_STRING "0.3.4-beta"
+#define VERSION_STRING "1.0.0"
+
 
 class slot_manager;
 class device_manager;
@@ -37,6 +38,7 @@ enum file_category {
   FILE_GENDEV,       //Generic driver descriptors
   FILE_OPTIONS,      //Global options, each file is a category.
   FILE_DEVICE_SET,   //Device-specific settings (FUTURE)
+  FILE_PLUGIN,       //Plugin .so files, such as drivers.
 };
 
 
@@ -57,6 +59,7 @@ public:
   message_stream drivers;
   message_stream plugs;
   options* opts;
+  int sock = -1; //socket fd
   std::shared_ptr<profile> gamepad = std::make_shared<profile>();
 
   moltengamepad(options* opts) : drivers("driver"), plugs("hotplug"), opts(opts) {};
@@ -110,6 +113,7 @@ struct context {
 
 int shell_loop(moltengamepad* mg, std::istream& in);
 
+void escape_string(std::string& string);
 
 
 struct token;

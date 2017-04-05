@@ -132,23 +132,24 @@ bool find_token_type(enum tokentype type, std::vector<token>& tokens) {
 
 }
 
-void do_header_line(std::vector<token>& line, std::string& header) {
-  if (line.empty()) return;
-  if (line.at(0).type != TK_HEADER_OPEN) return;
+bool do_header_line(std::vector<token>& line, std::string& header) {
+  if (line.empty()) return false;
+  if (line.at(0).type != TK_HEADER_OPEN) return false;
   std::string newheader;
   for (auto it = ++line.begin(); it != line.end(); it++) {
 
-    if ((*it).type == TK_HEADER_OPEN) return; //abort.
+    if ((*it).type == TK_HEADER_OPEN) return false; //abort.
 
     if ((*it).type == TK_HEADER_CLOSE) {
-      if (newheader.empty()) return;
+      if (newheader.empty()) return false;
       header = newheader;
-      return;
+      return true;
     }
     if (!newheader.empty()) newheader.push_back(' ');
     newheader += (*it).value;
 
   }
+  return false;
 }
 
 //Some lazy macros to build some function pointers with associated name strings.
@@ -174,8 +175,8 @@ MGType parse_type(const std::string& str) {
     return MG_KEY_TRANS;
   if (str == "axis_trans")
     return MG_AXIS_TRANS;
-  if (str == "adv_trans")
-    return MG_ADVANCED_TRANS;
+  if (str == "group_trans")
+    return MG_GROUP_TRANS;
   if (str == "key_code")
     return MG_KEY;
   if (str == "axis_code")
@@ -300,6 +301,7 @@ void MGparser::load_translators(moltengamepad* mg) {
   //add a quick mouse redirect
   trans_decl mouse_decl;
   mouse_decl.identifier = "mouse";
+  mouse_decl.decl_str = "event = mouse(trans)";
   mouse_decl.mapped_events.push_back(DEV_KEY);
   mouse_decl.fields.push_back({"","",MG_TRANS});
   trans_gens["mouse"] = trans_generator( mouse_decl, [mg] (std::vector<MGField>& fields) {
@@ -312,18 +314,20 @@ void MGparser::load_translators(moltengamepad* mg) {
   });
   //key is just a synonym to the above. It redirects events to the keyboard slot.
   trans_gens["key"] = trans_gens["mouse"];
+  trans_gens["key"].decl.decl_str = "event = key(trans)";
 
-  //add advanced_event_translators
+  //add group_translators
   RENAME_GEN(chord,simple_chord);
   RENAME_GEN(exclusive,exclusive_chord);
   RENAME_GEN(stick,thumb_stick);
+  RENAME_GEN(dpad,stick_dpad);
 }
 
-MGparser::MGparser(moltengamepad* mg, message_protocol* output) : out("parse") {
-  out.add_listener(output);
+MGparser::MGparser(moltengamepad* mg, message_protocol* output) : messages("parse") {
+  messages.add_listener(output);
 }
 
-void MGparser::do_assignment(std::string header, std::string field, std::vector<token> rhs) {
+void MGparser::do_assignment(std::string header, std::string field, std::vector<token> rhs, response_stream& out) {
   enum entry_type left_type = NO_ENTRY;
   
   auto prof = mg->find_profile(header);
@@ -331,37 +335,57 @@ void MGparser::do_assignment(std::string header, std::string field, std::vector<
     out.take_message("could not locate profile " + header);
     return;
   }
-  
+  int8_t direction = read_direction(field);
   left_type = prof->get_entry_type(field);
+
+  if (left_type == DEV_EVENT_GROUP) {
+    //whoops! this actually a group translation! Switch over to do_group_assignment
+    std::vector<std::string> fields;
+    fields.push_back(field);
+    do_group_assignment(header, fields, rhs, out);
+    return;
+  }
+
+  if (rhs.empty()) {
+    out.take_message("Parsing failed, right-hand side of assignment empty.");
+    return;
+  }
 
   if (left_type == DEV_KEY || left_type == DEV_AXIS) {
     auto it = rhs.begin();
-    event_translator* trans = parse_trans(left_type, rhs, it, &out);
-
-    if (!trans) {
+    event_translator* trans = nullptr;
+    try {
+      trans = parse_trans(left_type, rhs, it, &out);
+    } catch (MGParseTransException& e) {
       out.take_message("Parsing the right-hand side failed.");
-      return; //abort
+      return;
     }
 
     if (trans)  {
-      prof->set_mapping(field, trans->clone(), left_type, false);
+      prof->set_mapping(field, direction, trans->clone(), left_type, false);
       std::stringstream ss;
       MGTransDef def;
       trans->fill_def(def);
       print_def(left_type, def, ss);
       delete trans;
-      out.take_message("setting " + header + "." + field + " = " + ss.str());
+      std::string suffix = (direction == -1) ? "-" : "";
+      out.take_message("setting " + header + "." + field + suffix + " = " + ss.str());
+      return;
+    } else {
+      //we are clearing the mapping...
+      prof->set_mapping(field, direction, nullptr, left_type, false);
+      out.take_message("mapping for " + header + "." + field + " was cleared.");
       return;
     }
   }
-
-  if (rhs.empty()) return;
 
   if (!field.empty() && field.front() == '?' && rhs.size() > 0) {
     field.erase(field.begin());
     int ret = prof->set_option(field, rhs.front().value);
     if (ret)
       out.take_message(field + " is not a registered option");
+    else
+      out.take_message("option \"" + field + "\" set.");
     return;
   }
 
@@ -370,29 +394,34 @@ void MGparser::do_assignment(std::string header, std::string field, std::vector<
 
 
 
-void MGparser::do_adv_assignment(std::string header, std::vector<std::string>& fields, std::vector<token> rhs) {
+void MGparser::do_group_assignment(std::string header, std::vector<std::string>& fields, std::vector<token> rhs, response_stream& out) {
   if (rhs.empty()) return;
   auto prof = mg->find_profile(header);
   if (!prof) {
     out.take_message("could not locate profile " + header);
     return;
   }
+  std::vector<int8_t> directions;
+  for (std::string& field : fields) {
+    directions.push_back(read_direction(field));
+  }
 
   if (rhs.front().value == "nothing") {
-    prof->set_advanced(fields, nullptr);
+    prof->set_group_mapping(fields, directions, nullptr);
+    out.take_message("clearing group translator");
     return;
   }
-  advanced_event_translator* trans = parse_adv_trans(fields, rhs, &out);
+  group_translator* trans = parse_group_trans(rhs, &out);
   if (!trans) {
     out.take_message("could not parse right hand side");
   }
   if (trans) {
-    prof->set_advanced(fields, trans->clone());
+    prof->set_group_mapping(fields, directions, trans->clone());
     std::stringstream ss;
     MGTransDef def;
     trans->fill_def(def);
     print_def(DEV_KEY, def, ss);
-    out.take_message("setting advanced translator to " + ss.str());
+    out.take_message("setting group translator to " + ss.str());
   }
 
   if (trans) delete trans;
@@ -402,7 +431,7 @@ void MGparser::do_adv_assignment(std::string header, std::vector<std::string>& f
 
 }
 
-void MGparser::do_assignment_line(std::vector<token>& line, std::string& header) {
+void MGparser::do_assignment_line(std::vector<token>& line, std::string& header, response_stream& out) {
   std::string effective_header = "";
   std::string effective_field;
   std::string chord1 = "";
@@ -480,41 +509,45 @@ void MGparser::do_assignment_line(std::vector<token>& line, std::string& header)
   }
 
   if (multifield.size() > 0) {
-    do_adv_assignment(effective_header, multifield, rightside);
+    do_group_assignment(effective_header, multifield, rightside, out);
     return;
   }
 
   if (effective_field.empty() || rightside.empty()) return;
 
 
-  do_assignment(effective_header, effective_field, rightside);
+  do_assignment(effective_header, effective_field, rightside, out);
 
 
 
 }
 
-void MGparser::parse_line(std::vector<token>& line, std::string& header) {
+void MGparser::parse_line(std::vector<token>& line, std::string& header, response_stream& out) {
 
   if (find_token_type(TK_HEADER_OPEN, line)) {
-    do_header_line(line, header);
-    out.take_message("header is " + header);
+    if (do_header_line(line, header))
+      out.take_message("header is " + header);
     return;
   }
 
   if (find_token_type(TK_EQUAL, line) && line[0].value != "set") {
-    do_assignment_line(line, header);
+    do_assignment_line(line, header, out);
   } else {
     do_command(mg, line, &out);
   }
 
 }
 
-void MGparser::exec_line(std::vector<token>& line, std::string& header) {
-  parse_line(line, header);
+void MGparser::exec_line(std::vector<token>& line, std::string& header, int response_id) {
+  response_stream out(response_id, &messages);
+  parse_line(line, header, out);
+  out.end_response(0); //Always have return value 0 for now.
 }
 
+MGParseException parse_err;
+MGParseTransException parse_trans_err;
 
-event_translator* MGparser::parse_trans(enum entry_type intype, std::vector<token>& tokens, std::vector<token>::iterator& it, message_stream* out) {
+event_translator* MGparser::parse_trans(enum entry_type intype, std::vector<token>& tokens, std::vector<token>::iterator& it, response_stream* out) {
   //Note: this function is assumed to be called at the top of parsing a translator,
   //not as some recursive substep. If we wish to avoid the quirks, use parse_complex_trans instead.
   event_translator* trans = parse_trans_toplevel_quirks(intype, tokens, it);
@@ -531,7 +564,10 @@ event_translator* MGparser::parse_trans_toplevel_quirks(enum entry_type intype, 
   //Allowing a top level expression to include a comma would make the parse descent ambiguous.
   //So instead, it ends up here.
 
-  if (it != tokens.begin()) return nullptr; //Not the toplevel? Abort?
+  if (it != tokens.begin()) {
+    throw parse_trans_err;
+    return nullptr; //Not the toplevel? Abort?
+  }
 
   //This is very heavy on formatting, a button, a comma, a button.
   if (intype == DEV_AXIS && tokens.size() == 3 && tokens[1].type == TK_COMMA) {
@@ -541,7 +577,11 @@ event_translator* MGparser::parse_trans_toplevel_quirks(enum entry_type intype, 
     expr->params.push_back(new complex_expr);
     expr->params[0]->ident = tokens[0].value;
     expr->params[1]->ident = tokens[2].value;
-    event_translator* trans = parse_trans_expr(DEV_AXIS, expr, nullptr);
+    event_translator* trans = nullptr;
+    try {
+      trans = parse_trans_expr(DEV_AXIS, expr, nullptr);
+    } catch (std::exception& e) {
+    }
     free_complex_expr(expr);
     return trans;
   }
@@ -549,13 +589,22 @@ event_translator* MGparser::parse_trans_toplevel_quirks(enum entry_type intype, 
 }
 
 
-event_translator* MGparser::parse_trans_strict(enum entry_type intype, std::vector<token>& tokens, std::vector<token>::iterator& it, message_stream* out) {
+event_translator* MGparser::parse_trans_strict(enum entry_type intype, std::vector<token>& tokens, std::vector<token>::iterator& it, response_stream* out) {
+  if (it != tokens.end() && it->value == "nothing")
+    return nullptr;
   auto localit = it;
   complex_expr* expr = read_expr(tokens, localit);
-  event_translator* trans =  parse_trans_expr(intype, expr, out);
+  event_translator* trans;
+  try {
+     trans =  parse_trans_expr(intype, expr, out);
+  } catch (std::exception& e) {
+    trans = nullptr;
+  }
   free_complex_expr(expr);
   it = localit;
-  return trans;
+  if (trans)
+    return trans;
+  throw parse_trans_err;
 
 }
 
@@ -563,21 +612,25 @@ event_translator* MGparser::parse_trans_strict(enum entry_type intype, std::vect
 
 void release_def(MGTransDef& def) {
   for (auto entry : def.fields) {
-    if (entry.type == MG_TRANS || entry.type == MG_KEY_TRANS || entry.type == MG_AXIS_TRANS || entry.type == MG_REL_TRANS)
+    if ((entry.type == MG_TRANS || entry.type == MG_KEY_TRANS || entry.type == MG_AXIS_TRANS || entry.type == MG_REL_TRANS) && entry.trans)
       delete entry.trans;
-    if (entry.type == MG_ADVANCED_TRANS)
-      delete entry.adv_trans;
-    if (entry.type == MG_STRING)
+    if (entry.type == MG_GROUP_TRANS && entry.group_trans)
+      delete entry.group_trans;
+    if (entry.type == MG_STRING && entry.string)
       free((char*)entry.string);
   }
 }
 
 
-event_translator* MGparser::parse_trans_expr(enum entry_type intype, complex_expr* expr, message_stream* out) {
+event_translator* MGparser::parse_trans_expr(enum entry_type intype, complex_expr* expr, response_stream* out) {
   if (!expr) {
     if (out) out->err("expression not well-formed.");
+    throw parse_trans_err;
     return nullptr;
   }
+
+  if (expr->ident == "nothing")
+    return nullptr; //we actually wish to return nullptr in this case, not an exception.
 
   event_translator* trans = parse_special_trans(intype, expr);
   if (trans) return trans;
@@ -587,6 +640,7 @@ event_translator* MGparser::parse_trans_expr(enum entry_type intype, complex_exp
   auto generator = trans_gens.find(expr->ident);
   if (generator == trans_gens.end()) {
     if (out) out->err("no known translator \""+expr->ident+"\".");
+    throw parse_trans_err;
     return nullptr;
   }
 
@@ -596,18 +650,23 @@ event_translator* MGparser::parse_trans_expr(enum entry_type intype, complex_exp
   def.identifier = expr->ident;
 
 
-  if (!parse_decl(intype, decl, def, expr, out)) return nullptr;
+  if (!parse_decl(intype, decl, def, expr, out)) {
+    throw parse_trans_err;
+    return nullptr;
+  }
 
 
   //still need to build it!
   try {
     trans = generator->second.generate(def.fields);
-  } catch (...) {
+  } catch (std::exception& e) {
     if (out) out->err("translator constructor failed.");
     trans = nullptr;
   }
   release_def(def);
-  return trans;
+  if (trans)
+    return trans;
+  throw parse_trans_err;
 }
 
 
@@ -616,7 +675,7 @@ int read_ev_code(std::string& code, out_type type) {
   try {
     i = std::stoi(code);
     return i;
-  } catch (...) {
+  } catch (std::exception& e) {
     if (type == OUT_NONE) return 0;
     event_info info = lookup_event(code.c_str());
     if (info.type == type) return info.value;
@@ -630,8 +689,6 @@ int read_ev_code(std::string& code, out_type type) {
 event_translator* MGparser::parse_special_trans(enum entry_type intype, complex_expr* expr) {
   if (!expr) return nullptr;
 
-  if (expr->ident == "nothing") return new event_translator();
-
   //Key to a key.
   if (intype == DEV_KEY && expr->params.size() == 0) {
     int out_button = read_ev_code(expr->ident, OUT_KEY);
@@ -643,10 +700,15 @@ event_translator* MGparser::parse_special_trans(enum entry_type intype, complex_
     std::string outevent = expr->ident;
     int direction = 1;
     if (outevent.size() > 0) {
-      if (outevent[0] == '+') {
+      if (outevent.back() == '+') {
+        outevent.pop_back();
+      } else if (outevent.back() == '-') {
+        outevent.pop_back();
+        direction = -1;
+      } else if (outevent[0] == '+') {
+        //For backwards compatibility, allow +/- to be in front as well.
         outevent.erase(outevent.begin());
-      }
-      if (outevent[0] == '-') {
+      } else if (outevent[0] == '-') {
         outevent.erase(outevent.begin());
         direction = -1;
       }
@@ -674,17 +736,18 @@ event_translator* MGparser::parse_special_trans(enum entry_type intype, complex_
 }
 
 
-bool MGparser::parse_decl(enum entry_type intype, const trans_decl& decl, MGTransDef& def, complex_expr* expr, message_stream* out) {
+bool MGparser::parse_decl(enum entry_type intype, const trans_decl& decl, MGTransDef& def, complex_expr* expr, response_stream* out) {
   if (!expr) return false;
 
   int fieldsfound = expr->params.size();
 
   //initialize two vectors to match our number of fields.
+  //set all to default
   std::vector<complex_expr> values;
   std::vector<bool> valid;
   def.fields.clear();
   for (int i = 0; i < decl.fields.size(); i++) {
-    def.fields.push_back({decl.fields[i].type,0});
+    def.fields.push_back({decl.fields[i].type,0,FLAG_DEFAULT});
     complex_expr default_val;
     default_val.ident = decl.fields[i].default_val;
     values.push_back(default_val);
@@ -697,13 +760,21 @@ bool MGparser::parse_decl(enum entry_type intype, const trans_decl& decl, MGTran
     variadic_type = decl.fields.back().type;
 
   //assign each given parameter to its correct spot.
+  //do this by maintaining a count of which positional parameter we are on,
+  //while allowing named parameters to find their spot without affecting that count.
+  //Also: store metadata like whether each param was positional/defaulted/named.
   int offset = 0;
+  bool named = false;
   for (int i = 0; i < fieldsfound; i++) {
     int spot = i - offset;
+    named = false;
     if (!expr->params[i]->name.empty()) {
       for (spot = 0; spot < decl.fields.size(); spot++) {
-        if (decl.fields[spot].name == expr->params[i]->name)
+        if (decl.fields[spot].name == expr->params[i]->name) {
+          //we have a name and found its spot!
+          named = true;
           break;
+        }
       }
       if (spot == decl.fields.size()) {
         if (out) out->err("translator \""+expr->ident+"\" has no parameter named \""+expr->params[i]->name+"\"");
@@ -711,6 +782,7 @@ bool MGparser::parse_decl(enum entry_type intype, const trans_decl& decl, MGTran
       }
     }
     if (spot >= def.fields.size() && variadic_type != MG_NULL) {
+      //we got more than the decl, but this decl was flexible.
       //just push some dummy values to resize the list.
       complex_expr dummy;
       values.push_back(dummy);
@@ -719,6 +791,9 @@ bool MGparser::parse_decl(enum entry_type intype, const trans_decl& decl, MGTran
     }
     values[spot] = *(expr->params[i]);
     valid[spot] = true;
+    def.fields[spot].flags = 0; //clear the default flag, as we do have a value given.
+    if (named)
+      def.fields[spot].flags |= FLAG_NAMED;
     if (spot != i-offset)
       offset++; //stay at current spot for the next loop.
   }
@@ -750,25 +825,45 @@ bool MGparser::parse_decl(enum entry_type intype, const trans_decl& decl, MGTran
       values[i] = *temp_expr;
     }
       
-
-    if (type == MG_TRANS) def.fields[i].trans = parse_trans_expr(intype, &values[i], out);
-    if (type == MG_KEY_TRANS) def.fields[i].trans = parse_trans_expr(DEV_KEY, &values[i], out);
-    if (type == MG_REL_TRANS) def.fields[i].trans = parse_trans_expr(DEV_REL, &values[i], out);
-    if (type == MG_AXIS_TRANS) def.fields[i].trans = parse_trans_expr(DEV_AXIS, &values[i], out);
+    try {
+      if (type == MG_TRANS) def.fields[i].trans = parse_trans_expr(intype, &values[i], out);
+      if (type == MG_KEY_TRANS) def.fields[i].trans = parse_trans_expr(DEV_KEY, &values[i], out);
+      if (type == MG_REL_TRANS) def.fields[i].trans = parse_trans_expr(DEV_REL, &values[i], out);
+      if (type == MG_AXIS_TRANS) def.fields[i].trans = parse_trans_expr(DEV_AXIS, &values[i], out);
+    } catch (std::exception& e) {
+      if (out) out->err("translator-type parameter invalid.");
+      if (temp_expr)
+        free_complex_expr(temp_expr);
+      return false;
+    }
     if (temp_expr)
       free_complex_expr(temp_expr);
     if (type >= MG_KEY_TRANS && type <= MG_TRANS && !def.fields[i].trans) {
-      if (out) out->err("translator-type parameter invalid.");
-      return false;
+      def.fields[i].trans = new event_translator(); //save some headaches, keep translators from dealing with nulls.
     }
     if (type == MG_KEY) def.fields[i].key = read_ev_code(values[i].ident, OUT_KEY);
     if (type == MG_REL) def.fields[i].rel = read_ev_code(values[i].ident, OUT_REL);
     if (type == MG_AXIS) def.fields[i].axis = read_ev_code(values[i].ident, OUT_ABS);
+    if (type == MG_AXIS_DIR) {
+      std::string axis = values[1].ident;
+      bool negative = false;
+      if (axis.size() > 0) {
+        if (axis.back() == '+') {
+          axis.pop_back();
+        } else if (axis[0] == '-') {
+          axis.pop_back();
+          negative = true;
+        }
+      }
+      def.fields[i].axis = read_ev_code(axis,OUT_ABS);
+      if (def.fields[i].axis >= 0 && negative)
+        def.fields[i].axis |= NEGATIVE_AXIS_DIR;
+    }
     if (type == MG_INT) def.fields[i].integer = read_ev_code(values[i].ident, OUT_NONE);
     if (type == MG_FLOAT) {
       try {
         def.fields[i].real = std::atof(values[i].ident.c_str());
-      } catch (...) {
+      } catch (std::exception& e) {
         def.fields[i].real = std::nanf("");
       }
     }
@@ -801,12 +896,31 @@ void MGparser::print_def(entry_type intype, MGTransDef& def, std::ostream& outpu
   //Check for the possibility of some automagic.
   if (print_special_def(intype, def, output)) return;
 
+  trans_decl* decl = nullptr;
+  bool decl_failed = false;
   output << def.identifier;
   if (def.fields.size() > 0) output << "(";
   bool needcomma = false;
-  for (auto field : def.fields) {
+  for (int i = 0; i < def.fields.size(); i++) {
+    auto field = def.fields[i];
+    if (field.flags & FLAG_DEFAULT)
+      continue; //apparently we made this without specifying a value. It'd be wrong to remove that flexibility.
     if (needcomma) output << ",";
     MGType type = field.type;
+
+    if (field.flags & FLAG_NAMED) {
+      //gotta look up that trans_decl to actually get the field name...
+      if (!decl && !decl_failed) {
+        auto finder = trans_gens.find(def.identifier);
+        if (finder != trans_gens.end()) {
+          decl = &(finder->second.decl);
+        } else {
+          decl_failed = true;
+        }
+      }
+      if (decl && decl->fields.size() > i)
+        output << decl->fields[i].name << "=";
+    }
     if (type == MG_KEY) {
       const char* name = get_key_name(field.key);
       if (name) {
@@ -823,6 +937,17 @@ void MGparser::print_def(entry_type intype, MGTransDef& def, std::ostream& outpu
         output << field.axis;
       }
     }
+    if (type == MG_AXIS_DIR) {
+      int dir = EXTRACT_DIR(field.axis);
+      int axis = EXTRACT_AXIS(field.axis);
+      const char* name = get_axis_name(axis);
+      const char* suffix = dir > 0 ? "+" : "-";
+      if (name) {
+        output << name << suffix;
+      } else {
+        output << field.axis << suffix;
+      }
+    }
     if (type == MG_REL) {
       const char* name = get_rel_name(field.rel);
       if (name) {
@@ -833,7 +958,11 @@ void MGparser::print_def(entry_type intype, MGTransDef& def, std::ostream& outpu
     }
     if (type == MG_INT) output << field.integer;
     if (type == MG_FLOAT) output << field.real;
-    if (type == MG_STRING) output << "\""<<field.string<<"\"";
+    if (type == MG_STRING)  {
+      std::string str = field.string;
+      escape_string(str);
+      output << "\""<<str<<"\"";
+    }
     if (type == MG_SLOT) output << field.slot->name;
     if (type == MG_BOOL) output << (field.integer ? "true":"false");
     if (type == MG_TRANS || type == MG_KEY_TRANS || type == MG_AXIS_TRANS || type == MG_REL_TRANS) {
@@ -873,31 +1002,31 @@ bool MGparser::print_special_def(entry_type intype, MGTransDef& def, std::ostrea
     || (intype == DEV_AXIS && (def.identifier == "axis2axis" || def.identifier == "axis2rel"))) {
     if (def.fields.size() >= 2 &&  def.fields[1].type == MG_INT) {
       const char* name = nullptr;
-      const char* prefix = "";
+      const char* suffix = "";
       //Axis: get axis name and check for default speeds of +/- one.
       if (def.fields[0].type == MG_AXIS) {
         name = get_axis_name(def.fields[0].axis);
         if (def.fields[1].integer == -1) {
-          prefix = "-";
+          suffix = "-";
         }
         if (def.fields[1].integer == +1) {
-          prefix = "+";
+          suffix = "+";
         }
       } else if (def.fields[0].type == MG_REL) {
         //Rel: default speeds depend on the intype as well!
         name = get_rel_name(def.fields[0].axis);
         int speed = def.fields[1].integer;
         if ((intype == DEV_KEY && speed == -SPEC_REL_BTN) || (intype == DEV_AXIS && speed == -SPEC_REL_AXIS)) {
-          prefix = "-";
+          suffix = "-";
         }
         if ((intype == DEV_KEY && speed == SPEC_REL_BTN) || (intype == DEV_AXIS && speed == SPEC_REL_AXIS)) {
-          prefix = "+";
+          suffix = "+";
         }
       }
       
-      if (!prefix) return false;
+      if (!suffix) return false;
       if (!name) return false;
-      output << prefix << name;
+      output << name << suffix;
       return true;
     }
   }
@@ -966,7 +1095,10 @@ struct complex_expr* read_expr(std::vector<token>& tokens, std::vector<token>::i
   bool abort = false;
 
 
-  if ((*it).type == TK_IDENT || (*it).type == TK_LPAREN) {
+  //Are we an IDENT, a string of some sort?
+  //Or perhaps an LPAREN, that we might want to recurse?
+  //Or maybe even a dot, in the off chance of a numeric literal like ".7" instead of "0.7"
+  if ((*it).type == TK_IDENT || (*it).type == TK_LPAREN || (*it).type == TK_DOT) {
     complex_expr* expr = new complex_expr;
     //If we have ident, read it in.
     //If we see '=' next, then our ident was actually a name!
@@ -984,8 +1116,13 @@ struct complex_expr* read_expr(std::vector<token>& tokens, std::vector<token>::i
       expr->ident = (*it).value;
       it++;
     }
+    //just append idents and dots to blindly cover the case of recombining numeric values.
+    // "-5" "." "3"  ---> "-5.3"
+    while((*it).type == TK_IDENT || (*it).type == TK_DOT) {
+      expr->ident += (*it).value;
+      it++;
+    }
     //Otherwise, we have a paren, start reading children
-
     if ((*it).type == TK_LPAREN) {
       it++;
       complex_expr* subexpr = read_expr(tokens, it);
@@ -1013,11 +1150,15 @@ struct complex_expr* read_expr(std::vector<token>& tokens, std::vector<token>::i
   return nullptr;
 }
 
-advanced_event_translator* MGparser::parse_adv_trans(const std::vector<std::string>& event_names, std::vector<token>& rhs, message_stream* out) {
+group_translator* MGparser::parse_group_trans(std::vector<token>& rhs, response_stream* out) {
   auto it = rhs.begin();
-  event_translator* trans = parse_trans(DEV_KEY, rhs, it, nullptr);
-  if (trans) {
-    return new simple_chord(event_names, trans);
+  try {
+    event_translator* trans = parse_trans(DEV_KEY, rhs, it, nullptr);
+    if (trans) {
+      return new simple_chord(trans);
+    }
+  } catch (MGParseTransException& e) {
+    //just move along.
   }
 
   it = rhs.begin();
@@ -1027,7 +1168,7 @@ advanced_event_translator* MGparser::parse_adv_trans(const std::vector<std::stri
 
   auto generator = trans_gens.find(expr->ident);
   if (generator == trans_gens.end()) {
-    if (out) out->err("no known advanced translator \""+expr->ident+"\".");
+    if (out) out->err("no known group translator \""+expr->ident+"\".");
     return nullptr;
   }
 
@@ -1041,15 +1182,15 @@ advanced_event_translator* MGparser::parse_adv_trans(const std::vector<std::stri
 
 
   //still need to build it!
-  advanced_event_translator* adv_trans;
+  group_translator* group_trans;
   try {
-    adv_trans = generator->second.adv_generate(def.fields);
-  } catch (...) {
-    adv_trans = nullptr;
+    group_trans = generator->second.group_generate(def.fields);
+  } catch (std::exception& e) {
+    group_trans = nullptr;
   }
   release_def(def);
 
   free_complex_expr(expr);
 
-  return adv_trans;
+  return group_trans;
 }

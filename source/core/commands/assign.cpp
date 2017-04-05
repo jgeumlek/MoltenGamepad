@@ -6,7 +6,7 @@
 #include "../parser.h"
 
 #define ASSIGN_USAGE "USAGE:\n\tassign slot <slot> to <type> <id>\n\ttype can be \"name\", \"phys\", or \"uniq\".\n\tid should be the identifier string of the relevant type to be assigned.\n\tSet slot to \"nothing\" to clear this assignment."
-int do_assign(moltengamepad* mg, std::vector<token>& command, message_stream* out) {
+int do_assign(moltengamepad* mg, std::vector<token>& command, response_stream* out) {
   if (command.size() < 6) {
     out->print(ASSIGN_USAGE);
     return -1;

@@ -46,6 +46,7 @@ void options::register_option(const option_decl opt) {
   opt_info.name = std::string(opt.name);
   opt_info.descr = std::string(opt.descr);
   opt_info.value.type = opt.type;
+  opt_info.value.flags = 0;
   opts[opt.name] = opt_info;
   std::string strval(opt.value);
   int ret = set_locked(opt_info.name, strval);
@@ -74,6 +75,7 @@ int options::set_locked(std::string& opname, std::string& value) {
   MGField newval;
   memset(&newval, 0, sizeof(newval));
   newval.type = type;
+  newval.flags = 0;
   //Weed out some bad values.
   if (type == MG_BOOL) {
     if (value == "true") {
@@ -104,7 +106,7 @@ int options::set_locked(std::string& opname, std::string& value) {
       if (callback)
         callback(opname, newval);
       return 0;
-    } catch(...) {
+    } catch(std::exception& e) {
       return -1;
     }
   }

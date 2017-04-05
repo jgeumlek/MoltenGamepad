@@ -20,16 +20,16 @@ const event_decl wiimote_events[] = {
   {EVNAME(wm_b), "Wiimote B button", BTN, "fourth"},
   {EVNAME(wm_plus), "Wiimote + button", BTN, "start"},
   {EVNAME(wm_minus), "Wiimote - button", BTN, "select"},
-  {EVNAME(wm_1), "Wiimote 1 button", BTN, "secondary"},
-  {EVNAME(wm_2), "Wiimote 2 button", BTN, "primary"},
+  {EVNAME(wm_1), "Wiimote 1 button", BTN, "second"},
+  {EVNAME(wm_2), "Wiimote 2 button", BTN, "first"},
   {EVNAME(wm_home), "Wiimote home button", BTN, "mode"},
   {EVNAME(wm_left), "Wiimote Dpad left", BTN, "down"}, //default mapping assumes wiimote is horizontal
   {EVNAME(wm_right), "Wiimote Dpad right", BTN, "up"}, //like a NES pad
   {EVNAME(wm_up), "Wiimote Dpad up", BTN, "left"},
   {EVNAME(wm_down), "Wiimote Dpad down", BTN, "right"},
 
-  {EVNAME(nk_a), "Wiimote A button with Nunchuk", BTN, "primary"},
-  {EVNAME(nk_b), "Wiimote B button with Nunchuk", BTN, "secondary"},
+  {EVNAME(nk_a), "Wiimote A button with Nunchuk", BTN, "first"},
+  {EVNAME(nk_b), "Wiimote B button with Nunchuk", BTN, "second"},
   {EVNAME(nk_plus), "Wiimote + button with Nunchuk", BTN, "start"},
   {EVNAME(nk_minus), "Wiimote - button with Nunchuk", BTN, "select"},
   {EVNAME(nk_1), "Wiimote 1 button with Nunchuk", BTN, "tl"},
@@ -42,8 +42,8 @@ const event_decl wiimote_events[] = {
   {EVNAME(nk_c), "Nunchuk C button", BTN, "third"},
   {EVNAME(nk_z), "Nunchuk Z button", BTN, "fourth"},
 
-  {EVNAME(cc_a), "Classic Controller A button", BTN, "primary"},
-  {EVNAME(cc_b), "Classic Controller B button", BTN, "secondary"},
+  {EVNAME(cc_a), "Classic Controller A button", BTN, "first"},
+  {EVNAME(cc_b), "Classic Controller B button", BTN, "second"},
   {EVNAME(cc_x), "Classic Controller X button", BTN, "third"},
   {EVNAME(cc_y), "Classic Controller Y button", BTN, "fourth"},
   {EVNAME(cc_plus), "Classic Controller + button", BTN, "start"},
@@ -61,10 +61,10 @@ const event_decl wiimote_events[] = {
   {EVNAME(cc_thumbl), "Classic Controller Left Stick Click (Wii U Pro only)", BTN, "thumbl"},
   {EVNAME(cc_thumbr), "Classic Controller Right Stick Click  (Wii U Pro only)", BTN, "thumbr"},
 
-  {EVNAME(cc_left_x), "Classic Controller Left Stick X", ABS, "+left_x"},
-  {EVNAME(cc_left_y), "Classic Controller Left Stick Y", ABS, "+left_y"},
-  {EVNAME(cc_right_x), "Classic Controller Right Stick X", ABS, "+right_x"},
-  {EVNAME(cc_right_y), "Classic Controller Right Stick Y", ABS, "+right_y"},
+  {EVNAME(cc_left_x), "Classic Controller Left Stick X", ABS, ""},
+  {EVNAME(cc_left_y), "Classic Controller Left Stick Y", ABS, ""},
+  {EVNAME(cc_right_x), "Classic Controller Right Stick X", ABS, ""},
+  {EVNAME(cc_right_y), "Classic Controller Right Stick Y", ABS, ""},
 
   {EVNAME(wm_accel_x), "Wiimote X acceleration ((-) <--> (+) axis)", ABS, ""},
   {EVNAME(wm_accel_y), "Wiimote Y acceleration (plug <--> pointer axis)", ABS, ""},
@@ -81,8 +81,8 @@ const event_decl wiimote_events[] = {
   {EVNAME(nk_accel_x), "Nunchuk X acceleration", ABS, ""},
   {EVNAME(nk_accel_y), "Nunchuk Y acceleration", ABS, ""},
   {EVNAME(nk_accel_z), "Nunchuk Z acceleration", ABS, ""},
-  {EVNAME(nk_stick_x), "Nunchuk stick X", ABS, "+left_x"},
-  {EVNAME(nk_stick_y), "Nunchuk stick Y", ABS, "+left_y"},
+  {EVNAME(nk_stick_x), "Nunchuk stick X", ABS, ""},
+  {EVNAME(nk_stick_y), "Nunchuk stick Y", ABS, ""},
 
 
   {EVNAME(bal_x), "Balance Board Center of Gravity X", ABS, ""},
@@ -99,6 +99,8 @@ const option_decl wiimote_options[] = {
   {"nk_ir_active", "Enable IR data when nunchuk is present", "false", MG_BOOL},
   {"grab_exclusive", "Grab device events via ioctl EVIOCGRAB", "true", MG_BOOL},
   {"grab_permissions", "Grab device via blocking all read permissions", "false", MG_BOOL},
+  {"grab_permissions", "Grab device via blocking all read permissions", "true", MG_BOOL},
+  //grab_permissions = "true" only really needed for Wii U Pro, but it doesn't hurt the others.
   {nullptr, nullptr, nullptr, MG_NULL},
 };
 

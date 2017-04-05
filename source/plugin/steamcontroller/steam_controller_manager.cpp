@@ -48,8 +48,8 @@ void steam_controller_manager::init_profile() {
   };
 
   //Init some aliases to act like a standardized game pad
-  set_alias("primary","a");
-  set_alias("secondary","b");
+  set_alias("first","a");
+  set_alias("second","b");
   set_alias("third","x");
   set_alias("fourth","y");
   set_alias("leftright","left_pad_x");
@@ -62,6 +62,10 @@ void steam_controller_manager::init_profile() {
   set_alias("left_y","stick_y");
   set_alias("right_x","right_pad_x");
   set_alias("right_y","right_pad_y");
+
+  methods.register_event_group(ref, {"left_pad","left_pad_x,left_pad_y","Left Touch Pad","dpad()"});
+  methods.register_event_group(ref, {"stick","stick_x,stick_y","Thumb stick","stick(left_x,left_y)"});
+  methods.register_event_group(ref, {"right_pad","right_pad_x,right_pad_y","Right Touch Pad","stick(right_x,right_y)"});
 
 };
 

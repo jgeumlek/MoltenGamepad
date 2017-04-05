@@ -11,8 +11,8 @@ void wiimote_manager::init_profile() {
     methods.register_alias(ref, external, internal);
   };
   //Init some aliases to act like a standardized game pad
-  set_alias("primary","cc_a");
-  set_alias("secondary","cc_b");
+  set_alias("first","cc_a");
+  set_alias("second","cc_b");
   set_alias("third","cc_x");
   set_alias("fourth","cc_y");
   set_alias("left","cc_left");
@@ -33,6 +33,9 @@ void wiimote_manager::init_profile() {
   set_alias("right_x","cc_right_x");
   set_alias("right_y","cc_right_y");
   
+
+  //set default group translators by declaring event groups
+  methods.register_event_group(ref, {"nk_stick","nk_stick_x,nk_stick_y","Nunchuk stick","stick(left_x,left_y)"});
 
   const option_decl* opt = &wiimote_options[0];
   for (int i = 0; opt->name && *opt->name; opt = &wiimote_options[++i]) {

@@ -19,7 +19,7 @@ struct mg_ev {
 
 class input_source;
 class event_translator;
-class advanced_event_translator;
+class group_translator;
 
 struct MGTransDef {
   std::string identifier;
@@ -62,38 +62,50 @@ public:
     def.identifier = "nothing";
   }
   event_translator() {};
+
+  //vector of parameter meta-data. The macros will deal with it.
+  std::vector<int16_t> field_flags;
 };
+  
 
 //A more complicated event translator. It can request to listen to multiple events.
-class advanced_event_translator {
+class group_translator {
 public:
   //Initialize any values needed with this input source
   virtual void init(input_source* source) {};
-  //Take in a list of events to listen to.
-  virtual bool set_mapped_events(const std::vector<std::string>& event_names) {};
+  //Take in a list of event types that this translator will be listening to.
+  virtual bool set_mapped_events(const std::vector<source_event>& listened_events) {};
   //Called when the device's thread is ready for attaching.
   virtual void attach(input_source* source) {};
   //Return true to block the input source's native handling of this event.
-  virtual bool claim_event(int id, mg_ev event) {
+  //index is with respect to this translators list of mapped inputs.
+  //This function should be where we handle any incoming events.
+  virtual bool claim_event(int index, mg_ev event) {
     return false;
   };
   //called regularly on a tick event; a certain amount of time has elapsed.
-  virtual void process_recurring(output_slot* out) const {
+  virtual void process_recurring(output_slot* out) const {};
+  //called on a SYN_REPORT, to allow processing multiple events at an appropriate time.
+  virtual void process_syn_report(output_slot* out) {};
+  //Similar to event_translator::clone(), acts as a prototype method.
+  virtual group_translator* clone() {
+    return new group_translator(*this);
   }
-  //Similar to the above, acts as a prototype method.
-  virtual advanced_event_translator* clone() {
-    return new advanced_event_translator(*this);
-  }
-  virtual ~advanced_event_translator() {};
+  virtual ~group_translator() {};
 
   //Do we want the input_source to send recurring "ticks" for processing?
   virtual bool wants_recurring_events() { return false; };
+  //Do we want to clear other translators for our events?
+  virtual bool clear_other_translations() { return true; };
 
-  advanced_event_translator(std::vector<MGField>& fields) {};
-  advanced_event_translator() {};
+  group_translator(std::vector<MGField>& fields) {};
+  group_translator() {};
   virtual void fill_def(MGTransDef& def) {
     def.identifier = "nothing";
   }
+
+  //vector of parameter meta-data. The macros will deal with it.
+  std::vector<int16_t> field_flags;
 };
 
 #endif

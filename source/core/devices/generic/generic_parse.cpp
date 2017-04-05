@@ -10,9 +10,9 @@
 #define GENDEV_REJECTED_MANAGER -5
 void parse_error(moltengamepad* mg, const std::string& message, const context& context) {
   if (message.empty()) {
-    mg->drivers.err("gendev: parsing error, entire line ignored.", context.path, context.line_number);
+    mg->drivers.err(0,"gendev: parsing error, entire line ignored.", context.path, context.line_number);
   } else {
-    mg->drivers.err(message, context.path, context.line_number);
+    mg->drivers.err(0,message, context.path, context.line_number);
   }
 }
 void generic_assignment_line(std::vector<token>& line, generic_driver_info*& info, moltengamepad* mg, context context) {
@@ -57,7 +57,7 @@ void generic_assignment_line(std::vector<token>& line, generic_driver_info*& inf
     }
     try {
       numeric_literal = std::stoi((*it).value);
-    } catch (...) {
+    } catch (std::exception& e) {
       parse_error(mg, "gendev: could not parse event code number.", context);
       return;
     }
@@ -104,7 +104,7 @@ void generic_assignment_line(std::vector<token>& line, generic_driver_info*& inf
     int ret = read_bool(value, [&info] (bool val) {
       info->grab_ioctl = val;
     });
-    if (ret) mg->drivers.err("gendev: \""+value+"\" was not recognized as true or false.", context.path, context.line_number);
+    if (ret) mg->drivers.err(0,"gendev: \""+value+"\" was not recognized as true or false.", context.path, context.line_number);
     return;
   }
 
@@ -112,7 +112,7 @@ void generic_assignment_line(std::vector<token>& line, generic_driver_info*& inf
     int ret = read_bool(value, [&info] (bool val) {
       info->grab_chmod = val;
     });
-    if (ret) mg->drivers.err("gendev: \""+value+"\" was not recognized as true or false.", context.path, context.line_number);
+    if (ret) mg->drivers.err(0,"gendev: \""+value+"\" was not recognized as true or false.", context.path, context.line_number);
     return;
   }
 
@@ -120,7 +120,7 @@ void generic_assignment_line(std::vector<token>& line, generic_driver_info*& inf
     int ret = read_bool(value, [&info] (bool val) {
       info->subscribe_to_gamepad = val;
     });
-    if (ret) mg->drivers.err("gendev: \""+value+"\" was not recognized as true or false.", context.path, context.line_number);
+    if (ret) mg->drivers.err(0,"gendev: \""+value+"\" was not recognized as true or false.", context.path, context.line_number);
     return;
   }
 
@@ -128,7 +128,7 @@ void generic_assignment_line(std::vector<token>& line, generic_driver_info*& inf
     int ret = read_bool(value, [&info] (bool val) {
       info->rumble = val;
     });
-    if (ret) mg->drivers.err("gendev: \""+value+"\" was not recognized as true or false.", context.path, context.line_number);
+    if (ret) mg->drivers.err(0,"gendev: \""+value+"\" was not recognized as true or false.", context.path, context.line_number);
     return;
   }
 
@@ -136,18 +136,20 @@ void generic_assignment_line(std::vector<token>& line, generic_driver_info*& inf
     int ret = read_bool(value, [&info] (bool val) {
       info->flatten = val;
     });
-    if (ret) mg->drivers.err("gendev: \""+value+"\" was not recognized as true or false.", context.path, context.line_number);
+    if (ret) mg->drivers.err(0,"gendev: \""+value+"\" was not recognized as true or false.", context.path, context.line_number);
     return;
   }
 
   if (field == "split") {
     try {
       int split_count  = std::stoi(value);
+      if (split_count <= 0)
+        throw std::runtime_error("invalid split");
       info->split = split_count;
       info->split_types.clear();
       info->split_types.assign(split_count,"gamepad");
-    } catch (...) {
-      mg->drivers.err("gendev: split value invalid.", context.path, context.line_number);
+    } catch (std::exception& e) {
+      mg->drivers.err(0,"gendev: split value invalid.", context.path, context.line_number);
     }
     return;
   }
@@ -157,9 +159,10 @@ void generic_assignment_line(std::vector<token>& line, generic_driver_info*& inf
     try {
       split_id  = std::stoi(prefix);
       if (split_id <= 0 || split_id > info->split)
-        throw -1;
-    } catch (...) {
-      mg->drivers.err("gendev: split value invalid.", context.path, context.line_number);
+        throw std::runtime_error("invalid split");
+    } catch (std::exception& e) {
+      //catches both parse errors and out-of-range issues...
+      mg->drivers.err(0,"gendev: split value invalid.", context.path, context.line_number);
     }
   }
 
@@ -200,13 +203,13 @@ void generic_assignment_line(std::vector<token>& line, generic_driver_info*& inf
     info->events.push_back(ev);
     return;
   }
-  mg->drivers.err("gendev: " + field + " was not recognized as an option or event.", context.path, context.line_number);
+  mg->drivers.err(0,"gendev: " + field + " was not recognized as an option or event.", context.path, context.line_number);
 }
 
 int parse_hex(const std::string& text) {
   try {
     return std::stoi(text,0,16);
-  } catch(...) {
+  } catch(std::exception& e) {
   }
   return -1;
 }
@@ -214,7 +217,7 @@ int parse_hex(const std::string& text) {
 int parse_dec(const std::string& text) {
   try {
     return std::stoi(text,0,10);
-  } catch(...) {
+  } catch(std::exception& e) {
   }
   return -1;
 }
@@ -360,21 +363,58 @@ int generic_config_loop(moltengamepad* mg, std::istream& in, std::string& path) 
   int ret = add_generic_manager(mg, *info);
   if (ret == GENDEV_INCOMPLETE_INFO) {
     delete info;
-    mg->drivers.err("gendev: missing name, devname, or events.", path, context.line_number);
+    mg->drivers.err(0,"gendev: missing name, devname, or events.", path, context.line_number);
   }
 
   delete[] buff;
   return 0;
 }
 
+void check_driver_warnings(const generic_driver_info& info) {
+  bool trigger_axes[2] = {false,false};
+  bool trigger_btns[2] = {false,false};
+  for (auto ev : info.events) {
+    if (ev.name == "tr2_axis")
+      trigger_axes[0] = true;
+    else if (ev.name == "tl2_axis")
+      trigger_axes[1] = true;
+    else if (ev.name == "tr2")
+      trigger_btns[0] = true;
+    else if (ev.name == "tl2")
+      trigger_btns[1] = true;
+  }
+  for (auto pair : info.aliases) {
+    const std::string& name = pair.first;
+    if (name == "tr2_axis")
+      trigger_axes[0] = true;
+    else if (name == "tl2_axis")
+      trigger_axes[1] = true;
+    else if (name == "tr2")
+      trigger_btns[0] = true;
+    else if (name == "tl2")
+      trigger_btns[1] = true;
+  }
+  //It is hard to generically describe this error to the user. Much clearer when concretely saying "tr2" rather than "tr2/tl2".
+  if (trigger_axes[0] && trigger_btns[0]) {
+    debug_print(DEBUG_NONE,3, "driver: generic driver ", info.name.c_str(), " exposes both tr2 and tr2_axis. This is likely an error, as tr2 is only for devices without analog trigger values. tr2_axis_btn can be used instead.");
+  }
+  //Should we only print one case when both occur? It is likely both will occur at the same time.
+  //Decided to just print both to further encourage the user to change things.
+  if (trigger_axes[1] && trigger_btns[1]) {
+    debug_print(DEBUG_NONE,3, "driver: generic driver ", info.name.c_str(), " exposes both tl2 and tl2_axis. This is likely an error, as tl2 is only for devices without analog trigger values. tl2_axis_btn can be used instead.");
+  }
+}
+
 int add_generic_manager(moltengamepad* mg, generic_driver_info& info) {
   if (info.events.size() > 0 && !info.name.empty() && !info.devname.empty()) {
     if (info.rumble && info.flatten) {
-      mg->drivers.err("gendev: " +info.name + ": flatten and rumble cannot both be active. Rumble is disabled.");
+      mg->drivers.err(0,"gendev: " +info.name + ": flatten and rumble cannot both be active. Rumble is disabled.");
       info.rumble = false;
     }
     generic_manager* manager = new generic_manager(mg, info);
     auto man = mg->add_manager(manager->get_plugin(), manager);
+    if (man)
+      check_driver_warnings(info);
     if (!man)
       return GENDEV_REJECTED_MANAGER;
     return 0;
@@ -447,4 +487,5 @@ int init_generic_callbacks() {
     return ((generic_device*)ref)->play_ff(id, repetitions);
   };
 }
+
 

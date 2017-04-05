@@ -1,14 +1,33 @@
-#MoltenGamepad Profile Documentation
+# MoltenGamepad Profile Documentation
 
 This file documents the behavior and use of MoltenGamepad profiles. These profiles contain event mappings and device-level options. Profiles do not include global/driver-level options such as those reached by the `set` command.
 
-##Overview
+This document has a few key sections:
 
-Profiles contain a mapping from MoltenGamepad event names to output events.
+1. An overview into the semantics of a profile
+2. A guided tour on profile features and how to use them
+3. A description of the root "gamepad" profile
+4. Extra details/advanced features
 
-Currently a profile exists for each driver and each device. The driver profile is used by newly connected devices to initialize their profile, and changes to a driver profile propagate to devices of that driver.
 
-For demonstration purposes, this file will deal with `wiimote` driver, and assume two wiimotes are connected (`wm1` and `wm2`).
+## Overview
+
+A Profile contains all the information one might want to configure about a device: the event mappings and the device options.
+
+Naturally every input source carries its own profile, where the profile has the same name as the device.
+
+Each driver also carries a profile. This profile is inherited by all the devices arising from that driver. Changes to the driver profile are propagated to the relevant devices. The driver profile is very useful for setting up devices that haven't been connected yet. Remember that driver-level options are stored in a profile; the driver profile is specifically for device-level information!
+
+There is also a special profile, "gamepad", that acts like a root profile. Drivers can optionally subscribe to the gamepad profile. Thus changes to the gamepad profile can propagate to all gamepad devices in MoltenGamepad, even though they may belong to different drivers.
+
+For demonstration purposes, this file will deal with `wiimote` driver, and will assume two wiimotes are connected (`wm1` and `wm2`).
+
+## Tour of Features
+
+This section is both a rough "getting started" guide and a collection of reference information. 
+
+
+### Changing a profile
 
 A profile can be altered by issuing a command of this form:
 
@@ -22,13 +41,17 @@ would set all wiimotes to emit a select button event when their "a" button is pr
 
     wm2.wm_a = start
 
-Would set `wm2` to emit a start button event when its "a" button is pressed, while `wm1` would still send a primary event.
+Would set `wm2` to emit a start button event when its "a" button is pressed, while `wm1`'s profile would be unmodified.
 
-##Listing Profiles
+An event's mapping can be cleared by setting it to `nothing`.
+
+    wiimote.wm_a = nothing
+
+### Listing Profiles
 
     print profiles
 
-will list all profiles currently in use. At the moment, this will simply be a list of all drivers and their devices.
+will list all profiles currently in use. At the moment, this will simply be a list of all drivers and their devices, plus the special gamepad profile.
 
     print profiles <profile name>
 
@@ -36,20 +59,25 @@ will print out the mappings in that profile, in the same format as the commands 
 
     print profiles wiimote
 
-This is handy, as it will display the already populated wiimote default profile, which gives a nice example.
+This will display the already populated wiimote default profile, which gives a nice example.
 
-##Listing Input Events
+### Listing Input Events
+
+    print events <device or driver>
+
+Unfortunately this does not work for the gamepad profile, but it does work for the devices and drivers. It will print out the events along with their descriptions.
 
     print devices <device>
 
-This will print out all events this device might emit, along with a short description of what that event represents. Note that this must be a device, not a driver!
+This prints out information of a device, which also includes its event list.
 
-##Possible Output Events
 
-The following are specially recognized as gamepad button events for output (event code, MoltenGamepad name, description):
+### Possible Output Events
 
-*  {BTN_SOUTH, "primary", "Primary face button (Confirm)"},
-*  {BTN_EAST, "secondary", "Second face button (Go Back)"},
+The following are specially recognized as gamepad button events for output. The entries are in this order (event code, MoltenGamepad name, description):
+
+*  {BTN_SOUTH, "first", "Primary face button (Confirm)"},
+*  {BTN_EAST, "second", "Second face button (Go Back)"},
 *  {BTN_WEST, "third", "Third face button"},
 *  {BTN_NORTH, "fourth", "Fourth face button"},
 *  {BTN_START, "start", "Start button"},
@@ -83,7 +111,7 @@ If the four dpad event codes were not available on your system, two extra axis e
 * {ABS_HAT0X,"leftright", "left/right on the dpad"},
 * {ABS_HAT0Y, "updown", "up/own on the dpad"},
 
-(The `--dpad-as-hat` option does the appropriate mapping of four dpad events to a hat when your system has the four dpad event codes available, their is no need for these two extra axes)
+(The `--dpad-as-hat` option does the appropriate mapping of four dpad events to a hat when your system has the four dpad event codes available. There is not much need for these two extra axes on such systems, but they are still available as `abs_hat0x` if truly needed.)
 
 In addition, the full range of evdev events (of type KEY or ABS) are also available, using lower case identifiers. Here are a subset just to demonstrate:
 
@@ -97,57 +125,105 @@ In addition, the full range of evdev events (of type KEY or ABS) are also availa
 * key_previoussong
 * key_volumeup
 
-##Mapping a button to a button
+### Mapping a button to a button
 
     wiimote.wm_a = primary
 
 That's it.
 
-##Mapping an axis to an axis
+### Mapping an axis to an axis
 
     wiimote.cc_left_x = left_x
-    wiimote.cc_left_x = +left_x
-    wiimote.cc_left_x = -left_x
+    wiimote.cc_left_x = left_x+
+    wiimote.cc_left_x = left_x-
 
 The first two are equivalent. The last one inverts the axis direction.
 
-##Mapping a button to an axis
+### Mapping a button to an axis
 
-    wiimote.wm_a = +left_x
-    wiimote.wm_a = -left_x
+    wiimote.wm_a = left_x+
+    wiimote.wm_a = left_x-
 
 The +/- represents whether the button should output in the positive or negative direction. When pressed, the button maxes out that axis in that direction. When not released, the button sets that axis to zero.
 
-##Mapping a button to a relative event
+### Mapping a button to a relative event
 
 Unlike an axis that represents absolute values, relative events express only changes. They are seen from mice, which have no idea where the mouse is, only how fast it is moving.
 
-    wiimote.wm_a = +rel_x
-    wiimote.wm_a = -rel_x
+    wiimote.wm_a = rel_x+
+    wiimote.wm_a = rel_x-
 
 The +/- represents whether the button should output in the positive or negative direction. 
 
 While pressed, a relative event will be generate at a regular rate.
 
 
-##Mapping an axis to buttons
+### Mapping an axis to buttons
 
     wiimote.cc_left_x = left,right
 
 The first output button is pressed when the axis gets sufficiently negative. The second output button is pressed when the axis gets sufficiently positive. When the axis is not at either extreme, both buttons are released.
 
-##Mapping an axis to a relative event.
+### Mapping an axis to a relative event.
 
     wiimote.cc_left_x = rel_x
-    wiimote.cc_left_x = +rel_x
-    wiimote.cc_left_x = -rel_x
+    wiimote.cc_left_x = rel_x+
+    wiimote.cc_left_x = rel_x-
 
 The first two are equivalent. The last one inverts the direction.
 
 Similar to the button-to-relative mapping, these events are generated at a fixed rate. Unlike the button mapping, an axis can express a range of speeds for smoother control.
 
+### Mapping a thumb stick
 
-##The Gamepad profile
+To generate events for a thumb stick, one generally wants to consider the two axes simultaneously to make a decision. This requires using "group translators" that can read from multiple events.
+
+    wiimote.(cc_left_x,cc_left_y) = stick(left_x,left_y)
+    wiimote.(cc_right_x,cc_right_y) = dpad
+
+The former maps to the left stick of the virtual output device. The latter maps to the dpad of the virtual output device.
+This more-complicated dpad-mapping is only needed for analog axes like a thumb stick. For an input device with the dpad represented as a hat, the section "mapping an axis to buttons" suffices.
+
+Note how the multiple input events are simply listed inside parentheses. To clear a "group translator", just set its input combination to "nothing". The mapping is ordering-sensitive!
+
+    wiimote.(cc_left_x,cc_left_y) = nothing
+
+Aliases can also map to input event lists, making this easier. The following two lines are equivalent due to the built in alias "left_stick":
+
+    wiimote.(cc_left_x,cc_left_y) = dpad
+    wiimote.left_stick = dpad
+
+When using these combined translators, the individual translators on the axes should be set to "nothing". Certain group translators, such as `stick` and `dpad`, will enforce this automatically (setting the group to `dpad` clears the individual mappings, and setting any individual mapping will clear out the group `dpad` mapping.)
+
+### Inverted mapping
+
+The input event on the left side can have an optional `-` added to the end to invert the events sent. For an axis, this is negation, while a button is inverted logically.
+
+    wiimote.wm_accel_x- = left_x
+
+### Multiple outputs
+
+An event can be sent to multiple translators with `multi`:
+
+    wiimote.wm_a = multi(start,select)
+
+### Keyboard Redirect
+
+Recall that the virtual gamepad output slots cannot emit keyboard events. However, a special translator can redirect these events to the correct keyboard slot.
+
+    wiimote.wm_a = key(key_a)
+    
+This maps the wiimote a button to `key_a` on the keyboard slot, regardless of what slot the wiimote is currently in.
+
+The device still must be assigned to slot for these events to occur.
+
+### Mouse Redirect
+
+    wiimote.cc_left_x = mouse(rel_x)
+    
+Similar to the above.
+
+## The Gamepad profile
 
 There is a special profile named `gamepad`. Drivers can subscribe to this profile, such that any changes to the gamepad profile apply to the driver (and thus the driver's devices as well).
 
@@ -155,11 +231,35 @@ For example
 
     gamepad.select = start
 
-This sets the select button of all game pad devices to send start-button events. This is achieved by each driver internally having a table of aliases, mapping the gamepad event names to the event names of the driver. There is a limitation here, in that the mapping can only have one result (e.g. each driver has at most one "select" event).
+This sets the select button of all game pad devices to send start-button events. This is achieved by each driver internally having a table of aliases, mapping the gamepad event names to the event names of the driver. There is a limitation here, in that each alias can only have one result (e.g. each driver has at most one "select" event).
 
 For Wii devices, all such mappings affect only the classic controller control scheme.
 
-##Extra Details
+It has the following events:
+
+* left_x,left_y: The two axes of the left stick. Right and Down are the positive directions.
+* right_x, right_y: The two axes of the right stick. Same directions apply.
+* primary,secondary,third,fourth: The four action buttons, or "face" buttons. The exact arrangement is left to the driver.
+* up,down,left,right: The four digital events of a dpad.
+* updown, leftright: The two axes of a dpad that is represented as a hat.
+* start, select: the conventional extra buttons, often used for  in-game menus.
+* mode: The additional meta button common on modern game pads, like the Wii Home button or the Xbox Guide button.
+* tr, tl: The two upper shoulder buttons, or "bumpers".
+* tr2, tl2: The digital two lower shoulder buttons or trigger. (ONLY FOR DEVICES WITHOUT ANALOG TRIGGERS)
+* tr2_axis, tl2_axis: The analog axes for the two analog triggers, if present.
+* tr2_axis_btn, tl2_axis_btn: The generally superfluous digital events emitted by analog triggers. (ONLY FOR DEVICES WITH ANALOG TRIGGERS)
+
+Why the concern over "tr2_axis_btn"? When we have analog values, we generally want to ignore these events. But when we don't have analog values to read, we want to pay attention to the digital events.
+
+Thus "tr2" is an event that is generally mapped to do something, while "tr2_axis_btn" is generally mapped to be ignored.
+
+Currently MoltenGamepad only supports output devices with just digital or just analog triggers. Listening to both "tr2" and "tr2_axis" would lead to the two events clobbering each other.
+
+If MoltenGamepad supports output devices with combined digital/analog triggers, then we'd probably want to make the digital value respect the conventions of the output device and activate at certain levels. This would still involve ignoring the "tr2_axis_btn".
+
+Why have an event we almost always want to ignore? To standardize it and to give explicit guidelines to tell driver writers to not map these events to tr2/tl2.
+
+## Extra Details
 
 MoltenGamepad keeps track of whether a input event is a key/button (has only two values: pressed or not), or an axis/absolute (range of values). Similarly, MoltenGamepad uses output event names rather than numeric codes to know whether the output is a key or axis. Then an appropriate event translator is chosen to make this match. In general, MoltenGamepad attempts to do "the right thing".
 
@@ -178,8 +278,41 @@ The following are available:
 * btn2rel(event code, speed) maps a button to a relative event, generating events periodically while held
 * axis2rel(event code, speed) maps an axis to a relative event, generating events periodically
 
+See `print translators` for more details. It will show translator declarations like the following:
 
-##Saving
+    key = btn2axis(axis_code, int direction=1)
+
+where the `key` left of the `=` denotes this should be mapped to an input event that is a key (or button) press. The first argument should be an axis code like `abs_x` or `0`. The second argument is an integer that defaults to 1, and the argument is named "direction".
+
+The arguments follow this pattern: `type [name] [= default value]`. Arguments that aren't named must be specified positionally. Arguments without default values must be provided.
+
+A `[]` after an argument represents that it is variadic. It is thus a place holder for an argument list of arbitrary size. This is seen in
+
+     event = multi(trans [])
+
+where `multi(btn_start)`, `multi(btn_start,btn_select)`, `multi(btn_start,btn_select,btn_mode)` are all valid.
+
+The following are all equivalent, noting that `ABS_X` is axis 0 and is the same as `left_x`:
+
+    btn2axis(0)
+    btn2axis(abs_x,1)
+    btn2axis(direction=1,abs_x)
+    btn2axis(0,direction=1)
+    btn2axis(left_x)
+
+## Group Translators
+
+As mentioned in the section about mapping sticks, some translations really need to look at multiple events.
+
+
+
+`chord(key_trans)` fires its internal event whenever all of its inputs are pressed. ex. `wiimote.(wm_a,wm_b) = chord(tr)` will send a `tr` press when both the A and B buttons are held. The original events `wm_a` and `wm_b` are also fired. The chord is released when any of the involved buttons are released. 
+
+`exclusive(key_trans)` is an exclusive chord action, where all involved buttons must be pressed down at the same time. It exclusively fires its internal event, as if the involved buttons weren't pressed at all. For example, `wiimote.(wm_a,wm_b) = exclusive(tr)` will send the `wm_a` or `wm_b` events only if they are pressed separately. MoltenGamepad does not support creating complicated layers of exclusive chords, the behavior for two simultaneous overlapping exclusive chords is not well defined.
+
+`stick` and `dpad` were described in the mapping a thumb stick section.
+
+## Saving
 
     save profiles to <filename>
     
@@ -189,13 +322,15 @@ You'll likely want to put your filename in quotes.
 
 You'll also likely want to open up this file later in your favorite text editor and clean it up.
 
-##Loading
+## Loading
 
     load profiles from <filename>
     
-Will load profile mappings from the specified file. No concern is taken over whether this affects driver or device profiles, and any commands referencing currently nonexistent profiles will be ifnored.
+Will load profile mappings from the specified file. No concern is taken over whether this affects driver or device profiles, and any commands referencing currently nonexistent profiles will be ignored.
 
-##Headers
+Sometimes these files will be referred to as a "profile", but this is inacurrate. These files can contain information for many of the profiles in MG.
+
+## Headers
 
 Specifying a profile name in square brackets will set the implicit profile name for all following commands
 
@@ -205,43 +340,10 @@ Specifying a profile name in square brackets will set the implicit profile name 
     
 Note how `wm_a` sufficed, instead of `wiimote.wm_a`
 
-##EXPERIMENTAL FEATURES. USE AT YOUR OWN RISK
+
+## EXPERIMENTAL FEATURES. USE AT YOUR OWN RISK
 
 These features are in development, and the syntax is subject to change, and full functionality not guaranteed:
 
-###Recursive load
- Profile files are allowed to use the load command, allowing for a form of inheritance, along with a bag of worms. Might be disabled in the future.
-
-###Keyboard Redirect
-
-    wiimote.wm_a = key(key_a)
-    
-This maps the wiimote a button to `key_a` on the keyboard slot, regardless of what slot the wiimote is currently in.
-
-The device still must be assigned to slot for these events to occur.
-
-###Mouse Redirect
-
-    wiimote.cc_left_x = mouse(rel_x)
-    
-Similar to the above.
-
-###Multi event
-
-    wiimote.wm_a = multi(primary,third)
-
-This takes two event translators, and performs both of them.
-
-###Chords
-
-    wiimote.(wm_a,wm_b) = thumbl
-
-This makes it so that a `thumbl` event is generated everytime both `wm_a` and `wm_b` are pressed, and the appropriate release event is fired whenever they are not both pressed. 
-
-Chords must use events located on the same input source. Chords DO NOT prevent the original events from firing. (ex. pressing both `wm_a` and `wm_b` would lead to 3 presses, each individually plus the chord event).
-
-If you want a chord that prevents the original events, a very experimental implementation is offered via specifying a full `exclusive` advanced translator.
-
-    wiimote.(wm_a,wm_b) = exclusive(thumbl)
-
-Exclusive chords DO NOT support creating a complicated hierarchy of chords, as two exclusive chords sharing a button or overlapping will not be able to prevent each other's events. Exclusive chords inherhently add some input latency, as to do otherwise would require being able to see the future. Further, making many chords rely on the same button is not recommended.
+### Recursive load
+ Profile files are allowed to use the load command, allowing for a form of inheritance, along with a bag of worms. This will likely be disabled in the future. 

@@ -7,6 +7,7 @@
 #include "devices/generic/generic.h"
 #include "parser.h"
 #include "protocols/ostream_protocol.h"
+#include "protocols/socket/socket_in.h"
 
 //FUTURE WORK: Make it easier to specify additional virtpad styles.
 
@@ -15,7 +16,6 @@ const virtpad_settings default_padstyle = {
   false, //dpad_as_hat
   true, //analog_triggers
   false, //rumble
-  "SEWN", //facemap_1234
 };
 
 const virtpad_settings xpad_padstyle = {
@@ -23,7 +23,6 @@ const virtpad_settings xpad_padstyle = {
   true, //dpad_as_hat
   true, //analog_triggers
   false, //rumble
-  "SEWN", //facemap_1234
 };
 
 
@@ -91,6 +90,9 @@ std::string moltengamepad::locate(file_category cat, std::string path) {
     case FILE_OPTIONS:
       category_prefix = "/options/";
       break;
+    case FILE_PLUGIN:
+      category_prefix = "/plugins/";
+      break;
   }
 
   std::vector<std::string> dirs = xdg_config_dirs;
@@ -117,38 +119,67 @@ std::string moltengamepad::locate(file_category cat, std::string path) {
 
 std::vector<std::string> moltengamepad::locate_glob(file_category cat, std::string pathglob) {
   std::string commandline_override = "";
+  //if this is a relative path, we need to do extra logic:
+  // -use appropriate prefix to match the category
+  // -cascade the file glob according to XDG directories.
+  //if this is an absolute path, we don't need to do anything other than the glob.
   std::string category_prefix = "";
-  
-  switch (cat) {
-    case FILE_CONFIG:
-      break; //the override handled elsewhere to affect all categories
-    case FILE_PROFILE:
-      commandline_override = opts->get<std::string>("profile_dir");
-      category_prefix = "/profiles/";
-      break;
-    case FILE_GENDEV:
-      commandline_override = opts->get<std::string>("gendev_dir");
-      category_prefix = "/gendevices/";
-      break;
-    case FILE_OPTIONS:
-      category_prefix = "/options/";
-      break;
-  }
-  
   std::vector<std::string> files;
   std::vector<std::string> dirs;
-  dirs.insert(dirs.begin(),xdg_config_dirs.begin(),xdg_config_dirs.end());
-  if (!commandline_override.empty())
-    dirs.insert(dirs.begin(),commandline_override);
+  if (pathglob.empty() || pathglob[0] != '/') {
+    //relative path
+    switch (cat) {
+      case FILE_CONFIG:
+        break; //the override handled elsewhere to affect all categories
+      case FILE_PROFILE:
+        commandline_override = opts->get<std::string>("profile_dir");
+        category_prefix = "/profiles/";
+        break;
+      case FILE_GENDEV:
+        commandline_override = opts->get<std::string>("gendev_dir");
+        category_prefix = "/gendevices/";
+        break;
+      case FILE_OPTIONS:
+        category_prefix = "/options/";
+        break;
+      case FILE_PLUGIN:
+        category_prefix = "/plugins/";
+        break;
+    }
+    dirs.insert(dirs.begin(),xdg_config_dirs.begin(),xdg_config_dirs.end());
+    if (!commandline_override.empty())
+      dirs.insert(dirs.begin(),commandline_override);
+  } else {
+    //absolute path
+    dirs.push_back("");
+    //the prefix is still empty,
+    //so we end up globbing "//" + absolute file glob
+  }
 
+  //we want higher precedence files to "shadow" those with lesser precedence.
+  //This is achieved by checking to see if we have seen this filename before.
+  std::unordered_set<std::string> unique_finds;
   for (auto dir : dirs) {
-    std::string fullpath = dir + "/" + category_prefix + pathglob;
+    std::string fullpath = dir + "/" + category_prefix + "/";
     glob_t globbuffer;
-    glob(fullpath.c_str(), 0, nullptr, &globbuffer);
-    debug_print(DEBUG_VERBOSE, 2, "glob: ", fullpath.c_str());
+    glob((fullpath+pathglob).c_str(), 0, nullptr, &globbuffer);
+    debug_print(DEBUG_VERBOSE, 2, "glob: ", (fullpath+pathglob).c_str());
     for (int i = 0; i < globbuffer.gl_pathc; i++) {
+      
       char* resolved = realpath(globbuffer.gl_pathv[i], nullptr);
       if (resolved) {
+        //try to strip off our directory path, to see the part matched by the glob.
+        if (strstr(globbuffer.gl_pathv[i], fullpath.c_str()) == globbuffer.gl_pathv[i]) {
+          //then we have detected our directory prefix successfully.
+          const char* extracted = globbuffer.gl_pathv[i] + fullpath.size();
+          auto check = unique_finds.insert(std::string(extracted));
+          if (check.second == false) {
+            //this is a duplicate!
+            debug_print(DEBUG_INFO, 2, "\tglob file shadowed by higher precedence file: ", resolved);
+            free(resolved);
+            continue;
+          }
+        }
         files.push_back(std::string(resolved));
         debug_print(DEBUG_VERBOSE, 2, "\tglob file: ", resolved);
         free(resolved);
@@ -213,6 +244,9 @@ const option_decl general_options[] = {
   {"monitor", "Listen for device connections/disconnections", "true", MG_BOOL},
   {"rumble", "Process controller rumble effects", "false", MG_BOOL},
   {"stay_alive", "Keep process running even after standard input is closed", "false", MG_BOOL},
+  {"make_socket", "Make a socket to communicate with clients", "false", MG_BOOL},
+  {"socket_path", "Location to create the socket", "", MG_STRING},
+  {"auto_profile_subdir", "automatically load profiles in this subdir. of the profile dir. on start up", "auto/", MG_STRING},
   {"", "", ""},
 };
 
@@ -249,6 +283,9 @@ int moltengamepad::init() {
   //This whole function is pretty bad in handling the config directories not being present.
   //But at least we aren't just spilling into the user's top level home directory.
   stdout = new ostream_protocol(std::cout, std::cerr);
+  if (geteuid() == 0) {
+    std::cout << "warning: Running MoltenGamepad as root is not recommended. Instead, please run as a non-superuser that has been granted the appropriate permissions." << std::endl;
+  }
   //load config dirs from environment variables
   xdg_config_dirs = find_xdg_config_dirs(opts->get<std::string>("config_dir"));
   
@@ -274,7 +311,6 @@ int moltengamepad::init() {
   } else {
     std::cout << "No moltengamepad.cfg found." << std::endl;
   }
-
   //Now that we have all config parsed,
   //check for FIFO to quit early if needed.
   if (opts->get<bool>("make_fifo") || opts->get<bool>("replace_fifo")) {
@@ -289,11 +325,11 @@ int moltengamepad::init() {
     std::string fifo_path;
     opts->get<std::string>("fifo_path",fifo_path);
     if (fifo_path.empty() && run_dir) {
-      fifo_path = std::string(run_dir) + "/moltengamepad";
+      fifo_path = std::string(run_dir) + "/mg.fifo";
     }
     if (fifo_path.empty()) {
       stdout->err(0,"Could not locate fifo path. Use the --fifo-path command line argument.");
-      throw -1; //Abort so we don't accidentally run without a means of control.
+      throw std::runtime_error("FIFO failed."); //Abort so we don't accidentally run without a means of control.
     }
     if (opts->get<bool>("replace_fifo")) {
       debug_print(DEBUG_NONE, 2, "Replacing FIFO at ", fifo_path.c_str());
@@ -310,7 +346,7 @@ int moltengamepad::init() {
       //lock them! No further changes.
       opts->lock("make_fifo",true);
       opts->lock("fifo_path",true);
-      throw -1;
+      throw std::runtime_error("FIFO failed.");
     } else {
       opts->set("fifo_path",fifo_path);
       opts->lock("fifo_path",true);
@@ -318,9 +354,33 @@ int moltengamepad::init() {
     }
   }
 
+  struct sockaddr_un address;
+  memset(&address, 0, sizeof(address));
+  if (opts->get<bool>("make_socket")) {
+    std::string socket_path;
+    opts->get<std::string>("socket_path",socket_path);
+    this->sock = make_socket(socket_path, address);
+    if (sock < 0) {
+      debug_print(DEBUG_NONE,1,"Making socket failed. Perhaps --socket-path is needed.");
+      opts->lock("socket_path",false);
+      opts->set("socket_path","");
+      opts->lock("socket_path",true);
+      opts->lock("make_socket",false);
+      opts->set("make_socket","false");
+      opts->lock("make_socket",true);
+      throw std::runtime_error("Socket failed.");
+    } else {
+      opts->lock("socket_path",false);
+      opts->set("socket_path",socket_path);
+      opts->lock("socket_path",true);
+    }
+  }
+
   //build the gamepad profile
   gamepad->gamepad_defaults();
   gamepad->name = "gamepad";
+  gamepad->set_group_alias("left_stick","left_x left_y");
+  gamepad->set_group_alias("right_stick","right_x right_y");
   add_profile(gamepad.get());
   ids_in_use.insert("gamepad");
 
@@ -337,8 +397,10 @@ int moltengamepad::init() {
   slots->log.add_listener(stdout);
 
   //add built in drivers
+  //They have priority over both plugin drivers and gendev drivers.
   init_plugin_api();
   init_generic_callbacks();
+  //even with no built ins, this does some needed initialization...
   load_builtins(this);
 
 
@@ -347,17 +409,31 @@ int moltengamepad::init() {
     if (opts->get<std::string>("profile_dir").empty()) mkdir((confdir + "/profiles/").c_str(), 0755);
     if (opts->get<std::string>("gendev_dir").empty()) mkdir((confdir + "/gendevices/").c_str(), 0755);
     mkdir((confdir + "/options/").c_str(), 0755);
+    mkdir((confdir + "/plugins/").c_str(), 0755);
   }
 
   std::string slotcfg = locate(FILE_OPTIONS, "slots.cfg");
   if (!slotcfg.empty()) {
-    slots->log.take_message("reading slots options from " + slotcfg);
+    slots->log.take_message(0,"reading slots options from " + slotcfg);
     loop_file(slotcfg, [this] (std::vector<token>& tokens, context ctx) {
       config_parse_line(this, tokens, ctx, this->slots->opts, nullptr);
       return 0;
     });
   }
- 
+
+  //load our dynamic plugins.
+  //They have priority over gendev drivers.
+  if (LOAD_PLUGINS) {
+    auto plugin_files = locate_glob(FILE_PLUGIN,"*.so");
+    if (!plugin_files.empty()) {
+      std::cout << "plugin: Loading plugins." << std::endl;
+    } else {
+      std::cout << "plugin: no plugins found." << std::endl;
+    }
+    for (auto path : plugin_files) {
+      load_plugin(path);
+    }
+  }
 
   //file glob the gendev .cfg files to add more drivers
   auto gendev_files = locate_glob(FILE_GENDEV,"*.cfg");
@@ -372,6 +448,17 @@ int moltengamepad::init() {
   }
 
   //Run any startup profiles before beginning the udev searches
+
+  //First, check the auto profile subdir.
+  //Insert them to the front of startup_profiles.
+  //The ones read from moltengamepad.cfg were specified explicitly,
+  //so they should take precedence (and be read later).
+  std::string auto_prof_dir = opts->get<std::string>("auto_profile_subdir");
+  if (!auto_prof_dir.empty()) {
+    std::vector<std::string> auto_profiles = locate_glob(FILE_PROFILE,auto_prof_dir+"/*");
+    cfg.startup_profiles.insert(cfg.startup_profiles.begin(), auto_profiles.begin(), auto_profiles.end());
+  }
+
   for (auto profile_path : cfg.startup_profiles) {
     std::string fullpath = locate(FILE_PROFILE,profile_path);
     if (fullpath.empty() || profile_path.empty()) {
@@ -406,6 +493,10 @@ int moltengamepad::init() {
     remote_handler = nullptr;
   }
 
+  if (opts->get<bool>("make_socket")) {
+    start_socket_listener(this, address);
+  }
+
 
 
 }
@@ -426,6 +517,13 @@ moltengamepad::~moltengamepad() {
     fifo_looping = false;
     opts->get("fifo_path",path);
     clear_fifo(path.c_str(), false); //do not force exit, as we are already exiting!
+  }
+
+  //clean up socket
+  if (opts->get<bool>("make_socket")) {
+    debug_print(DEBUG_INFO,3,"cleaning up socket at \"",opts->get<std::string>("socket_path").c_str(),"\"");
+    close(sock);
+    unlink(opts->get<std::string>("socket_path").c_str());
   }
 
   //remove devices
@@ -451,11 +549,11 @@ device_manager* moltengamepad::add_manager(manager_plugin manager, void* manager
   std::string manager_name(manager.name);
   bool destroyed = false;
   if (forbidden_ids.find(manager_name) != forbidden_ids.end()) {
-    drivers.err("manager name " + manager_name + " is invalid.");
+    drivers.err(0,"manager name " + manager_name + " is invalid.");
     destroyed = true;
   }
   if (ids_in_use.find(manager_name) != ids_in_use.end()) {
-    drivers.err("redundant manager " + manager_name + " ignored.");
+    drivers.err(0,"redundant manager " + manager_name + " ignored.");
     destroyed = true;
   }
   if (destroyed) {
@@ -473,7 +571,7 @@ device_manager* moltengamepad::add_manager(manager_plugin manager, void* manager
   if (man->has_options) {
     auto filepath = locate(FILE_OPTIONS, manager_name + ".cfg");
     if (!filepath.empty()) {
-      drivers.take_message("reading driver options from " + filepath);
+      drivers.take_message(0,"reading driver options from " + filepath);
       loop_file(filepath, [this, man] (std::vector<token>& tokens, context ctx) {
         config_parse_line(this, tokens, ctx, man->opts, nullptr);
         return 0;
@@ -482,7 +580,7 @@ device_manager* moltengamepad::add_manager(manager_plugin manager, void* manager
   }
   if (manager.start)
     manager.start(man->plug_data);
-  drivers.take_message(man->name + " driver initialized.");
+  drivers.take_message(0,man->name + " driver initialized.");
   ids_in_use.insert(man->name);
   return man;
 };
@@ -524,19 +622,19 @@ std::shared_ptr<input_source> moltengamepad::add_device(input_source* source, de
   }
   
   if (!available) {
-    plugs.err("could not find available name for " + name_stem);
+    plugs.err(0,"could not find available name for " + name_stem);
     return nullptr;
   }
   //Set the device and profile name, send a message, link the profile, and finally start the device thread.
   ptr->set_name(proposal);
   ids_in_use.insert(proposal);
   devices.push_back(ptr);
-  plugs.take_message("device " + source->get_name() + " added.");
   auto devprof = source->get_profile();
   devprof->name = source->get_name();
   add_profile(devprof.get());
   devprof->add_device(ptr);
   manager->mapprofile->copy_into(devprof, true, true);
+  plugs.device_plug(0, source, "add");
   device_list_lock.unlock();
   ptr->start_thread();
   if (slots->opts.get<bool>("auto_assign"))
@@ -554,7 +652,7 @@ int moltengamepad::remove_device(input_source* source) {
   std::lock_guard<std::mutex> guard(id_list_lock);
   for (int i = 0; i < devices.size(); i++) {
     if (source == devices[i].get()) {
-      plugs.take_message("device " + source->get_name() + " removed.");
+      plugs.device_plug(0, source, "remove");
       remove_profile(devices[i]->get_profile().get());
       ids_in_use.erase(source->get_name());
       devices.erase(devices.begin() + i);
@@ -657,3 +755,22 @@ void moltengamepad::run_on_options(std::string& category, std::function<void (op
     return;
   }
 };
+
+void escape_string(std::string& str) {
+  auto it = str.begin();
+  while (it != str.end()) {
+    if (*it == '\\') {
+      str.insert(it,'\\');
+      it++;
+    }
+    it++;
+  }
+  it = str.begin();
+  while (it != str.end()) {
+    if (*it == '"') {
+      str.insert(it,'\\');
+      it++;
+    }
+    it++;
+  }
+}

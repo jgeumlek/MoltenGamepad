@@ -11,19 +11,23 @@ void exclusive_chord::fill_def(MGTransDef& def) {
   FILL_DEF_TRANS(out_trans,MG_KEY_TRANS);
 }
 
+bool exclusive_chord::set_mapped_events(const std::vector<source_event>& listened) {
+  for (auto ev : listened) {
+    event_vals.push_back(ev.value);
+    event_ids.push_back(ev.id);
+    chord_hits.push_back(0);
+  }
+}
+
 bool exclusive_chord::claim_event(int id, mg_ev event) {
   bool output = true;
   int index;
-  int old_val;
+  int old_val = event_vals[id];
+  event_vals[id] = event.value;
+  if (event.value != old_val)
+    chord_hits[id] = event.value;
 
-  for (int i = 0; i < event_ids.size(); i++) {
-    if (id == event_ids[i]) {
-      index = i;
-      old_val = event_vals[i];
-      event_vals[i] = event.value;
-      if (event.value != old_val) chord_hits[i] = event.value;
-      
-    }
+  for (int i = 0; i < chord_hits.size(); i++) {
     output = output && (chord_hits[i]);
   }
 
@@ -31,10 +35,13 @@ bool exclusive_chord::claim_event(int id, mg_ev event) {
   if (!output && !chord_active && event.value && !old_val) {
 
     chord_active = true;
+    //clear all hits, we need all to be hit in the timespan.
     for (int i = 0; i < event_vals.size(); i++) {
       chord_hits[i] = 0;
     }
-    chord_hits[index] = event.value;
+    //of course, do still set the one that just happened.
+    chord_hits[id] = event.value;
+    //the time span is two ticks, or about 20ms
     tick_count = 2;
   }
 
@@ -85,27 +92,6 @@ void exclusive_chord::process_recurring(output_slot* out) const {
 }
 
 void exclusive_chord::init(input_source* source) {
-  //Stash the actual event ids this device has for the names we are interested in.
-  auto events = source->get_events();
-  owner = source;
-  for (auto name : event_names) {
-    event_ids.push_back(-1);
-    event_vals.push_back(0);
-    chord_hits.push_back(0);
-  }
-
-  for (int i = 0; i < event_names.size(); i++) {
-    std::string looking_for = event_names[i];
-    std::string alias = source->get_alias(looking_for);
-    if (!alias.empty()) looking_for = alias;
-
-    for (auto event : events) {
-      if (!strcmp(event.name, looking_for.c_str())) {
-        event_ids[i] = event.id;
-        event_vals[i] = event.value;
-      }
-    }
-  }
 
   tick_count = 2;
   chord_active = false;

@@ -7,7 +7,7 @@
 class input_source;
 class device_manager;
 class event_translator;
-class advanced_event_translator;
+class group_translator;
 class output_slot;
 
 
@@ -18,7 +18,7 @@ struct MGField {
   MGType type;
   union {
     event_translator* trans;
-    advanced_event_translator* adv_trans;
+    group_translator* group_trans;
     int key;
     int axis;
     int rel;
@@ -28,7 +28,12 @@ struct MGField {
     float real;
     output_slot* slot;
   };
+  int16_t flags; //a set of flags, that may be contextual. Field meta-data.
 };
+
+#define FLAG_NAMED 1
+#define FLAG_DEFAULT 2
+#define FLAG_INVERT 4
 
 //These declaration structs will be used to register events and options to be exposed.
 
@@ -39,6 +44,17 @@ struct event_decl {
   const char* descr;
   enum entry_type type;  //DEV_KEY or DEV_AXIS or DEV_REL
   const char* default_mapping; //will be read by the parser to generate an event translator
+};
+
+struct event_group_decl {
+  //a name for this event group. It'll be used as an alias for assignment purposes to refer to the events in namelist.
+  const char* group_name;
+  //the namelist argument is simply a comma separated string of previously registered event names (not aliases).
+  //The listed names may include a direction modifier.
+  // Ex: "touch_x,touch_y" or "tilt_y,tilt_x-" or "l,r,select,start"
+  const char* namelist;
+  const char* descr;
+  const char* default_mapping; //will be read by the parser to generate a group translator
 };
 
 struct option_decl {
@@ -122,7 +138,7 @@ struct manager_methods {
   int (*register_dev_option) (device_manager*, option_decl opt);
   //register an event alias, such as "primary" -> "a"
   int (*register_alias) (device_manager*, const char* external, const char* local);
-  //(UNIMPLEMENTED) register an option that applies to the device manager as a whole.
+  //register an option that applies to the device manager as a whole.
   int (*register_manager_option) (device_manager*, option_decl opt);
   //Adds a new input source using the device_plugin callbacks and set its plug_data.
   input_source* (*add_device) (device_manager*, device_plugin, void* dev_plug_data);
@@ -130,6 +146,8 @@ struct manager_methods {
   int (*remove_device) (device_manager*, input_source*);
   //Print a message coming from this manager.
   int (*print) (device_manager*, const char* message);
+  //register a group of events and provide a default group translator for them.
+  int (*register_event_group) (device_manager*, event_group_decl);
 };
 
 struct manager_plugin {
@@ -207,17 +225,67 @@ struct plugin_api {
   struct device_methods device;
 };
 
-//call this with a function pointer to be ran when loading this plugin.
-//This function should call add_manager as appropriate.
-int register_plugin( int (*init) (plugin_api));
-//If you include a line like
-//     int loaded = register_plugin(my_init_function)
-//that declares a static global int, then the my_init_function
-//will be called automatically when MoltenGamepad starts up.
-//Otherwise, nothing at all will happen!
+//A quick helper macro to check all sizes are in agreement
+#define API_EXACT(X) \
+  (X.head.size == sizeof(plugin_api_header) && \
+    X.head.mg->size == sizeof(moltengamepad_methods) && \
+    X.head.manager->size == sizeof(manager_methods) && \
+    X.head.device->size == sizeof(device_methods))
+//Another helper macro to check sizes are compatible.
+//Care must be taken to still initialize all values!
+#define API_COMPAT(X) \
+  (X.head.size >= sizeof(plugin_api_header) && \
+    X.head.mg->size >= sizeof(moltengamepad_methods) && \
+    X.head.manager->size >= sizeof(manager_methods) && \
+    X.head.device->size >= sizeof(device_methods))
 
-//Leave this alone, it will be handled automatically
-extern int (*plugin_init) (plugin_api);
-  
-  
-  
+//We define two helper macros PLUGIN_INIT and PLUGIN_INIT_FUNC.
+//PLUGIN_INIT should be used when defining your plugin init function,
+//like so:
+//
+//   PLUGIN_INIT(plugin_name)(plugin_api api) {
+//     ...
+//   }
+//
+//The "(plugin_api api)" portion is simply the parameter section for your init function.
+//This section was excluded from the macro for clarity.
+//Note that this macro handles defining the return type of the function.
+//
+//When compiling as an external plugin, this resolves to the appropriate
+//standard entry point name.
+//
+//When compiling as a static plugin, this uses the given plugin_name and
+//resolves to a unique name for this init function to avoid conflicts.
+//It also causes the plugin to be loaded automatically by statically calling
+//a function to register the plugin.
+//
+//PLUGIN_INIT_FUNC simply resolves to the function name and return type, without
+//adding any extern qualifiers or auto-registration features.
+//It is useful if you need to refer to this function as a friend elsewhere.
+//
+//    friend PLUGIN_INIT_FUNC(plugin_name)(plugin_api api);
+//
+//It includes the return type but excludes the parameters so as to match
+//the behaviour of the PLUGIN_INIT macro.
+
+#ifdef PLUGIN
+
+#define PLUGIN_INIT(X) extern "C" int plugin_init
+#define PLUGIN_INIT_FUNC(X) int plugin_init
+
+#else
+
+
+#define PLUGIN_INIT(X) \
+int X##_plugin_init(plugin_api);\
+int X##_loaded = register_plugin(&X##_plugin_init);\
+int X##_plugin_init
+
+#define PLUGIN_INIT_FUNC(X)  int X##_plugin_init
+#endif
+
+
+
+//Leave this alone, it will be handled automatically. It is the entry point for loading dynamic plugins.
+extern "C" int plugin_init(plugin_api);
+extern int register_plugin( int (*init) (plugin_api));

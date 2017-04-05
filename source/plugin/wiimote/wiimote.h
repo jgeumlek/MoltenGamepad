@@ -91,7 +91,7 @@ public:
   void read_wiimote();
   static device_methods methods;
   input_source* ref = nullptr;
-  friend int wiimote_plugin_init(plugin_api api);
+  friend PLUGIN_INIT_FUNC(wiimote)(plugin_api api);
 protected:
   void process(void*);
   virtual int process_option(const char* opname, const MGField value);

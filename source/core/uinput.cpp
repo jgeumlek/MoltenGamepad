@@ -33,7 +33,7 @@ void uinput::uinput_destroy(int fd) {
 
 uinput::uinput() {
   filename = try_to_find_uinput();
-  if (filename == nullptr) throw - 1;
+  if (filename == nullptr) throw std::runtime_error("unable to find uinput");
 
   epfd = -1;
   ff_thread = nullptr;
@@ -47,7 +47,7 @@ uinput::~uinput() {
     keep_looping = false;
     try {
       ff_thread->join();
-    } catch (...) {
+    } catch (std::exception& e) {
     }
     delete ff_thread;
   }
@@ -188,7 +188,6 @@ int uinput::make_keyboard(const uinput_ids& ids) {
   if (ioctl(fd, UI_DEV_CREATE) < 0)
     perror("uinput device creation");
 
-
   return fd;
 }
 
@@ -233,7 +232,6 @@ int uinput::make_mouse(const uinput_ids& ids) {
   write(fd, &uidev, sizeof(uidev));
   if (ioctl(fd, UI_DEV_CREATE) < 0)
     perror("uinput device creation");
-
 
   return fd;
 }

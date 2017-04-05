@@ -15,4 +15,11 @@ struct option_info {
   std::string stringval; //Just because allocation is simpler outside the MGField union.
 };
 
-
+struct source_event {
+  int id;
+  const char* name;
+  const char* descr;
+  enum entry_type type;
+  int64_t value;
+  event_state state;
+};

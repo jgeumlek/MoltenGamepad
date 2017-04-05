@@ -11,9 +11,16 @@ device_manager::device_manager(moltengamepad* mg, manager_plugin plugin, void* p
 int device_manager::register_event(event_decl ev) {
   events.push_back(ev);
   std::vector<token> tokens = tokenize(std::string(ev.default_mapping));
+  tokens.pop_back(); //remove the endline token.
   auto it = tokens.begin();
-  event_translator* trans = MGparser::parse_trans(ev.type, tokens, it, nullptr);
-  mapprofile->set_mapping(std::string(ev.name), trans ? trans : new event_translator(), ev.type, true);
+  event_translator* trans = nullptr;
+  try {
+    if (it != tokens.end())
+      trans = MGparser::parse_trans(ev.type, tokens, it, nullptr);
+  } catch (std::exception& e) {
+    //just use nullptr, it gets treated sensibly as a NOOP.
+  }
+  mapprofile->set_mapping(std::string(ev.name), 1, trans, ev.type, true);
   return 0;
 }
 
@@ -35,7 +42,40 @@ int device_manager::process_manager_option(const std::string& name, MGField valu
 }
 
 int device_manager::register_alias(const char* external, const char* local) {
-  mapprofile->set_alias(std::string(external), std::string(local));
+  std::string external_str(external);
+  //hack to maintain backwards compatability:
+  if (plugin.subscribe_to_gamepad_profile) {
+    if (external_str == "primary")
+      external_str = "first";
+    if (external_str == "secondary")
+      external_str = "second";
+    //the gamepad profile will also alias primary->first and secondary->second.
+    //so if the user tries to set a mapping for primary,
+    //the aliases go primary->first->(appropriate local event)
+  }
+  mapprofile->set_alias(external_str, std::string(local));
+  return 0;
+}
+
+int device_manager::register_event_group(event_group_decl ev) {
+  if (!ev.namelist || !ev.group_name) return -1;
+  std::string names(ev.namelist);
+  std::string group(ev.group_name);
+  //convert commas to spaces, as spaces make sense internally,
+  //but commas make sense for the plugin API.
+  for (int i = 0; i < names.size(); i++) {
+    if (names[i] == ',')
+      names[i] = ' ';
+  }
+  mapprofile->set_group_alias(group, names);
+  std::vector<token> tokens = tokenize(std::string(ev.default_mapping));
+  group_translator* trans = MGparser::parse_group_trans(tokens, nullptr);
+  if (trans) {
+    std::vector<std::string> fields;
+    fields.push_back(group);
+    std::vector<int8_t> directions({1});
+    mapprofile->set_group_mapping(fields, directions, trans);
+  }
   return 0;
 }
 

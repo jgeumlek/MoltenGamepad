@@ -1,4 +1,30 @@
 ---------------------------
+1.0.0
+2017-04-05
+---------------------------
+
+The 1.0 release! With some luck there won't be anything on fire, but this release comes with some huge changes.
+
+MoltenGamepad is still not considered "done" or even "reliable"; however, all the basic functionality is in there. Compared to previous releases, a lot of the strife and hackishness of those features has been smoothed.
+
+This involved a lot of rewrites, particularly with support for group translators that need to look at multiple input events. One such usability improvement is that group translators of thumb sticks can now filter out events withing a deadzone, so that a jittery stick doesn't clobber the output. It is now reasonable to assign both buttons and sticks to the same output events.
+
+Some backwards-compatability breaking changes have been included.
+
+* A socket interface was added, allowing for the use of clients like moltengamepadctl to communicate with a running instance.
+* The default umask was changed so that created files like the FIFO or socket are group-writable.
+* MoltenGamepad supports systems without UI_GET_SYSNAME by using the phys field of devices to detect MG's own virtual ones.
+* A plugin loading framework for drivers, so that they can be compiled separately with their own dependencies.
+* Inverting an output event is now denoted by a "-" at the end of the name rather than in front.
+* "stick" and "dpad" group translators added, that are a bit smarter in generating output events by looking at both axes of a thumb stick at once.
+* Input events can be inverted too, such as "gamepad.(left_x-,left_y) = stick(left_x,left_y)"
+* More info is available via the "print" command, such as aliases or translators.
+* An auto_profile_subdir can be specified: any files in that subdirectory of the profile directory will be loaded when MG starts.
+* Added --print-cfg, which prints out a sample moltengamepad.cfg with all available options.
+* Rename "primary" and "secondary" to "first" and "second" for consistency
+* Removed the alterslot command.
+
+---------------------------
 0.3.4-beta
 2017-03-28
 ---------------------------

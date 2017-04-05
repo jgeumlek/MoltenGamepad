@@ -4,7 +4,10 @@
 #include <unistd.h>
 
 #define BEGIN_FILL_DEF(X) def.identifier = X; MGField field;
-#define FILL_DEF(X,TYPE,LOC) field.type = TYPE; field.LOC = X; def.fields.push_back(field);
+#define FILL_DEF(X,TYPE,LOC) do {\
+  field.type = TYPE; field.LOC = X; \
+  field.flags = (field_flags.size() > def.fields.size()) ? field_flags[def.fields.size()] : 0;\
+  def.fields.push_back(field); } while(0);
 #define FILL_DEF_KEY(X) FILL_DEF(X,MG_KEY,key)
 #define FILL_DEF_AXIS(X) FILL_DEF(X,MG_AXIS,axis)
 #define FILL_DEF_REL(X) FILL_DEF(X,MG_REL,rel)
@@ -15,15 +18,18 @@
 #define FILL_DEF_FLOAT(X) FILL_DEF(X,MG_FLOAT,real)
 
 // BEGIN declares some local variables to allow the other macro magic.
-#define BEGIN_READ_DEF int __index = 0; std::vector<event_translator*> __localclones;
+#define BEGIN_READ_DEF \
+  int __index = 0; std::vector<event_translator*> __localclones;\
+  field_flags.resize(fields.size(),0);
 // On failure we need to destroy our local event_translator clones.
 #define TRANS_FAIL \
   for (auto trans : __localclones) { delete trans; };\
-  throw -5;
+  throw std::runtime_error("translator construction failed.");
 
 #define READ_DEF(X,TYPE,LOC)  \
   if (fields.size() > __index && fields.at(__index).type == TYPE) { \
     X = fields.at(__index).LOC; \
+    field_flags[__index] = fields.at(__index).flags;\
     __index++; \
   } else { \
     TRANS_FAIL \

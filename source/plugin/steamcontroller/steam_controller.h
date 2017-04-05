@@ -9,7 +9,6 @@
 #include <mutex>
 #include "../plugin.h"
 
-extern int sc_loaded;
 extern device_plugin scdev;
 
 enum sc_keys {
@@ -60,7 +59,7 @@ public:
   ~steam_controller();
 
   input_source* ref;
-  friend int sc_plugin_init(plugin_api api);
+  friend PLUGIN_INIT_FUNC(steamcontroller)(plugin_api api);
   static device_methods methods;
 
 protected:
@@ -95,13 +94,14 @@ public:
     if (sc_context_thread) {
       try {
         sc_context_thread->join();
-      } catch (...) {
+      } catch (std::exception& e) {
       }
       delete sc_context_thread;
     }
   }
 
   friend int sc_plugin_init(plugin_api api);
+  friend int plugin_init(plugin_api api);
   static manager_methods methods;
 private:
   scraw::context sc_context;

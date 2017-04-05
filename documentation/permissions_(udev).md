@@ -2,6 +2,8 @@ MoltenGamepad requires file permissions to function, and you are unlikely to hav
 
 See the `installation` directory for some pre-made udev rules files.
 
+This documentation is only for those who wish to write their own udev rules, which may be needed for strange devices that do not fall under the bundled udev rules.
+
 # Intro to udev rules
 
 Udev rules match constraints with `==`, update and set values with `=`, and use plurals like `DRIVERS` rather than `DRIVER` to check values of parent devices.
