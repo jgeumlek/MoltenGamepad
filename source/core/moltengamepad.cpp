@@ -119,32 +119,42 @@ std::string moltengamepad::locate(file_category cat, std::string path) {
 
 std::vector<std::string> moltengamepad::locate_glob(file_category cat, std::string pathglob) {
   std::string commandline_override = "";
+  //if this is a relative path, we need to do extra logic:
+  // -use appropriate prefix to match the category
+  // -cascade the file glob according to XDG directories.
+  //if this is an absolute path, we don't need to do anything other than the glob.
   std::string category_prefix = "";
-  
-  switch (cat) {
-    case FILE_CONFIG:
-      break; //the override handled elsewhere to affect all categories
-    case FILE_PROFILE:
-      commandline_override = opts->get<std::string>("profile_dir");
-      category_prefix = "/profiles/";
-      break;
-    case FILE_GENDEV:
-      commandline_override = opts->get<std::string>("gendev_dir");
-      category_prefix = "/gendevices/";
-      break;
-    case FILE_OPTIONS:
-      category_prefix = "/options/";
-      break;
-    case FILE_PLUGIN:
-      category_prefix = "/plugins/";
-      break;
-  }
-  
   std::vector<std::string> files;
   std::vector<std::string> dirs;
-  dirs.insert(dirs.begin(),xdg_config_dirs.begin(),xdg_config_dirs.end());
-  if (!commandline_override.empty())
-    dirs.insert(dirs.begin(),commandline_override);
+  if (pathglob.empty() || pathglob[0] != '/') {
+    //relative path
+    switch (cat) {
+      case FILE_CONFIG:
+        break; //the override handled elsewhere to affect all categories
+      case FILE_PROFILE:
+        commandline_override = opts->get<std::string>("profile_dir");
+        category_prefix = "/profiles/";
+        break;
+      case FILE_GENDEV:
+        commandline_override = opts->get<std::string>("gendev_dir");
+        category_prefix = "/gendevices/";
+        break;
+      case FILE_OPTIONS:
+        category_prefix = "/options/";
+        break;
+      case FILE_PLUGIN:
+        category_prefix = "/plugins/";
+        break;
+    }
+    dirs.insert(dirs.begin(),xdg_config_dirs.begin(),xdg_config_dirs.end());
+    if (!commandline_override.empty())
+      dirs.insert(dirs.begin(),commandline_override);
+  } else {
+    //absolute path
+    dirs.push_back("");
+    //the prefix is still empty,
+    //so we end up globbing "//" + absolute file glob
+  }
 
   //we want higher precedence files to "shadow" those with lesser precedence.
   //This is achieved by checking to see if we have seen this filename before.
@@ -273,6 +283,9 @@ int moltengamepad::init() {
   //This whole function is pretty bad in handling the config directories not being present.
   //But at least we aren't just spilling into the user's top level home directory.
   stdout = new ostream_protocol(std::cout, std::cerr);
+  if (geteuid() == 0) {
+    std::cout << "warning: Running MoltenGamepad as root is not recommended. Instead, please run as a non-superuser that has been granted the appropriate permissions." << std::endl;
+  }
   //load config dirs from environment variables
   xdg_config_dirs = find_xdg_config_dirs(opts->get<std::string>("config_dir"));
   
@@ -384,6 +397,7 @@ int moltengamepad::init() {
   slots->log.add_listener(stdout);
 
   //add built in drivers
+  //They have priority over both plugin drivers and gendev drivers.
   init_plugin_api();
   init_generic_callbacks();
   //even with no built ins, this does some needed initialization...
@@ -409,9 +423,16 @@ int moltengamepad::init() {
 
   //load our dynamic plugins.
   //They have priority over gendev drivers.
-  auto plugin_files = locate_glob(FILE_PLUGIN,"*.so");
-  for (auto path : plugin_files) {
-    load_plugin(path);
+  if (LOAD_PLUGINS) {
+    auto plugin_files = locate_glob(FILE_PLUGIN,"*.so");
+    if (!plugin_files.empty()) {
+      std::cout << "plugin: Loading plugins." << std::endl;
+    } else {
+      std::cout << "plugin: no plugins found." << std::endl;
+    }
+    for (auto path : plugin_files) {
+      load_plugin(path);
+    }
   }
 
   //file glob the gendev .cfg files to add more drivers
@@ -438,8 +459,6 @@ int moltengamepad::init() {
     cfg.startup_profiles.insert(cfg.startup_profiles.begin(), auto_profiles.begin(), auto_profiles.end());
   }
 
-  //profiles specified explicitly in moltengamepad.cfg take precedence,
-  //so read them later.
   for (auto profile_path : cfg.startup_profiles) {
     std::string fullpath = locate(FILE_PROFILE,profile_path);
     if (fullpath.empty() || profile_path.empty()) {

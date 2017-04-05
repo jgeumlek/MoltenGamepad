@@ -134,68 +134,74 @@ int print_usage(char* execname) {
   std::cout << "USAGE:\n";
   std::cout << "\t" << execname << " [OPTIONS]\n";
   std::cout << "\n";
-  std::string help_text = ""\
-                          "--help -h\n"\
-                          "\tShow this message\n"\
-                          "\n"\
-                          "--version -v\n"\
-                          "\tDisplay the version string\n"\
-                          "\n"\
-                          "--verbose -V\n"\
-                          "\tDisplay extra information while running. Repeat this argument to show even more detail.\n"\
-                          "\n"\
-                          "--uinput-path -u\n"\
-                          "\tSet where the uinput node is found on the system\n"\
-                          "\n"\
-                          "--make-fifo -m\n"\
-                          "\tCreate a fifo command channel, and exit if it can't be made.\n"\
-                          "\n"\
-                          "--replace-fifo -m\n"\
-                          "\tReplace the FIFO if it exists, while telling any existing listeners to exit.\n"\
-                          "\n"\
-                          "--fifo-path -f\n"\
-                          "\tSet where the fifo command channel should be placed.\n"\
-                          "\n"\
-                          "--config-path -c\n"\
-                          "\tSet a path for config files instead of $XDG_CONFIG_HOME/moltengamepad\n"\
-                          "\t$XDG_CONFIG_DIRS is still respected.\n"\
-                          "\n"\
-                          "--profiles-path -p\n"\
-                          "\tSet a path to find profiles before checking config directories\n"\
-                          "\n"\
-                          "--gendev-path -g\n"\
-                          "\tSet a path to find generic driver descriptions before checking config directories\n"\
-                          "\n"\
-                          "--num-gamepads -n\n"\
-                          "\tSet how many virtual gamepads will be created\n"\
-                          "\n"\
-                          "--no-make-keys\n"\
-                          "\tDisable the creation of a virtual keyboard\n"\
-                          "\n"\
-                          "--no-enumerate\n"\
-                          "\tDisable the search for already connected devices\n"\
-                          "\n"\
-                          "--no-monitor\n"\
-                          "\tDisable listening for future connected devices\n"\
-                          "\n"\
-                          "--dpad-as-hat\n"\
-                          "\tOutput dpad events as a hat rather than separate buttons\n"\
-                          "\n"\
-                          "--mimic-xpad\n"\
-                          "\tMake the virtual output devices appear as xpad-style XBox 360 devices\n"\
-                          "--rumble -R\n"\
-                          "\tProcess controller rumble effects. (Do not quit while rumble effects are loaded.)\n"\
-                          "--daemon -d\n"\
-                          "\tFork and exit immediately, leaving the daemon running in the background.\n"\
-                          "--pidfile -P\n"\
-                          "\tOnly used for --daemon, gives a path for where to store the PID of the process.\n"\
-                          "--stay-alive\n"\
-                          "\tPrevents MoltenGamepad from shutting down when its standard input is closed.\n"\
-                          "--make-socket\n"\
-                          "\tCreate a UNIX socket, and exit if it can't be made.\n"\
-                          "--socket-path -S\n"\
-                          "\tSet where the socket should be placed.\n"\
-                          "--print-cfg\n"\
+  std::string help_text = ""
+                          "--help -h\n"
+                          "\tShow this message\n"
+                          "\n"
+                          "--version -v\n"
+                          "\tDisplay the version string\n"
+                          "\n"
+                          "--verbose -V\n"
+                          "\tDisplay extra information while running. Repeat this argument to show even more detail.\n"
+                          "\n"
+                          "--uinput-path -u\n"
+                          "\tSet where the uinput node is found on the system\n"
+                          "\n"
+                          "--make-fifo -m\n"
+                          "\tCreate a fifo command channel, and exit if it can't be made.\n"
+                          "\n"
+                          "--replace-fifo -m\n"
+                          "\tReplace the FIFO if it exists, while telling any existing listeners to exit.\n"
+                          "\n"
+                          "--fifo-path -f\n"
+                          "\tSet where the fifo command channel should be placed.\n"
+                          "\n"
+                          "--config-path -c\n"
+                          "\tSet a path for config files instead of $XDG_CONFIG_HOME/moltengamepad\n"
+                          "\t$XDG_CONFIG_DIRS is still respected.\n"
+                          "\n"
+                          "--profiles-path -p\n"
+                          "\tSet a path to find profiles before checking config directories\n"
+                          "\n"
+                          "--gendev-path -g\n"
+                          "\tSet a path to find generic driver descriptions before checking config directories\n"
+                          "\n"
+                          "--num-gamepads -n\n"
+                          "\tSet how many virtual gamepads will be created\n"
+                          "\n"
+                          "--no-make-keys\n"
+                          "\tDisable the creation of a virtual keyboard\n"
+                          "\n"
+                          "--no-enumerate\n"
+                          "\tDisable the search for already connected devices\n"
+                          "\n"
+                          "--no-monitor\n"
+                          "\tDisable listening for future connected devices\n"
+                          "\n"
+                          "--dpad-as-hat\n"
+                          "\tOutput dpad events as a hat rather than separate buttons\n"
+                          "\n"
+                          "--mimic-xpad\n"
+                          "\tMake the virtual output devices appear as xpad-style XBox 360 devices\n"
+                          "--rumble -R\n"
+                          "\tProcess controller rumble effects. (Do not quit while rumble effects are loaded.)\n"
+                          "--daemon -d\n"
+                          "\tFork and exit immediately, leaving the daemon running in the background.\n"
+                          "--pidfile -P\n"
+                          "\tOnly used for --daemon, gives a path for where to store the PID of the process.\n"
+                          "--stay-alive\n"
+                          "\tPrevents MoltenGamepad from shutting down when its standard input is closed.\n"
+                          "--make-socket\n"
+                          "\tCreate a UNIX socket, and exit if it can't be made.\n"
+                          "--socket-path -S\n"
+                          "\tSet where the socket should be placed.\n"
+#ifndef NO_PLUGIN_LOADING
+                          "--load-plugins\n"
+                          "\tEnable the loading of MoltenGamepad plugins\n"
+                          "--load-root-plugins\n"
+                          "\tEnable the loading of MoltenGamepad plugins even when running as root\n"
+#endif
+                          "--print-cfg\n"
                           "\tPrint out an example moltengamepad.cfg, showing all available options.\n"
                           ;
 
@@ -233,6 +239,8 @@ int parse_opts(options& options, int argc, char* argv[]) {
     {"make-socket",   0,    0,    0},
     {"socket-path",   1,    0,  'S'},
     {"print-cfg",     0,    0,    0},
+    {"load-plugins",  0,    0,    0}, //still keep these entries even if compiled out, so that indices remain the same.
+    {"load-root-plugins",0, 0,    0},
     {0,               0,    0,    0},
   };
   int long_index;
@@ -302,6 +310,29 @@ int parse_opts(options& options, int argc, char* argv[]) {
         std::cout << "# load profiles from <profile>" << std::endl;
         return 10;
       };
+      //Loading plugins should require a conscious user effort, so let's not let these two options be put in a *.cfg
+      //command line only!
+#ifdef NO_PLUGIN_LOADING
+      if (long_index == 23 || long_index == 24) {
+        std::cout << "MoltenGamepad was compiled without support for loading plugins." << std::endl;
+        return -33;
+      }
+#endif
+      if (long_index == 23) {
+        //load-plugins || load-root-plugins
+        if (geteuid() == 0) {
+          std::cout << "Loading plugins as root is very much not recommended.\n";
+          std::cout << "If you know what you are doing, use the --load-root-plugins option" << std::endl;
+          return -34;
+        }
+        LOAD_PLUGINS = LOAD_PLUGINS || (geteuid() > 0);
+      }
+      if (long_index == 24) {
+        if (geteuid() == 0) {
+          std::cout << "Loading plugins as root is very much not recommended." << std::endl;
+        }
+        LOAD_PLUGINS = true;
+      }
       break;
     case 'd':
       options.set("daemon","true");

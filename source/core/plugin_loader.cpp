@@ -1,10 +1,14 @@
 #include "plugin_loader.h"
 #include "moltengamepad.h"
+#ifndef NO_PLUGIN_LOADING
 #include <dlfcn.h>
+#endif
 
 plugin_api plugin_methods;
 
 std::vector<std::function<int (plugin_api)>> builtin_plugins;
+
+bool LOAD_PLUGINS = false;
 
 int register_plugin( int (*init) (plugin_api)) {
   if (init) {
