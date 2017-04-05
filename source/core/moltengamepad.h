@@ -18,7 +18,7 @@
 #include "plugin_loader.h"
 #include "protocols/protocols.h"
 
-#define VERSION_STRING "0.3.4-beta"
+#define VERSION_STRING "1.0.0"
 
 class slot_manager;
 class device_manager;
