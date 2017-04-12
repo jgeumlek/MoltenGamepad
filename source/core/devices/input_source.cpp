@@ -60,7 +60,7 @@ input_source::~input_source() {
 }
 
 struct input_internal_msg {
-  enum input_msg_type { IN_TRANS_MSG, IN_GROUP_TRANS_MSG, IN_EVENT_MSG, IN_OPTION_MSG, IN_SLOT_MSG, IN_END_THREAD_MSG } type;
+  enum input_msg_type { IN_TRANS_MSG, IN_GROUP_TRANS_MSG, IN_EVENT_MSG, IN_OPTION_MSG, IN_SLOT_MSG, IN_END_THREAD_MSG, IN_PLUG_RECURRING_MSG } type;
   int id;
   int64_t value;
   MGField field;
@@ -68,7 +68,6 @@ struct input_internal_msg {
   bool skip_group_trans;
   char* name;
 };
-
 
 void input_source::register_event(event_decl ev) {
   int id = events.size();
@@ -157,6 +156,14 @@ void input_source::update_option(const char* name, const MGField value) {
   if (value.type == MG_STRING)
     msg.field.string = copy_str(value.string);
   msg.type = input_internal_msg::IN_OPTION_MSG;
+  write(priv_pipe, &msg, sizeof(msg));
+}
+
+int input_source::set_plugin_recurring(bool wants_recurring) {
+  struct input_internal_msg msg;
+  memset(&msg, 0, sizeof(msg));
+  msg.value = wants_recurring;
+  msg.type = input_internal_msg::IN_PLUG_RECURRING_MSG;
   write(priv_pipe, &msg, sizeof(msg));
 }
 
@@ -459,7 +466,7 @@ void input_source::handle_internal_message(input_internal_msg& msg) {
       delete msg.group.directions;
       if (msg.group.key) delete msg.group.key;
     }
-    do_recurring_events = recurring_events.size() + group_recurring_events.size() > 0;
+    do_recurring_events = (recurring_events.size() + group_recurring_events.size() > 0) || plugin_recurring;
     return;
   }
   if (msg.type == input_internal_msg::IN_TRANS_MSG) {
@@ -479,7 +486,11 @@ void input_source::handle_internal_message(input_internal_msg& msg) {
     if (msg.field.trans->wants_recurring_events()) {
       add_recurring_event(msg.field.trans, msg.id);
     }
-    do_recurring_events = recurring_events.size() + group_recurring_events.size() > 0;
+    do_recurring_events = (recurring_events.size() + group_recurring_events.size() > 0) || plugin_recurring;
+  }
+  if (msg.type == input_internal_msg::IN_PLUG_RECURRING_MSG) {
+    plugin_recurring = (msg.value != 0) && (plugin.process_recurring_event != nullptr);
+    do_recurring_events = (recurring_events.size() + group_recurring_events.size() > 0) || plugin_recurring;
   }
   if (msg.type == input_internal_msg::IN_EVENT_MSG) {
     //Is it an event injection message?
@@ -521,6 +532,10 @@ void input_source::process_recurring_events() {
   for (const group_translator* group : group_recurring_events) {
     group->process_recurring(out_dev);
   }
+
+  if (plugin_recurring && plugin.process_recurring_event)
+    plugin.process_recurring_event(plug_data);
+
   send_syn_report();
   clock_gettime(CLOCK_MONOTONIC, &last_recurring_update);
 }

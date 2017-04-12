@@ -84,6 +84,8 @@ public:
   int upload_ff(ff_effect effect);
   int erase_ff(int id);
   int play_ff(int id, int repetitions);
+
+  int set_plugin_recurring(bool wants_recurring);
   
 
   std::string get_name() const { return name; };
@@ -125,6 +127,7 @@ protected:
 
   std::vector<recurring_info> recurring_events;
   std::vector<const group_translator*> group_recurring_events;
+  bool plugin_recurring = false;
   bool do_recurring_events = false;
   timespec last_recurring_update;
 

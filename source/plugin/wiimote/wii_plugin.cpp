@@ -70,6 +70,11 @@ PLUGIN_INIT(wiimote)(plugin_api api) {
     return ((wiimote*)ref)->play_ff(id, repetitions);
   };
 
+  wiidev.process_recurring_event = [] (void* data) -> int {
+    ((wiimote*)data)->process_recurring_calibration();
+    return 0;
+  };
+
   api.mg.add_manager(wiiman, manager);
   return 0;
 }

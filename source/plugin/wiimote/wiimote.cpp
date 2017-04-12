@@ -40,6 +40,16 @@ int wiimote::process_option(const char* name, const MGField value) {
     update_mode(mode);
     return 0;
   }
+  if (!strcmp(name, "wm_gyro_active")) {
+    this->wm_gyro_active = value.boolean;
+    update_mode(mode);
+    return 0;
+  }
+  if (!strcmp(name, "nk_gyro_active")) {
+    this->nk_gyro_active = value.boolean;
+    update_mode(mode);
+    return 0;
+  }
   if (!strcmp(name, "grab_exclusive")) {
     this->grab_exclusive = value.boolean;
     grab_ioctl(value.boolean);
@@ -162,9 +172,12 @@ void wiimote::store_node(struct udev_device* dev, const char* name) {
     break;
   case MP:
     methods.print(ref,"added motion+");
-    //we never use it, but grab it so that it is hidden if desired.
-    wiimote_manager::grab_permissions(dev,true);
     motionplus.dev = udev_device_ref(dev);
+    if ((mode == NO_EXT && wm_gyro_active) || (mode == NUNCHUK_EXT && nk_gyro_active)) {
+      open_node(&motionplus);
+    } else {
+      wiimote_manager::grab_permissions(dev,true);
+    }
     break;
   case E_NK:
     methods.print(ref,"added nunchuk");
@@ -228,6 +241,8 @@ void wiimote::update_mode(modes new_mode) {
     methods.remove_option(ref, "nk_accel_active");
     methods.remove_option(ref, "wm_ir_active");
     methods.remove_option(ref, "nk_ir_active");
+    methods.remove_option(ref, "wm_gyro_active");
+    methods.remove_option(ref, "nk_gyro_active");
   }
   if (mode == BALANCE_EXT) {
     event_prefix = 'b';
@@ -236,6 +251,8 @@ void wiimote::update_mode(modes new_mode) {
     methods.remove_option(ref, "nk_accel_active");
     methods.remove_option(ref, "wm_ir_active");
     methods.remove_option(ref, "nk_ir_active");
+    methods.remove_option(ref, "wm_gyro_active");
+    methods.remove_option(ref, "nk_gyro_active");
   }
   if (mode == NO_EXT)
     event_prefix = 'w';
@@ -287,6 +304,7 @@ void wiimote::update_mode(modes new_mode) {
     methods.toggle_event(ref, nk_ir_x, EVENT_INACTIVE);
     methods.toggle_event(ref, nk_ir_y, EVENT_INACTIVE);
   }
+
   if ((mode == NO_EXT && wm_accel_active) || (mode == NUNCHUK_EXT && nk_accel_active)) {
     if (accel.dev != nullptr && accel.fd < 0) {
       //If it was grabbed previously, we need to ungrab before we can open.
@@ -322,6 +340,34 @@ void wiimote::update_mode(modes new_mode) {
     methods.toggle_event(ref, wm_accel_z, EVENT_INACTIVE);
   }
 
+  if ((mode == NO_EXT && wm_gyro_active) || (mode == NUNCHUK_EXT && nk_gyro_active)) {
+    if (motionplus.dev != nullptr && motionplus.fd < 0) {
+      //If it was grabbed previously, we need to ungrab before we can open.
+      wiimote_manager::grab_permissions(motionplus.dev, false);
+      open_node(&motionplus);
+    }
+    if (mode == NO_EXT) {
+      methods.toggle_event(ref, wm_gyro_x, EVENT_ACTIVE);
+      methods.toggle_event(ref, wm_gyro_y, EVENT_ACTIVE);
+      methods.toggle_event(ref, wm_gyro_z, EVENT_ACTIVE);
+    } else if (mode == NUNCHUK_EXT) {
+      methods.toggle_event(ref, nk_wm_gyro_x, EVENT_ACTIVE);
+      methods.toggle_event(ref, nk_wm_gyro_y, EVENT_ACTIVE);
+      methods.toggle_event(ref, nk_wm_gyro_z, EVENT_ACTIVE);
+    }
+  } else {
+    if (motionplus.fd > 0) {
+      wiimote_manager::grab_permissions(motionplus.dev, false);
+      close(motionplus.fd);
+      motionplus.fd = -1;
+    }
+    methods.toggle_event(ref, nk_wm_gyro_x, EVENT_INACTIVE);
+    methods.toggle_event(ref, nk_wm_gyro_y, EVENT_INACTIVE);
+    methods.toggle_event(ref, nk_wm_gyro_z, EVENT_INACTIVE);
+    methods.toggle_event(ref, wm_gyro_x, EVENT_INACTIVE);
+    methods.toggle_event(ref, wm_gyro_y, EVENT_INACTIVE);
+    methods.toggle_event(ref, wm_gyro_z, EVENT_INACTIVE);
+  }
 }
 
 void wiimote::remove_node(const char* name) {
@@ -345,6 +391,10 @@ void wiimote::open_node(struct dev_node* node) {
   int mode = O_RDONLY;
   if (node == &buttons || node == &pro)
     mode = O_RDWR;
+  if (node->fd > 0) {
+    methods.print(ref, "Trying to reopen a node!!! Error?");
+  }
+
   node->fd = open(udev_device_get_devnode(node->dev), mode | O_NONBLOCK | O_CLOEXEC);
   if (node->fd < 0 && mode == O_RDWR && errno == EACCES) {
     node->fd = open(udev_device_get_devnode(node->dev), O_RDONLY | O_NONBLOCK | O_CLOEXEC);
@@ -354,6 +404,17 @@ void wiimote::open_node(struct dev_node* node) {
   if (node->fd < 0) {
     perror("open subdevice:");
     return;
+  }
+
+  if (node == &motionplus && node->fd > 0) {
+    mp_required_samples = 50;
+    motionplus_calibrated = false;
+    mpcalibrations[0] = 0;
+    mpcalibrations[1] = 0;
+    mpcalibrations[2] = 0;
+    mpvariance = 0;
+    methods.print(ref, "Opened Motion+, awaiting calibration. Please set the controller down on a steady surface.");
+    methods.request_recurring_events(ref,true);
   }
 
   if (grab_exclusive) grab_ioctl_node(node, true);
@@ -407,6 +468,7 @@ void wiimote::process(void* tag) {
   if (tag == &accel) type = ACCEL;
   if (tag == &pro)  type = WII_U_PRO;
   if (tag == &balance) type = BALANCE;
+  if (tag == &motionplus) type = MP;
   switch (type) {
   case CORE:
     process_core();
@@ -428,6 +490,9 @@ void wiimote::process(void* tag) {
     break;
   case WII_U_PRO:
     process_pro(pro.fd);
+    break;
+  case MP:
+    process_motionplus(motionplus.fd);
     break;
   }
 }
