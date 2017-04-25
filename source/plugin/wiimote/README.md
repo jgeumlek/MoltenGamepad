@@ -1,4 +1,4 @@
-#MoltenGamepad Wiimote Driver Documentation
+# MoltenGamepad Wiimote Driver Documentation
 
 The MoltenGamepad wiimote driver is based off of the ideas of the WiimoteGlue project. The central ideas are:
 
@@ -78,6 +78,52 @@ Instead of the "modes" of WiimoteGlue, MoltenGamepad has the slightly less flexi
 
 A Wii U Pro controller will use the "cc_" events like a classic controller.
 
+# Motion Sensors
+
+Various sensors on the wiimote are off by default: The accelerometers, the IR camera, and the motion+ gyroscopes. You must explicitly enable them, otherwise no events will be generated.
+
+These sensors are toggled independently in the "no nunchuk" and "nunchuk present" mode.
+
+    wiimote.?wm_accel_active = true  # activate accels when no nunchuk is present.
+    wiimote.?nk_accel_active = true  # activates accels when nunchuk is present
+    
+    wiimote.?wm_ir_active = true
+    wiimote.?nk_ir_active = true
+
+
+
+# Pairing
+
 Connecting a wiimote is done outside of MoltenGamepad.
 
-A wiimote, if initially paired/connected/trusted in quick succession, can be set to automatically connect to one's PC whenever a button is pressed.
+A wiimote, if initially paired/connected/trusted in quick succession, might be set to automatically connect to one's PC whenever a button is pressed. This appears to only occur if the Linux system is connecting for the "first" time (i.e. you might need to "forget" the device and pair again from scratch to cause this process to happen again).
+
+# EXPERIMENTAL: wiigyromouse
+
+The contents of this section are not intended to be stable, and may change dramatically.
+
+The motion+ gyroscopes are now exposed, but these events are not intended for direct translation. Similar to the other sensors, they must be enabled prior to use (using the `?wm_gyro_active` and `?nk_gyro_active` device options).
+
+When first opened, these gyroscope sensors need some calibration, and no events will be generated until calibration is complete. The calibration is designed to not complete until the values are steady.
+
+You are expected to set the Wii remote down on a steady surface for a while in order to complete the calibration process.
+
+An experimental group event translator is included that can use these gyroscopes to produce relative mouse movements. As a reminder, these generated mouse movements will only work if the MoltenGamepad wiimote device is set to the `keyboard` output slot (the virtual gamepads do nothing with mouse events).
+
+The wiigyromouse translator expects to see many events: 3 axes of accels, 3 axes of gyros, an optional ratchet button, and optionally further buttons that will temporarily "dampen" the generated mouse movements. (Dampening is intended to help prevent the mouse from moving just because you pressed that button and slightly moved the Wii remote while doing so.)
+
+Some event group aliases have been written to help shorten this: `wm_accels, wm_gyros, nk_wm_accels, nk_wm_gyros`.
+
+Thus you can write a mapping such as
+
+    wiimote.(wm_accels,wm_gyros,wm_a) = wiigyromouse
+
+where the A button is used as the ratchet (think: lifting a mouse off a mousepad, allows controller to move without generating mouse movements.)
+
+You might like to also try a reverse ratchet, where mouse movements are made only while the button is held. Simply invert the ratchet button in the mapping.
+
+    wiimote.(wm_accels,wm_gyros,wm_a-) = wiigyromouse
+
+Any button events listed after the ratchet will be treated as dampening buttons.
+
+The event translator exposes many options, and fine tuning of the defaults is still needed. See issue #29 for more details.
