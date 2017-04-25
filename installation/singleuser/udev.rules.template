@@ -16,3 +16,9 @@ SUBSYSTEM=="leds", ACTION=="add", DRIVERS=="wiimote", \
 
 SUBSYSTEM=="input", DRIVERS=="wiimote", \
  MODE:="0660", OWNER:="SINGLEUSER"
+
+ 
+ # JoyCon rules. Bluetooth hidraw requires globbing to find the vendor/product ids...
+
+# Nintendo products over bluetooth hidraw
+KERNEL=="hidraw*", KERNELS=="0005:057E:*.*", MODE="0600", OWNER:="SINGLEUSER"
