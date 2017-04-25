@@ -22,6 +22,7 @@ PLUGIN_INIT(joycon)(plugin_api api) {
   //set static vars
   joycon_manager::methods = *(api.head.manager);
   joycon::methods = *(api.head.device);
+  joycon_manager::grab_permissions = api.head.mg->grab_permissions;
   joycon_manager* manager = new joycon_manager();
 
   //set manager call backs

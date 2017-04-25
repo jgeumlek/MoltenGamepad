@@ -2,7 +2,7 @@
 
 This plugin supports Nintendo Switch JoyCon via the hidraw interface.
 
-The protocol is still not fully understood, and the implementation here is based of the work of dekuNukem and Riking.
+The protocol is still not fully understood, and the implementation here is based off the work of [riking](https://github.com/riking/joycon) [dekuNukem](https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering).
 
 Basic button and analog stick inputs are supported.
 

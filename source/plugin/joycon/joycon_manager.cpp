@@ -7,6 +7,8 @@
 
 manager_methods joycon_manager::methods;
 
+int (*joycon_manager::grab_permissions) (udev_device*, bool);
+
 joycon_manager::joycon_manager() {
 
 }
@@ -158,6 +160,7 @@ int joycon_manager::accept_device(struct udev* udev, struct udev_device* dev) {
   }
 
   std::lock_guard<std::mutex> guard(lock);
+  grab_permissions(dev, true);
   joycon* new_joycon = new joycon(fd,-1, side, UNKNOWN_JOYCON, syspath, nullptr, this);
   joycon_info info;
   info.jc = new_joycon;

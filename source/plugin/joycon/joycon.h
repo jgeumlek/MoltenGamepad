@@ -141,6 +141,9 @@ public:
 
   friend PLUGIN_INIT_FUNC(joycon)(plugin_api api);
   static manager_methods methods;
+
+  static int (*grab_permissions) (udev_device*, bool);
+
   constexpr static const char* name = "joycon";
 
   void check_partnership(joycon* jc);
