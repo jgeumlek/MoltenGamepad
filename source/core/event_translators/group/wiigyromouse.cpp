@@ -4,7 +4,7 @@
 
 //wiimote.(wm_accels,wm_gyros,wm_down, ratchet_btn, dampen_btns) = wiigyromouse(...)
 const char* wiigyromouse::decl = \
- "axis, axis, axis, axis, axis, axis, key [] = wiigyromouse(float smooth_factor=.75, int buffer_size=4, float xscale=1, float yscale=1, float min_offset=0.0616205, float max_offset=60, float deadzone = .01, bool use_accels=true, float dampen_factor = 0, int dampen_period = 1)";
+ "axis, axis, axis, axis, axis, axis, key [] = wiigyromouse(float smooth_factor=.75, int buffer_size=4, float xscale=1, float yscale=1, float min_offset=0.0616205, float max_offset=60, float deadzone = .01, bool use_accels=true, float dampen_factor = 0, int dampen_period = 10)";
 wiigyromouse::wiigyromouse(std::vector<MGField>& fields) {
   BEGIN_READ_DEF;
   READ_FLOAT(smooth_factor);
