@@ -25,9 +25,6 @@ input_source::input_source(device_manager* manager, device_plugin plugin, void* 
 
   priv_pipe = internal[1];
   internalpipe = internal[0];
-  
-  if (plugin.init)
-    plugin.init(plug_data, this);
 
   ff_ids[0] = -1;
 }
@@ -453,6 +450,10 @@ void input_source::handle_internal_message(input_internal_msg& msg) {
         int8_t direction = (*msg.group.directions)[trans_index];
         add_listener(ev_id, direction, msg.group.trans, trans_index);
         listened.push_back(events[ev_id]);
+        if (direction < 0 && listened.back().type == DEV_AXIS)
+          listened.back().value = - listened.back().value;
+        if (direction < 0 && listened.back().type == DEV_KEY)
+          listened.back().value = !listened.back().value;
       }
       msg.group.trans->set_mapped_events(listened);
       group_trans[group_name] = {msg.group.key, msg.group.fields, msg.group.directions, msg.group.trans};

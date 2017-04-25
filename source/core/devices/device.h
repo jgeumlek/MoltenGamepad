@@ -101,6 +101,7 @@ public:
 
   void* const plug_data = nullptr;
   friend void init_plugin_api();
+  friend moltengamepad;
 protected:
   int epfd = 0;
   int priv_pipe = 0;
