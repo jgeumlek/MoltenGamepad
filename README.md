@@ -36,7 +36,7 @@ If you get undefined KEY_* errors, you'll need to remove those lines from the ev
 
 The only linked libraries under this default target are libudev, libpthread, and libdl.
 
-Currently two plugins can optionally be built into MoltenGamepad when compiling, `wiimote` and `steamcontroller`. By default, only the former is set to be built. Modify the lines at the beginning of the Makefile to control whether these plugins are included.
+Currently three plugins can optionally be built into MoltenGamepad when compiling, `wiimote`, `joycon`, and `steamcontroller`. By default, only the wiimote plugin is set to be built. Modify the lines at the beginning of the Makefile to control whether these plugins are included.
 
 Plugins can also be set to be built as external plugins. These plugins will need to be moved to a `plugins` folder inside MG's config directory in order to be found and loaded. (Plugins will only be loaded if MG is started with the `--load-plugins` option).
 
@@ -70,7 +70,7 @@ As MoltenGamepad might be running as a background task, there are two additional
 
 A FIFO can be made with `--make-fifo`. It acts as a special file where commands written to it will be read by MG. There is not bidirectional; MG cannot send any information back through the FIFO.
 
-A socket can be made with `--make-socket`. This also creates a special file, one that supports sending and receiving data. You'll need a client such [moltengamepadctl](https://github.com/jgeumlek/moltengamepadctl) that knows the appropriate way to communicate with MG.
+A socket can be made with `--make-socket`. This also creates a special file, one that supports sending and receiving data. You'll need a client such as [moltengamepadctl](https://github.com/jgeumlek/moltengamepadctl) that knows the appropriate way to communicate with MG.
 
 ## Configuration Locations
 
@@ -149,6 +149,8 @@ Or print the events to see their descriptions
 ## Additional Documentation
 
 See this README, the various files in the `documentation` folder, the output of `./moltengamepad --help`, and the output of the `help` command while running MoltenGamepad.
+
+Documentation for the plugins is located in their source directory. (e.g. `source/plugins/wiimote/`).
 
 
 
