@@ -118,6 +118,7 @@ void udev_handler::set_uinput(const uinput* ui) {
 int udev_handler::start_monitor() {
   monitor = udev_monitor_new_from_netlink(udev, "udev");
   udev_monitor_filter_add_match_subsystem_devtype(monitor, "hid", NULL);
+  udev_monitor_filter_add_match_subsystem_devtype(monitor, "hidraw",NULL);
   udev_monitor_filter_add_match_subsystem_devtype(monitor, "input", NULL);
 
   udev_monitor_enable_receiving(monitor);
@@ -220,7 +221,6 @@ int udev_handler::grab_permissions(udev_device* dev, bool grabbed) {
     //go up a level to find siblings...
     auto parent = udev_device_get_parent(dev);
     std::string parentpath(udev_device_get_syspath(parent));
-    std::cout << "parent " << parentpath << std::endl;
     std::string childglob = "";
     const char* subsystem = udev_device_get_subsystem(dev);
     if (subsystem && !strcmp(subsystem,"input")) {

@@ -4,8 +4,9 @@
 # Allow gamepad user access to uinput.
 KERNEL=="uinput",  GROUP:="gamepad", OPTIONS+="static_node=uinput"
 
-# Virtual event devices should be world-usable.
+# Virtual gamepad devices should be world-usable.
 SUBSYSTEM=="input", ACTION=="add", ATTRS{phys}=="moltengamepad*", \
+ ENV{ID_INPUT_JOYSTICK}=="?*", \
  OWNER:="gamepad", GROUP:="input", MODE:="0666"
 
 # When a non-virtual gamepad device appears, hide it.
@@ -22,3 +23,9 @@ SUBSYSTEM=="leds", ACTION=="add", DRIVERS=="wiimote", \
 SUBSYSTEM=="input", DRIVERS=="wiimote", \
  OWNER:="gamepad", GROUP:="gamepad", MODE:="0600", \
  TAG-="uaccess", TAG-="seat"
+
+ 
+# JoyCon rules. Bluetooth hidraw requires globbing to find the vendor/product ids...
+
+# Nintendo products over bluetooth hidraw
+KERNEL=="hidraw*", KERNELS=="0005:057E:*.*", MODE="0600", OWNER:="gamepad", GROUP:="gamepad", TAG-="uaccess"

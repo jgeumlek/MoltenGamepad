@@ -6,13 +6,6 @@ slot_manager::slot_manager(int max_pads, bool keys, const virtpad_settings& pads
   dummyslot = new output_slot("blank", "Dummy slot (ignores all events)");
   debugslot = new debug_device("debugslot", "Prints out all received events");
   debugslot->state = SLOT_ACTIVE;
-  if (keys) {
-    keyboard = new virtual_keyboard("keyboard", "A virtual keyboard", {"Virtual Keyboard (MoltenGamepad)", "moltengamepad/keyboard", 1, 1, 1}, {"Virtual Mouse (MoltenGamepad)", "moltengamepad/keyboard", 1, 1, 1}, ui);
-    keyboard->state = SLOT_ACTIVE;
-  } else {
-    keyboard = new output_slot("keyboard", "Disabled virtual keyboard slot");
-    keyboard->state = SLOT_DISABLED;
-  }
 
   for (int i = 0; i < max_pads; i++) {
     slots.push_back(new virtual_gamepad("virtpad" + std::to_string(i + 1), "A virtual gamepad", padstyle, ui));
@@ -20,6 +13,14 @@ slot_manager::slot_manager(int max_pads, bool keys, const virtpad_settings& pads
   }
   opts.register_option({"active_pads","Number of virtpad slots currently active for assignment.", std::to_string(max_pads).c_str(), MG_INT});
   opts.register_option({"auto_assign","Assign devices to an output slot upon connection.", "false", MG_BOOL});
+
+  if (keys) {
+    keyboard = new virtual_keyboard("keyboard", "A virtual keyboard", {"Virtual Keyboard (MoltenGamepad)", "moltengamepad/keyboard", 1, 1, 1}, {"Virtual Mouse (MoltenGamepad)", "moltengamepad/keyboard", 1, 1, 1}, ui);
+    keyboard->state = SLOT_ACTIVE;
+  } else {
+    keyboard = new output_slot("keyboard", "Disabled virtual keyboard slot");
+    keyboard->state = SLOT_DISABLED;
+  }
 
   if (padstyle.rumble)
     ui->start_ff_thread();

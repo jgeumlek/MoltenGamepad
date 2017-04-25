@@ -87,8 +87,12 @@ const event_decl wiimote_events[] = {
 
   {EVNAME(bal_x), "Balance Board Center of Gravity X", ABS, ""},
   {EVNAME(bal_y), "Balance Board Center of Gravity Y", ABS, ""},
-
-
+  {EVNAME(wm_gyro_x), "Wiimote Motion+ X Gyro", ABS, ""},
+  {EVNAME(wm_gyro_y), "Wiimote Motion+ Y Gyro", ABS, ""},
+  {EVNAME(wm_gyro_z), "Wiimote Motion+ Z Gyro", ABS, ""},
+  {EVNAME(nk_wm_gyro_x), "Wiimote Motion+ X Gyro with Nunchuk", ABS, ""},
+  {EVNAME(nk_wm_gyro_y), "Wiimote Motion+ Y Gyro with Nunchuk", ABS, ""},
+  {EVNAME(nk_wm_gyro_z), "Wiimote Motion+ Z Gyro with Nunchuk", ABS, ""},
   {nullptr, nullptr, NO_ENTRY, nullptr}
 };
 
@@ -101,6 +105,8 @@ const option_decl wiimote_options[] = {
   {"grab_permissions", "Grab device via blocking all read permissions", "false", MG_BOOL},
   {"grab_permissions", "Grab device via blocking all read permissions", "true", MG_BOOL},
   //grab_permissions = "true" only really needed for Wii U Pro, but it doesn't hurt the others.
+  {"wm_gyro_active", "Enable Motion+ gyroscopes when no extension is present", "false", MG_BOOL},
+  {"nk_gyro_active", "Enable Motion+ gyroscopes when nunchuk is present", "false", MG_BOOL},
   {nullptr, nullptr, nullptr, MG_NULL},
 };
 
@@ -297,13 +303,16 @@ void wiimote::process_accel(int fd) {
     if (ret > 0) {
       switch (ev.code) {
       case ABS_RX:
-        send_value(offset + 0, ev.value * WIIMOTE_ACCEL_SCALE);
+        accelcache[0] = ev.value;
+        send_value(offset + 0, (ev.value - accelcalibrations[0]) * WIIMOTE_ACCEL_SCALE);
         break;
       case ABS_RY:
-        send_value(offset + 1, ev.value * WIIMOTE_ACCEL_SCALE);
+        accelcache[1] = ev.value;
+        send_value(offset + 1, (ev.value - accelcalibrations[1]) * WIIMOTE_ACCEL_SCALE);
         break;
       case ABS_RZ:
-        send_value(offset + 2, ev.value * WIIMOTE_ACCEL_SCALE);
+        accelcache[2] = ev.value;
+        send_value(offset + 2, (ev.value - accelcalibrations[2]) * WIIMOTE_ACCEL_SCALE);
         break;
       case SYN_REPORT:
         methods.send_syn_report(ref);
@@ -384,6 +393,43 @@ void wiimote::compute_ir() {
     send_value(offset + 1, (y-400) * IR_Y_SCALE);
   }
 
+}
+
+void wiimote::process_motionplus(int fd) {
+  struct input_event ev;
+  int ret;
+  while(ret = read(fd, &ev, sizeof(ev)) > 0) {
+    switch (ev.code) {
+      case ABS_RX:
+        mpcache[0] = ev.value;
+        break;
+      case ABS_RY:
+        mpcache[1] = ev.value;
+        break;
+      case ABS_RZ:
+        mpcache[2] = ev.value;
+        break;
+      case SYN_REPORT:
+        compute_motionplus();
+        methods.send_syn_report(ref);
+        break;
+    }
+  }
+  if (ret < 0) perror("read motion+");
+}
+
+void wiimote::compute_motionplus() {
+  if (!motionplus_calibrated)
+    return;
+  if (mode == NUNCHUK_EXT) {
+    send_value(nk_wm_gyro_x, (int64_t)(mpcache[0] - mpcalibrations[0]));
+    send_value(nk_wm_gyro_y, (int64_t)(mpcache[1] - mpcalibrations[1]));
+    send_value(nk_wm_gyro_z, (int64_t)(mpcache[2] - mpcalibrations[2]));
+  } else {
+    send_value(wm_gyro_x, (int64_t)(mpcache[0] - mpcalibrations[0]));
+    send_value(wm_gyro_y, (int64_t)(mpcache[1] - mpcalibrations[1]));
+    send_value(wm_gyro_z, (int64_t)(mpcache[2] - mpcalibrations[2]));
+  }
 }
 
 #define BAL_X_SCALE ABS_RANGE
@@ -515,7 +561,39 @@ void wiimote::process_pro(int fd) {
 
   }
 }
-#include <iostream>
+
+#define CALIBRATION_FACTOR (0.05)
+#define CALIBRATION_THRESHOLD 1100
+#define CALIBRATION_RESET_THRESHOLD 2000
+void wiimote::process_recurring_calibration() {
+  if (motionplus_calibrated)
+    return;
+  double newvals[3];
+  double delta = 0;
+  for (int i = 0; i < 3; i++) {
+    newvals[i] = CALIBRATION_FACTOR*mpcache[i] + (1-CALIBRATION_FACTOR)*mpcalibrations[i];
+    delta += (newvals[i] - mpcache[i])*(newvals[i] - mpcache[i]);
+    mpcalibrations[i] = newvals[i];
+    accelcalibrations[i] = CALIBRATION_FACTOR*accelcalibrations[i] + (1-CALIBRATION_FACTOR)*accelcache[i];
+  }
+  accelcalibrations[2] = 0; //the axis aligned with gravity, we don't want to zero it out...
+  mpvariance = CALIBRATION_FACTOR*delta + (1-CALIBRATION_FACTOR)*mpvariance;
+  //printf("raw %08d %08d %08d delta %010.1f %3d\n", mpcache[0], mpcache[1], mpcache[2], delta, mp_required_samples);
+  //printf("cal %07.2f %07.2f %07.2f delta %010.1f\n", newvals[0], newvals[1], newvals[2], mpvariance);
+  if (mp_required_samples > 0) {
+    mp_required_samples--;
+    return;
+  } else {
+    if (mpvariance < CALIBRATION_THRESHOLD) {
+      methods.print(ref,"calibration complete. You may now pick up the controller.");
+      methods.request_recurring_events(ref, false);
+      motionplus_calibrated = true;
+    } else if (mpvariance > CALIBRATION_RESET_THRESHOLD) {
+      mp_required_samples = 50;
+    }
+  }
+}
+
 int wiimote::upload_ff(const ff_effect* effect) {
   int fd = buttons.fd;
   if (fd < 0)

@@ -1,8 +1,8 @@
-#Steam Controller Driver
+# Steam Controller Driver
 
 Moltengamepad can use the scraw library to process Steam Controllers. This library must be installed separately. Currently a separate make target is used to specify the inclusion of this support.
 
-This requires MoltenGamepad to have permissions to access the Steam Controller, which would be true in a set up already configured to let Steam have access to it.
+This requires MoltenGamepad to have permissions to access the Steam Controller, which would be true for your user if you are already configured to let Steam have access to it. Check out the udev rules supplied with your steam installation for inspiration.
 
 Steam and MoltenGamepad cannot both be in control of the device. Whichever one claims it first maintains control.
 

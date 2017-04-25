@@ -144,6 +144,10 @@ void init_plugin_api() {
     dev->print(std::string(text));
     return 0;
   };
+  plugin_methods.device.request_recurring_events = [] (input_source* dev, bool wants_recurring) -> int {
+    dev->set_plugin_recurring(wants_recurring);
+    return 0;
+  };
 
   plugin_methods.head.mg = &plugin_methods.mg;
   plugin_methods.head.device = &plugin_methods.device;

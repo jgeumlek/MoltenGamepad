@@ -187,7 +187,7 @@ void profile::set_group_mapping(std::vector<std::string> names, std::vector<int8
         //this is a bit obnoxious to do.
         //The 200 limit is to avoid silly infinite loops if someone is careless with aliases...
         std::vector<token> tokens = tokenize(local);
-        if (tokens.empty() || tokens.size() + names.size() > 50 || total_op > 100)
+        if (tokens.empty() || tokens.size() + names.size() > 50 || total_op > 200)
           return; //abort
         //we need to delete this alias from our lists, and insert the new names in order at its old spot.
         //the first new name is pulled out of the loop to just overwrite the old alias spot.
@@ -198,10 +198,10 @@ void profile::set_group_mapping(std::vector<std::string> names, std::vector<int8
         auto dir_it = directions.begin()+i+1;
         //the last token is an end-of-line we should ignore.
         for (int j = 1; j < tokens.size()-1; j++) {
+          name_it = names.begin()+i+j;
+          dir_it = directions.begin()+i+j;
           directions.insert(dir_it, read_direction(tokens[j].value));
           names.insert(name_it, tokens[j].value);
-          name_it++;
-          dir_it++;
         }
         //decrement i to get us ready to reread the overwritten spot on the next loop.
         i--;

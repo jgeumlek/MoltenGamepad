@@ -90,6 +90,8 @@ struct device_methods {
   int (*remove_option) (input_source* dev, const char* opname);
   //Print a message labelled as coming from this device.
   int (*print) (input_source*, const char* message);
+  //Request to have a callback used every 10ms or so.
+  int (*request_recurring_events) (input_source* dev, bool wants_recurring);
 };
 
 struct device_plugin {
@@ -126,6 +128,8 @@ struct device_plugin {
   int (*erase_ff) (void* plug_data, int id);
   //Called to activate a previously uploaded effect.
   int (*play_ff) (void* plug_data, int id, int repeats);
+  //Called every 10ms or so if request_recurring_events
+  int (*process_recurring_event) (void* plug_data);
 };
 
 struct manager_methods {

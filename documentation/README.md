@@ -1,3 +1,4 @@
+
 # gendev.md
 
 This file describes the `.cfg` files used to create generic drivers. If your kernel is already sending events from your device, a quick file naming the events should be all it takes to get the device working in MoltenGamepad
@@ -9,14 +10,6 @@ This file describes the syntax for setting control mappings in profiles. Look he
 # config_files.md
 
 This file describes the syntax and behavior of the  `moltengamepad.cfg` configuration file, along with describing the files in the `/options/` subdirectory. Look here if you are interested in affecting how MoltenGamepad starts or if you are interested in how MoltenGamepad reads its global settings.
-
-# wiimote.md
-
-This file offers additional documentation on the wiimote driver.
-
-# steamcontroller.md
-
-This file offers additional documentation on the Steam controller driver.
 
 # rumble.md
 
@@ -33,3 +26,9 @@ This file describes the MG plugin system and offers a quick overview of what is 
 # socket.md
 
 Describes the protocol used for clients to connect to MoltenGamepad via its socket.
+
+# Plugin Specific Documentation
+
+Documentation for plugins is now located alongside the plugin code.
+
+See `source/plugins/<plugin>/README.md` for info on each plugin.

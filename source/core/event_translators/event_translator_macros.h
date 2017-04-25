@@ -12,6 +12,7 @@
 #define FILL_DEF_AXIS(X) FILL_DEF(X,MG_AXIS,axis)
 #define FILL_DEF_REL(X) FILL_DEF(X,MG_REL,rel)
 #define FILL_DEF_INT(X) FILL_DEF(X,MG_INT,integer)
+#define FILL_DEF_BOOL(X) FILL_DEF(X,MG_BOOL,boolean)
 #define FILL_DEF_TRANS(X,TYPE) FILL_DEF(X,TYPE,trans)
 #define FILL_DEF_SLOT(X) FILL_DEF(X,MG_SLOT,slot)
 #define FILL_DEF_KEYBOARD(X) FILL_DEF(X,MG_KEYBOARD_SLOT,slot)
@@ -39,6 +40,7 @@
 #define READ_AXIS(X) READ_DEF(X,MG_AXIS,axis)
 #define READ_REL(X) READ_DEF(X,MG_REL,rel)
 #define READ_INT(X) READ_DEF(X,MG_INT,integer)
+#define READ_BOOL(X) READ_DEF(X,MG_BOOL,boolean)
 #define READ_TRANS(X,TYPE) READ_DEF(X,TYPE,trans); if (!X) { TRANS_FAIL }; X = X->clone(); __localclones.push_back(X);
 #define READ_SLOT(X) READ_DEF(X,MG_SLOT,slot)
 #define READ_KEYBOARD(X) READ_DEF(X,MG_KEYBOARD_SLOT,slot)

@@ -99,17 +99,26 @@ protected:
 private:
   irdata ircache[4];
   int balancecache[4] = {0, 0, 0, 0};
+  int mpcache[3] = {0,0,0};
+  int accelcache[3] = {0,0,0};
+  double mpcalibrations[3] = {0,0,0};
+  double accelcalibrations[3] = {0,0,0};
+  double mpvariance = 0;
+  int mp_required_samples = 0;
   std::mutex mode_lock;
   bool wm_accel_active = false;
   bool nk_accel_active = false;
   bool wm_ir_active = false;
   bool nk_ir_active = false;
+  bool wm_gyro_active = false;
+  bool nk_gyro_active = false;
   bool grab_exclusive = true;
   bool grab_permissions = false;
 
   bool active_ir = false;
   bool active_accel = false;
   bool toggle_motionplus;
+  bool motionplus_calibrated = false;
   void listen_node(int type, int fd);
   void open_node(struct dev_node* node);
   void grab_ioctl_node(struct dev_node* node, bool grabbed);
@@ -128,8 +137,11 @@ private:
   void process_ir(int fd);
   void process_pro(int fd);
   void process_balance(int fd);
+  void process_motionplus(int fd);
+  void process_recurring_calibration();
   void compute_ir();
   void compute_balance();
+  void compute_motionplus();
   void process(int type, int event_id, int64_t value);
 
   void clear_node(struct dev_node* node);

@@ -634,6 +634,10 @@ std::shared_ptr<input_source> moltengamepad::add_device(input_source* source, de
   add_profile(devprof.get());
   devprof->add_device(ptr);
   manager->mapprofile->copy_into(devprof, true, true);
+
+  if (ptr->plugin.init)
+    ptr->plugin.init(ptr->plug_data, ptr.get());
+
   plugs.device_plug(0, source, "add");
   device_list_lock.unlock();
   ptr->start_thread();

@@ -321,6 +321,7 @@ void MGparser::load_translators(moltengamepad* mg) {
   RENAME_GEN(exclusive,exclusive_chord);
   RENAME_GEN(stick,thumb_stick);
   RENAME_GEN(dpad,stick_dpad);
+  MAKE_GEN(wiigyromouse);
 }
 
 MGparser::MGparser(moltengamepad* mg, message_protocol* output) : messages("parse") {
@@ -876,9 +877,9 @@ bool MGparser::parse_decl(enum entry_type intype, const trans_decl& decl, MGTran
       def.fields[i].slot = slot;
     }
     if (type == MG_BOOL) {
-      def.fields[i].integer = 0;
+      def.fields[i].boolean = 0;
       read_bool(values[i].ident, [&def, i] (bool val) {
-        def.fields[i].integer = val ? 1 : 0;
+        def.fields[i].boolean = val;
       });
     }
     if (type == MG_STRING) {
@@ -964,7 +965,7 @@ void MGparser::print_def(entry_type intype, MGTransDef& def, std::ostream& outpu
       output << "\""<<str<<"\"";
     }
     if (type == MG_SLOT) output << field.slot->name;
-    if (type == MG_BOOL) output << (field.integer ? "true":"false");
+    if (type == MG_BOOL) output << (field.boolean ? "true":"false");
     if (type == MG_TRANS || type == MG_KEY_TRANS || type == MG_AXIS_TRANS || type == MG_REL_TRANS) {
       MGTransDef innerdef;
       entry_type context = intype;
