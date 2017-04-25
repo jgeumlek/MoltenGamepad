@@ -1,4 +1,16 @@
 ---------------------------
+1.1.0
+2017-04-25
+---------------------------
+
+A smaller update with some neat new features:
+
+* A Joy-Con plugin! Thanks to the work of riking and others, the Joy-Con buttons and sticks can be read over the hidraw interface. They still sometimes disconnect though...
+* An experimental translator that reads a Wii remote's motion+ data to generate relative mouse movements. See issue #29 for details.
+* Minor improvements to the plugin loading
+* Virtual gamepads are now created first.
+
+---------------------------
 1.0.0
 2017-04-05
 ---------------------------
