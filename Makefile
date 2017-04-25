@@ -1,12 +1,14 @@
-#uncomment the lines below to include those plugins
+#uncomment the lines below to include those plugins within the MG executable.
 MG_BUILT_INS+=wiimote
 #MG_BUILT_INS+=steamcontroller
 #MG_BUILT_INS+=example
+#MG_BUILT_INS+=joycon
 
-#uncomment the lines below to build external plugins loaded at run time
+#uncomment the lines below to build external plugins to be loaded at run time.
 #MG_PLUG_INS+=wiimote
 #MG_PLUG_INS+=steamcontroller
 #MG_PLUG_INS+=example
+#MG_PLUG_INS+=joycon
 
 #If you need to run "make eventlists" and it failed to find your
 #input header where all the key codes are defined, put the
@@ -81,6 +83,9 @@ plugins : $(EXTERNAL_PLUGS)
 	@echo "    " $(MG_PLUG_INS)
 	@echo "Plugin .so files are located in built_plugins/"
 	@echo "They still need to be moved to a <MG config dir>/plugins/ directory before MG will see them."
+	@echo ""
+	@echo "Don't forget that external plugins won't be loaded unless "
+	@echo "  --load-plugins is specified when launching MG."
 	@echo "=========================================================="
 
 built_plugins :
