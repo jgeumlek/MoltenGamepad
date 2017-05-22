@@ -87,7 +87,8 @@ udev_handler::~udev_handler() {
   if (monitor_thread) {
     stop_thread = true;
     int signal = 0;
-    write(pipe_fd, &signal, sizeof(signal));
+    //just blindly write a byte to wake up the thread...
+    ssize_t res = write(pipe_fd, &signal, sizeof(signal));
     try {
       monitor_thread->join();
     } catch (std::exception& e) {
@@ -164,7 +165,9 @@ int udev_handler::read_monitor() {
   epoll_ctl(epfd, EPOLL_CTL_ADD, udev_monitor_get_fd(monitor), &event);
 
   int pipes[2];
-  pipe(pipes);
+  int res = pipe(pipes);
+  if (res != 0) 
+    throw std::runtime_error("internal pipe creation failed.");
   event.data.ptr = nullptr;
   epoll_ctl(epfd, EPOLL_CTL_ADD, pipes[0], &event);
 

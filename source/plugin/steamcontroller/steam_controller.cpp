@@ -45,7 +45,9 @@ const option_decl steamcont_options[] = {
 };
 
 steam_controller::steam_controller(scraw::controller* sc) : sc(sc) {
-  pipe(statepipe);
+  int res = pipe(statepipe);
+  if (res != 0) 
+    throw std::runtime_error("internal pipe creation failed.");
   scraw::controller_config ctrl_cfg;
   ctrl_cfg.idle_timeout = 300;
   ctrl_cfg.imu = false;
@@ -62,7 +64,7 @@ steam_controller::~steam_controller() {
 
 void steam_controller::on_state_change(const scraw_controller_state_t& state) {
   //turn this call back into an epoll event.
-  write(statepipe[1], &state, sizeof(state));
+  ssize_t res = write(statepipe[1], &state, sizeof(state));
 }
 
 //A lot of boiler plate if-statements to check each event one-by-one.

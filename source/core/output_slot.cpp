@@ -145,10 +145,10 @@ void virtual_keyboard::take_event(struct input_event in) {
   //Relative events go to a separate mouse device.
   //SYN events should go to both!
   if (in.type == EV_REL || in.type == EV_SYN) {
-    write(mouse_fd, &in, sizeof(in));
+    ssize_t res = write(mouse_fd, &in, sizeof(in));
     if (in.type == EV_REL) return;
   }
-  write(uinput_fd, &in, sizeof(in));
+  ssize_t res = write(uinput_fd, &in, sizeof(in));
 };
 
 
@@ -185,7 +185,7 @@ void virtual_gamepad::take_event(struct input_event in) {
     in.type = EV_ABS;
     in.code = ABS_Z,  in.value *= 255;
   }
-  write(uinput_fd, &in, sizeof(in));
+  ssize_t res = write(uinput_fd, &in, sizeof(in));
 };
 
 bool virtual_gamepad::accept_device(std::shared_ptr<input_source> dev) {

@@ -623,6 +623,6 @@ int wiimote::play_ff(int id, int repetitions) {
   ev.type = EV_FF;
   ev.code = id;
   ev.value = repetitions;
-  write(fd, &ev, sizeof(ev));
+  ssize_t res = write(fd, &ev, sizeof(ev));
   return 0;
 }

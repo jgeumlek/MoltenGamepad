@@ -134,7 +134,7 @@ void joycon::process_recurring_event() {
 
       //send only if the file is open and we aren't currently waiting for a reply.
       if (fds[i] > 0 && pending_reports[i] == 0) {
-        int res = write(fds[i],request_state,2);
+        ssize_t res = write(fds[i],request_state,2);
         if (res < 0) {
           std::string msg = "comm. err: " + std::string(strerror(errno));
           methods.print(ref,msg.c_str());

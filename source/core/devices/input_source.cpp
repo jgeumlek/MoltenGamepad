@@ -20,7 +20,9 @@ input_source::input_source(device_manager* manager, device_plugin plugin, void* 
   if (epfd < 1) perror("epoll create");
 
   int internal[2];
-  pipe(internal);
+  int res = pipe(internal);
+  if (res != 0) 
+    throw std::runtime_error("internal pipe creation failed.");
   watch_file(internal[0], this);
 
   priv_pipe = internal[1];
@@ -153,7 +155,7 @@ void input_source::update_option(const char* name, const MGField value) {
   if (value.type == MG_STRING)
     msg.field.string = copy_str(value.string);
   msg.type = input_internal_msg::IN_OPTION_MSG;
-  write(priv_pipe, &msg, sizeof(msg));
+  ssize_t res = write(priv_pipe, &msg, sizeof(msg));
 }
 
 int input_source::set_plugin_recurring(bool wants_recurring) {
@@ -161,7 +163,7 @@ int input_source::set_plugin_recurring(bool wants_recurring) {
   memset(&msg, 0, sizeof(msg));
   msg.value = wants_recurring;
   msg.type = input_internal_msg::IN_PLUG_RECURRING_MSG;
-  write(priv_pipe, &msg, sizeof(msg));
+  ssize_t res = write(priv_pipe, &msg, sizeof(msg));
 }
 
 void input_source::set_slot(output_slot* slot) {
@@ -180,7 +182,7 @@ void input_source::set_slot(output_slot* slot) {
   memset(&msg, 0, sizeof(msg));
   msg.field.slot = slot;
   msg.type = input_internal_msg::IN_SLOT_MSG;
-  write(priv_pipe, &msg, sizeof(msg));
+  ssize_t res = write(priv_pipe, &msg, sizeof(msg));
   assigned_slot = slot;
 }
 
@@ -251,7 +253,7 @@ void input_source::update_group(const std::vector<std::string>& evnames, const s
   
   msg.type = input_internal_msg::IN_GROUP_TRANS_MSG;
 
-  write(priv_pipe, &msg, sizeof(msg));
+  ssize_t res = write(priv_pipe, &msg, sizeof(msg));
 }
 
 
@@ -266,7 +268,7 @@ void input_source::set_trans(int id, int8_t direction, event_translator* trans) 
   msg.field.trans = trans;
   msg.value = direction;
   msg.type = input_internal_msg::IN_TRANS_MSG;
-  write(priv_pipe, &msg, sizeof(msg));
+  ssize_t res = write(priv_pipe, &msg, sizeof(msg));
 };
 
 void input_source::inject_event(int id, int64_t value, bool skip_group_trans) {
@@ -278,7 +280,7 @@ void input_source::inject_event(int id, int64_t value, bool skip_group_trans) {
   msg.value = value;
   msg.skip_group_trans = skip_group_trans;
   msg.type = input_internal_msg::IN_EVENT_MSG;
-  write(priv_pipe, &msg, sizeof(msg));
+  ssize_t res = write(priv_pipe, &msg, sizeof(msg));
 
 }
 
@@ -561,7 +563,7 @@ void input_source::end_thread() {
     struct input_internal_msg msg;
     memset(&msg, 0, sizeof(msg));
     msg.type = input_internal_msg::IN_END_THREAD_MSG;
-    write(priv_pipe, &msg, sizeof(msg));
+    ssize_t res = write(priv_pipe, &msg, sizeof(msg));
     thread->join();
     delete thread;
     thread = nullptr;

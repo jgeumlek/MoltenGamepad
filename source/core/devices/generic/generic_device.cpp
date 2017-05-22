@@ -45,7 +45,9 @@ int generic_device::init(input_source* ref) {
     methods.toggle_event(ref, i, eventstates[i]);
 
   int internal[2];
-  pipe(internal);
+  int res = pipe(internal);
+  if (res != 0) 
+    throw std::runtime_error("internal pipe creation failed.");
   methods.watch_file(ref, internal[0], &pipe_read);
   pipe_write = internal[1];
   pipe_read = internal[0];
@@ -115,6 +117,6 @@ int generic_device::play_ff(int id, int repetitions) {
   ev.type = EV_FF;
   ev.code = id;
   ev.value = repetitions;
-  write(fd, &ev, sizeof(ev));
+  ssize_t res = write(fd, &ev, sizeof(ev));
   return 0;
 }

@@ -68,7 +68,7 @@ int uinput::make_gamepad(const uinput_ids& ids, bool dpad_as_hat, bool analog_tr
     return -1;
   }
   memset(&uidev, 0, sizeof(uidev));
-  snprintf(uidev.name, UINPUT_MAX_NAME_SIZE, ids.device_string.c_str());
+  strncpy(uidev.name, ids.device_string.c_str(), UINPUT_MAX_NAME_SIZE);
   uidev.id.bustype = BUS_USB;
   uidev.id.vendor = ids.vendor_id;
   uidev.id.product = ids.product_id;
@@ -126,7 +126,7 @@ int uinput::make_gamepad(const uinput_ids& ids, bool dpad_as_hat, bool analog_tr
   ioctl(fd, UI_SET_PHYS, ids.phys.c_str());
 
 
-  write(fd, &uidev, sizeof(uidev));
+  ssize_t res = write(fd, &uidev, sizeof(uidev));
   if (ioctl(fd, UI_DEV_CREATE) < 0)
     perror("uinput device creation");
 
@@ -147,7 +147,7 @@ int uinput::make_keyboard(const uinput_ids& ids) {
     return -1;
   }
   memset(&uidev, 0, sizeof(uidev));
-  snprintf(uidev.name, UINPUT_MAX_NAME_SIZE, ids.device_string.c_str());
+  strncpy(uidev.name, ids.device_string.c_str(), UINPUT_MAX_NAME_SIZE);
   uidev.id.bustype = BUS_USB;
   uidev.id.vendor = ids.vendor_id;
   uidev.id.product = ids.product_id;
@@ -184,7 +184,7 @@ int uinput::make_keyboard(const uinput_ids& ids) {
   ioctl(fd, UI_SET_PROPBIT, INPUT_PROP_DIRECT);
   ioctl(fd, UI_SET_PHYS, ids.phys.c_str());
 
-  write(fd, &uidev, sizeof(uidev));
+  ssize_t res = write(fd, &uidev, sizeof(uidev));
   if (ioctl(fd, UI_DEV_CREATE) < 0)
     perror("uinput device creation");
 
@@ -203,7 +203,7 @@ int uinput::make_mouse(const uinput_ids& ids) {
     return -1;
   }
   memset(&uidev, 0, sizeof(uidev));
-  snprintf(uidev.name, UINPUT_MAX_NAME_SIZE, ids.device_string.c_str());
+  strncpy(uidev.name, ids.device_string.c_str(), UINPUT_MAX_NAME_SIZE);
   uidev.id.bustype = BUS_USB;
   uidev.id.vendor = ids.vendor_id;
   uidev.id.product = ids.product_id;
@@ -229,7 +229,7 @@ int uinput::make_mouse(const uinput_ids& ids) {
   ioctl(fd, UI_SET_PROPBIT, INPUT_PROP_POINTER);
   ioctl(fd, UI_SET_PHYS, ids.phys.c_str());
 
-  write(fd, &uidev, sizeof(uidev));
+  ssize_t res = write(fd, &uidev, sizeof(uidev));
   if (ioctl(fd, UI_DEV_CREATE) < 0)
     perror("uinput device creation");
 

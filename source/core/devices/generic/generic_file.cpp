@@ -20,7 +20,9 @@ generic_file::generic_file(moltengamepad* mg, struct udev_device* node, bool gra
   this->grab_chmod = grab_chmod;
   open_node(node);
   //set up a pipe so we can talk to out own thread.
-  pipe(internal_pipe);
+  int res = pipe(internal_pipe);
+  if (res != 0) 
+    throw std::runtime_error("internal pipe creation failed.");
   
   struct epoll_event event;
   memset(&event, 0, sizeof(event));
@@ -42,7 +44,8 @@ generic_file::~generic_file() {
   }
   if (thread) {
     int beep = 0;
-    write(internal_pipe[1],&beep,sizeof(beep));
+    //blindly write a byte just to wake up other thread
+    ssize_t res = write(internal_pipe[1],&beep,sizeof(beep));
     try {
       thread->join();
     } catch (std::exception& e) {
@@ -146,7 +149,7 @@ void generic_file::thread_loop() {
     }
     if (ret == sizeof(ev)) {
       for (auto dev : devices) {
-        write(((generic_device*)dev->plug_data)->pipe_write, &ev, sizeof(ev));
+        ssize_t res = write(((generic_device*)dev->plug_data)->pipe_write, &ev, sizeof(ev));
       }
     } else if (errno == ENODEV && keep_looping) {
       close(file);

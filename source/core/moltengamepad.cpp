@@ -214,12 +214,13 @@ int clear_fifo(const char* fifo_path, bool force_remote_exit) {
   if (fifo >= 0) {
     if (force_remote_exit) {
       //tell the listener to stop everything
-      write(fifo,"\nexit_process_leave_fifo\n",25);
+      ssize_t res = write(fifo,"\nexit_process_leave_fifo\n",25);
+      //not much to do if these writes fail...
     } else {
       //tell the listener to refresh their fifo session and see that it is gone.
       //(keeps process alive, but stops FIFO thread.)
       //This is needed when we call clear_fifo() while already trying to stop everything!
-      write(fifo,"\nquit\n",6);
+      ssize_t res = write(fifo,"\nquit\n",6);
     }
     close(fifo);
   }

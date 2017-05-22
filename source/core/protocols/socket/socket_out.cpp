@@ -32,8 +32,11 @@ int socket_out::osc_msg(const std::string& path, int id, const std::string& argt
   pw.init().addMessage(msg);
   uint32_t size = pw.packetSize();
   std::lock_guard<std::mutex> guard(write_lock);
-  write(fd, &size, sizeof(size));
-  write(fd, pw.packetData(), size);
+  ssize_t res = write(fd, &size, sizeof(size));
+  ssize_t res2 = write(fd, pw.packetData(), size);
+  if (res != sizeof(size) || res2 != size)
+    return -1;
+  return 0;
 }
 
 void socket_out::text_message(int resp_id, const std::string& text) {
