@@ -131,8 +131,6 @@ public:
   int pipe_write = -1;
   int total_events;
   event_state* eventstates = nullptr;
-  bool rumble = false;
-  const std::string type;
 
   std::map<evcode, decodedevent> eventcodes;
   struct udev_device* node = nullptr;
@@ -143,6 +141,8 @@ public:
   int init(input_source* ref);
 
   void process(void*);
+  const std::string type;
+  bool rumble;
 
   int get_pipe();
   input_source* ref = nullptr;

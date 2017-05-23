@@ -17,7 +17,7 @@ int do_load(moltengamepad* mg, std::vector<token>& command, response_stream* out
     return -1;
   }
   std::string filename = command.at(3).value;
-  for (int i = 4; i < command.size(); i++) {
+  for (uint i = 4; i < command.size(); i++) {
     if (command.at(i).type != TK_ENDL) filename += command.at(i).value;
   }
   std::string foundname = mg->locate(FILE_PROFILE,filename);

@@ -1,7 +1,7 @@
 #ifndef SIGNALFLAGS_H
 #define SIGNALFLAGS_H
 
-//global flags, set by an interrupt signal.\
+//global flags, set by an interrupt signal.
 
 //stop the current action
 extern volatile bool STOP_WORKING;

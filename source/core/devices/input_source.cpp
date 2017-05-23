@@ -37,7 +37,7 @@ input_source::~input_source() {
   close(internalpipe);
   close(priv_pipe);
   close(epfd);
-  for (int i = 0; i < ev_map.size(); i++) {
+  for (uint i = 0; i < ev_map.size(); i++) {
     if (ev_map[i].trans) delete ev_map[i].trans;
   }
 
@@ -83,7 +83,7 @@ void input_source::register_event(event_decl ev) {
 }
 
 void input_source::toggle_event(int id, event_state state) {
-  if (id < 0 || id >= events.size() || events[id].state == EVENT_DISABLED)
+  if (id < 0 || (uint) id >= events.size() || events[id].state == EVENT_DISABLED)
     return;
   events[id].state = state;
   if (state == EVENT_DISABLED)
@@ -122,7 +122,7 @@ void input_source::update_map(const char* evname, int8_t direction, event_transl
   evname = name.c_str();
   if (!trans)
     trans = new event_translator();
-  for (int i = 0; i < events.size(); i++) {
+  for (uint i = 0; i < events.size(); i++) {
     if (!strcmp(evname, events[i].name)) {
       set_trans(i, direction, trans->clone());
       return;
@@ -156,6 +156,8 @@ void input_source::update_option(const char* name, const MGField value) {
     msg.field.string = copy_str(value.string);
   msg.type = input_internal_msg::IN_OPTION_MSG;
   ssize_t res = write(priv_pipe, &msg, sizeof(msg));
+  if (res < 0)
+    perror("input source internal pipe write");
 }
 
 int input_source::set_plugin_recurring(bool wants_recurring) {
@@ -164,6 +166,9 @@ int input_source::set_plugin_recurring(bool wants_recurring) {
   msg.value = wants_recurring;
   msg.type = input_internal_msg::IN_PLUG_RECURRING_MSG;
   ssize_t res = write(priv_pipe, &msg, sizeof(msg));
+  if (res < 0)
+    perror("input source internal pipe write");
+  return 0;
 }
 
 void input_source::set_slot(output_slot* slot) {
@@ -183,6 +188,8 @@ void input_source::set_slot(output_slot* slot) {
   msg.field.slot = slot;
   msg.type = input_internal_msg::IN_SLOT_MSG;
   ssize_t res = write(priv_pipe, &msg, sizeof(msg));
+  if (res < 0)
+    perror("input source internal pipe write");
   assigned_slot = slot;
 }
 
@@ -206,7 +213,7 @@ void input_source::update_group(const std::vector<std::string>& evnames, const s
   msg.group.directions = new std::vector<int8_t>(directions);
   
   //First, translate event names using this device's aliases into the local names.
-  for (int i = 0; i < local_names.size(); i++) {
+  for (uint i = 0; i < local_names.size(); i++) {
     auto alias = devprofile->aliases.find(std::string(local_names.at(i)));
     if (alias != devprofile->aliases.end()) {
       std::string local_name = alias->second;
@@ -217,7 +224,7 @@ void input_source::update_group(const std::vector<std::string>& evnames, const s
   //Next, check that all referenced events are present. Abort if not.
   for (std::string name : local_names) {
     bool found = false;
-    for (int i = 0; i < events.size(); i++) {
+    for (uint i = 0; i < events.size(); i++) {
       const source_event& ev = events[i];
       if (!strcmp(name.c_str(), ev.name)) {
         found = true;
@@ -254,13 +261,15 @@ void input_source::update_group(const std::vector<std::string>& evnames, const s
   msg.type = input_internal_msg::IN_GROUP_TRANS_MSG;
 
   ssize_t res = write(priv_pipe, &msg, sizeof(msg));
+  if (res < 0)
+    perror("input source internal pipe write");
 }
 
 
 
 
 void input_source::set_trans(int id, int8_t direction, event_translator* trans) {
-  if (id < 0 || id >= events.size()) return;
+  if (id < 0 || (uint)id >= events.size()) return;
 
   struct input_internal_msg msg;
   memset(&msg, 0, sizeof(msg));
@@ -269,10 +278,12 @@ void input_source::set_trans(int id, int8_t direction, event_translator* trans) 
   msg.value = direction;
   msg.type = input_internal_msg::IN_TRANS_MSG;
   ssize_t res = write(priv_pipe, &msg, sizeof(msg));
+  if (res < 0)
+    perror("input source internal pipe write");
 };
 
 void input_source::inject_event(int id, int64_t value, bool skip_group_trans) {
-  if (id < 0 || id >= events.size()) return;
+  if (id < 0 || (uint)id >= events.size()) return;
 
   struct input_internal_msg msg;
   memset(&msg, 0, sizeof(msg));
@@ -281,7 +292,8 @@ void input_source::inject_event(int id, int64_t value, bool skip_group_trans) {
   msg.skip_group_trans = skip_group_trans;
   msg.type = input_internal_msg::IN_EVENT_MSG;
   ssize_t res = write(priv_pipe, &msg, sizeof(msg));
-
+  if (res < 0)
+    perror("input source internal pipe write");
 }
 
 //Do we care enough to assign to a slot when this happens?
@@ -309,7 +321,7 @@ int64_t apply_direction(entry_type type, int64_t value, int8_t direction) {
 }
 
 void input_source::send_value(int id, int64_t value) {
-  if (id < 0 || id > events.size() || events[id].value == value)
+  if (id < 0 || (uint)id > events.size() || events[id].value == value)
     return;
   bool blocked = false;
   for (auto group_trans : ev_map.at(id).attached) {
@@ -447,7 +459,7 @@ void input_source::handle_internal_message(input_internal_msg& msg) {
     if (msg.group.trans) {
       msg.group.trans->attach(this);
       std::vector<source_event> listened;
-      for (int trans_index = 0; trans_index < msg.group.fields->size(); trans_index++) {
+      for (uint trans_index = 0; trans_index < msg.group.fields->size(); trans_index++) {
         int ev_id = (*msg.group.fields)[trans_index];
         int8_t direction = (*msg.group.directions)[trans_index];
         add_listener(ev_id, direction, msg.group.trans, trans_index);
@@ -564,6 +576,8 @@ void input_source::end_thread() {
     memset(&msg, 0, sizeof(msg));
     msg.type = input_internal_msg::IN_END_THREAD_MSG;
     ssize_t res = write(priv_pipe, &msg, sizeof(msg));
+    if (res < 0)
+      perror("input source internal pipe write");
     thread->join();
     delete thread;
     thread = nullptr;
@@ -571,12 +585,12 @@ void input_source::end_thread() {
 }
 
 void input_source::add_listener(int id, int8_t direction, group_translator* trans, int trans_index) {
-  if (id < 0 || id >= events.size()) return;
+  if (id < 0 || (uint)id >= events.size()) return;
   ev_map[id].attached.push_back({trans, trans_index, direction});
 }
 
 void input_source::remove_listener(int id, group_translator* trans) {
-  if (id < 0 || id >= ev_map.size()) return;
+  if (id < 0 || (uint)id >= ev_map.size()) return;
   for (auto it = ev_map[id].attached.begin(); it != ev_map[id].attached.end(); it++) {
     if (it->trans == trans) {
       ev_map[id].attached.erase(it);

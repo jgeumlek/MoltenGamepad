@@ -17,6 +17,7 @@ bool thumb_stick::set_mapped_events(const std::vector<source_event>& listened) {
     event_vals[0] = listened[0].value;
     event_vals[1] = listened[1].value;
   }
+  return true;
 }
   
 void thumb_stick::fill_def(MGTransDef& def) {

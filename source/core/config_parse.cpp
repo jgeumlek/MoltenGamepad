@@ -73,7 +73,7 @@ int config_parse_line(moltengamepad* mg, std::vector<token>& line, context conte
     if (line[2].value != "from")
       return 0;
     std::string filename = line.at(3).value;
-    for (int i = 4; i < line.size(); i++) 
+    for (uint i = 4; i < line.size(); i++)
       if (line.at(i).type != TK_ENDL) filename += line.at(i).value;
 
     extra->startup_profiles.push_back(filename);

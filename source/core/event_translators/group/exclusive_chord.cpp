@@ -17,17 +17,17 @@ bool exclusive_chord::set_mapped_events(const std::vector<source_event>& listene
     event_ids.push_back(ev.id);
     chord_hits.push_back(0);
   }
+  return true;
 }
 
 bool exclusive_chord::claim_event(int id, mg_ev event) {
   bool output = true;
-  int index;
   int old_val = event_vals[id];
   event_vals[id] = event.value;
   if (event.value != old_val)
     chord_hits[id] = event.value;
 
-  for (int i = 0; i < chord_hits.size(); i++) {
+  for (uint i = 0; i < chord_hits.size(); i++) {
     output = output && (chord_hits[i]);
   }
 
@@ -36,7 +36,7 @@ bool exclusive_chord::claim_event(int id, mg_ev event) {
 
     chord_active = true;
     //clear all hits, we need all to be hit in the timespan.
-    for (int i = 0; i < event_vals.size(); i++) {
+    for (uint i = 0; i < event_vals.size(); i++) {
       chord_hits[i] = 0;
     }
     //of course, do still set the one that just happened.
@@ -59,7 +59,7 @@ bool exclusive_chord::claim_event(int id, mg_ev event) {
     //chord released. clear out everything.
     output_slot* out_dev = owner->get_slot();
     if (out_dev) out_trans->process({output}, out_dev);
-    for (int i = 0; i < event_vals.size(); i++) {
+    for (uint i = 0; i < event_vals.size(); i++) {
       chord_hits[i] = 0;
     }
     output_cache = output;
@@ -82,7 +82,7 @@ void exclusive_chord::process_recurring(output_slot* out) const {
     return;
   if (chord_active && tick_count == 0) {
     //send out events
-    for (int i = 0; i < event_ids.size(); i++) {
+    for (uint i = 0; i < event_ids.size(); i++) {
       if (chord_hits[i]) owner->inject_event(event_ids[i], event_vals[i], true);
       chord_hits[i] = 0;
     }

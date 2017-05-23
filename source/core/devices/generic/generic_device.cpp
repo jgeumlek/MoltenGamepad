@@ -13,7 +13,7 @@ generic_device::generic_device(std::vector<split_ev_info>& split_events, int tot
     eventstates[i] = EVENT_DISABLED;
   }
 
-  for (int i = 0; i < split_events.size(); i++) {
+  for (uint i = 0; i < split_events.size(); i++) {
     
     input_absinfo     abs;
     memset(&abs, 0, sizeof(abs));
@@ -97,6 +97,8 @@ int generic_device::upload_ff(ff_effect* effect) {
     return -1;
   int fd = file->get_fd();
   int ret = ioctl(fd, EVIOCSFF, effect);
+  if (ret < 0)
+    perror("gendev upload FF ioctl");
   return effect->id;
 }
   
@@ -105,6 +107,8 @@ int generic_device::erase_ff(int id) {
     return -1;
   int fd = file->get_fd();
   int ret = ioctl(fd, EVIOCRMFF, id);
+  if (ret < 0)
+    perror("gendev erase FF ioctl");
   return 0;
 }
 
@@ -118,5 +122,7 @@ int generic_device::play_ff(int id, int repetitions) {
   ev.code = id;
   ev.value = repetitions;
   ssize_t res = write(fd, &ev, sizeof(ev));
+  if (res < 0)
+    perror("gendev write FF event");
   return 0;
 }

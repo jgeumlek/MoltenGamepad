@@ -38,7 +38,7 @@ simple_chord::~simple_chord() {
 bool simple_chord::claim_event(int id, mg_ev event) {
   bool output = true;
   event_vals[id] = event.value;
-  for (int i = 0; i < event_vals.size(); i++) {
+  for (uint i = 0; i < event_vals.size(); i++) {
     output = output && (event_vals[i]);
   }
   if (output != output_cache) {

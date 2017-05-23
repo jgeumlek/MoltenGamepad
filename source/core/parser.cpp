@@ -303,7 +303,7 @@ void MGparser::load_translators(moltengamepad* mg) {
   mouse_decl.identifier = "mouse";
   mouse_decl.decl_str = "event = mouse(trans)";
   mouse_decl.mapped_events.push_back(DEV_KEY);
-  mouse_decl.fields.push_back({"","",MG_TRANS});
+  mouse_decl.fields.push_back({"","",MG_TRANS, false, false});
   trans_gens["mouse"] = trans_generator( mouse_decl, [mg] (std::vector<MGField>& fields) {
     //Need to tack on a field with the keyboard slot
     MGField keyboard_slot;
@@ -740,14 +740,14 @@ event_translator* MGparser::parse_special_trans(enum entry_type intype, complex_
 bool MGparser::parse_decl(enum entry_type intype, const trans_decl& decl, MGTransDef& def, complex_expr* expr, response_stream* out) {
   if (!expr) return false;
 
-  int fieldsfound = expr->params.size();
+  uint fieldsfound = expr->params.size();
 
   //initialize two vectors to match our number of fields.
   //set all to default
   std::vector<complex_expr> values;
   std::vector<bool> valid;
   def.fields.clear();
-  for (int i = 0; i < decl.fields.size(); i++) {
+  for (uint i = 0; i < decl.fields.size(); i++) {
     def.fields.push_back({decl.fields[i].type,0,FLAG_DEFAULT});
     complex_expr default_val;
     default_val.ident = decl.fields[i].default_val;
@@ -766,8 +766,8 @@ bool MGparser::parse_decl(enum entry_type intype, const trans_decl& decl, MGTran
   //Also: store metadata like whether each param was positional/defaulted/named.
   int offset = 0;
   bool named = false;
-  for (int i = 0; i < fieldsfound; i++) {
-    int spot = i - offset;
+  for (uint i = 0; i < fieldsfound; i++) {
+    uint spot = i - offset;
     named = false;
     if (!expr->params[i]->name.empty()) {
       for (spot = 0; spot < decl.fields.size(); spot++) {
@@ -788,7 +788,7 @@ bool MGparser::parse_decl(enum entry_type intype, const trans_decl& decl, MGTran
       complex_expr dummy;
       values.push_back(dummy);
       valid.push_back(true);
-      def.fields.push_back({variadic_type,0});
+      def.fields.push_back({variadic_type,0, 0});
     }
     values[spot] = *(expr->params[i]);
     valid[spot] = true;
@@ -799,7 +799,7 @@ bool MGparser::parse_decl(enum entry_type intype, const trans_decl& decl, MGTran
       offset++; //stay at current spot for the next loop.
   }
 
-  for (int i = 0; i < decl.fields.size(); i++) {
+  for (uint i = 0; i < decl.fields.size(); i++) {
     //mandatory param missing.
     if (!decl.fields[i].has_default && !valid[i]) {
       if (out) out->err("required parameter missing for translator \""+expr->ident+"\"");
@@ -807,7 +807,7 @@ bool MGparser::parse_decl(enum entry_type intype, const trans_decl& decl, MGTran
     }
   }
     
-  for (int i = 0; i < def.fields.size(); i++) {
+  for (uint i = 0; i < def.fields.size(); i++) {
     MGType type = def.fields[i].type;
     if (type == MG_KEYBOARD_SLOT) {
       def.fields[i].slot = mg->slots->keyboard;
@@ -902,7 +902,7 @@ void MGparser::print_def(entry_type intype, MGTransDef& def, std::ostream& outpu
   output << def.identifier;
   if (def.fields.size() > 0) output << "(";
   bool needcomma = false;
-  for (int i = 0; i < def.fields.size(); i++) {
+  for (uint i = 0; i < def.fields.size(); i++) {
     auto field = def.fields[i];
     if (field.flags & FLAG_DEFAULT)
       continue; //apparently we made this without specifying a value. It'd be wrong to remove that flexibility.
@@ -1092,8 +1092,6 @@ void print_expr(complex_expr* expr, int depth) {
 
 struct complex_expr* read_expr(std::vector<token>& tokens, std::vector<token>::iterator& it) {
   if (tokens.empty() || it == tokens.end()) return nullptr;
-
-  bool abort = false;
 
 
   //Are we an IDENT, a string of some sort?

@@ -17,7 +17,7 @@ MG_BUILT_INS+=wiimote
 INPUT_HEADER:=""
 
 LDLIBS=-ludev -lpthread -ldl
-CPPFLAGS+=-std=c++14
+CPPFLAGS+=-std=c++14 -Wall -Wmissing-field-initializers
 
 SRCS:=$(shell echo source/core/*.cpp source/core/*/*.cpp source/core/*/*/*.cpp)
 

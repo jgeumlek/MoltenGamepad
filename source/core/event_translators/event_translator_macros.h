@@ -20,7 +20,7 @@
 
 // BEGIN declares some local variables to allow the other macro magic.
 #define BEGIN_READ_DEF \
-  int __index = 0; std::vector<event_translator*> __localclones;\
+  uint __index = 0; std::vector<event_translator*> __localclones;\
   field_flags.resize(fields.size(),0);
 // On failure we need to destroy our local event_translator clones.
 #define TRANS_FAIL \

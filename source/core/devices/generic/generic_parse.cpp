@@ -294,6 +294,7 @@ int generic_match_line(std::vector<token>& line, device_match& current_match) {
     value += (*it).value;
 
   }
+  return 0;
 }
 
 void generic_parse_line(std::vector<token>& line, generic_driver_info*& info, moltengamepad* mg, context context) {
@@ -334,7 +335,6 @@ int generic_config_loop(moltengamepad* mg, std::istream& in, std::string& path) 
   bool keep_looping = true;
   std::string header = "";
   char* buff = new char [1024];
-  bool need_to_free_info = true;
   struct generic_driver_info* info = new generic_driver_info;
   context context;
   context.line_number = 1;
@@ -486,6 +486,7 @@ int init_generic_callbacks() {
   genericdev.play_ff =  [] (void* ref, int id, int repetitions) {
     return ((generic_device*)ref)->play_ff(id, repetitions);
   };
+  return 0;
 }
 
 

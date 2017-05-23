@@ -93,6 +93,9 @@ std::string moltengamepad::locate(file_category cat, std::string path) {
     case FILE_PLUGIN:
       category_prefix = "/plugins/";
       break;
+    default:
+      return "";
+      break;
   }
 
   std::vector<std::string> dirs = xdg_config_dirs;
@@ -145,6 +148,9 @@ std::vector<std::string> moltengamepad::locate_glob(file_category cat, std::stri
       case FILE_PLUGIN:
         category_prefix = "/plugins/";
         break;
+      default:
+        return files;
+        break;
     }
     dirs.insert(dirs.begin(),xdg_config_dirs.begin(),xdg_config_dirs.end());
     if (!commandline_override.empty())
@@ -164,7 +170,7 @@ std::vector<std::string> moltengamepad::locate_glob(file_category cat, std::stri
     glob_t globbuffer;
     glob((fullpath+pathglob).c_str(), 0, nullptr, &globbuffer);
     debug_print(DEBUG_VERBOSE, 2, "glob: ", (fullpath+pathglob).c_str());
-    for (int i = 0; i < globbuffer.gl_pathc; i++) {
+    for (uint i = 0; i < globbuffer.gl_pathc; i++) {
       
       char* resolved = realpath(globbuffer.gl_pathv[i], nullptr);
       if (resolved) {
@@ -212,18 +218,22 @@ int clear_fifo(const char* fifo_path, bool force_remote_exit) {
   debug_print(DEBUG_INFO,2,"Destroying FIFO at ", fifo_path);
   unlink(fifo_path);
   if (fifo >= 0) {
+    ssize_t res;
     if (force_remote_exit) {
       //tell the listener to stop everything
-      ssize_t res = write(fifo,"\nexit_process_leave_fifo\n",25);
+      res = write(fifo,"\nexit_process_leave_fifo\n",25);
       //not much to do if these writes fail...
     } else {
       //tell the listener to refresh their fifo session and see that it is gone.
       //(keeps process alive, but stops FIFO thread.)
       //This is needed when we call clear_fifo() while already trying to stop everything!
-      ssize_t res = write(fifo,"\nquit\n",6);
+      res = write(fifo,"\nquit\n",6);
     }
+    if (res < 0)
+      perror("write fifo during clear_fifo");
     close(fifo);
   }
+  return 0;
 }
 
 const option_decl general_options[] = {
@@ -248,7 +258,7 @@ const option_decl general_options[] = {
   {"make_socket", "Make a socket to communicate with clients", "false", MG_BOOL},
   {"socket_path", "Location to create the socket", "", MG_STRING},
   {"auto_profile_subdir", "automatically load profiles in this subdir. of the profile dir. on start up", "auto/", MG_STRING},
-  {"", "", ""},
+  {"", "", "", MG_NULL},
 };
 
 const char* keywords[] = {
@@ -445,6 +455,8 @@ int moltengamepad::init() {
     //If we can read it, feed it to our gendev parser
     if (!file.fail()) {
       int ret = generic_config_loop(this, file, path);
+      if (ret)
+        std::cerr << "gendev parsing error." << std::endl;
     }
   }
 
@@ -499,7 +511,7 @@ int moltengamepad::init() {
   }
 
 
-
+  return 0;
 }
 
 moltengamepad::~moltengamepad() {
@@ -655,7 +667,7 @@ std::shared_ptr<input_source> moltengamepad::add_device(device_manager* manager,
 int moltengamepad::remove_device(input_source* source) {
   device_list_lock.lock();
   std::lock_guard<std::mutex> guard(id_list_lock);
-  for (int i = 0; i < devices.size(); i++) {
+  for (uint i = 0; i < devices.size(); i++) {
     if (source == devices[i].get()) {
       plugs.device_plug(0, source, "remove");
       remove_profile(devices[i]->get_profile().get());
@@ -693,7 +705,7 @@ void moltengamepad::add_profile(profile* profile) {
 
 void moltengamepad::remove_profile(profile* profile) {
   profile_list_lock.lock();
-  for (int i = 0; i < profiles.size(); i++) {
+  for (uint i = 0; i < profiles.size(); i++) {
     if (profile == profiles[i].lock().get()) {
       profiles.erase(profiles.begin() + i);
       i--;

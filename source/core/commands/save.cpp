@@ -19,7 +19,7 @@ int do_save(moltengamepad* mg, std::vector<token>& command, response_stream* out
   };
 
   std::vector<std::string> profiles_to_save;
-  int i = 2;
+  uint i = 2;
   for (i = 2; i < command.size() && command.at(i).value != "to"; i++) {
     if (command.at(i).type == TK_IDENT)
       profiles_to_save.push_back(command.at(i).value);

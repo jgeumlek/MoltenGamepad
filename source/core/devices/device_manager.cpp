@@ -63,7 +63,7 @@ int device_manager::register_event_group(event_group_decl ev) {
   std::string group(ev.group_name);
   //convert commas to spaces, as spaces make sense internally,
   //but commas make sense for the plugin API.
-  for (int i = 0; i < names.size(); i++) {
+  for (uint i = 0; i < names.size(); i++) {
     if (names[i] == ',')
       names[i] = ' ';
   }

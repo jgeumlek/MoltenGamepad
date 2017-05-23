@@ -93,5 +93,6 @@ int shell_loop(moltengamepad* mg, std::istream& in) {
   }
 
   delete[] buff;
+  return 0;
 }
 

@@ -89,6 +89,8 @@ udev_handler::~udev_handler() {
     int signal = 0;
     //just blindly write a byte to wake up the thread...
     ssize_t res = write(pipe_fd, &signal, sizeof(signal));
+    if (res < 0)
+      perror("write to wake udev monitor");
     try {
       monitor_thread->join();
     } catch (std::exception& e) {
@@ -175,11 +177,12 @@ int udev_handler::read_monitor() {
 
 
   while (!stop_thread) {
-    int n = epoll_wait(epfd, events, EPOLL_MAX_EVENTS, -1);
+    epoll_wait(epfd, events, EPOLL_MAX_EVENTS, -1);
     if (!events[0].data.ptr) {
       char buffer[2];
-      int ret = 1;
-      ret = read(pipes[0], &buffer, sizeof(buffer));
+      int ret = read(pipes[0], &buffer, sizeof(buffer));
+      if (ret < 0)
+        perror("read to wake udev monitor");
     } else {
       struct udev_device* dev = udev_monitor_receive_device(monitor);
       if (dev) {
@@ -239,7 +242,7 @@ int udev_handler::grab_permissions(udev_device* dev, bool grabbed) {
     glob_t globbuffer;
     glob(parentpath.c_str(), GLOB_BRACE, nullptr, &globbuffer);
 
-    for (int i = 0; i < globbuffer.gl_pathc; i++) {
+    for (uint i = 0; i < globbuffer.gl_pathc; i++) {
       udev_device* subdev = udev_device_new_from_syspath(udev, globbuffer.gl_pathv[i]);
       if (!subdev)
         continue;

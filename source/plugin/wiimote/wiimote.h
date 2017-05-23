@@ -63,7 +63,7 @@ public:
 
   modes mode = MODE_UNCERTAIN;
 
-  ~wiimote();
+  virtual ~wiimote();
   
   virtual void handle_event(struct udev_device* dev);
 

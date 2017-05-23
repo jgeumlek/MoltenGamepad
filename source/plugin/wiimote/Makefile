@@ -4,7 +4,7 @@ PLUGOBJS=$(subst .cpp,.po,$(SRCS))
 
 LDLIBS+=$(shell cat ldlibs)
 
-CXXFLAGS+=-std=c++14
+CXXFLAGS+=-std=c++14 -Wall -Wmissing-field-initializers
 
 COMPILE.cpp = $(CXX) $(DEPFLAGS) $(CXXFLAGS) $(CPPFLAGS) $(TARGET_ARCH) -c
 

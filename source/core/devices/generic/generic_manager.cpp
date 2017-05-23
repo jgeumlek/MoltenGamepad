@@ -46,8 +46,8 @@ int generic_manager::init(device_manager* ref) {
   }
 
   descr->split_types.resize(split,"gamepad");
-  
 
+  return 0;
 }
 
 manager_plugin generic_manager::get_plugin() {
@@ -89,7 +89,6 @@ std::vector<int> read_capabilities(const char* capabilities) {
   //(Any leading zeroes in a word have been stripped!)
   int code = 0;
   int next_word = WORD_SIZE;
-  const char* ptr = capabilities + len - 1;
 
   for (const char* ptr = capabilities + len; ptr >= capabilities; ptr--) {
     if (*ptr == '\n' || *ptr == '\0')
@@ -331,7 +330,6 @@ int generic_manager::accept_device(struct udev* udev, struct udev_device* dev) {
   if (!strcmp(action, "add") || !strcmp(action, "null")) {
     if (!strcmp(subsystem, "input")) {
       const char* sysname = udev_device_get_sysname(dev);
-      const char* name = nullptr;
       if (!strncmp(sysname, "event", 3)) {
         for (auto it = descr->matches.begin(); it != descr->matches.end(); it++) {
           if (matched(udev,dev,*it, descr)) {

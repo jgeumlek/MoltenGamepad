@@ -116,7 +116,7 @@ const option_decl wiimote_options[] = {
 void wiimote::process_core() {
   struct input_event ev;
   int ret;
-  while (ret = read(buttons.fd, &ev, sizeof(ev)) > 0) {
+  while ((ret = read(buttons.fd, &ev, sizeof(ev))) > 0) {
     int offset = 0;
 
     if (mode == NUNCHUK_EXT) offset = nk_a;
@@ -292,7 +292,7 @@ void wiimote::process_nunchuk(int fd) {
 void wiimote::process_accel(int fd) {
   struct input_event ev;
   int ret;
-  while (ret = read(fd, &ev, sizeof(ev)) > 0) {
+  while ((ret = read(fd, &ev, sizeof(ev))) > 0) {
     int offset = 0;
 
     if (mode == NUNCHUK_EXT) {
@@ -328,7 +328,7 @@ void wiimote::process_accel(int fd) {
 void wiimote::process_ir(int fd) {
   struct input_event ev;
   int ret;
-  while (ret = read(fd, &ev, sizeof(ev)) > 0) {
+  while ((ret = read(fd, &ev, sizeof(ev))) > 0) {
     switch (ev.code) {
     case ABS_HAT0X:
       ircache[0].x = ev.value;
@@ -398,7 +398,7 @@ void wiimote::compute_ir() {
 void wiimote::process_motionplus(int fd) {
   struct input_event ev;
   int ret;
-  while(ret = read(fd, &ev, sizeof(ev)) > 0) {
+  while((ret = read(fd, &ev, sizeof(ev))) > 0) {
     switch (ev.code) {
       case ABS_RX:
         mpcache[0] = ev.value;
@@ -437,7 +437,7 @@ void wiimote::compute_motionplus() {
 void wiimote::process_balance(int fd) {
   struct input_event ev;
   int ret;
-  while (ret = read(fd, &ev, sizeof(ev)) > 0) {
+  while ((ret = read(fd, &ev, sizeof(ev))) > 0) {
     switch (ev.code) {
     case ABS_HAT0X:
       balancecache[0] = ev.value;
@@ -601,6 +601,8 @@ int wiimote::upload_ff(const ff_effect* effect) {
   if (fd < 0)
     return -1;
   int ret = ioctl(fd, EVIOCSFF, effect);
+  if (ret < 0)
+    perror("wiimote upload FF");
   return effect->id;
 }
 int wiimote::erase_ff(int id) {
@@ -610,6 +612,8 @@ int wiimote::erase_ff(int id) {
   if (fd < 0)
     return -1;
   int ret = ioctl(fd, EVIOCRMFF, id);
+  if (ret < 0)
+    perror("wiimote erase FF");
   return 0;
 }
 int wiimote::play_ff(int id, int repetitions) {
@@ -624,5 +628,7 @@ int wiimote::play_ff(int id, int repetitions) {
   ev.code = id;
   ev.value = repetitions;
   ssize_t res = write(fd, &ev, sizeof(ev));
+  if (res < 0)
+    perror("wiimote write FF event");
   return 0;
 }

@@ -57,6 +57,7 @@ public:
   
   
   int set_player(int player_num) {
+    return -1;
   }
   
   void list_options(std::vector<option_info>& list) const;
@@ -98,8 +99,9 @@ public:
   std::string get_alias(std::string event_name) const;
   std::shared_ptr<profile> get_profile() const { return devprofile; };
 
-
-  void* const plug_data = nullptr;
+  device_manager* manager;
+  device_plugin plugin;
+  void* const plug_data;
   friend void init_plugin_api();
   friend moltengamepad;
 protected:
@@ -118,8 +120,6 @@ protected:
   std::shared_ptr<profile> devprofile = std::make_shared<profile>();
   std::thread* thread = nullptr;
   volatile bool keep_looping = true;
-  device_manager* manager;
-  device_plugin plugin;
   std::mutex opt_lock;
   std::mutex slot_lock;
   output_slot* out_dev = nullptr;
@@ -163,7 +163,6 @@ protected:
 class device_manager {
 public:
   moltengamepad* mg;
-  void* const plug_data = nullptr;
   manager_plugin plugin;
   
   device_manager(moltengamepad* mg, manager_plugin plugin, void* plug_data);
@@ -189,6 +188,7 @@ public:
 
   std::string name;
   message_stream log;
+  void* const plug_data;
   std::shared_ptr<profile> mapprofile = std::make_shared<profile>();
 
   std::vector<event_decl> events;

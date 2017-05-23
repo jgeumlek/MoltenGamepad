@@ -27,7 +27,7 @@ void print_profile(profile& profile, std::ostream& out) {
     if (entry.second.fields.size() >= 1) {
       out << entry.second.fields[0] << (entry.second.directions[0] == -1 ? "-" : "");
     }
-    for (int i = 1; i < entry.second.fields.size(); i++) {
+    for (uint i = 1; i < entry.second.fields.size(); i++) {
       out << "," << entry.second.fields[i] << (entry.second.directions[i] == -1 ? "-" : "");
     }
     out << ") = ";
@@ -180,6 +180,7 @@ int do_print_slot(output_slot* slot, bool details, std::ostream& out) {
       out << "\t" << e.first << " = " << e.second << std::endl;
     }
   }
+  return 0;
 };
 
 int do_print_slots(moltengamepad* mg, std::string name, std::ostream& out) {
@@ -348,6 +349,7 @@ int do_print_assignments(moltengamepad* mg, std::string name, std::ostream& out)
   mg->slots->for_all_assignments([&out] (slot_manager::id_type type, std::string id, output_slot* slot) {
     out << "\t" <<  id_types[type] << " \"" << id << "\" -> " << slot->name << std::endl;
   });
+  return 0;
 }
 
 #define PRINT_USAGE ""\

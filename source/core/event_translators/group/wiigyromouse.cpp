@@ -48,9 +48,10 @@ bool wiigyromouse::set_mapped_events(const std::vector<source_event>& listened) 
   }
   if (listened.size() >= 8) {
     dampening_buttons.resize(listened.size()-7);
-    for (int i = 7; i < listened.size(); i++)
+    for (uint i = 7; i < listened.size(); i++)
       dampening_buttons.push_back(!!listened[i].value);
   }
+  return true;
 }
   
 void wiigyromouse::fill_def(MGTransDef& def) {
@@ -103,7 +104,7 @@ bool wiigyromouse::claim_event(int id, mg_ev event) {
     ratchet_active = event.value;
   } else {
     int d_id = id-7;
-    if (d_id < 0 || d_id >= dampening_buttons.size())
+    if (d_id < 0 || (uint)d_id >= dampening_buttons.size())
       return false;
     if (event.value && !dampening_buttons[d_id])
       dampening_ticks = dampen_period/10;

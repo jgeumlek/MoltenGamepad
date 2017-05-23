@@ -79,7 +79,7 @@ const char* wiimote::get_description() const {
   if (nunchuk.fd > 0) return "Wii Remote with Nunchuk Controller";
   if (balance.fd > 0) return "Wii Balance Board";
   if (buttons.fd > 0) return "Wii Remote";
-  return "Wii device (???)";
+  return "Wii device (\?\?\?)"; //avoid ??) trigraph
 }
 
 const char* wiimote::get_type() const {

@@ -46,6 +46,8 @@ generic_file::~generic_file() {
     int beep = 0;
     //blindly write a byte just to wake up other thread
     ssize_t res = write(internal_pipe[1],&beep,sizeof(beep));
+    if (res < 0)
+      perror("generic file write to wake up");
     try {
       thread->join();
     } catch (std::exception& e) {
@@ -150,6 +152,8 @@ void generic_file::thread_loop() {
     if (ret == sizeof(ev)) {
       for (auto dev : devices) {
         ssize_t res = write(((generic_device*)dev->plug_data)->pipe_write, &ev, sizeof(ev));
+        if (res < 0)
+          perror("generic file to device pipe write");
       }
     } else if (errno == ENODEV && keep_looping) {
       close(file);

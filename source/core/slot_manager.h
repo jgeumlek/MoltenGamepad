@@ -31,9 +31,10 @@ public:
   output_slot* keyboard = nullptr;
   output_slot* dummyslot = nullptr;
   output_slot* debugslot = nullptr;
-  options opts;
+
   std::vector<output_slot*> slots;
   message_stream log;
+  options opts;
 private:
   void remove_from(output_slot* slot);
   void move_device(input_source* dev, output_slot* target);
@@ -45,7 +46,7 @@ private:
   uinput* ui;
   std::mutex lock;
   int min_pads = 1;
-  int max_pads = 4;
+  int max_pads;
   int active_pads = 4;
   bool persistent_slots = true;
   std::map<std::pair<id_type,std::string>,output_slot*> id_slot_assignments;

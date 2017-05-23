@@ -44,7 +44,8 @@ entry_type profile::get_entry_type(std::string in_event_name) {
     if (alias->second.size() > 0 && alias->second.front() == ' ')
       return DEV_EVENT_GROUP;
     in_event_name = alias->second;
-    int8_t dir = read_direction(in_event_name);
+    //chop off any direction markers
+    read_direction(in_event_name);
   }
   auto it = mapping.find(in_event_name);
   if (it == mapping.end()) return NO_ENTRY;
@@ -87,7 +88,8 @@ void profile::remove_event(std::string event_name) {
   auto alias = aliases.find(event_name);
   if (alias != aliases.end()) {
     event_name = alias->second;
-    int8_t dir = read_direction(event_name);
+    //chop off any direction markers
+    read_direction(event_name);
   }
   trans_map* oldmap = get_mapping(event_name);
 
@@ -177,7 +179,7 @@ void profile::set_group_mapping(std::vector<std::string> names, std::vector<int8
   if (names.empty()) return;
   std::lock_guard<std::mutex> guard(lock);
   int total_op = 0; //a little counter to avoid infinite loops.
-  for (int i = 0; i < names.size(); i++) {
+  for (uint i = 0; i < names.size(); i++) {
     total_op++;
     auto alias = aliases.find(names[i]);
     if (alias != aliases.end()) {
@@ -197,7 +199,7 @@ void profile::set_group_mapping(std::vector<std::string> names, std::vector<int8
         auto name_it = names.begin()+i+1;
         auto dir_it = directions.begin()+i+1;
         //the last token is an end-of-line we should ignore.
-        for (int j = 1; j < tokens.size()-1; j++) {
+        for (uint j = 1; j < tokens.size()-1; j++) {
           name_it = names.begin()+i+j;
           dir_it = directions.begin()+i+j;
           directions.insert(dir_it, read_direction(tokens[j].value));
@@ -482,36 +484,36 @@ void profile::build_default_gamepad_profile() {
   default_gamepad_profile.lock.lock();
   if (default_gamepad_profile.mapping.empty()) {
     auto map = &default_gamepad_profile.mapping;
-    (*map)["first"] =    {new btn2btn(BTN_SOUTH), DEV_KEY};
-    (*map)["second"] =    {new btn2btn(BTN_EAST), DEV_KEY};
-    (*map)["third"] =    {new btn2btn(BTN_WEST), DEV_KEY};
-    (*map)["fourth"] =    {new btn2btn(BTN_NORTH), DEV_KEY};
-    (*map)["left"] = {new btn2btn(BTN_DPAD_LEFT), DEV_KEY};
-    (*map)["right"] = {new btn2btn(BTN_DPAD_RIGHT), DEV_KEY};
-    (*map)["up"] =   {new btn2btn(BTN_DPAD_UP), DEV_KEY};
-    (*map)["down"] = {new btn2btn(BTN_DPAD_DOWN), DEV_KEY};
-    (*map)["mode"] = {new btn2btn(BTN_MODE), DEV_KEY};
-    (*map)["start"] = {new btn2btn(BTN_START), DEV_KEY};
-    (*map)["select"] = {new btn2btn(BTN_SELECT), DEV_KEY};
-    (*map)["tl"] =    {new btn2btn(BTN_TL), DEV_KEY};
-    (*map)["tr"] =    {new btn2btn(BTN_TR), DEV_KEY};
-    (*map)["tl2"] =   {new btn2btn(BTN_TL2), DEV_KEY};
-    (*map)["tr2"] =   {new btn2btn(BTN_TR2), DEV_KEY};
-    (*map)["thumbl"] =   {new btn2btn(BTN_THUMBL), DEV_KEY};
-    (*map)["thumbr"] =   {new btn2btn(BTN_THUMBR), DEV_KEY};
+    (*map)["first"] =    {new btn2btn(BTN_SOUTH), DEV_KEY, 1, nullptr};
+    (*map)["second"] =    {new btn2btn(BTN_EAST), DEV_KEY, 1, nullptr};
+    (*map)["third"] =    {new btn2btn(BTN_WEST), DEV_KEY, 1, nullptr};
+    (*map)["fourth"] =    {new btn2btn(BTN_NORTH), DEV_KEY, 1, nullptr};
+    (*map)["left"] = {new btn2btn(BTN_DPAD_LEFT), DEV_KEY, 1, nullptr};
+    (*map)["right"] = {new btn2btn(BTN_DPAD_RIGHT), DEV_KEY, 1, nullptr};
+    (*map)["up"] =   {new btn2btn(BTN_DPAD_UP), DEV_KEY, 1, nullptr};
+    (*map)["down"] = {new btn2btn(BTN_DPAD_DOWN), DEV_KEY, 1, nullptr};
+    (*map)["mode"] = {new btn2btn(BTN_MODE), DEV_KEY, 1, nullptr};
+    (*map)["start"] = {new btn2btn(BTN_START), DEV_KEY, 1, nullptr};
+    (*map)["select"] = {new btn2btn(BTN_SELECT), DEV_KEY, 1, nullptr};
+    (*map)["tl"] =    {new btn2btn(BTN_TL), DEV_KEY, 1, nullptr};
+    (*map)["tr"] =    {new btn2btn(BTN_TR), DEV_KEY, 1, nullptr};
+    (*map)["tl2"] =   {new btn2btn(BTN_TL2), DEV_KEY, 1, nullptr};
+    (*map)["tr2"] =   {new btn2btn(BTN_TR2), DEV_KEY, 1, nullptr};
+    (*map)["thumbl"] =   {new btn2btn(BTN_THUMBL), DEV_KEY, 1, nullptr};
+    (*map)["thumbr"] =   {new btn2btn(BTN_THUMBR), DEV_KEY, 1, nullptr};
 
-    (*map)["left_x"] = {nullptr, DEV_AXIS};
-    (*map)["left_y"] = {nullptr, DEV_AXIS};
-    (*map)["right_x"] = {nullptr, DEV_AXIS};
-    (*map)["right_y"] = {nullptr, DEV_AXIS};
-    (*map)["tl2_axis"] = {new axis2axis(ABS_Z, 1), DEV_AXIS};
-    (*map)["tr2_axis"] = {new axis2axis(ABS_RZ, 1), DEV_AXIS};
-    (*map)["tl2_axis_btn"] = {nullptr, DEV_KEY};
-    (*map)["tr2_axis_btn"] = {nullptr, DEV_KEY};
+    (*map)["left_x"] = {nullptr, DEV_AXIS, 1, nullptr};
+    (*map)["left_y"] = {nullptr, DEV_AXIS, 1, nullptr};
+    (*map)["right_x"] = {nullptr, DEV_AXIS, 1, nullptr};
+    (*map)["right_y"] = {nullptr, DEV_AXIS, 1, nullptr};
+    (*map)["tl2_axis"] = {new axis2axis(ABS_Z, 1), DEV_AXIS, 1, nullptr};
+    (*map)["tr2_axis"] = {new axis2axis(ABS_RZ, 1), DEV_AXIS, 1, nullptr};
+    (*map)["tl2_axis_btn"] = {nullptr, DEV_KEY, 1, nullptr};
+    (*map)["tr2_axis_btn"] = {nullptr, DEV_KEY, 1, nullptr};
 
     //For devices with the dpad as a hat.
-    (*map)["updown"] =   {new axis2btns(BTN_DPAD_UP,BTN_DPAD_DOWN), DEV_AXIS};
-    (*map)["leftright"] =   {new axis2btns(BTN_DPAD_LEFT,BTN_DPAD_RIGHT), DEV_AXIS};
+    (*map)["updown"] =   {new axis2btns(BTN_DPAD_UP,BTN_DPAD_DOWN), DEV_AXIS, 1, nullptr};
+    (*map)["leftright"] =   {new axis2btns(BTN_DPAD_LEFT,BTN_DPAD_RIGHT), DEV_AXIS, 1, nullptr};
 
     //for backwards compatability
     default_gamepad_profile.aliases["primary"] = "first";
@@ -545,12 +547,12 @@ void profile::gamepad_defaults() {
     int8_t dir = read_direction(alias)*entry.second.direction;
     alias = alias.empty() ? entry.first : alias;
     event_translator* mapper = entry.second.trans ? entry.second.trans->clone() : nullptr;
-    mapping[alias] = {mapper, entry.second.type, dir};
+    mapping[alias] = {mapper, entry.second.type, dir, nullptr};
   }
   for (auto entry : default_gamepad_profile.group_trans) {
     std::vector<std::string> aliases;
     std::vector<int8_t> directions;
-    for (int i = 0; i < entry.second.fields.size(); i++) {
+    for (uint i = 0; i < entry.second.fields.size(); i++) {
       std::string alias = get_alias(entry.second.fields[i]);
       int8_t dir = read_direction(alias);
       aliases.push_back(alias.empty() ? entry.second.fields[i] : alias);

@@ -59,7 +59,6 @@ int main(int argc, char* argv[]) {
 
   try {
     bool daemon = options.get<bool>("daemon");
-    bool stay_alive = daemon || options.get<bool>("stay_alive");
     std::thread* stdin_thread = nullptr;
     int pid = -1;
     if (daemon)

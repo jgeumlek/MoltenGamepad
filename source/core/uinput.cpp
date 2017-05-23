@@ -127,6 +127,8 @@ int uinput::make_gamepad(const uinput_ids& ids, bool dpad_as_hat, bool analog_tr
 
 
   ssize_t res = write(fd, &uidev, sizeof(uidev));
+  if (res < 0)
+    perror("uinput device setup write");
   if (ioctl(fd, UI_DEV_CREATE) < 0)
     perror("uinput device creation");
 
@@ -185,6 +187,8 @@ int uinput::make_keyboard(const uinput_ids& ids) {
   ioctl(fd, UI_SET_PHYS, ids.phys.c_str());
 
   ssize_t res = write(fd, &uidev, sizeof(uidev));
+  if (res < 0)
+    perror("uinput device setup write");
   if (ioctl(fd, UI_DEV_CREATE) < 0)
     perror("uinput device creation");
 
@@ -230,6 +234,8 @@ int uinput::make_mouse(const uinput_ids& ids) {
   ioctl(fd, UI_SET_PHYS, ids.phys.c_str());
 
   ssize_t res = write(fd, &uidev, sizeof(uidev));
+  if (res < 0)
+    perror("uinput device setup write");
   if (ioctl(fd, UI_DEV_CREATE) < 0)
     perror("uinput device creation");
 
@@ -277,7 +283,6 @@ void uinput::ff_thread_loop() {
   struct epoll_event event;
   struct epoll_event events[1];
   memset(&event, 0, sizeof(event));
-  bool remaining_slots = ff_slots.size() > 0;
 
   while (keep_looping || !safe_to_close()) {
     int n = epoll_wait(epfd, events, 1, 1000);
@@ -312,7 +317,7 @@ void uinput::ff_thread_loop() {
         ioctl(uinput_fd, UI_BEGIN_FF_UPLOAD, &effect);
         if (slot) {
           int id = slot->upload_ff(effect.effect);
-          int retval = (id < 0); //fail if id < 0
+          effect.retval = (id < 0); //fail if id < 0
           effect.effect.id = id;
         } else {
           //no slot? Just say this upload fails.

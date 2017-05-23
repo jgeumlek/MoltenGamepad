@@ -41,7 +41,7 @@ const event_decl steamcont_events[] = {
 const option_decl steamcont_options[] = {
   {"automouse", "Enable built in mouse movement emulation (\"Lizard\" mode)", "false", MG_BOOL},
   {"autobuttons", "Enable built in keyboard/mouse button emulation (\"Lizard\" mode)", "false", MG_BOOL},
-  {nullptr, nullptr, nullptr},
+  {nullptr, nullptr, nullptr, MG_NULL},
 };
 
 steam_controller::steam_controller(scraw::controller* sc) : sc(sc) {
@@ -65,6 +65,8 @@ steam_controller::~steam_controller() {
 void steam_controller::on_state_change(const scraw_controller_state_t& state) {
   //turn this call back into an epoll event.
   ssize_t res = write(statepipe[1], &state, sizeof(state));
+  if (res < 0)
+    perror("steamcontroller write internal pipe");
 }
 
 //A lot of boiler plate if-statements to check each event one-by-one.
@@ -91,7 +93,7 @@ void steam_controller::process(void* tag) {
   scraw_controller_state_t state;
   int ret = read(statepipe[0],&state,sizeof(state));
   
-  if (ret < sizeof(state))
+  if (ret < (int)sizeof(state))
     return; //abort.
   
   //start checking events for new values to report...

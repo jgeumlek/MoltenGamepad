@@ -74,7 +74,7 @@ public:
   //Initialize any values needed with this input source
   virtual void init(input_source* source) {};
   //Take in a list of event types that this translator will be listening to.
-  virtual bool set_mapped_events(const std::vector<source_event>& listened_events) {};
+  virtual bool set_mapped_events(const std::vector<source_event>& listened_events) { return false; };
   //Called when the device's thread is ready for attaching.
   virtual void attach(input_source* source) {};
   //Return true to block the input source's native handling of this event.

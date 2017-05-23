@@ -83,6 +83,7 @@ public:
   int init(device_manager* ref) {
     this->ref = ref;
     init_profile();
+    return 0;
   }
 
   int start();

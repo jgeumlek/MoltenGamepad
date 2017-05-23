@@ -1,6 +1,6 @@
 #include "slot_manager.h"
 
-slot_manager::slot_manager(int max_pads, bool keys, const virtpad_settings& padstyle) : log("slot"), max_pads(max_pads), opts([&] (std::string& name, MGField value) { return process_option(name, value); })
+slot_manager::slot_manager(int max_pads, bool keys, const virtpad_settings& padstyle) : log("slot"),  opts([&] (std::string& name, MGField value){ return process_option(name, value); }), max_pads(max_pads)
 {
   ui = new uinput();
   dummyslot = new output_slot("blank", "Dummy slot (ignores all events)");

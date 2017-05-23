@@ -191,7 +191,7 @@ void joycon_manager::check_partnership(joycon* jc) {
   }
   
   //search for this jc in our list...
-  for (int i = 0; i < joycons.size(); i++) {
+  for (uint i = 0; i < joycons.size(); i++) {
     if ( joycons[i].jc == jc) {
       jc_index = i;
       joycons[i].active_trigger = jc->active_trigger[0];
