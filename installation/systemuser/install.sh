@@ -19,9 +19,7 @@ udevadm control --reload
 systemd-tmpfiles --create
 systemctl daemon-reload
 
-# Reload uinput to get its new permissions.
-rmmod uinput
-modprobe uinput
+echo "Please ensure the gamepad account has access to uinput before running MG. This access will be automatic after the next reboot."
 systemctl enable moltengamepad.service
 
 # Try to detect a case where "TAG-=uaccess" is not supported.
