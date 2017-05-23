@@ -168,7 +168,7 @@ int do_print_drivers(moltengamepad* mg, std::string name, std::ostream& out) {
 
 }
 
-int do_print_slot(output_slot* slot, bool details, std::ostream& out) {
+int do_print_slot(virtual_device* slot, bool details, std::ostream& out) {
   const char* statestr = "";
   if (slot->state == SLOT_INACTIVE)
     statestr = "(inactive)";
@@ -193,7 +193,7 @@ int do_print_slots(moltengamepad* mg, std::string name, std::ostream& out) {
     if (mg->slots->debugslot) do_print_slot(mg->slots->debugslot, false, out);
     return 0;
   }
-  output_slot* slot = mg->slots->find_slot(name);
+  virtual_device* slot = mg->slots->find_slot(name);
   if (slot) {
     do_print_slot(slot, true, out);
   }
@@ -346,7 +346,7 @@ int do_print_events(moltengamepad* mg, std::string name, std::ostream& out) {
 
 const char* id_types[] = {"name", "uniq", "phys"};
 int do_print_assignments(moltengamepad* mg, std::string name, std::ostream& out) {
-  mg->slots->for_all_assignments([&out] (slot_manager::id_type type, std::string id, output_slot* slot) {
+  mg->slots->for_all_assignments([&out] (slot_manager::id_type type, std::string id, virtual_device* slot) {
     out << "\t" <<  id_types[type] << " \"" << id << "\" -> " << slot->name << std::endl;
   });
   return 0;

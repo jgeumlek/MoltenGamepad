@@ -19,7 +19,7 @@ int do_move(moltengamepad* mg, std::vector<token>& command, response_stream* out
   std::string devname = command.at(1).value;
   std::string slotname = command.at(3).value;
   std::shared_ptr<input_source> dev = mg->find_device(devname.c_str());
-  output_slot* slot = mg->slots->find_slot(slotname);
+  virtual_device* slot = mg->slots->find_slot(slotname);
   if (!dev.get() && devname != "all") {
     out->err("device " + devname + " not found.");
     return -1;

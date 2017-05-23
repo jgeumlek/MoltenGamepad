@@ -10,8 +10,8 @@ public:
   }
 
 
-  virtual void process(struct mg_ev ev, output_slot* out);
-  virtual void process_recurring(output_slot* out) const;
+  virtual void process(struct mg_ev ev, virtual_device* out);
+  virtual void process_recurring(virtual_device* out) const;
   virtual bool wants_recurring_events();
 
   virtual axis2rel* clone() {

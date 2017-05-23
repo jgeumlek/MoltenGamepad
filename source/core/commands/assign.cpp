@@ -15,7 +15,7 @@ int do_assign(moltengamepad* mg, std::vector<token>& command, response_stream* o
   std::string id = command.at(5).value;
   std::string slotname = command.at(2).value;
 
-  output_slot* slot = mg->slots->find_slot(slotname);
+  virtual_device* slot = mg->slots->find_slot(slotname);
   if (!slot && slotname != "nothing") {
     out->err("slot " + slotname + " not found.");
     return -1;

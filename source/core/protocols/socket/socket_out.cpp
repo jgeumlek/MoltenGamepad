@@ -1,7 +1,7 @@
 #include "socket_out.h"
 #include "../../../oscpkt/oscpkt.hh"
 #include "../../devices/device.h"
-#include "../../output_slot.h"
+#include "../../virtual_devices/virtual_device.h"
 #include <unistd.h>
 
 int socket_out::osc_msg(const std::string& path, int id, const std::string& argtypes, ...) {
@@ -58,7 +58,7 @@ void socket_out::end_response(int resp_id, int ret_val) {
   osc_msg("/done",resp_id,"i",ret_val);
 }
 
-void socket_out::device_slot(int resp_id, input_source* device, output_slot* slot) {
+void socket_out::device_slot(int resp_id, input_source* device, virtual_device* slot) {
   std::string slotname = "";
   if (slot) slotname = slot->name;
   osc_msg("/devslot",resp_id,"ss",device->get_name().c_str(),slotname.c_str());

@@ -42,7 +42,7 @@ bool simple_chord::claim_event(int id, mg_ev event) {
     output = output && (event_vals[i]);
   }
   if (output != output_cache) {
-    output_slot* out_dev = owner->get_slot();
+    virtual_device* out_dev = owner->get_slot();
     if (out_dev) out_trans->process({output}, out_dev);
     output_cache = output;
   }

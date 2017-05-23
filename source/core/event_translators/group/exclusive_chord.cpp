@@ -48,7 +48,7 @@ bool exclusive_chord::claim_event(int id, mg_ev event) {
   if (output && output != output_cache) {
     //chord succeeded. Send event only if thread hasn't timed out.
 
-    output_slot* out_dev = owner->get_slot();
+    virtual_device* out_dev = owner->get_slot();
     if (out_dev && chord_active) out_trans->process({output}, out_dev);
 
     output_cache = output;
@@ -57,7 +57,7 @@ bool exclusive_chord::claim_event(int id, mg_ev event) {
   if (!output && output != output_cache) {
 
     //chord released. clear out everything.
-    output_slot* out_dev = owner->get_slot();
+    virtual_device* out_dev = owner->get_slot();
     if (out_dev) out_trans->process({output}, out_dev);
     for (uint i = 0; i < event_vals.size(); i++) {
       chord_hits[i] = 0;
@@ -74,7 +74,7 @@ bool exclusive_chord::claim_event(int id, mg_ev event) {
   return true;
 };
 
-void exclusive_chord::process_recurring(output_slot* out) const {
+void exclusive_chord::process_recurring(virtual_device* out) const {
   if (chord_active && tick_count > 0) {
     tick_count--;
   }

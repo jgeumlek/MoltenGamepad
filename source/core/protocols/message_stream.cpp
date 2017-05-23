@@ -50,7 +50,7 @@ void message_stream::err(int resp_id, std::string text) {
     listener->err(resp_id, (name.empty() ? "" : name + ": ") + text);
 }
 
-void message_stream::device_slot(int resp_id, input_source* device, output_slot* slot) {
+void message_stream::device_slot(int resp_id, input_source* device, virtual_device* slot) {
   std::lock_guard<std::mutex> guard(lock);
   for (auto listener : listeners)
     listener->device_slot(resp_id, device, slot);
@@ -80,7 +80,7 @@ void response_stream::err(std::string text, std::string path, int line_number) {
   stream->err(response_id,text,path,line_number);
 }
 
-void response_stream::device_slot(input_source* device, output_slot* slot) {
+void response_stream::device_slot(input_source* device, virtual_device* slot) {
   stream->device_slot(response_id,device,slot);
 }
 

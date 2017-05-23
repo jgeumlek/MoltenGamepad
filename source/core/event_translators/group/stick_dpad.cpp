@@ -52,7 +52,7 @@ bool stick_dpad::claim_event(int id, mg_ev event) {
 
 
 
-void stick_dpad::process_syn_report(output_slot* out) {
+void stick_dpad::process_syn_report(virtual_device* out) {
   int8_t output[2];
   float x = ((float) event_vals[0])/ABS_RANGE;
   float y = ((float) event_vals[1])/ABS_RANGE;

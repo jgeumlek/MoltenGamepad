@@ -11,7 +11,7 @@ public:
   axis2btns(int neg_btn, int pos_btn) : neg_btn(neg_btn), pos_btn(pos_btn) {
   }
 
-  virtual void process(struct mg_ev ev, output_slot* out);
+  virtual void process(struct mg_ev ev, virtual_device* out);
 
   virtual axis2btns* clone() {
     return new axis2btns(*this);

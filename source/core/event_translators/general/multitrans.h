@@ -12,8 +12,8 @@ public:
     for (auto trans : translist)
       delete trans;
   }
-  virtual void process(struct mg_ev ev, output_slot* out);
-  virtual void process_recurring(output_slot* out) const;
+  virtual void process(struct mg_ev ev, virtual_device* out);
+  virtual void process_recurring(virtual_device* out) const;
   virtual void attach(input_source* source);
   virtual bool wants_recurring_events();
 

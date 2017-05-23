@@ -25,7 +25,7 @@ public:
   virtual bool set_mapped_events(const std::vector<source_event>& listened);
 
   virtual bool claim_event(int id, mg_ev event);
-  virtual void process_syn_report(output_slot* out);
+  virtual void process_syn_report(virtual_device* out);
 
   virtual group_translator* clone() {
     return new thumb_stick(*this);

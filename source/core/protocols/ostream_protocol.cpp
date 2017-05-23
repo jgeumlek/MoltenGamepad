@@ -1,6 +1,6 @@
 #include "ostream_protocol.h"
 #include "../devices/device.h"
-#include "../output_slot.h"
+#include "../virtual_devices/virtual_device.h"
 
 void ostream_protocol::text_message(int resp_id, const std::string& text) {
   //This protocol does not use response ids.
@@ -14,7 +14,7 @@ void ostream_protocol::err(int resp_id, const std::string& text) {
   stderr << text << std::endl;
 }
 
-void ostream_protocol::device_slot(int resp_id, input_source* device, output_slot* slot) {
+void ostream_protocol::device_slot(int resp_id, input_source* device, virtual_device* slot) {
   if (slot) {
     out << "slot: " << device->get_name() << " assigned to slot " << slot->name << std::endl;
   } else {

@@ -869,7 +869,7 @@ bool MGparser::parse_decl(enum entry_type intype, const trans_decl& decl, MGTran
       }
     }
     if (type == MG_SLOT) {
-      output_slot* slot = mg->slots->find_slot(values[i].ident);
+      virtual_device* slot = mg->slots->find_slot(values[i].ident);
       if (!slot) {
         if (out) out->err("slot-type parameter invalid.");
         return false;

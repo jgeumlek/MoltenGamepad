@@ -5,7 +5,8 @@
 #include <vector>
 
 #include "uinput.h"
-#include "output_slot.h"
+#include "virtual_devices/virtual_device.h"
+#include "virtual_devices/virtual_gamepad.h"
 #include "devices/device.h"
 #include "protocols/message_stream.h"
 #include "options.h"
@@ -21,25 +22,25 @@ public:
   ~slot_manager();
 
   int request_slot(input_source* dev);
-  void move_to_slot(input_source* dev, output_slot* target);
-  void id_based_assign(slot_manager::id_type, std::string id, output_slot* slot); //tie an id to a specific slot for autoassignment
-  void for_all_assignments(std::function<void (slot_manager::id_type, std::string, output_slot*)> func);
+  void move_to_slot(input_source* dev, virtual_device* target);
+  void id_based_assign(slot_manager::id_type, std::string id, virtual_device* slot); //tie an id to a specific slot for autoassignment
+  void for_all_assignments(std::function<void (slot_manager::id_type, std::string, virtual_device*)> func);
 
   const uinput* get_uinput() { return ui; };
 
-  output_slot* find_slot(std::string name);
-  output_slot* keyboard = nullptr;
-  output_slot* dummyslot = nullptr;
-  output_slot* debugslot = nullptr;
+  virtual_device* find_slot(std::string name);
+  virtual_device* keyboard = nullptr;
+  virtual_device* dummyslot = nullptr;
+  virtual_device* debugslot = nullptr;
 
-  std::vector<output_slot*> slots;
+  std::vector<virtual_device*> slots;
   message_stream log;
   options opts;
 private:
-  void remove_from(output_slot* slot);
-  void move_device(input_source* dev, output_slot* target);
+  void remove_from(virtual_device* slot);
+  void move_device(input_source* dev, virtual_device* target);
   int process_option(std::string& name, MGField value);
-  output_slot* find_id_based_assignment(input_source* dev);
+  virtual_device* find_id_based_assignment(input_source* dev);
 
   bool slots_on_demand = false;
 
@@ -49,7 +50,7 @@ private:
   int max_pads;
   int active_pads = 4;
   bool persistent_slots = true;
-  std::map<std::pair<id_type,std::string>,output_slot*> id_slot_assignments;
+  std::map<std::pair<id_type,std::string>,virtual_device*> id_slot_assignments;
 };
 
 #endif

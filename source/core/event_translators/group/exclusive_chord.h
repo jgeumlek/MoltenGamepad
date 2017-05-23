@@ -21,7 +21,7 @@ public:
   mutable int tick_count;
 
   virtual bool wants_recurring_events() { return true; };
-  virtual void process_recurring(output_slot* out) const;
+  virtual void process_recurring(virtual_device* out) const;
 
   static const char* decl;
   exclusive_chord(std::vector<MGField>& fields);

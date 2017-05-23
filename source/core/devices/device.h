@@ -62,8 +62,8 @@ public:
   
   void list_options(std::vector<option_info>& list) const;
   
-  void set_slot(output_slot* outdev);
-  output_slot* get_slot();
+  void set_slot(virtual_device* outdev);
+  virtual_device* get_slot();
 
   void update_map(const char* evname, int8_t direction, event_translator* trans);
   void update_option(const char* opname, const MGField field);
@@ -122,8 +122,8 @@ protected:
   volatile bool keep_looping = true;
   std::mutex opt_lock;
   std::mutex slot_lock;
-  output_slot* out_dev = nullptr;
-  output_slot* assigned_slot = nullptr; //might differ from the above due to thread synchro.
+  virtual_device* out_dev = nullptr;
+  virtual_device* assigned_slot = nullptr; //might differ from the above due to thread synchro.
   int ff_ids[1]; //Since the physical device might hand us different ids.
 
   std::vector<recurring_info> recurring_events;

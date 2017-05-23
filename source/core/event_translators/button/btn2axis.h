@@ -9,7 +9,7 @@ public:
   btn2axis(int out_axis, int direction) : out_axis(out_axis), direction(direction) {
   }
 
-  virtual void process(struct mg_ev ev, output_slot* out);
+  virtual void process(struct mg_ev ev, virtual_device* out);
 
   virtual btn2axis* clone() {
     return new btn2axis(*this);

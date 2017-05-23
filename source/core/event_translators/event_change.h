@@ -1,6 +1,6 @@
 #ifndef EVENT_CHANGE_H
 #define EVENT_CHANGE_H
-#include "../output_slot.h"
+#include "../virtual_devices/virtual_device.h"
 #include <linux/input.h>
 #include <string>
 #include "../eventlists/eventlist.h"
@@ -30,14 +30,14 @@ struct MGTransDef {
 class event_translator {
 public:
   //called on a device event, such as a button or axis movement
-  virtual void process(struct mg_ev ev, output_slot* out) {
+  virtual void process(struct mg_ev ev, virtual_device* out) {
   }
   
   //called regularly on a tick event; a certain amount of time has elapsed.
-  virtual void process_recurring(output_slot* out) const {
+  virtual void process_recurring(virtual_device* out) const {
   }
 
-  void write_out(struct input_event ev, output_slot* out) const {
+  void write_out(struct input_event ev, virtual_device* out) const {
     out->take_event(ev);
   }
 
@@ -84,9 +84,9 @@ public:
     return false;
   };
   //called regularly on a tick event; a certain amount of time has elapsed.
-  virtual void process_recurring(output_slot* out) const {};
+  virtual void process_recurring(virtual_device* out) const {};
   //called on a SYN_REPORT, to allow processing multiple events at an appropriate time.
-  virtual void process_syn_report(output_slot* out) {};
+  virtual void process_syn_report(virtual_device* out) {};
   //Similar to event_translator::clone(), acts as a prototype method.
   virtual group_translator* clone() {
     return new group_translator(*this);

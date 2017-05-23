@@ -1,7 +1,7 @@
 #include "uinput.h"
 #include "eventlists/eventlist.h"
 #include "string.h"
-#include "output_slot.h"
+#include "virtual_devices/virtual_device.h"
 #include <sys/epoll.h>
 
 
@@ -248,7 +248,7 @@ int uinput::setup_epoll() {
   return (epfd < 0);
 }
 
-int uinput::watch_for_ff(int fd, output_slot* slot) {
+int uinput::watch_for_ff(int fd, virtual_device* slot) {
   std::lock_guard<std::mutex> guard(lock);
   if (epfd < 0)
     setup_epoll();
@@ -305,7 +305,7 @@ void uinput::ff_thread_loop() {
     } else {
       std::lock_guard<std::mutex> guard(lock);
       auto listener = ff_slots.find(uinput_fd);
-      output_slot* slot = nullptr;
+      virtual_device* slot = nullptr;
       if (listener != ff_slots.end())
         slot = listener->second;
 

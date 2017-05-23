@@ -7,7 +7,7 @@ public:
   btn2btn(int out) : out_button(out) {
   }
 
-  virtual void process(struct mg_ev ev, output_slot* out);
+  virtual void process(struct mg_ev ev, virtual_device* out);
 
   virtual btn2btn* clone() {
     return new btn2btn(*this);

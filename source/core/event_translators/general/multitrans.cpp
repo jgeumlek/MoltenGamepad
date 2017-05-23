@@ -1,12 +1,12 @@
 #include "multitrans.h"
 #include "../event_translator_macros.h"
 
-void multitrans::process(struct mg_ev ev, output_slot* out) {
+void multitrans::process(struct mg_ev ev, virtual_device* out) {
   for (auto trans : translist)
     trans->process(ev, out);
 }
 
-void multitrans::process_recurring(output_slot* out) const {
+void multitrans::process_recurring(virtual_device* out) const {
   for (auto trans : translist)
     trans->process_recurring(out);
 }

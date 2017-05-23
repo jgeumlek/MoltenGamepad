@@ -171,7 +171,7 @@ int input_source::set_plugin_recurring(bool wants_recurring) {
   return 0;
 }
 
-void input_source::set_slot(output_slot* slot) {
+void input_source::set_slot(virtual_device* slot) {
   std::lock_guard<std::mutex> guard(slot_lock);
   if (slot == assigned_slot) return;
   if (assigned_slot) {
@@ -193,7 +193,7 @@ void input_source::set_slot(output_slot* slot) {
   assigned_slot = slot;
 }
 
-output_slot* input_source::get_slot() {
+virtual_device* input_source::get_slot() {
   std::lock_guard<std::mutex> guard(slot_lock);
   return assigned_slot;
 }

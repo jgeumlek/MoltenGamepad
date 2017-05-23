@@ -113,7 +113,7 @@ bool wiigyromouse::claim_event(int id, mg_ev event) {
   return false;
 };
 
-void wiigyromouse::process_recurring(output_slot* out) const {
+void wiigyromouse::process_recurring(virtual_device* out) const {
   //newX and newY are going to be the two newly compute X/Y movements.
   //The final output will be a smoothed version of these new values.
   float newX = 0;
@@ -247,7 +247,7 @@ void wiigyromouse::process_recurring(output_slot* out) const {
   
 }
 
-void wiigyromouse::process_syn_report(output_slot* out) {
+void wiigyromouse::process_syn_report(virtual_device* out) {
   //don't need to do anything: we work on the recurring_events, not the incoming events.
 };
   

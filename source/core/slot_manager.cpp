@@ -1,9 +1,10 @@
 #include "slot_manager.h"
+#include "virtual_devices/virtual_kbm.h"
 
 slot_manager::slot_manager(int max_pads, bool keys, const virtpad_settings& padstyle) : log("slot"),  opts([&] (std::string& name, MGField value){ return process_option(name, value); }), max_pads(max_pads)
 {
   ui = new uinput();
-  dummyslot = new output_slot("blank", "Dummy slot (ignores all events)");
+  dummyslot = new virtual_device("blank", "Dummy slot (ignores all events)");
   debugslot = new debug_device("debugslot", "Prints out all received events");
   debugslot->state = SLOT_ACTIVE;
 
@@ -18,7 +19,7 @@ slot_manager::slot_manager(int max_pads, bool keys, const virtpad_settings& pads
     keyboard = new virtual_keyboard("keyboard", "A virtual keyboard", {"Virtual Keyboard (MoltenGamepad)", "moltengamepad/keyboard", 1, 1, 1}, {"Virtual Mouse (MoltenGamepad)", "moltengamepad/keyboard", 1, 1, 1}, ui);
     keyboard->state = SLOT_ACTIVE;
   } else {
-    keyboard = new output_slot("keyboard", "Disabled virtual keyboard slot");
+    keyboard = new virtual_device("keyboard", "Disabled virtual keyboard slot");
     keyboard->state = SLOT_DISABLED;
   }
 
@@ -42,7 +43,7 @@ int slot_manager::request_slot(input_source* dev) {
   std::lock_guard<std::mutex> guard(lock);
   if (dev->get_slot())
     return 0;
-  output_slot* assigned = find_id_based_assignment(dev);
+  virtual_device* assigned = find_id_based_assignment(dev);
   if (assigned) {
     move_device(dev,assigned);
     return 0;
@@ -66,20 +67,20 @@ int slot_manager::request_slot(input_source* dev) {
   return 0;
 }
 
-void slot_manager::move_to_slot(input_source* dev, output_slot* target) {
+void slot_manager::move_to_slot(input_source* dev, virtual_device* target) {
   lock.lock();
   move_device(dev,target);
   lock.unlock();
 }
 
-void slot_manager::move_device(input_source* dev, output_slot* target) {
+void slot_manager::move_device(input_source* dev, virtual_device* target) {
   //private, should only be called with lock acquired
   if (!dev) return;
   dev->set_slot(target);
   log.device_slot(0, dev, target);
 }
 
-void slot_manager::id_based_assign(slot_manager::id_type type, std::string id, output_slot* slot) {
+void slot_manager::id_based_assign(slot_manager::id_type type, std::string id, virtual_device* slot) {
   std::lock_guard<std::mutex> guard(lock);
   std::pair<slot_manager::id_type, std::string> key = std::make_pair(type,id);
   if (!slot) {
@@ -90,7 +91,7 @@ void slot_manager::id_based_assign(slot_manager::id_type type, std::string id, o
   return;
 }
 
-output_slot* slot_manager::find_id_based_assignment(input_source* dev) {
+virtual_device* slot_manager::find_id_based_assignment(input_source* dev) {
   //private func, called while lock is held.
   //Currently hardcoded priority:
   // uniq assignment -> name assignment -> phys assignment.
@@ -111,13 +112,13 @@ output_slot* slot_manager::find_id_based_assignment(input_source* dev) {
   return nullptr;
 }
 
-void slot_manager::for_all_assignments(std::function<void (slot_manager::id_type, std::string, output_slot*)> func) {
+void slot_manager::for_all_assignments(std::function<void (slot_manager::id_type, std::string, virtual_device*)> func) {
   std::lock_guard<std::mutex> guard(lock);
   for (auto entry : id_slot_assignments)
     func(entry.first.first, entry.first.second, entry.second);
 }
 
-output_slot* slot_manager::find_slot(std::string slotname) {
+virtual_device* slot_manager::find_slot(std::string slotname) {
   for (auto it = slots.begin(); it != slots.end(); it++) {
     if ((*it)->name == slotname) return *it;
   }

@@ -30,7 +30,7 @@ public:
   virtual bool set_mapped_events(const std::vector<source_event>& listened);
 
   virtual bool claim_event(int id, mg_ev event);
-  virtual void process_syn_report(output_slot* out);
+  virtual void process_syn_report(virtual_device* out);
 
   virtual bool clear_other_translations() { return false; };
 
@@ -39,7 +39,7 @@ public:
   }
 
   virtual bool wants_recurring_events() { return true; };
-  virtual void process_recurring(output_slot* out) const;
+  virtual void process_recurring(virtual_device* out) const;
 
   static const char* decl;
   wiigyromouse(std::vector<MGField>& fields);

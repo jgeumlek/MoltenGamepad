@@ -7,7 +7,7 @@ public:
   int direction;
   axis2axis(int axis, int dir) : out_axis(axis), direction(dir) {
   }
-  virtual void process(struct mg_ev ev, output_slot* out) {
+  virtual void process(struct mg_ev ev, virtual_device* out) {
     int value = ev.value * direction;
     if (value < -ABS_RANGE) value = -ABS_RANGE;
     if (value > ABS_RANGE) value = ABS_RANGE;

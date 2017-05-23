@@ -7,11 +7,11 @@ bool btn2rel::wants_recurring_events() {
 
 
 
-void btn2rel::process(struct mg_ev ev, output_slot* out) {
+void btn2rel::process(struct mg_ev ev, virtual_device* out) {
   value = ev.value ? speed : 0;
 }
 
-void btn2rel::process_recurring(output_slot* out) const {
+void btn2rel::process_recurring(virtual_device* out) const {
   struct input_event out_ev;
   memset(&out_ev, 0, sizeof(out_ev));
   out_ev.type = EV_REL;

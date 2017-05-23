@@ -1,7 +1,7 @@
 #include "axis2btns.h"
 #include "../event_translator_macros.h"
 
-void axis2btns::process(struct mg_ev ev, output_slot* out) {
+void axis2btns::process(struct mg_ev ev, virtual_device* out) {
   struct input_event out_ev;
   memset(&out_ev, 0, sizeof(out_ev));
   out_ev.type = EV_KEY;

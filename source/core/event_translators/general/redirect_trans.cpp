@@ -1,7 +1,7 @@
 #include "redirect_trans.h"
 #include "../event_translator_macros.h"
 
-void redirect_trans::process(struct mg_ev ev, output_slot* out) {
+void redirect_trans::process(struct mg_ev ev, virtual_device* out) {
   trans->process(ev, redirected);
   //Since we are redirecting, we can't guarantee when else a SYN_REPORT
   //might be sent. We send it here ourselves.
@@ -14,7 +14,7 @@ void redirect_trans::process(struct mg_ev ev, output_slot* out) {
 
 }
 
-void redirect_trans::process_recurring(output_slot* out) const {
+void redirect_trans::process_recurring(virtual_device* out) const {
   trans->process_recurring(redirected);
   struct input_event out_ev;
   memset(&out_ev, 0, sizeof(out_ev));

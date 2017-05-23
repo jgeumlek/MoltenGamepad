@@ -46,7 +46,7 @@ bool thumb_stick::claim_event(int id, mg_ev event) {
   return false;
 };
 
-void thumb_stick::process_syn_report(output_slot* out) {
+void thumb_stick::process_syn_report(virtual_device* out) {
   int64_t output[2];
   float x = ((float) event_vals[0])/ABS_RANGE;
   float y = ((float) event_vals[1])/ABS_RANGE;

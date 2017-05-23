@@ -8,9 +8,7 @@ class input_source;
 class device_manager;
 class event_translator;
 class group_translator;
-class output_slot;
-
-
+class virtual_device;
 
 
 
@@ -26,7 +24,7 @@ struct MGField {
     int integer;
     bool boolean;
     float real;
-    output_slot* slot;
+    virtual_device* slot;
   };
   int16_t flags; //a set of flags, that may be contextual. Field meta-data.
 };
