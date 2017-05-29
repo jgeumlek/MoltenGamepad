@@ -1,7 +1,7 @@
 #include "virtual_gamepad.h"
 #include "../devices/device.h"
 
-virtual_gamepad::virtual_gamepad(std::string name, std::string descr, virtpad_settings settings, uinput* ui) : virtual_device(name, descr) {
+virtual_gamepad::virtual_gamepad(std::string name, std::string descr, virtpad_settings settings,slot_manager* slot_man, uinput* ui) : virtual_device(name, descr, slot_man) {
   this->dpad_as_hat = settings.dpad_as_hat;
   this->analog_triggers = settings.analog_triggers;
   effects[0].id = -1;
@@ -53,22 +53,36 @@ void virtual_gamepad::take_event(struct input_event in) {
       perror("write to virt pad");
 };
 
-bool virtual_gamepad::accept_device(std::shared_ptr<input_source> dev) {
-  std::lock_guard<std::mutex> guard(lock);
-  
-  //Accept unless we already have a device of this type.
-  for (auto it = devices.begin(); it != devices.end(); it++) {
-    auto ptr = it->lock();
-    if (ptr && ptr->get_type() == dev->get_type()) {
-      return false;
-    }
-  }
-  return true;
-}
 
 void virtual_gamepad::destroy_uinput_devs() {
   if (ui && uinput_fd >= 0) {
     ui->uinput_destroy(uinput_fd);
     uinput_fd = -1;
   }
+}
+
+
+void virtual_gamepad::clear_outputs() {
+  //Could be optimized to only send gamepad events
+  struct input_event out_ev;
+  memset(&out_ev, 0, sizeof(out_ev));
+  out_ev.type = EV_KEY;
+  out_ev.value = 0;
+  for (out_ev.code = 0; out_ev.code < KEY_MAX; out_ev.code++)
+    take_event(out_ev);
+
+  out_ev.type = EV_ABS;
+  for (out_ev.code = 0; out_ev.code < ABS_MAX; out_ev.code++) {
+    if (out_ev.code != ABS_Z && out_ev.code != ABS_RZ) {
+      take_event(out_ev);
+    } else {
+      //have to handle triggers differently, since they are not
+      //at 0 when neutral.
+      input_event trigger = out_ev;
+      trigger.value = -ABS_RANGE;
+      take_event(trigger);
+    }
+  }
+
+
 }

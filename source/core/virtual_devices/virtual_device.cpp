@@ -9,22 +9,40 @@ virtual_device::~virtual_device() {
 
 bool virtual_device::remove_device(input_source* dev) {
   std::lock_guard<std::mutex> guard(lock);
-  for (auto it = devices.begin(); it != devices.end(); it++) {
+  uint num_devices = devices.size();
+  bool found_it = false;
+  for (auto it = devices.begin(); it != devices.end();) {
     auto ptr = it->lock();
     while (!ptr) {
       it = devices.erase(it);
-      if (it == devices.end()) return false;
+      if (it == devices.end())
+        break;
       ptr = it->lock();
     }
+    if (it == devices.end())
+      break;
     if (ptr.get() == dev) {
-      devices.erase(it);
-      return true;
+      it = devices.erase(it);
+      found_it = true;
+    } else {
+      it++;
     }
   }
-  return false;
+  if (num_devices > 0 && devices.size() == 0)
+        process_becoming_empty();
+  return found_it;
 }
 
 bool virtual_device::accept_device(std::shared_ptr<input_source> dev) {
+  std::lock_guard<std::mutex> guard(lock);
+
+  //Accept unless we already have a device of this type.
+  for (auto it = devices.begin(); it != devices.end(); it++) {
+    auto ptr = it->lock();
+    if (ptr && ptr->get_type() == dev->get_type()) {
+      return false;
+    }
+  }
   return true;
 }
 
@@ -114,10 +132,78 @@ int virtual_device::play_ff(int id, int repetitions) {
   return SUCCESS;
 }
 
+void virtual_device::send_start_press(int milliseconds) {
+  input_event in;
+  memset(&in, 0, sizeof(input_event));
+  in.type = EV_KEY;
+  in.code = BTN_START;
+  in.value = 1;
+  take_event(in);
+  in.value = 0;
+  take_delayed_event(in, milliseconds);
+  in.type = EV_SYN;
+  in.code = SYN_REPORT;
+  take_event(in);
+}
 
+void virtual_device::process_becoming_empty() {
+  //clear the output events
+  clear_outputs();
+  //check if we should send a fake start press.
+  if (slot_man->press_start_on_any_disconnect) {
+    send_start_press(slot_man->start_press_milliseconds);
+  }
+  //we don't handle press_start_on_last_disconnect here.
+  //That requires info we don't have here. (e.g. is this input source just moving slots?)
+}
 
+uint virtual_device::input_source_count() {
+  return devices.size();
+}
 
+void virtual_device::take_delayed_event(struct input_event in, int milliseconds) {
+  timespec now;
+  memset(&now,0,sizeof(timespec));
+  if (milliseconds < 0)
+    milliseconds = 0;
+  if (milliseconds > 10000)
+    milliseconds = 10000;
+  std::lock_guard<std::mutex> guard(delayed_events_lock);
+  clock_gettime(CLOCK_MONOTONIC, &now);
+  in.time.tv_sec = now.tv_sec;
+  in.time.tv_usec = now.tv_nsec/1000 + milliseconds*1000;
+  while (in.time.tv_usec > 1000000) {
+    in.time.tv_usec -= 1000000;
+    in.time.tv_sec++;
+  }
+  delayed_events.push_back(in);
+}
 
+void virtual_device::check_delayed_events() {
+  std::lock_guard<std::mutex> guard(delayed_events_lock);
+  if (delayed_events.empty())
+    return;
+  timespec now;
+  memset(&now,0,sizeof(timespec));
+  clock_gettime(CLOCK_MONOTONIC, &now);
+  bool had_event = false;
+  for (uint i = 0; i < delayed_events.size(); i++) {
+    const input_event& event = delayed_events[i];
+    if (now.tv_sec > event.time.tv_sec || ( (now.tv_sec == event.time.tv_sec) && (now.tv_nsec/1000 <= event.time.tv_usec))) {
+      take_event(event);
+      delayed_events.erase(delayed_events.begin() + i);
+      i--;
+      had_event = true;
+    }
+  }
+  if (had_event) {
+    input_event report;
+    memset(&report, 0, sizeof(report));
+    report.type = EV_SYN;
+    report.code = SYN_REPORT;
+    take_event(report);
+  }
+}
 
 void print_effect(ff_effect& effect) {
   std::cout << " type:"<< effect.type;

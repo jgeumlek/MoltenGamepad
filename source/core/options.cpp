@@ -112,12 +112,19 @@ int options::set_locked(std::string& opname, std::string& value) {
   }
   
   if (type == MG_STRING) {
-    opts[opname].stringval = value;
-    opts[opname].value.string = nullptr;
-    newval.string = value.c_str();
-    if (callback)
-      callback(opname, newval);
-    return 0;
+    int ret = 0;
+    if (callback) {
+      newval.string = value.c_str();
+      ret = callback(opname, newval);
+    }
+    if (ret == 0) {
+      opts[opname].stringval = value;
+      opts[opname].value.string = nullptr;
+      newval.string = value.c_str();
+      return 0;
+    } else {
+      return ret;
+    }
   }
   
   return -1;

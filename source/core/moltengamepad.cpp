@@ -667,6 +667,7 @@ std::shared_ptr<input_source> moltengamepad::add_device(device_manager* manager,
 int moltengamepad::remove_device(input_source* source) {
   device_list_lock.lock();
   std::lock_guard<std::mutex> guard(id_list_lock);
+  slots->update_slot_emptiness();
   for (uint i = 0; i < devices.size(); i++) {
     if (source == devices[i].get()) {
       plugs.device_plug(0, source, "remove");
@@ -676,6 +677,7 @@ int moltengamepad::remove_device(input_source* source) {
       i--;
     }
   }
+  slots->process_slot_emptiness();
   device_list_lock.unlock();
   return 0;
 }

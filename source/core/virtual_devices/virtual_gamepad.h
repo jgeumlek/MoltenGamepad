@@ -12,9 +12,9 @@ class virtual_gamepad : public virtual_device {
 public:
   bool dpad_as_hat = false;
   bool analog_triggers = false;
-  virtual_gamepad(std::string name, std::string descr, virtpad_settings settings, uinput* ui);
+  virtual_gamepad(std::string name, std::string descr, virtpad_settings settings, slot_manager* slot_man, uinput* ui);
   virtual void take_event(struct input_event in);
-  virtual bool accept_device(std::shared_ptr<input_source> dev);
+  virtual void clear_outputs();
 protected:
 
   virtpad_settings padstyle;

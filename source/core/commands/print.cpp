@@ -168,17 +168,15 @@ int do_print_drivers(moltengamepad* mg, std::string name, std::ostream& out) {
 
 }
 
-int do_print_slot(virtual_device* slot, bool details, std::ostream& out) {
+int do_print_slot(output_slot& slot, bool details, std::ostream& out) {
   const char* statestr = "";
-  if (slot->state == SLOT_INACTIVE)
+  if (slot.state == SLOT_INACTIVE)
     statestr = "(inactive)";
-  if (slot->state == SLOT_DISABLED)
+  if (slot.state == SLOT_DISABLED)
     statestr = "(disabled)";
-  out << slot->name << ":\t" << slot->descr << statestr << std::endl;
+  out << slot.virt_dev->name << ":\t" << slot.virt_dev->descr << statestr << std::endl;
   if (details) {
-    for (auto e : slot->options) {
-      out << "\t" << e.first << " = " << e.second << std::endl;
-    }
+    // we no longer have detailed information to show...
   }
   return 0;
 };
@@ -190,12 +188,15 @@ int do_print_slots(moltengamepad* mg, std::string name, std::ostream& out) {
     }
     do_print_slot(mg->slots->keyboard, false, out);
     do_print_slot(mg->slots->dummyslot, false, out);
-    if (mg->slots->debugslot) do_print_slot(mg->slots->debugslot, false, out);
+    if (mg->slots->debugslot.virt_dev) do_print_slot(mg->slots->debugslot, false, out);
     return 0;
   }
   virtual_device* slot = mg->slots->find_slot(name);
-  if (slot) {
-    do_print_slot(slot, true, out);
+
+
+  for (auto slot_cmp : mg->slots->slots) {
+    if (slot_cmp.virt_dev == slot)
+      do_print_slot(slot_cmp, false, out);
   }
 
   return 0;

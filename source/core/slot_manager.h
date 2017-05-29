@@ -13,6 +13,15 @@
 
 class input_source;
 
+enum slot_state { SLOT_ACTIVE, SLOT_INACTIVE, SLOT_CLOSED, SLOT_DISABLED};
+
+struct output_slot {
+  virtual_device* virt_dev;
+  slot_state state;
+  bool has_devices;
+};
+
+
 class slot_manager {
 public:
   enum id_type {NAME_ID, UNIQ_ID, PHYS_ID};
@@ -29,13 +38,21 @@ public:
   const uinput* get_uinput() { return ui; };
 
   virtual_device* find_slot(std::string name);
-  virtual_device* keyboard = nullptr;
-  virtual_device* dummyslot = nullptr;
-  virtual_device* debugslot = nullptr;
+  output_slot keyboard;
+  output_slot dummyslot;
+  output_slot debugslot;
 
-  std::vector<virtual_device*> slots;
+  std::vector<output_slot> slots;
+  std::vector<bool> slot_emptiness_cache;
   message_stream log;
   options opts;
+
+  bool press_start_on_any_disconnect = false;
+  bool press_start_on_last_disconnect = false;
+  uint start_press_milliseconds;
+  void update_slot_emptiness();
+  void process_slot_emptiness();
+  void tick_all_slots();
 private:
   void remove_from(virtual_device* slot);
   void move_device(input_source* dev, virtual_device* target);

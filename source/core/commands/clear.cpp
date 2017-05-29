@@ -16,7 +16,7 @@ int do_clear(moltengamepad* mg, std::vector<token>& command, response_stream* ou
 
   if (slotname == "allpads") {
     for (auto slot : mg->slots->slots) {
-      slot->clear_outputs();
+      slot.virt_dev->clear_outputs();
     }
     return 0;
   }

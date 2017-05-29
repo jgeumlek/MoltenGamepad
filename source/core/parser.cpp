@@ -308,7 +308,7 @@ void MGparser::load_translators(moltengamepad* mg) {
     //Need to tack on a field with the keyboard slot
     MGField keyboard_slot;
     keyboard_slot.type = MG_SLOT;
-    keyboard_slot.slot = mg->slots->keyboard;
+    keyboard_slot.slot = mg->slots->keyboard.virt_dev;
     fields.push_back(keyboard_slot);
     return new redirect_trans(fields);
   });
@@ -810,7 +810,7 @@ bool MGparser::parse_decl(enum entry_type intype, const trans_decl& decl, MGTran
   for (uint i = 0; i < def.fields.size(); i++) {
     MGType type = def.fields[i].type;
     if (type == MG_KEYBOARD_SLOT) {
-      def.fields[i].slot = mg->slots->keyboard;
+      def.fields[i].slot = mg->slots->keyboard.virt_dev;
       continue;
     };
 

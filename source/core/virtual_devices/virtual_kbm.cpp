@@ -1,7 +1,7 @@
 #include "virtual_kbm.h"
 #include "../devices/device.h"
 
-virtual_keyboard::virtual_keyboard(std::string name, std::string descr, uinput_ids keyboard_ids, uinput_ids mouse_ids, uinput* ui) : virtual_device(name, descr) {
+virtual_keyboard::virtual_keyboard(std::string name, std::string descr, uinput_ids keyboard_ids, uinput_ids mouse_ids, slot_manager* slot_man, uinput* ui) : virtual_device(name, descr, slot_man) {
   kb_fd = ui->make_keyboard(keyboard_ids);
   if (kb_fd < 0) throw std::runtime_error("No uinput node available.");
   
@@ -38,8 +38,5 @@ void virtual_keyboard::destroy_uinput_devs() {
     ui->uinput_destroy(rel_mouse_fd);
     rel_mouse_fd= -1;
   }
-  if (abs_mouse_fd >= 0) {
-    ui->uinput_destroy(abs_mouse_fd);
-    abs_mouse_fd = -1;
-  }
+
 }

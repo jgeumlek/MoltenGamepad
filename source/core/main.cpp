@@ -111,7 +111,9 @@ int main(int argc, char* argv[]) {
 
     //Wait for the signal to quit.
     while (retcode == 0 && !QUIT_APPLICATION) {
-      sleep(1);
+      //HACK: might as well use this thread to do some polling.
+      usleep(10000); //sleep 10 ms
+      mg->slots->tick_all_slots();
     }
     delete mg;
     exit(0);

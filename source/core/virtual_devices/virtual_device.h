@@ -9,41 +9,47 @@
 #include <memory>
 
 class input_source;
+class slot_manager;
 
-enum slot_state { SLOT_ACTIVE, SLOT_INACTIVE, SLOT_CLOSED, SLOT_DISABLED};
 
 class virtual_device {
 public:
   std::string name;
   std::string descr;
-  virtual_device(std::string name) : name(name) { effects[0].id = -1;};
-  virtual_device(std::string name, std::string descr) : name(name), descr(descr) {effects[0].id = -1;};
+  virtual_device(std::string name, slot_manager* slot_man) : name(name), slot_man(slot_man) { effects[0].id = -1;};
+  virtual_device(std::string name, std::string descr, slot_manager* slot_man) : name(name), descr(descr), slot_man(slot_man) {effects[0].id = -1;};
   virtual ~virtual_device();
   virtual void take_event(struct input_event in) {
   }
 
-  virtual bool accept_device(std::shared_ptr<input_source> dev);
-  virtual bool add_device(std::shared_ptr<input_source> dev);
-  virtual bool remove_device(input_source* dev);
+  bool accept_device(std::shared_ptr<input_source> dev);
+  bool add_device(std::shared_ptr<input_source> dev);
+  bool remove_device(input_source* dev);
 
   int upload_ff(const ff_effect& effect);
   int erase_ff(int id);
   int play_ff(int id, int reptitions);
 
   virtual void clear_outputs();
-  virtual void close_virt_device();
+  void close_virt_device();
   void for_all_devices(std::function<void (std::shared_ptr<input_source>&)> func);
+  uint input_source_count();
+  void send_start_press(int milliseconds);
 
-  int pad_count = 0;
-  std::map<std::string, std::string> options;
-  slot_state state = SLOT_INACTIVE;
+  void take_delayed_event(struct input_event in, int milliseconds);
+  void check_delayed_events();
+
   ff_effect effects[1];
 protected:
   std::vector<std::weak_ptr<input_source>> devices;
+  std::vector<input_event> delayed_events;
   std::mutex lock;
+  std::mutex delayed_events_lock;
   bool device_opened = true;
   uinput* ui = nullptr;
+  slot_manager* slot_man;
   virtual void destroy_uinput_devs() {};
+  void process_becoming_empty();
 };
 
 
@@ -53,7 +59,7 @@ protected:
 
 class debug_device : public virtual_device {
 public:
-  debug_device(std::string name, std::string descr) : virtual_device(name, descr) {};
+  debug_device(std::string name, std::string descr, slot_manager* slot_man) : virtual_device(name, descr, slot_man) {};
   virtual void take_event(struct input_event in) {
     const char* event_name = nullptr;
     if (in.type == EV_KEY) event_name = get_key_name(in.code);
