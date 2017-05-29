@@ -84,6 +84,9 @@ enum wii_keys {
   nk_wm_gyro_y,
   nk_wm_gyro_z,
 
+  cc_l_axis,
+  cc_r_axis,
+
   wii_event_max
 };
 

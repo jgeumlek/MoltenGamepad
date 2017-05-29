@@ -93,6 +93,9 @@ const event_decl wiimote_events[] = {
   {EVNAME(nk_wm_gyro_x), "Wiimote Motion+ X Gyro with Nunchuk", ABS, ""},
   {EVNAME(nk_wm_gyro_y), "Wiimote Motion+ Y Gyro with Nunchuk", ABS, ""},
   {EVNAME(nk_wm_gyro_z), "Wiimote Motion+ Z Gyro with Nunchuk", ABS, ""},
+  {EVNAME(cc_l_axis), "Classic Controller Analog L Button (redundant except on original CC)", ABS, ""},
+  {EVNAME(cc_r_axis), "Classic Controller Analog R Button (redundant except on original CC)", ABS, ""},
+  
   {nullptr, nullptr, NO_ENTRY, nullptr}
 };
 
@@ -165,6 +168,7 @@ void wiimote::process_core() {
 };
 
 #define CLASSIC_STICK_SCALE ABS_RANGE/24
+#define CLASSIC_ANALOG_BTN_SCALE ABS_RANGE/30
 void wiimote::process_classic(int fd) {
   struct input_event ev;
   int ret = read(fd, &ev, sizeof(ev));
@@ -229,6 +233,12 @@ void wiimote::process_classic(int fd) {
         break;
       case ABS_HAT2Y:
         send_value(cc_right_y, -ev.value * CLASSIC_STICK_SCALE);
+        break;
+      case ABS_HAT3X:
+        send_value(cc_r_axis, ev.value*CLASSIC_ANALOG_BTN_SCALE - ABS_RANGE);
+        break;
+      case ABS_HAT3Y:
+        send_value(cc_l_axis, ev.value*CLASSIC_ANALOG_BTN_SCALE - ABS_RANGE);
         break;
       }
     else {
