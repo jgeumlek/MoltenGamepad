@@ -163,7 +163,12 @@ void wiimote::process_core() {
       }
     }
   }
-  if (ret < 0) perror("read core");
+  if (ret < 0 && errno == ENODEV) {
+    close(buttons.fd);
+    buttons.fd = -1;
+    return;
+  }
+  if (ret < 0 && errno != EWOULDBLOCK) perror("read core");
 
 };
 
@@ -251,7 +256,7 @@ void wiimote::process_classic(int fd) {
     classic.fd = -1;
     return;
   }
-  if (ret < 0) perror("read classic ext");
+  if (ret < 0 && errno != EWOULDBLOCK) perror("read classic ext");
 }
 
 #define NUNCHUK_STICK_SCALE ABS_RANGE/85
@@ -295,7 +300,7 @@ void wiimote::process_nunchuk(int fd) {
     nunchuk.fd = -1;
     return;
   }
-  if (ret < 0) perror("read nunchuk");
+  if (ret < 0 && errno != EWOULDBLOCK) perror("read nunchuk");
 }
 
 #define WIIMOTE_ACCEL_SCALE ABS_RANGE/90
@@ -329,7 +334,12 @@ void wiimote::process_accel(int fd) {
       }
     }
   }
-  if (ret < 0) perror("read accel");
+  if (ret < 0 && errno == ENODEV) {
+    close(fd);
+    accel.fd = -1;
+    return;
+  }
+  if (ret < 0 && errno != EWOULDBLOCK) perror("read accel");
 }
 
 #define IR_X_SCALE ABS_RANGE/450
@@ -370,7 +380,12 @@ void wiimote::process_ir(int fd) {
       break;
     }
   }
-  if (ret < 0) perror("read IR");
+  if (ret < 0 && errno == ENODEV) {
+    close(fd);
+    ir.fd = -1;
+    return;
+  }
+  if (ret < 0 && errno != EWOULDBLOCK) perror("read IR");
 }
 
 void wiimote::compute_ir() {
@@ -425,7 +440,12 @@ void wiimote::process_motionplus(int fd) {
         break;
     }
   }
-  if (ret < 0) perror("read motion+");
+  if (ret < 0 && errno == ENODEV) {
+    close(fd);
+    motionplus.fd = -1;
+    return;
+  }
+  if (ret < 0 && errno != EWOULDBLOCK) perror("read motion+");
 }
 
 void wiimote::compute_motionplus() {
@@ -467,7 +487,12 @@ void wiimote::process_balance(int fd) {
       break;
     }
   }
-  if (ret < 0) perror("read balance board");
+  if (ret < 0 && errno == ENODEV) {
+    close(fd);
+    balance.fd = -1;
+    return;
+  }
+  if (ret < 0 && errno != EWOULDBLOCK) perror("read balance board");
 }
 
 void wiimote::compute_balance() {

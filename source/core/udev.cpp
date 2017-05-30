@@ -271,8 +271,10 @@ int udev_handler::grab_permissions(udev_device* dev, bool grabbed) {
     for (auto entry : it->second.children) {
       devnode = udev_device_get_devnode(entry.node);
       int ret = chmod(devnode, entry.orig_mode);
-      if (ret)
+      if (ret && errno != ENOENT) {
+        perror("restore permissions");
         debug_print(DEBUG_NONE,3,"device hiding: restoring permissions of ",devnode," failed.");
+      }
       udev_device_unref(entry.node);
     }
     grabbed_nodes.erase(devnodepath);
