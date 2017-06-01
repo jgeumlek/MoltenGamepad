@@ -173,7 +173,7 @@ void wiimote::process_core() {
 };
 
 #define CLASSIC_STICK_SCALE ABS_RANGE/24
-#define CLASSIC_ANALOG_BTN_SCALE ABS_RANGE/30
+#define CLASSIC_ANALOG_BTN_SCALE ABS_RANGE/27
 void wiimote::process_classic(int fd) {
   struct input_event ev;
   int ret = read(fd, &ev, sizeof(ev));
@@ -240,10 +240,10 @@ void wiimote::process_classic(int fd) {
         send_value(cc_right_y, -ev.value * CLASSIC_STICK_SCALE);
         break;
       case ABS_HAT3X:
-        send_value(cc_r_axis, ev.value*CLASSIC_ANALOG_BTN_SCALE - ABS_RANGE);
+        send_value(cc_r_axis, (ev.value-6)*CLASSIC_ANALOG_BTN_SCALE - ABS_RANGE);
         break;
       case ABS_HAT3Y:
-        send_value(cc_l_axis, ev.value*CLASSIC_ANALOG_BTN_SCALE - ABS_RANGE);
+        send_value(cc_l_axis, (ev.value-6)*CLASSIC_ANALOG_BTN_SCALE - ABS_RANGE);
         break;
       }
     else {
