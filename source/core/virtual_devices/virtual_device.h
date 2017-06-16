@@ -7,6 +7,7 @@
 #include <string>
 #include <map>
 #include <memory>
+#include <functional>
 
 class input_source;
 class slot_manager;

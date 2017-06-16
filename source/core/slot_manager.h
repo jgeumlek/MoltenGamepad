@@ -3,6 +3,7 @@
 
 #include <mutex>
 #include <vector>
+#include <functional>
 
 #include "uinput.h"
 #include "virtual_devices/virtual_device.h"
