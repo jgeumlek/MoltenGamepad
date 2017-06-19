@@ -43,14 +43,27 @@ bool calibratable::claim_event(int id, mg_ev event) {
     switch (id){
         case ID_EVENT_RECALIBRATE:
             if(event.value == 1){
-                // if not pressed reset calibration
-                calibration->start_calibration(cached_input_set == 0);
+                is_calibrating = true;
+                index_sample = 0;
+                // if pressed reset calibration
+                if(cached_input_set == 1){
+                    calibration->reset_calibration();
+                }
+                input_samples.clear();
+                std::cout << "Calibrating: " << calibration->get_feedback_msg(index_sample++) << std::endl;
             }
             break;
         case ID_EVENT_SET:
             cached_input_set = event.value;
-            if(cached_input_set == 1  && calibration ->is_calibrating()){
-               calibration->save_calibrate_data(cached_input_axes); 
+            if(is_calibrating && cached_input_set == 1){
+               input_samples.push_back(cached_input_axes);
+               if(index_sample == calibration->get_number_samples_needed_to_calibrate()){
+                    calibration->calibrate(input_samples);
+                    is_calibrating = false;
+                    index_sample = 0;
+               }else{
+                   std::cout << "Calibrating: " << calibration->get_feedback_msg(index_sample++) << std::endl;
+               }
             }
             break;
         case ID_EVENT_AXIS:
