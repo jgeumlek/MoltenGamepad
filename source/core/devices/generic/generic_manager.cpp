@@ -241,6 +241,13 @@ bool matched(struct udev* udev, struct udev_device* dev, const device_match& mat
     phys = udev_device_get_property_value(hidparent, "HID_PHYS");
     uniq = udev_device_get_property_value(hidparent, "HID_UNIQ");
   }
+
+  if (!phys && parent) {
+    phys = udev_device_get_sysattr_value(parent,"phys");
+  }
+  if (uniq && parent) {
+    uniq = udev_device_get_sysattr_value(parent,"uniq");
+  }
   //only bother parsing this string if we will later match it
   if (parent && (match.vendor != -1 || match.product != -1) ) {
     const char* productstring = udev_device_get_property_value(parent, "PRODUCT");
