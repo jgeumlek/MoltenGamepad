@@ -216,17 +216,14 @@ void profile::set_group_mapping(std::vector<std::string> names, std::vector<int8
   //two purposes here: loop over all event names and 
   // 1) build up the key used to index this translator by concatenating the vent names
   // 2) verify that this profile actually has the event being named.
-  auto it = names.begin();
   //this key creation is not ideal.
-  std::string key = *it;
-  if (mapping.find(key) == mapping.end())
-    return; //abort! event not found.
-  it++;
-  for (; it != names.end(); it++) {
-    if (mapping.find(*it) == mapping.end())
+  std::string key;
+  for (int i = 0; i < names.size(); i++) {
+    if (mapping.find(names[i]) == mapping.end())
       return; //abort! event not found.
-    key += "," + (*it);
+    key += names[i] + ((directions[i] > 0)?"+":"-") + ",";
   }
+  key.pop_back();
 
   auto stored = group_trans.find(key);
   if (stored != group_trans.end()) {
