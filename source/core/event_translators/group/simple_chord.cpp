@@ -13,6 +13,7 @@ bool simple_chord::set_mapped_events(const std::vector<source_event>& listened) 
     if ((ev.type != DEV_KEY) && (ev.type != DEV_AXIS))
       return false;
     event_vals.push_back(ev.value);
+    event_thres.push_back(ev.type == DEV_KEY?0:ABS_RANGE/2);
   }
   return true;
 }
@@ -37,7 +38,7 @@ simple_chord::~simple_chord() {
 
 bool simple_chord::claim_event(int id, mg_ev event) {
   bool output = true;
-  event_vals[id] = event.value > 0;
+  event_vals[id] = event.value > event_thres[id];
   for (int i = 0; i < event_vals.size(); i++) {
     output = output && (event_vals[i]);
   }

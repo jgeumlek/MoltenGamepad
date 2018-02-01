@@ -4,6 +4,7 @@
 class simple_chord : public group_translator {
 public:
   std::vector<int> event_vals;
+  std::vector<int64_t> event_thres;
   int output_cache = 0;
   input_source* owner = nullptr;
   event_translator* out_trans = nullptr;
