@@ -6,6 +6,7 @@ class virtual_keyboard : public virtual_device {
 public:
   virtual_keyboard(std::string name, std::string descr, uinput_ids keyboard_ids, uinput_ids mouse_ids, slot_manager* slot_man, uinput* ui);
   virtual void take_event(struct input_event in);
+  virtual ~virtual_keyboard();
 
 protected:
 

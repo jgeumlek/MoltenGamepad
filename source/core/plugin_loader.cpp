@@ -84,6 +84,14 @@ void init_plugin_api() {
   plugin_methods.mg.grab_permissions = [] (udev_device* dev, bool grabbed) {
     return loader_mg->udev.grab_permissions(dev, grabbed);
   };
+  plugin_methods.mg.virtual_device_ref = [] (virtual_device* dev) {
+    dev->ref();
+    return 0;
+  };
+  plugin_methods.mg.virtual_device_unref = [] (virtual_device* dev) {
+    dev->unref();
+    return 0;
+  };
 
   plugin_methods.manager.plug_data = [] (const device_manager* man) {
     return man->plug_data;

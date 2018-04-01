@@ -117,7 +117,7 @@ std::vector<int> read_capabilities(const char* capabilities) {
 }
 
 
-bool events_matched(udev* udev, udev_device* dev, const generic_driver_info* gendev, device_match::ev_match match) {
+bool events_matched(udev* udev, udev_device* dev, const generic_driver_info* gendev, device_match::ev_match match, int ev_match_arg) {
   if (match == device_match::EV_MATCH_IGNORED)
     return true;
   std::set<std::pair<entry_type,int>> gendev_events;
@@ -149,15 +149,18 @@ bool events_matched(udev* udev, udev_device* dev, const generic_driver_info* gen
   buffer[1023] = '\0';
   close(fd);
   std::vector<int> codes = read_capabilities(buffer);
+  int matched_events = 0;
   for (int code : codes) {
     std::pair<entry_type,int> pair = std::make_pair(DEV_AXIS,code);
     int found = gendev_events.erase(pair);
     if (!found) {
       subset = false;
       superabs = code;
+    } else {
+      matched_events++;
     }
   }
-  int total_events = codes.size();
+
   //check key events
   fd = open((base_path+"key").c_str(), O_RDONLY);
   if (fd < 1) {
@@ -175,13 +178,15 @@ bool events_matched(udev* udev, udev_device* dev, const generic_driver_info* gen
     if (!found) {
       subset = false;
       superkey = code;
+    } else {
+      matched_events++;
     }
   }
-  total_events += codes.size();
   delete[] buffer;
   superset = gendev_events.empty();
   
   if (match == device_match::EV_MATCH_SUBSET) {
+    int required_in_common = ev_match_arg >= 0 ? ev_match_arg : 1;
     //reject the empty set as a trivial subset.
     if (!subset) {
       if (superkey != -1)
@@ -189,9 +194,9 @@ bool events_matched(udev* udev, udev_device* dev, const generic_driver_info* gen
       else if (superabs != -1)
         debug_print(DEBUG_VERBOSE, 2, "\t\t events subset: failed because device had abs ", std::to_string(superabs).c_str());
     }
-    if (total_events == 0)
-      debug_print(DEBUG_VERBOSE, 2, "\t\t events subset: failed because device had no detected events");
-    subset = subset && (total_events > 0);
+    if (matched_events < required_in_common)
+      debug_print(DEBUG_VERBOSE, 2, "\t\t events subset: failed because device had ", std::to_string(matched_events).c_str(), " in common, but needed ", std::to_string(required_in_common).c_str());
+    subset = subset && (matched_events >= required_in_common);
     if (subset)
       debug_print(DEBUG_VERBOSE, 1, "\t\t events subset: check passed");
     return subset;
@@ -301,7 +306,7 @@ bool matched(struct udev* udev, struct udev_device* dev, const device_match& mat
   }
   if (match.events != device_match::EV_MATCH_IGNORED) {
     valid = true;
-    result = result && events_matched(udev, dev, gendev, match.events);
+    result = result && events_matched(udev, dev, gendev, match.events, match.ev_match_arg);
   }
   //a match must be valid as well as meeting all criteria
   return valid && result;

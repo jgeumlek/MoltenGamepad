@@ -99,6 +99,8 @@ private:
 struct complex_expr* read_expr(std::vector<token>& tokens, std::vector<token>::iterator& it);
 void free_complex_expr(complex_expr* expr);
 
+void release_def(MGTransDef& def);
+
 int do_command(moltengamepad* mg, std::vector<token>& command, response_stream* out);
 
 int shell_loop(moltengamepad* mg, std::istream& in);

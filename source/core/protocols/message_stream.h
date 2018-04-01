@@ -17,6 +17,7 @@ class message_protocol;
 class response_stream;
 class input_source;
 class virtual_device;
+class output_slot;
 
 class message_stream {
   std::vector<message_protocol*> listeners;
@@ -34,6 +35,8 @@ public:
   virtual void err(int resp_id, std::string text);
   virtual void device_slot(int resp_id, input_source* device, virtual_device* slot);
   virtual void device_plug(int resp_id, input_source* device, std::string action);
+  virtual void slot_event(int resp_id, output_slot* slot, std::string action);
+
 
   virtual void end_response(int resp_id, int ret_val);
 };
@@ -50,6 +53,8 @@ public:
   void err(std::string text);
   void device_slot(input_source* device, virtual_device* slot);
   void device_plug(input_source* device, std::string action);
+  void slot_event(output_slot* slot, std::string action);
+
 
   void end_response(int ret_val);
 };

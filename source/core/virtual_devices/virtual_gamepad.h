@@ -13,6 +13,7 @@ public:
   bool dpad_as_hat = false;
   bool analog_triggers = false;
   virtual_gamepad(std::string name, std::string descr, virtpad_settings settings, slot_manager* slot_man, uinput* ui);
+  virtual ~virtual_gamepad();
   virtual void take_event(struct input_event in);
   virtual void clear_outputs();
 protected:

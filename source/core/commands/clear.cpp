@@ -20,7 +20,7 @@ int do_clear(moltengamepad* mg, std::vector<token>& command, response_stream* ou
     }
     return 0;
   }
-  virtual_device* slot = mg->slots->find_slot(slotname);
+  std::shared_ptr<virtual_device> slot = mg->slots->find_slot(slotname);
   if (!slot) {
     out->err("slot " + slotname + " not found.");
     return -1;

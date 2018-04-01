@@ -308,7 +308,7 @@ void MGparser::load_translators(moltengamepad* mg) {
     //Need to tack on a field with the keyboard slot
     MGField keyboard_slot;
     keyboard_slot.type = MG_SLOT;
-    keyboard_slot.slot = mg->slots->keyboard.virt_dev;
+    keyboard_slot.slot = mg->slots->keyboard.virt_dev.get();
     fields.push_back(keyboard_slot);
     return new redirect_trans(fields);
   });
@@ -368,6 +368,7 @@ void MGparser::do_assignment(std::string header, std::string field, std::vector<
       MGTransDef def;
       trans->fill_def(def);
       print_def(left_type, def, ss);
+      release_def(def);
       delete trans;
       std::string suffix = (direction == -1) ? "-" : "";
       out.take_message("setting " + header + "." + field + suffix + " = " + ss.str());
@@ -422,6 +423,7 @@ void MGparser::do_group_assignment(std::string header, std::vector<std::string>&
     MGTransDef def;
     trans->fill_def(def);
     print_def(DEV_KEY, def, ss);
+    release_def(def);
     out.take_message("setting group translator to " + ss.str());
   }
 
@@ -619,6 +621,8 @@ void release_def(MGTransDef& def) {
       delete entry.group_trans;
     if (entry.type == MG_STRING && entry.string)
       free((char*)entry.string);
+    if (entry.type == MG_SLOT && entry.slot)
+      entry.slot->unref();
   }
 }
 
@@ -810,7 +814,7 @@ bool MGparser::parse_decl(enum entry_type intype, const trans_decl& decl, MGTran
   for (uint i = 0; i < def.fields.size(); i++) {
     MGType type = def.fields[i].type;
     if (type == MG_KEYBOARD_SLOT) {
-      def.fields[i].slot = mg->slots->keyboard.virt_dev;
+      def.fields[i].slot = mg->slots->keyboard.virt_dev.get();
       continue;
     };
 
@@ -869,12 +873,13 @@ bool MGparser::parse_decl(enum entry_type intype, const trans_decl& decl, MGTran
       }
     }
     if (type == MG_SLOT) {
-      virtual_device* slot = mg->slots->find_slot(values[i].ident);
+      std::shared_ptr<virtual_device> slot = mg->slots->find_slot(values[i].ident);
       if (!slot) {
         if (out) out->err("slot-type parameter invalid.");
         return false;
       }
-      def.fields[i].slot = slot;
+      slot->ref();
+      def.fields[i].slot = slot.get();
     }
     if (type == MG_BOOL) {
       def.fields[i].boolean = 0;
@@ -974,6 +979,7 @@ void MGparser::print_def(entry_type intype, MGTransDef& def, std::ostream& outpu
       if (type == MG_REL_TRANS) context = DEV_REL;
       field.trans->fill_def(innerdef);
       print_def(context, innerdef, output);
+      release_def(innerdef);
     }
     needcomma = true;
   }
@@ -1059,6 +1065,7 @@ bool MGparser::print_special_def(entry_type intype, MGTransDef& def, std::ostrea
       }
       print_def(context, innerdef, output);
       output << ")";
+      release_def(innerdef);
       return true;
     }
   }

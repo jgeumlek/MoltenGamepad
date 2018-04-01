@@ -16,6 +16,7 @@ void print_profile(profile& profile, std::ostream& out) {
         MGTransDef def;
         it->second.trans->fill_def(def);
         MGparser::print_def(it->second.type, def, out);
+        release_def(def);
         out << std::endl;
       } else {
         unmapped_events.push_back(it->first);
@@ -34,6 +35,7 @@ void print_profile(profile& profile, std::ostream& out) {
     MGTransDef def;
     entry.second.trans->fill_def(def);
     MGparser::print_def(NO_ENTRY, def, out);
+    release_def(def);
     out << std::endl;
   }
   if (!unmapped_events.empty()) {
@@ -170,11 +172,19 @@ int do_print_drivers(moltengamepad* mg, std::string name, std::ostream& out) {
 
 int do_print_slot(output_slot& slot, bool details, std::ostream& out) {
   const char* statestr = "";
-  if (slot.state == SLOT_INACTIVE)
-    statestr = "(inactive)";
+  const char* vdstatestr = "";
   if (slot.state == SLOT_DISABLED)
     statestr = "(disabled)";
-  out << slot.virt_dev->name << ":\t" << slot.virt_dev->descr << statestr << std::endl;
+  if (slot.virt_dev)
+    vdstatestr = " [open]";
+  else
+    vdstatestr = " [closed]";
+  if (slot.virt_dev) {
+    out << slot.name << vdstatestr  << ":\t" << slot.virt_dev->descr << statestr << std::endl;
+  } else {
+    out << slot.name << vdstatestr << ":\t no virtual device" << statestr << std::endl;
+  }
+
   if (details) {
     // we no longer have detailed information to show...
   }
@@ -191,11 +201,11 @@ int do_print_slots(moltengamepad* mg, std::string name, std::ostream& out) {
     if (mg->slots->debugslot.virt_dev) do_print_slot(mg->slots->debugslot, false, out);
     return 0;
   }
-  virtual_device* slot = mg->slots->find_slot(name);
+  std::shared_ptr<virtual_device> slot = mg->slots->find_slot(name);
 
 
   for (auto slot_cmp : mg->slots->slots) {
-    if (slot_cmp.virt_dev == slot)
+    if (slot_cmp.virt_dev.get() == slot.get())
       do_print_slot(slot_cmp, false, out);
   }
 
@@ -348,7 +358,8 @@ int do_print_events(moltengamepad* mg, std::string name, std::ostream& out) {
 const char* id_types[] = {"name", "uniq", "phys"};
 int do_print_assignments(moltengamepad* mg, std::string name, std::ostream& out) {
   mg->slots->for_all_assignments([&out] (slot_manager::id_type type, std::string id, virtual_device* slot) {
-    out << "\t" <<  id_types[type] << " \"" << id << "\" -> " << slot->name << std::endl;
+    if (slot)
+      out << "\t" <<  id_types[type] << " \"" << id << "\" -> " << slot->name << std::endl;
   });
   return 0;
 }

@@ -2,13 +2,16 @@
 #include "../uinput.h"
 #include "../devices/device.h"
 #include <linux/uinput.h>
-#include <csignal>
+
 
 virtual_device::~virtual_device() {
+  // close_virt_device() must be called in derived classes! Unavailble within base.
+  // also, the base class has no actual virt devices to close...
 }
 
 bool virtual_device::remove_device(input_source* dev) {
   std::lock_guard<std::mutex> guard(lock);
+
   uint num_devices = devices.size();
   bool found_it = false;
   for (auto it = devices.begin(); it != devices.end();) {
@@ -72,29 +75,22 @@ void virtual_device::clear_outputs() {
   for (out_ev.code = 0; out_ev.code < REL_MAX; out_ev.code++)
     take_event(out_ev);
 }
-void noop_signal_handler(int signum) {
-  //HACK: Assumes we only close_virt_device at the very end of process lifespan.
-  return;
-}
-void virtual_device::close_virt_device() {
-  do {
-    signal(SIGINT, noop_signal_handler);
-    signal(SIGTERM, noop_signal_handler);
-    lock.lock();
-    //check for ff effect
-    if (effects[0].id != -1) {
-      std::cerr << "A virtual device cannot be closed until its force-feedback effects have been erased." << std::endl;
-      lock.unlock();
-      sleep(2);
-      continue;
-      //Bad stuff might happen with uinput module. Just keep looping.
-    }
+
+bool virtual_device::close_virt_device() {
+  bool success = true;
+  lock.lock();
+  //check for ff effect
+  if (effects[0].id != -1) {
+    //Bad stuff might happen with uinput module.
+    success = false;
+  } else {
     //close/destroy the uinput device -- device type specific.
     destroy_uinput_devs();
-    
-    lock.unlock();
-    return;  //Everything is fine, break the loop.
-  } while (true);
+  }
+
+  lock.unlock();
+
+  return success;
 }
 
 int virtual_device::upload_ff(const ff_effect& effect) {
@@ -102,6 +98,7 @@ int virtual_device::upload_ff(const ff_effect& effect) {
   if (effect.id == -1 && effects[0].id != -1)
     return -1;
   effects[0] = effect;
+  self_ref_to_prevent_deletion_with_ff = this->shared_from_this();
   for (auto it = devices.begin(); it != devices.end(); it++) {
     auto ptr = it->lock();
     ptr->upload_ff(effect);
@@ -114,6 +111,7 @@ int virtual_device::erase_ff(int id) {
   if (id != 0)
     return FAILURE;
   effects[0].id = -1;
+  self_ref_to_prevent_deletion_with_ff = nullptr;
   for (auto it = devices.begin(); it != devices.end(); it++) {
     auto ptr = it->lock();
     ptr->erase_ff(id);
@@ -155,6 +153,7 @@ void virtual_device::process_becoming_empty() {
   }
   //we don't handle press_start_on_last_disconnect here.
   //That requires info we don't have here. (e.g. is this input source just moving slots?)
+
 }
 
 uint virtual_device::input_source_count() {
@@ -214,4 +213,14 @@ void print_effect(ff_effect& effect) {
   std::cout << " play:"<< effect.replay.length << "," << effect.replay.delay << std::endl;
 }
 
+void virtual_device::ref() {
+  std::lock_guard<std::mutex> guard(lock);
+  extra_refs.push_back(shared_from_this());
+}
+
+void virtual_device::unref() {
+  std::lock_guard<std::mutex> guard(lock);
+  if (!extra_refs.empty())
+    extra_refs.pop_back();
+}
 

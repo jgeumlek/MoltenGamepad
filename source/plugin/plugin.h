@@ -208,6 +208,12 @@ struct moltengamepad_methods {
   //If grabbed == false
   //  undo the above
   int (*grab_permissions) (udev_device* dev, bool grabbed);
+  //Virtual devices are reference counted, and may be destroyed at any time.
+  //Any virtual_device ptr given to a plugin can be assumed to valid only for the duration of the plugin function.
+  //To hold onto a ptr to a virtual_device, use virtual_device_ref() to add to the reference count.
+  //A matching call to virtual_device_unref() should be used once the ptr is no longer needed.
+  int (*virtual_device_ref) (virtual_device* dev);
+  int (*virtual_device_unref)  (virtual_device* dev);
 };
 
 //A struct of pointers all the methods the plugin will be provided.

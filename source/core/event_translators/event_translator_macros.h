@@ -13,10 +13,11 @@
 #define FILL_DEF_REL(X) FILL_DEF(X,MG_REL,rel)
 #define FILL_DEF_INT(X) FILL_DEF(X,MG_INT,integer)
 #define FILL_DEF_BOOL(X) FILL_DEF(X,MG_BOOL,boolean)
-#define FILL_DEF_TRANS(X,TYPE) FILL_DEF(X,TYPE,trans)
-#define FILL_DEF_SLOT(X) FILL_DEF(X,MG_SLOT,slot)
+#define FILL_DEF_TRANS(X,TYPE) if (X) { FILL_DEF(X->clone(),TYPE,trans); } else {FILL_DEF(X, TYPE, trans);}
+#define FILL_DEF_SLOT(X) if (X) { X->ref(); } FILL_DEF(X,MG_SLOT,slot)
 #define FILL_DEF_KEYBOARD(X) FILL_DEF(X,MG_KEYBOARD_SLOT,slot)
 #define FILL_DEF_FLOAT(X) FILL_DEF(X,MG_FLOAT,real)
+#define FILL_DEF_SLOT_FROM_REF(X)  do { virtual_device* __temp = X.get(); FILL_DEF_SLOT(__temp); } while (0);
 
 // BEGIN declares some local variables to allow the other macro magic.
 #define BEGIN_READ_DEF \
@@ -47,3 +48,5 @@
 #define READ_STRING(X) READ_DEF(X,MG_STRING,string)
 //TODO: COPY_STRING(X) if we want to actually allocate...
 #define READ_FLOAT(X) READ_DEF(X,MG_FLOAT,real)
+#define READ_SLOT_REF(X) do { virtual_device* __temp;\
+    READ_DEF(__temp,MG_SLOT,slot); if (__temp) { X = __temp->shared_from_this(); } } while (0);

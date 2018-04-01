@@ -67,3 +67,7 @@ void socket_out::device_slot(int resp_id, input_source* device, virtual_device* 
 void socket_out::device_plug(int resp_id, input_source* device, std::string action) {
   osc_msg("/devplug",resp_id,"ss",device->get_name().c_str(),action.c_str());
 }
+
+void socket_out::slot_event(int resp_id, output_slot* slot, std::string action) {
+  osc_msg("/slotevent",resp_id,"ss",slot->name.c_str(),action.c_str());
+}

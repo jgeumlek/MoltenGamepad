@@ -56,6 +56,9 @@ input_source::~input_source() {
   };
   if (plugin.destroy)
     plugin.destroy(plug_data);
+  manager->mg->slots->update_slot_emptiness();
+  manager->mg->slots->process_slot_emptiness();
+
 }
 
 struct input_internal_msg {
@@ -171,10 +174,11 @@ int input_source::set_plugin_recurring(bool wants_recurring) {
   return 0;
 }
 
-void input_source::set_slot(virtual_device* slot) {
+//set_slot only called by slot_manager, slot ptr guaranteed to last for duration of this call.
+void input_source::set_slot(std::shared_ptr<virtual_device>& slot) {
   std::lock_guard<std::mutex> guard(slot_lock);
-  if (slot == assigned_slot) return;
   if (assigned_slot) {
+    if (slot.get() == assigned_slot.get()) return;
     assigned_slot->remove_device(this);
     if (ff_ids[0] != -1) {
       play_ff(0,0);
@@ -185,15 +189,21 @@ void input_source::set_slot(virtual_device* slot) {
     slot->add_device(shared_from_this());
   struct input_internal_msg msg;
   memset(&msg, 0, sizeof(msg));
-  msg.field.slot = slot;
+  msg.field.slot = slot.get();
   msg.type = input_internal_msg::IN_SLOT_MSG;
+  if (slot)
+    slot->ref();
   ssize_t res = write(priv_pipe, &msg, sizeof(msg));
-  if (res < 0)
+  if (res < 0) {
     perror("input source internal pipe write");
+    if (slot)
+      slot->unref();
+  }
+
   assigned_slot = slot;
 }
 
-virtual_device* input_source::get_slot() {
+std::shared_ptr<virtual_device> input_source::get_slot() {
   std::lock_guard<std::mutex> guard(slot_lock);
   return assigned_slot;
 }
@@ -348,7 +358,7 @@ void input_source::send_value(int id, int64_t value) {
 
   value = apply_direction(events[id].type, value, ev_map[id].direction);
 
-  if (ev_map.at(id).trans && out_dev) ev_map.at(id).trans->process({value}, out_dev);
+  if (ev_map.at(id).trans && out_dev) ev_map.at(id).trans->process({value}, out_dev.get());
     
 
 }
@@ -356,7 +366,7 @@ void input_source::send_value(int id, int64_t value) {
 void input_source::send_syn_report() {
   if (out_dev) {
     for (auto pair : group_trans) {
-      pair.second.trans->process_syn_report(out_dev);
+      pair.second.trans->process_syn_report(out_dev.get());
     }
     input_event ev;
     memset(&ev,0,sizeof(ev));
@@ -385,7 +395,7 @@ void input_source::force_value(int id, int64_t value) {
 
   value = apply_direction(events[id].type, value, ev_map[id].direction);
 
-  if (ev_map.at(id).trans && out_dev) ev_map.at(id).trans->process({value}, out_dev);
+  if (ev_map.at(id).trans && out_dev) ev_map.at(id).trans->process({value}, out_dev.get());
 
 }
 
@@ -517,8 +527,14 @@ void input_source::handle_internal_message(input_internal_msg& msg) {
       send_value(msg.id, msg.value);
     }
   }
-  if (msg.type == input_internal_msg::IN_SLOT_MSG)
-    out_dev = msg.field.slot;
+  if (msg.type == input_internal_msg::IN_SLOT_MSG) {
+    if (msg.field.slot) {
+      out_dev = msg.field.slot->shared_from_this();
+      msg.field.slot->unref();
+    } else {
+      out_dev = nullptr;
+    }
+  }
   if (msg.type == input_internal_msg::IN_OPTION_MSG) {
     std::lock_guard<std::mutex> lock(opt_lock);
     std::string sname = std::string(msg.name);
@@ -541,11 +557,11 @@ void input_source::handle_internal_message(input_internal_msg& msg) {
 void input_source::process_recurring_events() {
   for (auto rec : recurring_events) {
     if (out_dev && events[rec.id].state == EVENT_ACTIVE) {
-      rec.trans->process_recurring(out_dev);
+      rec.trans->process_recurring(out_dev.get());
     }
   }
   for (const group_translator* group : group_recurring_events) {
-    group->process_recurring(out_dev);
+    group->process_recurring(out_dev.get());
   }
 
   if (plugin_recurring && plugin.process_recurring_event)

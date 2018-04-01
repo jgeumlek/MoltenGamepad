@@ -48,8 +48,8 @@ bool exclusive_chord::claim_event(int id, mg_ev event) {
   if (output && output != output_cache) {
     //chord succeeded. Send event only if thread hasn't timed out.
 
-    virtual_device* out_dev = owner->get_slot();
-    if (out_dev && chord_active) out_trans->process({output}, out_dev);
+    std::shared_ptr<virtual_device> out_dev = owner->get_slot();
+    if (out_dev && chord_active) out_trans->process({output}, out_dev.get());
 
     output_cache = output;
     chord_active = false;
@@ -57,8 +57,8 @@ bool exclusive_chord::claim_event(int id, mg_ev event) {
   if (!output && output != output_cache) {
 
     //chord released. clear out everything.
-    virtual_device* out_dev = owner->get_slot();
-    if (out_dev) out_trans->process({output}, out_dev);
+    std::shared_ptr<virtual_device> out_dev = owner->get_slot();
+    if (out_dev) out_trans->process({output}, out_dev.get());
     for (uint i = 0; i < event_vals.size(); i++) {
       chord_hits[i] = 0;
     }

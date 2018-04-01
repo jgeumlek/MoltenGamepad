@@ -11,16 +11,9 @@
 #include "devices/device.h"
 #include "protocols/message_stream.h"
 #include "options.h"
+#include "output_slot.h"
 
 class input_source;
-
-enum slot_state { SLOT_ACTIVE, SLOT_INACTIVE, SLOT_CLOSED, SLOT_DISABLED};
-
-struct output_slot {
-  virtual_device* virt_dev;
-  slot_state state;
-  bool has_devices;
-};
 
 
 class slot_manager {
@@ -32,13 +25,13 @@ public:
   ~slot_manager();
 
   int request_slot(input_source* dev);
-  void move_to_slot(input_source* dev, virtual_device* target);
-  void id_based_assign(slot_manager::id_type, std::string id, virtual_device* slot); //tie an id to a specific slot for autoassignment
+  void move_to_slot(input_source* dev, std::shared_ptr<virtual_device>& target);
+  void id_based_assign(slot_manager::id_type, std::string id, std::shared_ptr<virtual_device> slot); //tie an id to a specific slot for autoassignment
   void for_all_assignments(std::function<void (slot_manager::id_type, std::string, virtual_device*)> func);
 
   const uinput* get_uinput() { return ui; };
 
-  virtual_device* find_slot(std::string name);
+  std::shared_ptr<virtual_device> find_slot(std::string name);
   output_slot keyboard;
   output_slot dummyslot;
   output_slot debugslot;
@@ -53,22 +46,28 @@ public:
   uint start_press_milliseconds;
   void update_slot_emptiness();
   void process_slot_emptiness();
+  void update_pad_count();
   void tick_all_slots();
 private:
-  void remove_from(virtual_device* slot);
-  void move_device(input_source* dev, virtual_device* target);
+  void remove_from(std::shared_ptr<virtual_device>& slot);
+  void move_device(input_source* dev, std::shared_ptr<virtual_device>& target);
   int process_option(std::string& name, MGField value);
-  virtual_device* find_id_based_assignment(input_source* dev);
+  std::shared_ptr<virtual_device> find_id_based_assignment(input_source* dev);
+  void open_pad_slot(int slot_index);
+  void update_slot_emptiness_prelocked();
+  void process_slot_emptiness_prelocked();
+  void update_pad_count_prelocked();
 
   bool slots_on_demand = false;
 
   uinput* ui;
   std::mutex lock;
-  int min_pads = 1;
+  int min_pads;
   int max_pads;
-  int active_pads = 4;
+  int active_pads;
   bool persistent_slots = true;
-  std::map<std::pair<id_type,std::string>,virtual_device*> id_slot_assignments;
+  virtpad_settings padstyle;
+  std::map<std::pair<id_type,std::string>,std::weak_ptr<virtual_device>> id_slot_assignments;
 };
 
 #endif

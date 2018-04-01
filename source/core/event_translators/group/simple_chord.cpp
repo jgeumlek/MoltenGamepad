@@ -42,8 +42,8 @@ bool simple_chord::claim_event(int id, mg_ev event) {
     output = output && (event_vals[i]);
   }
   if (output != output_cache) {
-    virtual_device* out_dev = owner->get_slot();
-    if (out_dev) out_trans->process({output}, out_dev);
+    std::shared_ptr<virtual_device> out_dev = owner->get_slot();
+    if (out_dev) out_trans->process({output}, out_dev.get());
     output_cache = output;
   }
 

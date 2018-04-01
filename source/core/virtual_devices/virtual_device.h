@@ -13,7 +13,7 @@ class input_source;
 class slot_manager;
 
 
-class virtual_device {
+class virtual_device : public std::enable_shared_from_this<virtual_device> {
 public:
   std::string name;
   std::string descr;
@@ -32,7 +32,7 @@ public:
   int play_ff(int id, int reptitions);
 
   virtual void clear_outputs();
-  void close_virt_device();
+  bool close_virt_device();
   void for_all_devices(std::function<void (std::shared_ptr<input_source>&)> func);
   uint input_source_count();
   void send_start_press(int milliseconds);
@@ -40,10 +40,17 @@ public:
   void take_delayed_event(struct input_event in, int milliseconds);
   void check_delayed_events();
 
+  void ref();
+  void unref();
+
   ff_effect effects[1];
 protected:
   std::vector<std::weak_ptr<input_source>> devices;
   std::vector<input_event> delayed_events;
+  std::vector<std::shared_ptr<virtual_device>> extra_refs;
+  //Bad stuff happens on some kernels if a uinput device is destroyed
+  //while it still has uploaded FF effects.
+  std::shared_ptr<virtual_device> self_ref_to_prevent_deletion_with_ff;
   std::mutex lock;
   std::mutex delayed_events_lock;
   bool device_opened = true;

@@ -248,7 +248,9 @@ int uinput::setup_epoll() {
   return (epfd < 0);
 }
 
-int uinput::watch_for_ff(int fd, virtual_device* slot) {
+int uinput::watch_for_ff(int fd, std::shared_ptr<virtual_device>& slot) {
+  if (!slot)
+    return -1;
   std::lock_guard<std::mutex> guard(lock);
   if (epfd < 0)
     setup_epoll();
@@ -305,9 +307,10 @@ void uinput::ff_thread_loop() {
     } else {
       std::lock_guard<std::mutex> guard(lock);
       auto listener = ff_slots.find(uinput_fd);
-      virtual_device* slot = nullptr;
-      if (listener != ff_slots.end())
-        slot = listener->second;
+      std::shared_ptr<virtual_device> slot = nullptr;
+      if (listener != ff_slots.end()) {
+        slot = listener->second.lock();
+      }
 
       if (ev.type == EV_UINPUT && ev.code == UI_FF_UPLOAD) {
         struct uinput_ff_upload effect;

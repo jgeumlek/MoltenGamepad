@@ -35,6 +35,7 @@ struct device_match {
   std::string driver;
   enum ev_match {EV_MATCH_IGNORED, EV_MATCH_SUBSET, EV_MATCH_EXACT, EV_MATCH_SUPERSET};
   ev_match events = EV_MATCH_IGNORED;
+  int ev_match_arg = -1;
   int order = DEVICE_CLAIMED; //specifies the priority of this match.
 };
 

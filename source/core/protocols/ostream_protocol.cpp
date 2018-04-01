@@ -29,3 +29,11 @@ void ostream_protocol::device_plug(int resp_id, input_source* device, std::strin
     out << "plug: " << device->get_name() << " removed" << std::endl;
   }
 }
+
+void ostream_protocol::slot_event(int resp_id, output_slot* slot, std::string action) {
+  if (action == "open") {
+    out << "slot: " << slot->name << " opened virtual device" << std::endl;
+  } else if (action == "close") {
+    out << "slot: " << slot->name << " closed virtual device" << std::endl;
+  }
+};

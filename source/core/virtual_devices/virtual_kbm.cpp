@@ -13,6 +13,10 @@ virtual_keyboard::virtual_keyboard(std::string name, std::string descr, uinput_i
   this->ui = ui;
 }
 
+virtual_keyboard::~virtual_keyboard() {
+  close_virt_device();
+}
+
 void virtual_keyboard::take_event(struct input_event in) {
   //Relative events go to a separate mouse device.
   //SYN events should go to both!

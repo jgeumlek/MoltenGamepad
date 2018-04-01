@@ -62,6 +62,12 @@ void message_stream::device_plug(int resp_id, input_source* device, std::string 
     listener->device_plug(resp_id, device, action);
 }
 
+void message_stream::slot_event(int resp_id, output_slot* slot, std::string action) {
+  std::lock_guard<std::mutex> guard(lock);
+  for (auto listener : listeners)
+    listener->slot_event(resp_id, slot, action);
+}
+
 void message_stream::end_response(int resp_id, int ret_val) {
   std::lock_guard<std::mutex> guard(lock);
   for (auto listener : listeners)
@@ -86,6 +92,10 @@ void response_stream::device_slot(input_source* device, virtual_device* slot) {
 
 void response_stream::device_plug(input_source* device, std::string action) {
   stream->device_plug(response_id,device,action);
+}
+
+void response_stream::slot_event(output_slot* slot, std::string action) {
+  stream->slot_event(response_id,slot,action);
 }
 
 void response_stream::err(std::string text) {

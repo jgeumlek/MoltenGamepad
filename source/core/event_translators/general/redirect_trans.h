@@ -4,9 +4,9 @@
 class redirect_trans : public event_translator {
 public:
   event_translator* trans = nullptr;
-  virtual_device* redirected;
+  std::weak_ptr<virtual_device> redirected;
 
-  redirect_trans(event_translator* trans, virtual_device* redirected) :  redirected(redirected) {
+  redirect_trans(event_translator* trans, std::weak_ptr<virtual_device>& redirected) :  redirected(redirected) {
     this->trans = trans->clone();
   }
 
