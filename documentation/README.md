@@ -7,6 +7,10 @@ This file describes the `.cfg` files used to create generic drivers. If your ker
 
 This file describes the syntax for setting control mappings in profiles. Look here if you are interested in changing event mappings or device-specific options.
 
+# slots.md
+
+This file gives extra info about the virtual output slots of MG, including some of the global options exposed for slot management.
+
 # config_files.md
 
 This file describes the syntax and behavior of the  `moltengamepad.cfg` configuration file, along with describing the files in the `/options/` subdirectory. Look here if you are interested in affecting how MoltenGamepad starts or if you are interested in how MoltenGamepad reads its global settings.

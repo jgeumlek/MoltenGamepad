@@ -118,6 +118,7 @@ Other traits can be specified in match declaration using `<field>=` notation. Av
 * `uniq` : a (potentially missing) uniquely identifying string for the device
 * `driver` : the name of the linux driver for this event device
 * `events` : can be one of `superset`, `subset`, or `exact`. Superset matches if the device contains all the events of this generic driver. Subset matches if the device has no reported events not listed in this driver, but it must have at least one event in common with this driver. Exact requires both of the conditions of superset and subset to hold. That is, the device has exactly the events of this driver; no more, no less.
+* `events_extra` : An integer that specifies extra information for the `events` constraint. It currently only applies for `events=subset`. By default, the `subset` match requires at least one event in common. Setting `events_extra` to an integer greater than one change this requirement. For example, `events=subset events_extra=8` will require the exposed events to be a subset of the ones in the driver, and further require the device exposes at least 8 of them.
 * `order` : A positive integer indicating the order to consider matches. When a device has multiple matches, the one with the lowest `order` is taken. If not specified, a match has an `order` of `1`, which is the lowest allowed value. Ties are broken based on whichever match is read first.
 
 Putting this together results in a match line that may resemble the following.

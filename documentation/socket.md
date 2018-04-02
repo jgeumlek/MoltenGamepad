@@ -43,7 +43,7 @@ Tells MG that this client wishes to start receiving or stop receiving messages f
 
 Currently there are only two streams a client can listen to:
 
-* "slot" : events occur when an input source is added to or removed from an output slot.
+* "slot" : events occur when an input source is added to or removed from an output slot, or a slot opens and closes
 * "plug" : events occur when an input source is added or removed.
 
 # Server Responses
@@ -79,3 +79,9 @@ This will only be emitted if listening to slot events. It indicates the output s
     /devplug (int resp_id, string device_name, string action)
 
 This will only be emitted if listening to plug events. It indicates the action has just occured for the specified device. The action may be "add" or "remove".
+
+## Slot event
+
+    /slotevent (int resp_id, string device_name, string action)
+
+This will only be emitted if listening to plug events. It indicates the action has just occured for the specified slot. The action may be "open" or "close". These correspond to creating or destroying the virtual output device of this slot.
