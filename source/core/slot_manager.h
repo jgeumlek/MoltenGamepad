@@ -67,7 +67,7 @@ private:
   int active_pads;
   bool persistent_slots = true;
   virtpad_settings padstyle;
-  std::map<std::pair<id_type,std::string>,std::weak_ptr<virtual_device>> id_slot_assignments;
+  std::map<std::pair<id_type,std::string>,std::string> id_slot_assignments;
 };
 
 #endif

@@ -158,13 +158,11 @@ int slot_manager::request_slot(input_source* dev) {
 
 void slot_manager::move_to_slot(input_source* dev, std::shared_ptr<virtual_device>& target) {
   //don't detect emptiness if we are just moving the last input source from one slot to another.
-  if (!target)
-    update_slot_emptiness();
   lock.lock();
+  update_slot_emptiness_prelocked();
   move_device(dev,target);
+  process_slot_emptiness_prelocked();
   lock.unlock();
-  if (!target)
-    process_slot_emptiness();
 }
 
 void slot_manager::move_device(input_source* dev, std::shared_ptr<virtual_device>& target) {
@@ -175,13 +173,15 @@ void slot_manager::move_device(input_source* dev, std::shared_ptr<virtual_device
 }
 
 void slot_manager::id_based_assign(slot_manager::id_type type, std::string id, std::shared_ptr<virtual_device> slot) {
+  //TODO: fix this in case trying to set up an assignment for a slot that currently has closed
+  //  its virtual device...
   std::lock_guard<std::mutex> guard(lock);
   std::pair<slot_manager::id_type, std::string> key = std::make_pair(type,id);
   if (!slot) {
     id_slot_assignments.erase(key);
     return;
   }
-  id_slot_assignments[key] =  std::weak_ptr<virtual_device>(slot);
+  id_slot_assignments[key] =  slot->name;
   return;
 }
 
@@ -195,30 +195,18 @@ std::shared_ptr<virtual_device> slot_manager::find_id_based_assignment(input_sou
   std::pair<slot_manager::id_type, std::string> key = std::make_pair(UNIQ_ID,dev->get_uniq());
   auto slot = id_slot_assignments.find(key);
   if (slot != id_slot_assignments.end()) {
-    auto ptr = slot->second.lock();
-    if (!ptr)
-      id_slot_assignments.erase(key);
-    else
-      return ptr;
+    return find_slot(slot->second);
   }
 
   key = std::make_pair(NAME_ID,dev->get_name());
   slot = id_slot_assignments.find(key);
   if (slot != id_slot_assignments.end()) {
-    auto ptr = slot->second.lock();
-    if (!ptr)
-      id_slot_assignments.erase(key);
-    else
-      return ptr;
+    return find_slot(slot->second);
   }
   key = std::make_pair(PHYS_ID,dev->get_phys());
   slot = id_slot_assignments.find(key);
   if (slot != id_slot_assignments.end()){
-    auto ptr = slot->second.lock();
-    if (!ptr)
-      id_slot_assignments.erase(key);
-    else
-      return ptr;
+    return find_slot(slot->second);
   }
   return nullptr;
 }
@@ -226,7 +214,7 @@ std::shared_ptr<virtual_device> slot_manager::find_id_based_assignment(input_sou
 void slot_manager::for_all_assignments(std::function<void (slot_manager::id_type, std::string, virtual_device*)> func) {
   std::lock_guard<std::mutex> guard(lock);
   for (auto entry : id_slot_assignments) {
-    auto ptr = entry.second.lock();
+    std::shared_ptr<virtual_device> ptr = find_slot(entry.second);
     if (ptr)
       func(entry.first.first, entry.first.second, ptr.get());
   }
