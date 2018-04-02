@@ -321,6 +321,7 @@ void MGparser::load_translators(moltengamepad* mg) {
   RENAME_GEN(exclusive,exclusive_chord);
   RENAME_GEN(stick,thumb_stick);
   RENAME_GEN(dpad,stick_dpad);
+  RENAME_GEN(calibratable,calibratable);
   MAKE_GEN(wiigyromouse);
 }
 

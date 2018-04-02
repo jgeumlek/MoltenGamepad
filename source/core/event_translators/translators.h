@@ -18,3 +18,7 @@
 #include "group/stick_dpad.h"
 
 #include "group/wiigyromouse.h"
+
+#include "group/calibratable.h"
+
+
