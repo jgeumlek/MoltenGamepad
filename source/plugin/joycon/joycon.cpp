@@ -62,6 +62,31 @@ joycon::joycon(int fd1, int fd2, JoyConSide side1, JoyConSide side2, const char*
     side1 = side2;
     side2 = UNKNOWN_JOYCON;
   }
+  //send packet requesting regular input updates, including analog stick values.
+  packet_num = 0;
+  uint8_t buf[0x40];
+  for (int k = 0; k < 0x40; k++) {
+    buf[k] = 0;
+  }
+  buf[0] = 1;
+  buf[1] = packet_num++;
+  packet_num = packet_num < 16 ? packet_num : 0;
+  buf[10] = 0x03;
+  buf[11] = 0x30;
+  if (fd1 >= 0)
+	ssize_t res = write(fd1,buf,0x40);
+  if (fd2 >= 0)
+	ssize_t res = write(fd2,buf,0x40);
+
+  //send another packet to change the LEDs so they don't flash.
+  buf[1] = packet_num++;
+  packet_num = packet_num < 16 ? packet_num : 0;
+  buf[10] = 0x30;
+  buf[11] = 1;
+  if (fd1 >= 0)
+	ssize_t res = write(fd1,buf,0x40);
+  if (fd2 >= 0)
+	ssize_t res = write(fd2,buf,0x40);
     
   fds[0] = fd1;
   fds[1] = fd2;
@@ -121,6 +146,7 @@ void joycon::process(void* tag) {
 }
 
 void joycon::process_recurring_event() {
+	return;
   //called every 10ms or so
   //send_request = true;
   //send packet to joycon to ask for its state.
@@ -134,7 +160,16 @@ void joycon::process_recurring_event() {
 
       //send only if the file is open and we aren't currently waiting for a reply.
       if (fds[i] > 0 && pending_reports[i] == 0) {
-        ssize_t res = write(fds[i],request_state,2);
+	uint8_t buf[0x40];
+	for (int k = 0; k < 0x40; k++) {
+	  buf[k] = 0;
+	}
+	buf[0] = 1;
+	buf[1] = packet_num++;
+	packet_num = packet_num < 16 ? packet_num : 0;
+	buf[10] = 0x03;
+	buf[11] = 0x30;
+        ssize_t res = write(fds[i],buf,0x40);
         if (res < 0) {
           std::string msg = "comm. err: " + std::string(strerror(errno));
           methods.print(ref,msg.c_str());
@@ -209,7 +244,7 @@ void joycon::read_report(int index) {
     lr =  READ_BUTTON(buffer[2], 6);
     zlzr =  READ_BUTTON(buffer[2], 7);
 
-  } else if (buffer[0] == 0x21) {
+  } else if (buffer[0] == 0x21 || buffer[0] == 0x30) {
     //Received an 0x21 report. This is a reply to our polling request, and it holds both
     //button data and usable analog stick values.
     if (pending_reports[index] > 0)
@@ -271,7 +306,9 @@ void joycon::read_report(int index) {
       }
     }
   } else {
-    //unknown packet
+	  std::string text = "unknown packet " + std::to_string(buffer[0]);
+    methods.print(ref,text.c_str());
+    
   }
 
   //finally, we have parsed the report regardless of which type it was.

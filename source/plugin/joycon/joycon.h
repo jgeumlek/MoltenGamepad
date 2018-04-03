@@ -113,6 +113,7 @@ protected:
   void process(void*);
   int process_option(const char* opname, const MGField value);
   uint8_t report[2][0x31];
+  uint8_t packet_num;
   joycon_manager* manager;
 };
 
