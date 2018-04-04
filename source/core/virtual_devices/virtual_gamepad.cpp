@@ -8,10 +8,6 @@ virtual_gamepad::virtual_gamepad(std::string name, std::string descr, virtpad_se
   settings.u_ids.phys = "moltengamepad/" + name;
   uinput_fd = ui->make_gamepad(settings.u_ids, dpad_as_hat, analog_triggers, settings.rumble);
   if (uinput_fd < 0) throw std::runtime_error("No uinput node available.");
-  if (settings.rumble) {
-    auto ptr = shared_from_this();
-    ui->watch_for_ff(uinput_fd, ptr);
-  }
   this->padstyle = settings;
   this->ui = ui;
 }
@@ -20,6 +16,12 @@ virtual_gamepad::~virtual_gamepad() {
   close_virt_device();
 }
 
+void virtual_gamepad::init() {
+  if (padstyle.rumble) {
+    auto ptr = shared_from_this();
+    ui->watch_for_ff(uinput_fd, ptr);
+  }
+}
 
 static int dpad_hat_axis[4] = {ABS_HAT0Y, ABS_HAT0Y, ABS_HAT0X, ABS_HAT0X};
 static int dpad_hat_mult[4] = { -1,        1,         -1,        1        };
