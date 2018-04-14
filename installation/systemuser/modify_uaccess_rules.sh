@@ -6,3 +6,6 @@
 sed -e 's/^SUBSYSTEM=="input", ENV{ID_INPUT_JOYSTICK}=="?\*", TAG+="uaccess"/#commented out for MoltenGamepad\n#&/' </lib/udev/rules.d/70-uaccess.rules >/etc/udev/rules.d/70-uaccess.rules
 
 echo "Created file /etc/udev/rules.d/70-uaccess.rules. This will cause the file /lib/udev/rules.d/70-uaccess.rules to be ignored."
+
+echo ""
+echo "If you use Steam, you might want to create a blank file at /etc/udev/rules.d/70-steam-controller-rules."

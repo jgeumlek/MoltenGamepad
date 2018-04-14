@@ -2,13 +2,15 @@ There are several different ways to configure your system for MoltenGamepad. Cho
 
 # As Root (NOT RECOMMENDED)
 
-If you run MoltenGamepad as root, you will not need to deal with any additional set up. MoltenGamepad should work out of the box. However, this set up is not secure and is not recommended. We strongly suggest you choose one of the other methods, and as such we do not provide any files to facilitate this set up.
+If you run MoltenGamepad as root, you will not need to deal with any additional set up. MoltenGamepad should work out of the box. However, this set up is not secure and is not recommended. We strongly suggest you choose one of the other methods. We do not provide any files to support this set up.
 
-# As a System User (`systemuser`)
+# As a System User (`systemuser`) (RECOMMENDED)
 
 This set up creates a new "gamepad" user account that is given only the permissions required to manage your game pad devices. The original game pad devices will be hidden from all other users, so the only controllers your software will ever see are those created by MoltenGamepad.
 
 Note that this means your controllers will be invisible even when MoltenGamepad is not running!
+
+Additionally, it creates a systemd service to start MoltenGamepad automatically.
 
 This set up is the only one that can avoid race conditions with software that natively supports controller hotplugging. With this set up, the software never gets any chance to see the original controller device.
 

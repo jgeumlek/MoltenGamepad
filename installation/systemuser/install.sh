@@ -23,8 +23,9 @@ echo "Please ensure the gamepad account has access to uinput before running MG. 
 systemctl enable moltengamepad.service
 
 # Try to detect a case where "TAG-=uaccess" is not supported.
-# This work-around uses "last_rule" which can lead to surprising behavior when writing other udev rules.
-# As a courtesy, alert the user in case they have interest in writing udev rules later.
+# This workaround shadows a system version of a udev rules file, so let the user know.
+# The user might need to take action if the system file gets updated.
+# (However, if things are getting updated, lets hope they get to a higher udev version)
 UDEV_VERSION=$(udevadm --version)
 if [[ "$?" -ne "0" ]]; then
   UDEV_VERSION=""
@@ -49,6 +50,9 @@ if [[ "$UDEV_VERSION" == "" || "$UDEV_VERSION" -lt "217" ]]; then
   echo "A modified version can be placed at /etc/udev/rules.d/70-uaccess.rules to shadow the original file in /lib/."
   echo "The provided script modify_uaccess_rules.sh will perform this for you."
   echo ""
+  echo "Furthermore, if you use Steam, Steam also adds uaccess rules that would interfere with device hiding."
+  echo "You'll need to comment out the appropriate lines from /usr/lib/udev/rules.d/70-steam-controller.rules"
+  echo "Placing a blank file at /etc/udev/rules.d/70-steam-controller.rules will block all the Steam udev rules."
 fi
 
 # Tell the user we're done and what to do next.
