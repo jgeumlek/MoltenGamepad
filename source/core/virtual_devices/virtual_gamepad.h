@@ -16,6 +16,7 @@ public:
   virtual ~virtual_gamepad();
   virtual void take_event(struct input_event in);
   virtual void clear_outputs();
+  virtual void init();
 protected:
 
   virtpad_settings padstyle;

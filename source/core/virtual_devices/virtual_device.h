@@ -23,6 +23,9 @@ public:
   virtual void take_event(struct input_event in) {
   }
 
+  virtual void init() {
+  }
+
   bool accept_device(std::shared_ptr<input_source> dev);
   bool add_device(std::shared_ptr<input_source> dev);
   bool remove_device(input_source* dev);

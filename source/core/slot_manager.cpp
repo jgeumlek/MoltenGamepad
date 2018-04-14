@@ -82,6 +82,7 @@ slot_manager::~slot_manager() {
 void slot_manager::open_pad_slot(int index) {
   output_slot &slot = slots[index];
   slot.virt_dev = std::make_shared<virtual_gamepad>(slot.name, "A virtual gamepad", padstyle, this, ui);
+  slot.virt_dev->init();
   slot.has_devices = false;
   log.slot_event(0, &slots[index], "open");
 }
