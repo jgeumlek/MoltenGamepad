@@ -1,6 +1,6 @@
 MoltenGamepad keeps several slots that input sources might be assinged to.
 
-There are several virtual gamepad devices, `virtpad1`, `virtpad2`, etc., as well as a `keyboard` slot. As mentioned in the profile documentation, pay attention to how input sources get placed since certain output slots can only emit certain events.
+There are several virtual gamepad devices, `virtpad1`, `virtpad2`, etc., as well as a `keyboard` slot. As mentioned in the profile documentation, certain output slots can only emit certain events.
 
 
 The default behavior of MG is to create 4 permanent output devices. When an input source is connected, it does not automatically get assigned a slot. Instead, slot allocation occurs only upon the first "notable" event (such as a button press, or an axis changing greatly).
@@ -15,7 +15,7 @@ Additional types are handy when dealing with input sources that are at best supp
 
 These assignments can be overruled with the `move ... to ...` command. This command ignores the types of the input sources, permitting two gamepads to be placed on the same `virtpad`.
 
-Use `move ... to nothing` in order to remove an input source from all slots. The device will request an allocation upon the next notable input received.
+Use `move ... to nothing` to remove an input source from all slots. The device will request an allocation upon the next notable input received.
 
 Use `move ... to auto` to force the automatic allocation to occur, event if no inputs are being registered.
 
@@ -33,7 +33,7 @@ MG's slot assigment also exposes several options. They can be seen with `print o
 
 The `min_pads` setting deserves more explanantion. By default, it set to 4, the same amount of `virtpads` created. This means `virtpad`s will never be closed! However, if this is set lower, then the `virtpad`s will start being closed whenever they are empty.
 
-Setting `min_pads = 0` means virtual devices will stay around only as long as they have input sources. This creates a set up where the virtual gamepads connect/disconnect just like their input sources do. Some games don't like it when their controllers disconnect, so when playing these trouble some games, make sure to set `min_pads` higher so that your virtual devices don't get destroyed.
+Setting `min_pads = 0` means virtual devices will stay around only as long as they have input sources. This causes the virtual gamepads connect/disconnect just like their input sources do. Some games don't like it when their controllers disconnect, so when playing these troublesome games, make sure to set `min_pads` higher so that your virtual devices don't get destroyed.
 
 During slot allocation, if a currently closed `virtpad` can be opened to accomodate the input source (subject to the `active_pads` constraint), then it will be opened.
 

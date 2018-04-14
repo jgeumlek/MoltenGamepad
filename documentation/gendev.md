@@ -43,7 +43,13 @@ This is the full spec. See the examples for a simpler view.
     ##Should we block all permissions after opening, preventing others from even opening the device?
     ##This is generally effective at making software ignore the original device entirely.
     ##Note: requires active user to be the device node owner.
-    #change_permissions="false" 
+    #change_permissions="false"
+    
+    ##Assuming change_permissions="true", should we go even further to hide any hidraw nodes
+    ##in addition to the event device we read from? This is handy when MG needs to speak
+    ##with the event device, but still wishes to hide the hidraw nodes from other software.
+    ##Note: requires active user to be the hidraw node owner.
+    #change_hid_permissions="false" 
     
     ##Should we coalesce all identified devices into one virtual input source?
     ##(Helpful for annoying devices that create a dead duplicate node,
@@ -52,7 +58,7 @@ This is the full spec. See the examples for a simpler view.
 
     ##Should we try to forward rumble (force-feedback) events?
     ##This setting has no effect unless MoltenGamepad was run with rumble enabled.
-    ##You can not enable both rumble and flatten.
+    ##You cannot enable both rumble and flatten.
     #rumble="false"
     
     
@@ -118,7 +124,7 @@ Other traits can be specified in match declaration using `<field>=` notation. Av
 * `uniq` : a (potentially missing) uniquely identifying string for the device
 * `driver` : the name of the linux driver for this event device
 * `events` : can be one of `superset`, `subset`, or `exact`. Superset matches if the device contains all the events of this generic driver. Subset matches if the device has no reported events not listed in this driver, but it must have at least one event in common with this driver. Exact requires both of the conditions of superset and subset to hold. That is, the device has exactly the events of this driver; no more, no less.
-* `events_extra` : An integer that specifies extra information for the `events` constraint. It currently only applies for `events=subset`. By default, the `subset` match requires at least one event in common. Setting `events_extra` to an integer greater than one change this requirement. For example, `events=subset events_extra=8` will require the exposed events to be a subset of the ones in the driver, and further require the device exposes at least 8 of them.
+* `min_common_events` : An integer that specifies extra information for the `events=subset` constraint. By default, the `subset` match requires, at minimum, one event in common. Setting `min_common_events` to an integer greater than one changes this requirement. For example, `events=subset min_common_events=8` will require the exposed events to be a subset of the ones in the driver, and further require the device exposes at least 8 of them.
 * `order` : A positive integer indicating the order to consider matches. When a device has multiple matches, the one with the lowest `order` is taken. If not specified, a match has an `order` of `1`, which is the lowest allowed value. Ties are broken based on whichever match is read first.
 
 Putting this together results in a match line that may resemble the following.

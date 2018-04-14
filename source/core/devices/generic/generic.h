@@ -35,7 +35,7 @@ struct device_match {
   std::string driver;
   enum ev_match {EV_MATCH_IGNORED, EV_MATCH_SUBSET, EV_MATCH_EXACT, EV_MATCH_SUPERSET};
   ev_match events = EV_MATCH_IGNORED;
-  int ev_match_arg = -1;
+  int min_common_events = 0;
   int order = DEVICE_CLAIMED; //specifies the priority of this match.
 };
 
@@ -66,6 +66,7 @@ struct generic_driver_info {
   std::string devname;
   bool grab_ioctl = false; //use ioctl EVIOCGRAB.
   bool grab_chmod = false; //Remove all permissions after we open device. Restore them on close.
+  bool grab_hid_chmod = false; //Also grab hidraw permissions?
   bool flatten = false;
   bool subscribe_to_gamepad = false;
   bool rumble = false;
@@ -104,13 +105,14 @@ public:
   std::mutex lock;
   bool grab_ioctl = false;
   bool grab_chmod = false;
+  bool grab_hid_chmod = false;
   bool keep_looping = true;
   bool rumble = false;
   moltengamepad* mg;
 
   int internal_pipe[2];
 
-  generic_file(moltengamepad* mg, struct udev_device* node, bool grab_ioctl, bool grab_chmod, bool rumble);
+  generic_file(moltengamepad* mg, struct udev_device* node, bool grab_ioctl, bool grab_chmod, bool grab_hid_chmod, bool rumble);
 
   ~generic_file();
 

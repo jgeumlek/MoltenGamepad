@@ -40,6 +40,7 @@ public:
   int udev_fd();
   int read_monitor();
   int grab_permissions(udev_device* dev, bool grabbed);
+  int grab_permissions(udev_device* dev, bool grabbed, int flags);
 private:
   void pass_along_device(struct udev_device* new_dev);
   std::mutex manager_lock;

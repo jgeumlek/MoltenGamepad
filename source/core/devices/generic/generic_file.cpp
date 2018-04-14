@@ -2,7 +2,7 @@
 #include <errno.h>
 
 
-generic_file::generic_file(moltengamepad* mg, struct udev_device* node, bool grab_ioctl, bool grab_chmod, bool rumble) {
+generic_file::generic_file(moltengamepad* mg, struct udev_device* node, bool grab_ioctl, bool grab_chmod, bool grab_hid_chmod, bool rumble) {
   this->mg = mg;
   this->rumble = rumble;
   struct udev_device* hidparent = udev_device_get_parent_with_subsystem_devtype(node,"hid",NULL);
@@ -18,6 +18,7 @@ generic_file::generic_file(moltengamepad* mg, struct udev_device* node, bool gra
   if (epfd < 1) perror("epoll create");
   this->grab_ioctl = grab_ioctl;
   this->grab_chmod = grab_chmod;
+  this->grab_hid_chmod = grab_hid_chmod;
   open_node(node);
   //set up a pipe so we can talk to out own thread.
   int res = pipe(internal_pipe);
@@ -81,14 +82,19 @@ void generic_file::open_node(struct udev_device* node) {
     }
 
     if (grab_ioctl) {
+      //Device nodes will still be visible, but they won't emit any events.
       ioctl(fd, EVIOCGRAB, 1);
     }
 
-    if (grab_chmod) {
-      //Remove all permissions. Other software will really ignore it.
-      //Requires the device to be owned by the current user. (not merely have access)
-      mg->udev.grab_permissions(node, true);
-
+    //Remove all permissions? Other software will really ignore it.
+    //Requires the device nodes to be owned by the current user. (not merely have access)
+    if (grab_hid_chmod) {
+      //grab_hid_chmod takes precedence over grab_chmod.
+      //Further, grab_hid_chmod implies the behavior of grab_chmod and more.
+      mg->udev.grab_permissions(node, true, GRAB_HID_NODE | GRAB_EVENT_AND_JS_NODE);
+    } else if (grab_chmod) {
+      //No hid, just plain old grab. Still try to grab any pesky js nodes.
+      mg->udev.grab_permissions(node, true, GRAB_EVENT_AND_JS_NODE);
     }
 
     struct epoll_event event;
@@ -118,7 +124,7 @@ void generic_file::close_node(const std::string& path, bool erase) {
   if (it == nodes.end()) return;
 
   close(it->second.fd);
-  if (grab_chmod)
+  if (grab_chmod || grab_hid_chmod)
     mg->udev.grab_permissions(it->second.node, false);
   udev_device_unref(it->second.node);
   if (erase) nodes.erase(it);

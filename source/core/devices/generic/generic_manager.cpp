@@ -117,7 +117,7 @@ std::vector<int> read_capabilities(const char* capabilities) {
 }
 
 
-bool events_matched(udev* udev, udev_device* dev, const generic_driver_info* gendev, device_match::ev_match match, int ev_match_arg) {
+bool events_matched(udev* udev, udev_device* dev, const generic_driver_info* gendev, device_match::ev_match match, int min_common_events) {
   if (match == device_match::EV_MATCH_IGNORED)
     return true;
   std::set<std::pair<entry_type,int>> gendev_events;
@@ -186,7 +186,7 @@ bool events_matched(udev* udev, udev_device* dev, const generic_driver_info* gen
   superset = gendev_events.empty();
   
   if (match == device_match::EV_MATCH_SUBSET) {
-    int required_in_common = ev_match_arg >= 0 ? ev_match_arg : 1;
+    int required_in_common = min_common_events >= 0 ? min_common_events : 1;
     //reject the empty set as a trivial subset.
     if (!subset) {
       if (superkey != -1)
@@ -195,7 +195,7 @@ bool events_matched(udev* udev, udev_device* dev, const generic_driver_info* gen
         debug_print(DEBUG_VERBOSE, 2, "\t\t events subset: failed because device had abs ", std::to_string(superabs).c_str());
     }
     if (matched_events < required_in_common)
-      debug_print(DEBUG_VERBOSE, 2, "\t\t events subset: failed because device had ", std::to_string(matched_events).c_str(), " in common, but needed ", std::to_string(required_in_common).c_str());
+      debug_print(DEBUG_VERBOSE, 4, "\t\t events subset: failed because device had ", std::to_string(matched_events).c_str(), " in common, but needed ", std::to_string(required_in_common).c_str());
     subset = subset && (matched_events >= required_in_common);
     if (subset)
       debug_print(DEBUG_VERBOSE, 1, "\t\t events subset: check passed");
@@ -306,7 +306,7 @@ bool matched(struct udev* udev, struct udev_device* dev, const device_match& mat
   }
   if (match.events != device_match::EV_MATCH_IGNORED) {
     valid = true;
-    result = result && events_matched(udev, dev, gendev, match.events, match.ev_match_arg);
+    result = result && events_matched(udev, dev, gendev, match.events, match.min_common_events);
   }
   //a match must be valid as well as meeting all criteria
   return valid && result;
@@ -378,7 +378,7 @@ int generic_manager::open_device(struct udev* udev, struct udev_device* dev) {
     if (flatten && openfiles.size() >= 1) {
       openfiles.front()->open_node(dev);
     } else {
-      openfiles.push_back(new generic_file(mg, dev, descr->grab_ioctl, descr->grab_chmod, descr->rumble));
+      openfiles.push_back(new generic_file(mg, dev, descr->grab_ioctl, descr->grab_chmod, descr->grab_hid_chmod, descr->rumble));
       create_inputs(openfiles.back());
     }
   } catch (std::exception& e) {

@@ -196,6 +196,14 @@ struct manager_plugin {
 // Then process_manager_option for each option registered in init
 // Finally start is called
 
+//flags for grab_permissions_specific
+//specify what type of nodes to grab.
+// (flags ignored on release -- release will always undo all that were grabbed)
+#define GRAB_EVENT_NODE 1
+#define GRAB_JS_NODE 2
+#define GRAB_HID_NODE 4
+
+#define GRAB_EVENT_AND_JS_NODE (GRAB_EVENT_NODE | GRAB_JS_NODE)
 
 struct moltengamepad_methods {
   size_t size;
@@ -205,6 +213,8 @@ struct moltengamepad_methods {
   int (*request_slot) (input_source*);
   //If grabbed == true
   //  perform appropriate file permission shuffling to hide this device
+  //  On event# node, grab it and its js# node.
+  //  On hid or hidraw node, grab all event# and js# nodes.
   //If grabbed == false
   //  undo the above
   int (*grab_permissions) (udev_device* dev, bool grabbed);
@@ -214,6 +224,9 @@ struct moltengamepad_methods {
   //A matching call to virtual_device_unref() should be used once the ptr is no longer needed.
   int (*virtual_device_ref) (virtual_device* dev);
   int (*virtual_device_unref)  (virtual_device* dev);
+  //A more specific version of grab_permissions.
+  //  The last argument is a bitfield that lets you specify certain behaviors.
+  int (*grab_permissions_specific) (udev_device* dev, bool grabbed, int flags);
 };
 
 //A struct of pointers all the methods the plugin will be provided.

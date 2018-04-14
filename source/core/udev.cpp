@@ -201,6 +201,18 @@ int udev_handler::read_monitor() {
 }
 
 int udev_handler::grab_permissions(udev_device* dev, bool grabbed) {
+  if (!dev)
+    return FAILURE;
+  if (!grabbed)
+    return grab_permissions(dev, grabbed, 0); //flags don't matter when releasing.
+  const char* subsystem = udev_device_get_subsystem(dev);
+  if (subsystem && (!strcmp(subsystem, "hid") || !strcmp(subsystem, "hidraw")))
+    return grab_permissions(dev, grabbed, GRAB_HID_NODE | GRAB_EVENT_AND_JS_NODE);
+
+  return grab_permissions(dev, grabbed, GRAB_EVENT_AND_JS_NODE);
+}
+
+int udev_handler::grab_permissions(udev_device* dev, bool grabbed, int flags) {
   std::lock_guard<std::mutex> guard(grabbed_nodes_lock);
   const char* devnode = udev_device_get_devnode(dev);
   if (!devnode)
@@ -211,6 +223,7 @@ int udev_handler::grab_permissions(udev_device* dev, bool grabbed) {
     if (grabbed_nodes.find(devnodepath) != grabbed_nodes.end())
       return FAILURE;
     struct stat filestat;
+    debug_print(DEBUG_NONE,2,"device grab: changing permissions of ",devnode);
     int ret = stat(devnode, &filestat);
     if (!ret)
       ret = chmod(devnode, 0);
@@ -222,31 +235,50 @@ int udev_handler::grab_permissions(udev_device* dev, bool grabbed) {
       base_node.orig_mode = filestat.st_mode;
       grabbed_nodes[devnodepath].children.push_back(base_node);
     }
+    
+
+    udev_device* parent = udev_device_get_parent(dev);
+    udev_device* hid_parent = udev_device_get_parent_with_subsystem_devtype(dev,"hid",nullptr);
+    const char* subsystem = udev_device_get_subsystem(dev);
 
     //This device might have a js device we also want to grab...
     //go up a level to find siblings...
-    auto parent = udev_device_get_parent(dev);
+    std::string devpath(udev_device_get_syspath(dev));
     std::string parentpath(udev_device_get_syspath(parent));
-    std::string childglob = "";
-    const char* subsystem = udev_device_get_subsystem(dev);
-    if (subsystem && !strcmp(subsystem,"input")) {
-      childglob = "/js*";
-    } else if (subsystem && !strcmp(subsystem,"hid")) {
-      //whoops, we are already the highest we wish to go...
-      parentpath = udev_device_get_syspath(dev);
-      childglob = "{/input/input*/event*,/input/input*/js*}";
-    } else if (subsystem && !strcmp(subsystem,"hidraw")) {
-      childglob = "{/input/input*/event*,/input/input*/js*}";
+    std::string hidparentpath(udev_device_get_syspath(hid_parent));
+    std::string globstr = "";
+    if (!subsystem)
+      return SUCCESS; //we grabbed all that we know how to do!
+
+    if (!strcmp(subsystem,"input") && (flags & GRAB_EVENT_AND_JS_NODE) && !(flags & GRAB_HID_NODE)) {
+      globstr = parentpath + "/js*";
     }
-    parentpath += childglob;
+    if (!strcmp(subsystem,"input") && (flags & GRAB_EVENT_AND_JS_NODE) && (flags & GRAB_HID_NODE)) {
+      globstr = hidparentpath + "{,/hidraw/hidraw*,/input/input*/event*,/input/input*/js*}";
+    }
+    if (!strcmp(subsystem,"hid") && (flags & GRAB_EVENT_AND_JS_NODE)) {
+      globstr = devpath + "{/hidraw/hidraw*,/input/input*/event*,/input/input*/js*}";
+    }
+    if (!strcmp(subsystem,"hid") && (flags & ~GRAB_EVENT_AND_JS_NODE)) {
+      globstr = devpath + "{/hidraw/hidraw*}";
+    }
+    if (!strcmp(subsystem,"hidraw") && (flags & GRAB_EVENT_AND_JS_NODE)) {
+      globstr = hidparentpath + "{input/input*/event*,/input/input*/js*}";
+    }
     glob_t globbuffer;
-    glob(parentpath.c_str(), GLOB_BRACE, nullptr, &globbuffer);
+    glob(globstr.c_str(), GLOB_BRACE, nullptr, &globbuffer);
 
     for (uint i = 0; i < globbuffer.gl_pathc; i++) {
       udev_device* subdev = udev_device_new_from_syspath(udev, globbuffer.gl_pathv[i]);
       if (!subdev)
         continue;
       devnode = udev_device_get_devnode(subdev);
+      if (!devnode)
+        continue;
+      std::string subdevpath(devnode);
+      if (subdevpath == devnodepath)
+        continue;
+      debug_print(DEBUG_NONE,2,"device hiding: changing permissions of ",devnode);
       ret = stat(devnode, &filestat);
       node_permissions sub_node;
       if(!ret)
@@ -270,10 +302,11 @@ int udev_handler::grab_permissions(udev_device* dev, bool grabbed) {
       return FAILURE;
     for (auto entry : it->second.children) {
       devnode = udev_device_get_devnode(entry.node);
+      debug_print(DEBUG_NONE,2,"device unhiding: restoring permissions of ",devnode);
       int ret = chmod(devnode, entry.orig_mode);
       if (ret && errno != ENOENT) {
         perror("restore permissions");
-        debug_print(DEBUG_NONE,3,"device hiding: restoring permissions of ",devnode," failed.");
+        debug_print(DEBUG_NONE,3,"device unhiding: restoring permissions of ",devnode," failed.");
       }
       udev_device_unref(entry.node);
     }

@@ -92,6 +92,9 @@ void init_plugin_api() {
     dev->unref();
     return 0;
   };
+  plugin_methods.mg.grab_permissions_specific = [] (udev_device* dev, bool grabbed, int flags) {
+    return loader_mg->udev.grab_permissions(dev, grabbed, flags);
+  };
 
   plugin_methods.manager.plug_data = [] (const device_manager* man) {
     return man->plug_data;

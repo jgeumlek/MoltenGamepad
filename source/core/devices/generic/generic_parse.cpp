@@ -116,6 +116,14 @@ void generic_assignment_line(std::vector<token>& line, generic_driver_info*& inf
     return;
   }
 
+  if (field == "change_hid_permissions") {
+    int ret = read_bool(value, [&info] (bool val) {
+      info->grab_hid_chmod = val;
+    });
+    if (ret) mg->drivers.err(0,"gendev: \""+value+"\" was not recognized as true or false.", context.path, context.line_number);
+    return;
+  }
+
   if (field == "gamepad_subscription") {
     int ret = read_bool(value, [&info] (bool val) {
       info->subscribe_to_gamepad = val;
@@ -246,8 +254,8 @@ void add_to_match(device_match& current_match, const std::string& field, const s
       if (value == "ignored")
         current_match.events = device_match::EV_MATCH_IGNORED;
     }
-    if (field == "events_extra")
-      current_match.ev_match_arg = parse_dec(value);
+    if (field == "min_common_events")
+      current_match.min_common_events = parse_dec(value);
     if (field == "order") {
       int order = parse_dec(value) - 1; //Syntax in gendev *.cfg is one-indexed, internal claim ordering is zero-indexed.
       current_match.order = DEVICE_CLAIMED_DEFERRED(order);
@@ -273,8 +281,10 @@ int generic_match_line(std::vector<token>& line, device_match& current_match) {
       }
       return 0;
     }
+    //TODO: do a compatibility break and require everything with spaces to have quotes.
+    //this current system does not gracefully handle keywords being added...
     //process key words as needed.
-    if ((*it).value == "name" || (*it).value == "vendor" || (*it).value == "product" || (*it).value == "uniq" || (*it).value == "phys" || (*it).value == "driver" || (*it).value == "events" || (*it).value == "order" || (*it).value == "events_extra") {
+    if ((*it).value == "name" || (*it).value == "vendor" || (*it).value == "product" || (*it).value == "uniq" || (*it).value == "phys" || (*it).value == "driver" || (*it).value == "events" || (*it).value == "order" || (*it).value == "min_common_events") {
       std::string newfield = it->value;
       it++;
       if (it == line.end()) return -1; //Parse error for sure! need a closing brace
