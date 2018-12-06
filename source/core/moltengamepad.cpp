@@ -315,10 +315,12 @@ int moltengamepad::init() {
   std::string cfgfile = locate(FILE_CONFIG,"moltengamepad.cfg");
   if (!cfgfile.empty()) {
     std::cout << "loading " << cfgfile << std::endl;
-    loop_file(cfgfile, [this, &cfg] (std::vector<token>& tokens, context ctx) {
+    if (loop_file(cfgfile, [this, &cfg] (std::vector<token>& tokens, context ctx) {
       config_parse_line(this, tokens, ctx, *(this->opts), &cfg);
       return 0;
-    });
+    }) != 0) {
+      stdout->err(0,"Could not read file!");
+    }
   } else {
     std::cout << "No moltengamepad.cfg found." << std::endl;
   }
