@@ -251,7 +251,8 @@ bool matched(struct udev* udev, struct udev_device* dev, const device_match& mat
   // and as a generic input device in another
   if((!hidparent) && parent && !match.phys.empty()) {
     phys = (char *) udev_device_get_property_value(parent, "PHYS");
-    uniq = (char *) udev_device_get_property_value(parent, "UNIQ");
+    //TODO find out if this is also possible
+    //uniq = (char *) udev_device_get_property_value(parent, "UNIQ");
   }
   //only bother parsing this string if we will later match it
   if (parent && (match.vendor != -1 || match.product != -1) ) {
