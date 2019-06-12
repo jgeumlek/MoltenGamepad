@@ -184,7 +184,7 @@ bool events_matched(udev* udev, udev_device* dev, const generic_driver_info* gen
   }
   delete[] buffer;
   superset = gendev_events.empty();
-  
+
   if (match == device_match::EV_MATCH_SUBSET) {
     int required_in_common = min_common_events >= 0 ? min_common_events : 1;
     //reject the empty set as a trivial subset.
@@ -245,6 +245,15 @@ bool matched(struct udev* udev, struct udev_device* dev, const device_match& mat
     phys = udev_device_get_property_value(hidparent, "HID_PHYS");
     uniq = udev_device_get_property_value(hidparent, "HID_UNIQ");
   }
+
+  //sometimes custom arcade devces do not register as hid, I have such a case
+  //with an ultimarc board which works as hid in one computer
+  // and as a generic input device in another
+  if((!hidparent) && parent && !match.phys.empty()) {
+    phys = (char *) udev_device_get_property_value(parent, "PHYS");
+    //TODO find out if this is also possible
+    //uniq = (char *) udev_device_get_property_value(parent, "UNIQ");
+  }
   //only bother parsing this string if we will later match it
   if (parent && (match.vendor != -1 || match.product != -1) ) {
     const char* productstring = udev_device_get_property_value(parent, "PRODUCT");
@@ -275,7 +284,12 @@ bool matched(struct udev* udev, struct udev_device* dev, const device_match& mat
   }
   if (!match.phys.empty()) {
     valid = true;
-    bool check = (phys && !strcmp(match.phys.c_str(), phys));
+
+    //the phys address can come in in some instances with quotes attached
+    //we have to take this into consideration
+    //hence the length check as well
+    bool check = (phys && (!strcmp(match.phys.c_str(), phys) || (strstr(phys, "\"") == phys && strstr( phys, match.phys.c_str()) != NULL
+            && (strlen(phys) - strlen(match.phys.c_str()) <= 2))));
     result = result && check;
     debug_print(DEBUG_VERBOSE, 4, "\t\t phys: ", phys ?  phys : "", check ? " == " : " != ", match.phys.c_str());
   }
