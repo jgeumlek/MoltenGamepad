@@ -15,6 +15,7 @@ wiimote::~wiimote() {
   clear_node(&motionplus);
   clear_node(&nunchuk);
   clear_node(&classic);
+  clear_node(&guitar);
   clear_node(&pro);
   clear_node(&balance);
 }
@@ -27,6 +28,11 @@ int wiimote::process_option(const char* name, const MGField value) {
   }
   if (!strcmp(name, "nk_accel_active")) {
     this->nk_accel_active = value.boolean;
+    update_mode(mode);
+    return 0;
+  }
+  if (!strcmp(name, "gt_accel_active")) {
+    this->gt_accel_active = value.boolean;
     update_mode(mode);
     return 0;
   }
@@ -47,6 +53,11 @@ int wiimote::process_option(const char* name, const MGField value) {
   }
   if (!strcmp(name, "nk_gyro_active")) {
     this->nk_gyro_active = value.boolean;
+    update_mode(mode);
+    return 0;
+  }
+  if (!strcmp(name, "gt_gyro_active")) {
+    this->gt_gyro_active = value.boolean;
     update_mode(mode);
     return 0;
   }
@@ -75,6 +86,7 @@ void wiimote::clear_node(struct dev_node* node) {
 
 const char* wiimote::get_description() const {
   if (pro.fd > 0) return "Wii U Pro Controller";
+  if (guitar.fd > 0) return "Wii Remote with Guitar Controller";
   if (classic.fd > 0) return "Wii Remote with Classic Controller";
   if (nunchuk.fd > 0) return "Wii Remote with Nunchuk Controller";
   if (balance.fd > 0) return "Wii Balance Board";
@@ -124,7 +136,7 @@ void wiimote::handle_event(struct udev_device* dev) {
   }
 }
 
-enum nodes {CORE, E_NK, E_CC,  IR, ACCEL, MP, BALANCE, WII_U_PRO, NONE};
+enum nodes {CORE, E_NK, E_CC, E_GT, IR, ACCEL, MP, BALANCE, WII_U_PRO, NONE};
 int name_to_node(const char* name) {
   if (!strcmp(name, WIIMOTE_NAME)) return CORE;
   if (!strcmp(name, WIIMOTE_IR_NAME)) return IR;
@@ -132,6 +144,7 @@ int name_to_node(const char* name) {
   if (!strcmp(name, MOTIONPLUS_NAME)) return MP;
   if (!strcmp(name, NUNCHUK_NAME)) return E_NK;
   if (!strcmp(name, CLASSIC_NAME)) return E_CC;
+  if (!strcmp(name, GUITAR_NAME)) return E_GT;
   if (!strcmp(name, BALANCE_BOARD_NAME)) return BALANCE;
   if (!strcmp(name, WII_U_PRO_NAME)) return WII_U_PRO;
   return NONE;
@@ -146,7 +159,7 @@ void wiimote::store_node(struct udev_device* dev, const char* name) {
 
     buttons.dev = udev_device_ref(dev);
     open_node(&buttons);
-    if (mode != NUNCHUK_EXT && mode != CLASSIC_EXT)
+    if (mode != NUNCHUK_EXT && mode != CLASSIC_EXT && mode != GUITAR_EXT)
       update_mode(NO_EXT); //A core lets us know this is a wiimote, not a Wii U pro or balance board.
       //But if they were processed out of order, NUNCHUK_EXT or CLASSIC_EXT take precedence!
     break;
@@ -163,7 +176,7 @@ void wiimote::store_node(struct udev_device* dev, const char* name) {
   case ACCEL:
     methods.print(ref,"added accelerometers");
     accel.dev = udev_device_ref(dev);
-    if ((mode == NO_EXT && wm_accel_active) || (mode == NUNCHUK_EXT && nk_accel_active)) {
+    if ((mode == NO_EXT && wm_accel_active) || (mode == NUNCHUK_EXT && nk_accel_active) || (mode == GUITAR_EXT && gt_accel_active)) {
       open_node(&accel);
     } else {
       //we aren't using it now, but grab it so that it is hidden if desired.
@@ -173,7 +186,7 @@ void wiimote::store_node(struct udev_device* dev, const char* name) {
   case MP:
     methods.print(ref,"added motion+");
     motionplus.dev = udev_device_ref(dev);
-    if ((mode == NO_EXT && wm_gyro_active) || (mode == NUNCHUK_EXT && nk_gyro_active)) {
+    if ((mode == NO_EXT && wm_gyro_active) || (mode == NUNCHUK_EXT && nk_gyro_active) || (mode == GUITAR_EXT && gt_gyro_active)) {
       open_node(&motionplus);
     } else {
       wiimote_manager::grab_permissions(dev,true);
@@ -190,6 +203,12 @@ void wiimote::store_node(struct udev_device* dev, const char* name) {
     classic.dev = udev_device_ref(dev);
     open_node(&classic);
     update_mode(CLASSIC_EXT);
+    break;
+  case E_GT:
+    methods.print(ref,"added guitar controller");
+    guitar.dev = udev_device_ref(dev);
+    open_node(&guitar);
+    update_mode(GUITAR_EXT);
     break;
   case BALANCE:
     balance.dev = udev_device_ref(dev);
@@ -239,20 +258,24 @@ void wiimote::update_mode(modes new_mode) {
     other_event = EVENT_DISABLED;
     methods.remove_option(ref, "wm_accel_active");
     methods.remove_option(ref, "nk_accel_active");
+    methods.remove_option(ref, "gt_accel_active");
     methods.remove_option(ref, "wm_ir_active");
     methods.remove_option(ref, "nk_ir_active");
     methods.remove_option(ref, "wm_gyro_active");
     methods.remove_option(ref, "nk_gyro_active");
+    methods.remove_option(ref, "gt_gyro_active");
   }
   if (mode == BALANCE_EXT) {
     event_prefix = 'b';
     other_event = EVENT_DISABLED;
     methods.remove_option(ref, "wm_accel_active");
     methods.remove_option(ref, "nk_accel_active");
+    methods.remove_option(ref, "gt_accel_active");
     methods.remove_option(ref, "wm_ir_active");
     methods.remove_option(ref, "nk_ir_active");
     methods.remove_option(ref, "wm_gyro_active");
     methods.remove_option(ref, "nk_gyro_active");
+    methods.remove_option(ref, "gt_gyro_active");
   }
   if (mode == NO_EXT)
     event_prefix = 'w';
@@ -260,8 +283,10 @@ void wiimote::update_mode(modes new_mode) {
     event_prefix = 'n';
   if (mode == CLASSIC_EXT)
     event_prefix = 'c';
-  
-  
+  if (mode == GUITAR_EXT)
+    event_prefix = 'g';
+
+
   //Just do  wild across the board state changes.
   for (int i = 0; i < wii_event_max; i++) {
     if (wiimote_events[i].name[0] == event_prefix) {
@@ -305,7 +330,7 @@ void wiimote::update_mode(modes new_mode) {
     methods.toggle_event(ref, nk_ir_y, EVENT_INACTIVE);
   }
 
-  if ((mode == NO_EXT && wm_accel_active) || (mode == NUNCHUK_EXT && nk_accel_active)) {
+  if ((mode == NO_EXT && wm_accel_active) || (mode == NUNCHUK_EXT && nk_accel_active) || (mode == GUITAR_EXT && gt_accel_active)) {
     if (accel.dev != nullptr && accel.fd < 0) {
       //If it was grabbed previously, we need to ungrab before we can open.
       wiimote_manager::grab_permissions(accel.dev, false);
@@ -322,6 +347,10 @@ void wiimote::update_mode(modes new_mode) {
       methods.toggle_event(ref, nk_wm_accel_x, EVENT_ACTIVE);
       methods.toggle_event(ref, nk_wm_accel_y, EVENT_ACTIVE);
       methods.toggle_event(ref, nk_wm_accel_z, EVENT_ACTIVE);
+    } else if (mode == GUITAR_EXT) {
+      methods.toggle_event(ref, gt_accel_x, EVENT_ACTIVE);
+      methods.toggle_event(ref, gt_accel_y, EVENT_ACTIVE);
+      methods.toggle_event(ref, gt_accel_z, EVENT_ACTIVE);
     }
   } else {
     if (accel.fd > 0) {
@@ -338,9 +367,12 @@ void wiimote::update_mode(modes new_mode) {
     methods.toggle_event(ref, wm_accel_x, EVENT_INACTIVE);
     methods.toggle_event(ref, wm_accel_y, EVENT_INACTIVE);
     methods.toggle_event(ref, wm_accel_z, EVENT_INACTIVE);
+    methods.toggle_event(ref, gt_accel_x, EVENT_INACTIVE);
+    methods.toggle_event(ref, gt_accel_y, EVENT_INACTIVE);
+    methods.toggle_event(ref, gt_accel_z, EVENT_INACTIVE);
   }
 
-  if ((mode == NO_EXT && wm_gyro_active) || (mode == NUNCHUK_EXT && nk_gyro_active)) {
+  if ((mode == NO_EXT && wm_gyro_active) || (mode == NUNCHUK_EXT && nk_gyro_active) || (mode == GUITAR_EXT && gt_gyro_active)) {
     if (motionplus.dev != nullptr && motionplus.fd < 0) {
       //If it was grabbed previously, we need to ungrab before we can open.
       wiimote_manager::grab_permissions(motionplus.dev, false);
@@ -354,6 +386,10 @@ void wiimote::update_mode(modes new_mode) {
       methods.toggle_event(ref, nk_wm_gyro_x, EVENT_ACTIVE);
       methods.toggle_event(ref, nk_wm_gyro_y, EVENT_ACTIVE);
       methods.toggle_event(ref, nk_wm_gyro_z, EVENT_ACTIVE);
+    } else if (mode == GUITAR_EXT) {
+      methods.toggle_event(ref, gt_gyro_x, EVENT_ACTIVE);
+      methods.toggle_event(ref, gt_gyro_y, EVENT_ACTIVE);
+      methods.toggle_event(ref, gt_gyro_z, EVENT_ACTIVE);
     }
   } else {
     if (motionplus.fd > 0) {
@@ -367,6 +403,9 @@ void wiimote::update_mode(modes new_mode) {
     methods.toggle_event(ref, wm_gyro_x, EVENT_INACTIVE);
     methods.toggle_event(ref, wm_gyro_y, EVENT_INACTIVE);
     methods.toggle_event(ref, wm_gyro_z, EVENT_INACTIVE);
+    methods.toggle_event(ref, gt_gyro_x, EVENT_INACTIVE);
+    methods.toggle_event(ref, gt_gyro_y, EVENT_INACTIVE);
+    methods.toggle_event(ref, gt_gyro_z, EVENT_INACTIVE);
   }
 }
 
@@ -379,6 +418,10 @@ void wiimote::remove_node(const char* name) {
   };
   if (node == E_CC) {
     clear_node(&classic);
+    remove_extension();
+  };
+  if (node == E_GT) {
+    clear_node(&guitar);
     remove_extension();
   };
   if (node == MP) {
@@ -435,6 +478,7 @@ void wiimote::grab_chmod(bool grab) {
   grab_chmod_node(&motionplus, grab);
   grab_chmod_node(&nunchuk, grab);
   grab_chmod_node(&classic, grab);
+  grab_chmod_node(&guitar, grab);
   grab_chmod_node(&pro, grab);
   grab_chmod_node(&balance, grab);
 }
@@ -456,12 +500,14 @@ void wiimote::grab_ioctl(bool grab) {
   grab_ioctl_node(&motionplus, grab);
   grab_ioctl_node(&nunchuk, grab);
   grab_ioctl_node(&classic, grab);
+  grab_ioctl_node(&guitar, grab);
   grab_ioctl_node(&pro, grab);
   grab_ioctl_node(&balance, grab);
 }
 
 void wiimote::process(void* tag) {
   int type = CORE;
+  if (tag == &guitar) type = E_GT;
   if (tag == &classic) type = E_CC;
   if (tag == &nunchuk) type = E_NK;
   if (tag == &ir) type = IR;
@@ -472,6 +518,9 @@ void wiimote::process(void* tag) {
   switch (type) {
   case CORE:
     process_core();
+    break;
+  case E_GT:
+    process_guitar(guitar.fd);
     break;
   case E_CC:
     process_classic(classic.fd);

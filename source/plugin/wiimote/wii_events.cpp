@@ -66,6 +66,20 @@ const event_decl wiimote_events[] = {
   {EVNAME(cc_right_x), "Classic Controller Right Stick X", ABS, ""},
   {EVNAME(cc_right_y), "Classic Controller Right Stick Y", ABS, ""},
 
+  {EVNAME(gt_green), "Guitar Controller green fret", BTN, "first"},
+  {EVNAME(gt_red), "Guitar Controller red fret", BTN, "second"},
+  {EVNAME(gt_yellow), "Guitar Controller yellow fret", BTN, "third"},
+  {EVNAME(gt_blue), "Guitar Controller blue fret", BTN, "fourth"},
+  {EVNAME(gt_orange), "Guitar Controller orange fret", BTN, "fifth"},
+  {EVNAME(gt_strumup), "Guitar Controller strumbar up", BTN, "sixth"},
+  {EVNAME(gt_strumdown), "Guitar Controller strumbar down", BTN, "seventh"},
+  {EVNAME(gt_plus), "Guitar Controller + button", BTN, "start"},
+  {EVNAME(gt_minus), "Guitar Controller - button", BTN, "select"},
+
+  {EVNAME(gt_stick_x), "Guitar Controller Stick X", ABS, ""},
+  {EVNAME(gt_stick_y), "Guitar Controller Stick Y", ABS, ""},
+  {EVNAME(gt_whammy), "Guitar Controller whammy bar", ABS, ""},
+
   {EVNAME(wm_accel_x), "Wiimote X acceleration ((-) <--> (+) axis)", ABS, ""},
   {EVNAME(wm_accel_y), "Wiimote Y acceleration (plug <--> pointer axis)", ABS, ""},
   {EVNAME(wm_accel_z), "Wiimote Z acceleration (top <--> bottom axis)", ABS, ""},
@@ -84,6 +98,10 @@ const event_decl wiimote_events[] = {
   {EVNAME(nk_stick_x), "Nunchuk stick X", ABS, ""},
   {EVNAME(nk_stick_y), "Nunchuk stick Y", ABS, ""},
 
+  {EVNAME(gt_accel_x), "Guitar X acceleration", ABS, ""},
+  {EVNAME(gt_accel_y), "Guitar Y acceleration", ABS, ""},
+  {EVNAME(gt_accel_z), "Guitar Z acceleration", ABS, ""},
+
 
   {EVNAME(bal_x), "Balance Board Center of Gravity X", ABS, ""},
   {EVNAME(bal_y), "Balance Board Center of Gravity Y", ABS, ""},
@@ -93,12 +111,16 @@ const event_decl wiimote_events[] = {
   {EVNAME(nk_wm_gyro_x), "Wiimote Motion+ X Gyro with Nunchuk", ABS, ""},
   {EVNAME(nk_wm_gyro_y), "Wiimote Motion+ Y Gyro with Nunchuk", ABS, ""},
   {EVNAME(nk_wm_gyro_z), "Wiimote Motion+ Z Gyro with Nunchuk", ABS, ""},
+  {EVNAME(gt_gyro_x), "Wiimote Motion+ X Gyro with Guitar", ABS, ""},
+  {EVNAME(gt_gyro_y), "Wiimote Motion+ Y Gyro with Guitar", ABS, ""},
+  {EVNAME(gt_gyro_z), "Wiimote Motion+ Z Gyro with Guitar", ABS, ""},
   {nullptr, nullptr, NO_ENTRY, nullptr}
 };
 
 const option_decl wiimote_options[] = {
   {"wm_accel_active", "Enable accelerometers when no extension is present", "false", MG_BOOL},
   {"nk_accel_active", "Enable accelerometers when nunchuk is present", "false", MG_BOOL},
+  {"gt_accel_active", "Enable accelerometers when guitar is present", "false", MG_BOOL},
   {"wm_ir_active", "Enable IR data when no extension is present", "false", MG_BOOL},
   {"nk_ir_active", "Enable IR data when nunchuk is present", "false", MG_BOOL},
   {"grab_exclusive", "Grab device events via ioctl EVIOCGRAB", "true", MG_BOOL},
@@ -107,6 +129,7 @@ const option_decl wiimote_options[] = {
   //grab_permissions = "true" only really needed for Wii U Pro, but it doesn't hurt the others.
   {"wm_gyro_active", "Enable Motion+ gyroscopes when no extension is present", "false", MG_BOOL},
   {"nk_gyro_active", "Enable Motion+ gyroscopes when nunchuk is present", "false", MG_BOOL},
+  {"gt_gyro_active", "Enable Motion+ gyroscopes when guitar is present", "false", MG_BOOL},
   {nullptr, nullptr, nullptr, MG_NULL},
 };
 
@@ -163,6 +186,66 @@ void wiimote::process_core() {
   if (ret < 0) perror("read core");
 
 };
+
+#define GUITAR_STICK_SCALE ABS_RANGE/24
+#define GUITAR_WHAMMY_SCALE ABS_RANGE
+void wiimote::process_guitar(int fd) {
+  struct input_event ev;
+  int ret = read(fd, &ev, sizeof(ev));
+  if (ret > 0) {
+
+    if (ev.type == EV_KEY) switch (ev.code) {
+      case BTN_1:
+        send_value(gt_green, ev.value);
+        break;
+      case BTN_2:
+        send_value(gt_red, ev.value);
+        break;
+      case BTN_3:
+        send_value(gt_yellow, ev.value);
+        break;
+      case BTN_4:
+        send_value(gt_blue, ev.value);
+        break;
+      case BTN_5:
+        send_value(gt_orange, ev.value);
+        break;
+      case BTN_DPAD_UP:
+        send_value(gt_strumup, ev.value);
+        break;
+      case BTN_DPAD_DOWN:
+        send_value(gt_strumdown, ev.value);
+        break;
+      case BTN_START:
+        send_value(gt_plus, ev.value);
+        break;
+      case BTN_SELECT:
+        send_value(gt_minus, ev.value);
+        break;
+      }
+    else if (ev.type == EV_ABS) switch (ev.code) {
+      case ABS_HAT1X:
+        send_value(gt_whammy, ev.value * GUITAR_WHAMMY_SCALE);
+        break;
+      case ABS_X:
+        send_value(gt_stick_x, ev.value * GUITAR_STICK_SCALE);
+        break;
+      case ABS_Y:
+        send_value(gt_stick_y, -ev.value * GUITAR_STICK_SCALE);
+        break;
+    }
+    else {
+      methods.send_syn_report(ref);
+    }
+
+  }
+  if (ret < 0 && errno == ENODEV) {
+    close(fd);
+    classic.fd = -1;
+    return;
+  }
+  if (ret < 0) perror("read guitar ext");
+}
 
 #define CLASSIC_STICK_SCALE ABS_RANGE/24
 void wiimote::process_classic(int fd) {
@@ -297,6 +380,8 @@ void wiimote::process_accel(int fd) {
 
     if (mode == NUNCHUK_EXT) {
       offset = nk_wm_accel_x;
+    } else if (mode == GUITAR_EXT) {
+      offset = gt_accel_x;
     } else {
       offset = wm_accel_x;
     }
@@ -421,15 +506,19 @@ void wiimote::process_motionplus(int fd) {
 void wiimote::compute_motionplus() {
   if (!motionplus_calibrated)
     return;
+
+  int offset = 0;
   if (mode == NUNCHUK_EXT) {
-    send_value(nk_wm_gyro_x, (int64_t)(mpcache[0] - mpcalibrations[0]));
-    send_value(nk_wm_gyro_y, (int64_t)(mpcache[1] - mpcalibrations[1]));
-    send_value(nk_wm_gyro_z, (int64_t)(mpcache[2] - mpcalibrations[2]));
+    offset = nk_wm_gyro_x;
+  } else if (mode == GUITAR_EXT) {
+    offset = gt_gyro_x;
   } else {
-    send_value(wm_gyro_x, (int64_t)(mpcache[0] - mpcalibrations[0]));
-    send_value(wm_gyro_y, (int64_t)(mpcache[1] - mpcalibrations[1]));
-    send_value(wm_gyro_z, (int64_t)(mpcache[2] - mpcalibrations[2]));
+    offset = wm_gyro_x;
   }
+
+  send_value(offset + 0, (int64_t)(mpcache[0] - mpcalibrations[0]));
+  send_value(offset + 1, (int64_t)(mpcache[1] - mpcalibrations[1]));
+  send_value(offset + 2, (int64_t)(mpcache[2] - mpcalibrations[2]));
 }
 
 #define BAL_X_SCALE ABS_RANGE
