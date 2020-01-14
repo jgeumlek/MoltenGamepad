@@ -188,7 +188,7 @@ void wiimote::process_core() {
 };
 
 #define GUITAR_STICK_SCALE ABS_RANGE/24
-#define GUITAR_WHAMMY_SCALE ABS_RANGE
+#define GUITAR_WHAMMY_SCALE ABS_RANGE/12
 void wiimote::process_guitar(int fd) {
   struct input_event ev;
   int ret = read(fd, &ev, sizeof(ev));
@@ -225,13 +225,13 @@ void wiimote::process_guitar(int fd) {
       }
     else if (ev.type == EV_ABS) switch (ev.code) {
       case ABS_HAT1X:
-        send_value(gt_whammy, ev.value * GUITAR_WHAMMY_SCALE);
+        send_value(gt_whammy, (ev.value - 6) * GUITAR_WHAMMY_SCALE);
         break;
       case ABS_X:
         send_value(gt_stick_x, ev.value * GUITAR_STICK_SCALE);
         break;
       case ABS_Y:
-        send_value(gt_stick_y, -ev.value * GUITAR_STICK_SCALE);
+        send_value(gt_stick_y, ev.value * GUITAR_STICK_SCALE);
         break;
     }
     else {
