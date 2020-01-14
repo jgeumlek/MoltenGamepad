@@ -188,7 +188,7 @@ void wiimote::process_core() {
 };
 
 #define GUITAR_STICK_SCALE ABS_RANGE/24
-#define GUITAR_WHAMMY_SCALE ABS_RANGE/12
+#define GUITAR_WHAMMY_SCALE ABS_RANGE/6
 void wiimote::process_guitar(int fd) {
   struct input_event ev;
   int ret = read(fd, &ev, sizeof(ev));
