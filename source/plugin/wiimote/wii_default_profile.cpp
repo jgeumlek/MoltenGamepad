@@ -39,8 +39,10 @@ void wiimote_manager::init_profile() {
   methods.register_event_group(ref, {"wm_accels","wm_accel_x,wm_accel_y,wm_accel_z", "Wiimote Accelerometers", ""});
   methods.register_event_group(ref, {"nk_accels","nk_accel_x,nk_accel_y,nk_accel_z", "Nunchuk Accelerometers", ""});
   methods.register_event_group(ref, {"nk_wm_accels","nk_wm_accel_x,nk_wm_accel_y,nk_wm_accel_z", "Wiimote Accelerometers with Nunchuk", ""});
+  methods.register_event_group(ref, {"gt_accels","gt_accel_x,gt_accel_y,gt_accel_z", "Wiimote Accelerometers with Guitar", ""});
   methods.register_event_group(ref, {"wm_gyros","wm_gyro_x,wm_gyro_y,wm_gyro_z", "Wiimote Motion+ Gyroscopes", ""});
   methods.register_event_group(ref, {"nk_wm_gyros","nk_wm_gyro_x,nk_wm_gyro_y,nk_wm_gyro_z", "Wiimote Motion+ Gyroscopes with Nunchuk", ""});
+  methods.register_event_group(ref, {"gt_gyros","gt_gyro_x,gt_gyro_y,gt_gyro_z", "Wiimote Motion+ Gyroscopes with Guitar", ""});
 
   const option_decl* opt = &wiimote_options[0];
   for (int i = 0; opt->name && *opt->name; opt = &wiimote_options[++i]) {
