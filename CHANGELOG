@@ -1,4 +1,26 @@
 ---------------------------
+1.2.0
+2020-06-19
+---------------------------
+
+It's been a while. In the meantime, the repo owner has earned a doctorate. Anyway, some changes have been stagnating on devel, and to get this project moving again, they are now on master.
+They aren't fully verified, but I have been using the devel branch for a while for my own purposes.
+
+In exciting news, this sees a fair number of contributions from others to MoltenGamepad. Changes  include things like:
+
+* support for the guitar extension for wii remotes
+* better detection of phys strings for finding devices
+* a bit better error messages
+* blocking Steam's hidraw access, maybe?
+* uses axes in chords
+* allow virtual output devices to vanish
+* send keycodes when an output device is empty
+* expose classic controller analog values for those lucky people with the original extension controllers.
+* some partial refactorings...
+
+This release might be unstable, but the new features are likely worth the hassle. Please report any bugs you might run into.
+
+---------------------------
 1.1.0
 2017-04-25
 ---------------------------
