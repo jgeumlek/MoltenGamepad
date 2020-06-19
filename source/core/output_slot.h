@@ -2,6 +2,7 @@
 #include "virtual_devices/virtual_device.h"
 #include <string>
 
+
 enum slot_state { SLOT_ENABLED, SLOT_DISABLED};
 
 struct output_slot {

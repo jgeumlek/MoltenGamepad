@@ -54,6 +54,20 @@ enum wii_keys {
   cc_right_x,
   cc_right_y,
 
+  gt_green,
+  gt_red,
+  gt_yellow,
+  gt_blue,
+  gt_orange,
+  gt_strumup,
+  gt_strumdown,
+  gt_plus,
+  gt_minus,
+
+  gt_stick_x,
+  gt_stick_y,
+  gt_whammy,
+
   wm_accel_x,
   wm_accel_y,
   wm_accel_z,
@@ -72,6 +86,10 @@ enum wii_keys {
   nk_stick_x,
   nk_stick_y,
 
+  gt_accel_x,
+  gt_accel_y,
+  gt_accel_z,
+
 
 
   bal_x,
@@ -83,6 +101,9 @@ enum wii_keys {
   nk_wm_gyro_x,
   nk_wm_gyro_y,
   nk_wm_gyro_z,
+  gt_gyro_x,
+  gt_gyro_y,
+  gt_gyro_z,
 
   cc_l_axis,
   cc_r_axis,

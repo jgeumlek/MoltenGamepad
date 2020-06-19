@@ -251,12 +251,11 @@ void input_source::update_group(const std::vector<std::string>& evnames, const s
   }
 
   //build the key to store this under.
-  auto its = local_names.begin();
-  std::string group_name = *its;
-  its++;
-  for (; its != local_names.end(); its++) {
-    group_name += "," + (*its);
+  std::string group_name;
+  for (int i = 0; i < local_names.size(); i++) {
+    group_name += local_names[i] + (((*msg.group.directions)[i] > 0)?"+":"-") + ",";
   }
+  group_name.pop_back();
   msg.group.key = new std::string(group_name);
 
   //Finally, instantiate the translator from it's prototype.

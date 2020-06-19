@@ -246,6 +246,7 @@ bool matched(struct udev* udev, struct udev_device* dev, const device_match& mat
     uniq = udev_device_get_property_value(hidparent, "HID_UNIQ");
   }
 
+
   //sometimes custom arcade devces do not register as hid, I have such a case
   //with an ultimarc board which works as hid in one computer
   // and as a generic input device in another
@@ -253,6 +254,14 @@ bool matched(struct udev* udev, struct udev_device* dev, const device_match& mat
     phys = (char *) udev_device_get_property_value(parent, "PHYS");
     //TODO find out if this is also possible
     //uniq = (char *) udev_device_get_property_value(parent, "UNIQ");
+  }
+  
+  if (!phys && parent && !match.phys.empty()) {
+    //TODO: decide if this is redundant with the above.
+    phys = udev_device_get_sysattr_value(parent,"phys");
+  }
+  if (!uniq && parent && !match.uniq.empty()) {
+    uniq = udev_device_get_sysattr_value(parent,"uniq");
   }
   //only bother parsing this string if we will later match it
   if (parent && (match.vendor != -1 || match.product != -1) ) {

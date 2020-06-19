@@ -17,6 +17,7 @@
 #define MOTIONPLUS_NAME "Nintendo Wii Remote Motion Plus"
 #define NUNCHUK_NAME "Nintendo Wii Remote Nunchuk"
 #define CLASSIC_NAME "Nintendo Wii Remote Classic Controller"
+#define GUITAR_NAME "Nintendo Wii Remote Guitar"
 #define BALANCE_BOARD_NAME "Nintendo Wii Remote Balance Board"
 #define WII_U_PRO_NAME "Nintendo Wii Remote Pro Controller"
 
@@ -43,7 +44,7 @@ struct irdata {
   int y = 1023;
 };
 
-enum modes {NO_EXT, NUNCHUK_EXT, CLASSIC_EXT, PRO_EXT, BALANCE_EXT, MODE_UNCERTAIN};
+enum modes {NO_EXT, NUNCHUK_EXT, CLASSIC_EXT, GUITAR_EXT, PRO_EXT, BALANCE_EXT, MODE_UNCERTAIN};
 //MODE_UNCERTAIN is for the early stage where we don't know if this is a wiimote,
 // a balance board, or a Wii U Pro controller.
 
@@ -57,6 +58,7 @@ public:
   struct dev_node motionplus;
   struct dev_node nunchuk;
   struct dev_node classic;
+  struct dev_node guitar;
   struct dev_node pro;
   struct dev_node balance;
   struct wii_leds leds;
@@ -108,10 +110,12 @@ private:
   std::mutex mode_lock;
   bool wm_accel_active = false;
   bool nk_accel_active = false;
+  bool gt_accel_active = false;
   bool wm_ir_active = false;
   bool nk_ir_active = false;
   bool wm_gyro_active = false;
   bool nk_gyro_active = false;
+  bool gt_gyro_active = false;
   bool grab_exclusive = true;
   bool grab_permissions = false;
 
@@ -132,6 +136,7 @@ private:
   };
   void process_core();
   void process_classic(int fd);
+  void process_guitar(int fd);
   void process_nunchuk(int fd);
   void process_accel(int fd);
   void process_ir(int fd);
