@@ -1,6 +1,6 @@
-#MoltenGamepad Generic Device Driver Documentation
+# MoltenGamepad Generic Device Driver Documentation
 
-##Intro
+## Intro
 
 MoltenGamepad can translate button and axis events from any evdev device, such those in `/dev/input/event#`. To do this, MoltenGamepad needs some basic information on how to handle these devices. Creating a Generic Driver is an easy way to get enable basic functionality of MoltenGamepad for a device.
 
@@ -110,7 +110,7 @@ This is the full spec. See the examples for a simpler view.
 
 If multiple `[<Device Match>]` declarations are in a row, they are presumed to be alternative devices that should be grouped under the same driver. If they are not in a row, it is assumed that the user is beginning a new generic driver specification. (Yes, multiple generic drivers can be specified in one file.)
 
-#Matching Devices
+# Matching Devices
 
 The most basic way to match a device is via it's reported name string. Putting it in quotes is recommended.
 
