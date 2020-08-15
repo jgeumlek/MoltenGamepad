@@ -438,9 +438,12 @@ void slot_manager::update_pad_count_prelocked() {
 
 void slot_manager::tick_all_slots() {
   std::lock_guard<std::mutex> guard(lock);
-  dummyslot.virt_dev->check_delayed_events();
-  debugslot.virt_dev->check_delayed_events();
-  keyboard.virt_dev->check_delayed_events();
+  if (dummyslot.virt_dev)
+    dummyslot.virt_dev->check_delayed_events();
+  if (debugslot.virt_dev)
+    debugslot.virt_dev->check_delayed_events();
+  if (keyboard.virt_dev)
+    keyboard.virt_dev->check_delayed_events();
   for (output_slot& slot : slots) {
     if (slot.virt_dev)
       slot.virt_dev->check_delayed_events();
