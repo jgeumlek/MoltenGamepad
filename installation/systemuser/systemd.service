@@ -7,11 +7,11 @@ Description=MoltenGamepad Event Translator
 User=gamepad
 Group=gamepad
 Type=forking
-PIDFile=/var/run/moltengamepad/pid
+PIDFile=/run/moltengamepad/pid
 ExecStart=/usr/local/bin/moltengamepad \
- --daemon --pidfile /var/run/moltengamepad/pid \
- --replace-fifo --fifo-path /var/run/moltengamepad/fifo \
- --make-socket --socket-path /var/run/moltengamepad/socket
+ --daemon --pidfile /run/moltengamepad/pid \
+ --replace-fifo --fifo-path /run/moltengamepad/fifo \
+ --make-socket --socket-path /run/moltengamepad/socket
 ExecStop=/usr/bin/kill $MAINPID
 StandardOutput=journal+console
 StandardError=journal+console
