@@ -144,10 +144,7 @@ std::string field_to_string(const MGField field) {
 }
 
 char* copy_str(const char* str) {
-  int len = strlen(str) + 1;
-  char* copy = (char*)calloc(len, sizeof(char));
-  strncpy(copy, str, len);
-  return copy;
+  return strdup(str);
 }
 
 void input_source::update_option(const char* name, const MGField value) {
