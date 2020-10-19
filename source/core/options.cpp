@@ -135,6 +135,7 @@ option_info options::get_option(std::string opname) {
   auto it = opts.find(opname);
   if (it == opts.end()) {
     option_info opt;
+    memset(&opt.value,0,sizeof(opt.value));
     return opt;
   }
   return it->second;
