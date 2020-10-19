@@ -1,0 +1,19 @@
+Source: moltengamepad
+Section: utils
+Priority: optional
+Maintainer: Matthias S. Benkmann <matthias@winterdrache.de>
+Build-Depends: debhelper (>=9), libudev-dev, go-md2man
+Standards-Version: 3.9.6
+Homepage: https://github.com/mbenkmann/MoltenGamepad
+Vcs-Git: https://github.com/mbenkmann/MoltenGamepad
+Vcs-Browser: https://github.com/mbenkmann/MoltenGamepad
+
+Package: moltengamepad
+Architecture: any
+Depends: ${misc:Depends}
+Recommends: moltengamepad-data
+Description: Make using game controllers pain-free
+ Allow hotplugging of game controllers (i.e. you don't have to restart the
+ game when switching controllers) and make them all behave like
+ XBox 360 controllers so that you don't have to remap buttons whenever
+ you switch between different controller types.

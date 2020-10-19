@@ -1,0 +1,3 @@
+moltengamepad                   usr/bin
+debian/moltengamepad.cfg        etc/xdg/moltengamepad
+debian/50-gamepad-uinput.rules  etc/udev/rules.d

@@ -1,0 +1,41 @@
+#!/bin/sh
+
+error() {
+  echo 1>&2 "$@"
+  exit 1
+}
+  
+# If we're executed from within debian/ go up 1 level.
+test -x ./make-orig && cd ..
+# Simple check if we're at the top level
+test -x debian/make-orig -a -d .git || error "Could not find debian/make-orig"
+
+# get most recent version with -... suffix stripped
+version="$(dpkg-parsechangelog -S Version | sed 's/-.*//')"
+pkg="$(dpkg-parsechangelog -S Source)"
+
+if [ "$1" = "--dont-overwrite" ]; then
+  test -f ../${pkg}_${version}.orig.tar.xz && exit 0
+fi
+
+tag="$version"
+
+is_tag="$(git tag -l "$tag")"
+test $? = 0 || error "Could not execute git tag"
+
+if [ -n "$is_tag" ]; then
+  # It's a tag
+  echo Creating .orig.tar.xz from tag $tag
+else
+  # It's probably a date
+  case $tag in
+    ????.??.??) # dotted date => translate to dashes
+                tag=HEAD@'{'"$(echo "$tag"|tr . -)"'}'
+                ;;
+  esac
+  echo Creating .orig.tar.xz from tree-ish $tag
+fi
+
+rm -f ../${pkg}_${version}.orig.tar.xz
+git archive --worktree-attributes -o ../${pkg}_${version}.orig.tar --prefix=${pkg}-${version}/ "$tag"
+xz ../${pkg}_${version}.orig.tar
