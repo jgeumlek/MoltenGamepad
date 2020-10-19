@@ -252,7 +252,7 @@ void input_source::update_group(const std::vector<std::string>& evnames, const s
 
   //build the key to store this under.
   std::string group_name;
-  for (int i = 0; i < local_names.size(); i++) {
+  for (unsigned i = 0; i < local_names.size(); i++) {
     group_name += local_names[i] + (((*msg.group.directions)[i] > 0)?"+":"-") + ",";
   }
   group_name.pop_back();

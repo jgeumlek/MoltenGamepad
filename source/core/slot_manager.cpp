@@ -111,7 +111,7 @@ int slot_manager::request_slot(input_source* dev) {
   //There is no guarantee that that the open pads occur at the front
   //virtpad2 might be closed, but virtpad1 and virtpad3 might be open.
   //In this case, virtpads 1 and 3 are considered as 2 active pads...
-  int actual_active_pads = (active_pads <= slots.size()) ? active_pads : slots.size();
+  int actual_active_pads = (active_pads <= (int)slots.size()) ? active_pads : slots.size();
   int actives_seen = 0;
 
   //check if any existing slots are willing to take it.
