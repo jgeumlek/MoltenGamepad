@@ -68,7 +68,7 @@ int uinput::make_gamepad(const uinput_ids& ids, bool dpad_as_hat, bool analog_tr
     return -1;
   }
   memset(&uidev, 0, sizeof(uidev));
-  strncpy(uidev.name, ids.device_string.c_str(), UINPUT_MAX_NAME_SIZE);
+  strncpy(uidev.name, ids.device_string.c_str(), UINPUT_MAX_NAME_SIZE-1); // -1 to guarantee 0 termination
   uidev.id.bustype = BUS_USB;
   uidev.id.vendor = ids.vendor_id;
   uidev.id.product = ids.product_id;
@@ -149,7 +149,7 @@ int uinput::make_keyboard(const uinput_ids& ids) {
     return -1;
   }
   memset(&uidev, 0, sizeof(uidev));
-  strncpy(uidev.name, ids.device_string.c_str(), UINPUT_MAX_NAME_SIZE);
+  strncpy(uidev.name, ids.device_string.c_str(), UINPUT_MAX_NAME_SIZE-1); // -1 to guarantee 0 termination
   uidev.id.bustype = BUS_USB;
   uidev.id.vendor = ids.vendor_id;
   uidev.id.product = ids.product_id;
@@ -207,7 +207,7 @@ int uinput::make_mouse(const uinput_ids& ids) {
     return -1;
   }
   memset(&uidev, 0, sizeof(uidev));
-  strncpy(uidev.name, ids.device_string.c_str(), UINPUT_MAX_NAME_SIZE);
+  strncpy(uidev.name, ids.device_string.c_str(), UINPUT_MAX_NAME_SIZE-1); // -1 to guarantee 0 termination
   uidev.id.bustype = BUS_USB;
   uidev.id.vendor = ids.vendor_id;
   uidev.id.product = ids.product_id;
