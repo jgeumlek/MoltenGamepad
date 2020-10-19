@@ -7,8 +7,6 @@ error() {
   
 # If we're executed from within debian/ go up 1 level.
 test -x ./make-orig && cd ..
-# Simple check if we're at the top level
-test -x debian/make-orig -a -d .git || error "Could not find debian/make-orig"
 
 # get most recent version with -... suffix stripped
 version="$(dpkg-parsechangelog -S Version | sed 's/-.*//')"
@@ -17,6 +15,9 @@ pkg="$(dpkg-parsechangelog -S Source)"
 if [ "$1" = "--dont-overwrite" ]; then
   test -f ../${pkg}_${version}.orig.tar.xz && exit 0
 fi
+
+# Simple check if we're at the top level and a .git is present
+test -x debian/make-orig -a -d .git || error "Could not find debian/make-orig or .git/"
 
 tag="$version"
 
