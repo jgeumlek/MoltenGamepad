@@ -1,0 +1,7 @@
+# Do not put debian/ directory into .orig archive. It is archived separately.
+debian/ export-ignore
+
+# Do not store pre-generated event lists in .orig archive
+source/core/eventlists/key_list.cpp   export-ignore
+source/core/eventlists/axis_list.cpp  export-ignore
+source/core/eventlists/rel_list.cpp   export-ignore
