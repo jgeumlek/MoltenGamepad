@@ -2,8 +2,8 @@ moltengamepad for Debian - notes about the source package
 -----------------------
 
 * This package is based on the sources found here
-  https://github.com/mbenkmann/MoltenGamepad  branch "devel"
-  https://github.com/mbenkmann/MG-Files       branch "master"
+  https://github.com/mbenkmann/MoltenGamepad  branch "msb"
+  https://github.com/mbenkmann/MG-Files       branch "msb"
   
   These repositories include the debian/ directory.
 
