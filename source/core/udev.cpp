@@ -245,7 +245,9 @@ int udev_handler::grab_permissions(udev_device* dev, bool grabbed, int flags) {
     //go up a level to find siblings...
     std::string devpath(udev_device_get_syspath(dev));
     std::string parentpath(udev_device_get_syspath(parent));
-    std::string hidparentpath(udev_device_get_syspath(hid_parent));
+    std::string hidparentpath(parentpath);
+    hidparentpath += "/../..";
+    if (hid_parent) hidparentpath = udev_device_get_syspath(hid_parent);
     std::string globstr = "";
     if (!subsystem)
       return SUCCESS; //we grabbed all that we know how to do!
