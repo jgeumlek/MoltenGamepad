@@ -1,0 +1,20 @@
+moltengamepad for Debian
+-----------------------
+
+* a user "gamepad" is created
+* all known gamepads have their device nodes owned by "gamepad" through udev rules
+  (these udev rules are contained in the package moltengamepad-data)
+* /dev/uinput is owned by user "gamepad" as well
+* /usr/bin/moltengamepad is installed setuid gamepad to have access to the device files
+* /etc/xdg/moltengamepad/moltengamepad.cfg is contained in this package
+  and is configured to present 2 permanently attached XBox 360 gamepads to the system.
+  This allows games for 2 players to work right away with no hassle.
+* The package moltengamepad-data contains the /etc/xdg/moltengamepad/gendevices and profiles
+  for known gamepads.
+* The program moltengamepad is NOT automatically started. Users that want it have to start it
+  manually, e.g.
+     moltengamepad --stay-alive </dev/null &
+  Usually this command would be put into some auto-start file.
+
+
+ -- Matthias S. Benkmann <matthias@winterdrache.de>  Mon, 25 May 2020 15:12:31 +0200

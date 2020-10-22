@@ -45,7 +45,7 @@ COMPILE.cpp = $(CXX) $(DEPFLAGS) $(CXXFLAGS) $(CPPFLAGS) $(TARGET_ARCH) -c
 POSTCOMPILE = mv -f $(DEPDIR)/$*.Td $(DEPDIR)/$*.d
 
 
-all : moltengamepad plugins
+all : moltengamepad plugins documentation/moltengamepad.1
 
 .SECONDEXPANSION:
 %.o : %.c
@@ -108,6 +108,7 @@ built_plugins/%.so : source/plugin/%/plug.so built_plugins
 force_look:
 	true
 
+EVENTSOURCES=source/core/eventlists/key_list.cpp source/core/eventlists/axis_list.cpp source/core/eventlists/rel_list.cpp
 BUILT_INS_CLEAN=$(addsuffix _clean,$(MG_BUILT_INS))
 EXTERNAL_PLUGS_CLEAN=$(addsuffix _clean,$(MG_PLUG_INS))
 
@@ -115,6 +116,8 @@ clean : $(BUILT_INS_CLEAN)
 	$(RM) moltengamepad
 	$(RM) $(OBJS)
 	$(RM) source/core/mg_core.a
+	$(RM) *~ *.bak */*~ */*.bak
+	$(RM) documentation/moltengamepad.1.md documentation/moltengamepad.1
 
 clean_plugins : $(EXTERNAL_PLUGS_CLEAN)
 	$(RM) $(EXTERNAL_PLUGS)
@@ -122,14 +125,31 @@ clean_plugins : $(EXTERNAL_PLUGS_CLEAN)
 %_clean :
 	$(MAKE) -C source/plugin/$* clean
 
+distclean: clean clean_plugins
+	$(RM) -r .d
+	$(RM) $(EVENTSOURCES)
+
 .PHONY: debug
 debug : CPPFLAGS+=-DDEBUG -g
 debug : moltengamepad
 
 .PHONY: eventlists
-eventlists : source/core/eventlists/generate_key_codes
+eventlists : $(EVENTSOURCES)
+
+$(EVENTSOURCES): source/core/eventlists/generate_key_codes
 	cd source/core/eventlists && ./generate_key_codes $(INPUT_HEADER)
 
 .PHONY: steam
 steam :
 	MG_BUILT_INS="steamcontroller" $(MAKE) moltengamepad
+
+documentation/moltengamepad.1.md: documentation/manpage-start.md README.md \
+ documentation/config_files.md documentation/profiles.md documentation/gendev.md documentation/manpage-end.md
+	cat $+ >$@
+
+documentation/moltengamepad.1: documentation/moltengamepad.1.md
+	go-md2man -in=$< -out=$@
+
+.PHONY: debian
+debian:
+	dpkg-buildpackage -rfakeroot -sa -uc -us

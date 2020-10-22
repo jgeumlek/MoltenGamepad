@@ -1,0 +1,4 @@
+# Assign /dev/uinput to user "gamepad", which is the setuid user of moltengamepad
+
+KERNEL=="uinput", OWNER="gamepad", MODE="0600"
+
