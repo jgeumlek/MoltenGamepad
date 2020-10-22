@@ -144,10 +144,7 @@ std::string field_to_string(const MGField field) {
 }
 
 char* copy_str(const char* str) {
-  int len = strlen(str) + 1;
-  char* copy = (char*)calloc(len, sizeof(char));
-  strncpy(copy, str, len);
-  return copy;
+  return strdup(str);
 }
 
 void input_source::update_option(const char* name, const MGField value) {
@@ -252,7 +249,7 @@ void input_source::update_group(const std::vector<std::string>& evnames, const s
 
   //build the key to store this under.
   std::string group_name;
-  for (int i = 0; i < local_names.size(); i++) {
+  for (unsigned i = 0; i < local_names.size(); i++) {
     group_name += local_names[i] + (((*msg.group.directions)[i] > 0)?"+":"-") + ",";
   }
   group_name.pop_back();

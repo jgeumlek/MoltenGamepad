@@ -145,7 +145,10 @@ bool events_matched(udev* udev, udev_device* dev, const generic_driver_info* gen
     delete[] buffer;
     return false;
   }
-  read(fd, buffer, 1024);
+  if (read(fd, buffer, 1024) <= 0) {
+    delete[] buffer;
+    return false;
+  }
   buffer[1023] = '\0';
   close(fd);
   std::vector<int> codes = read_capabilities(buffer);
@@ -168,7 +171,10 @@ bool events_matched(udev* udev, udev_device* dev, const generic_driver_info* gen
     return false;
   }
   memset(buffer, 0, 1024);
-  read(fd, buffer, 1024);
+  if (read(fd, buffer, 1024) <= 0) {
+    delete[] buffer;
+    return false;
+  }
   buffer[1023] = '\0';
   close(fd);
   codes = read_capabilities(buffer);

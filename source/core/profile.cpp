@@ -220,7 +220,7 @@ void profile::set_group_mapping(std::vector<std::string> names, std::vector<int8
   // 2) verify that this profile actually has the event being named.
   //this key creation is not ideal.
   std::string key;
-  for (int i = 0; i < names.size(); i++) {
+  for (unsigned i = 0; i < names.size(); i++) {
     if (mapping.find(names[i]) == mapping.end())
       return; //abort! event not found.
     key += names[i] + ((directions[i] > 0)?"+":"-") + ",";

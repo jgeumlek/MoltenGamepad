@@ -45,7 +45,7 @@ int make_socket(std::string& path, sockaddr_un& address) {
   }
   memset(&address, 0, sizeof(address));
   address.sun_family = AF_UNIX;
-  snprintf(address.sun_path, UNIX_PATH_MAX, path.c_str());
+  snprintf(address.sun_path, UNIX_PATH_MAX, "%s", path.c_str());
   if (bind(sock, (struct sockaddr *) &address, sizeof(address)) != 0) {
     perror("binding socket");
     return -1;
