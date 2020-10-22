@@ -1,13 +1,13 @@
 # MoltenGamepad
 *Flexible input device remapper, geared towards gamepads*
 
-(Tested only on Arch Linux, 64-bit)
+(Tested mainly on Arch Linux, 64-bit. Debian packaging contributed by mbenkmann)
 
 ## Motivation
 
 Do you have input devices that you wish sent different events? MoltenGamepad is a daemon that can replace input devices with virtual ones while providing a way to translate or remap events.
 
-It's main focus is on game controllers. They come in many shapes with many features, but most games make a lot of assumptions about what a controller should look like. MoltenGamepad allows for the diverse real input devices to all appear virtually as a "standard" game pad that most games understand.
+Its main focus is on game controllers. They come in many shapes with many features, but most games make a lot of assumptions about what a controller should look like. MoltenGamepad allows for the diverse real input devices to all appear virtually as a "standard" game pad that most games understand.
 
 The goal is to make any controller "just work", even as they are inserted or removed from the system. For complicated input devices, this can even involve writing specialized support to fully exploit their features.
 

@@ -18,7 +18,7 @@
 #include "plugin_loader.h"
 #include "protocols/protocols.h"
 
-#define VERSION_STRING "1.2.0"
+#define VERSION_STRING "1.2.1"
 
 
 class slot_manager;

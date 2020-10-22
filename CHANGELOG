@@ -1,4 +1,13 @@
 ---------------------------
+1.2.1
+2020-10-22
+--------------------------
+
+Some more contributed changes, with some initial debian packaging being contributed by mbenkmann, along with some other fixes. Another contributed change updates the default install scripts to use a less deprecated /run directory. Unless you are rerunning those install scripts, existing installs should be unaffected. (Not to mention systems will likely have /var/run and /run linked.) Those packaging this software, or making their own use of the sockets or pid files might need to adapt.
+
+
+
+---------------------------
 1.2.0
 2020-06-19
 ---------------------------
