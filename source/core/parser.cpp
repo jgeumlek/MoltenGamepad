@@ -224,11 +224,13 @@ trans_decl build_trans_decl(const char* decl_str) {
   parsed_decl.variadic_mapped_events = false;
   parsed_decl.decl_str = decl_str;
   auto it = tokens.begin();
-  while (it->value == "key" || it->value == "axis" || it->value == "event") {
+  while (it->value == "key" || it->value == "axis" || it->value == "rel" || it->value == "event") {
     if (it->value == "key")
       parsed_decl.mapped_events.push_back(DEV_KEY);
     if (it->value == "axis")
       parsed_decl.mapped_events.push_back(DEV_AXIS);
+    if (it->value == "rel")
+      parsed_decl.mapped_events.push_back(DEV_REL);
     if (it->value == "event")
       parsed_decl.mapped_events.push_back(DEV_ANY);
     it++;
@@ -296,6 +298,7 @@ void MGparser::load_translators(moltengamepad* mg) {
   MAKE_GEN(axis2btns);
   MAKE_GEN(btn2rel);
   MAKE_GEN(axis2rel);
+  MAKE_GEN(rel2rel);
   RENAME_GEN(redirect,redirect_trans);
   RENAME_GEN(multi,multitrans);
   //add a quick mouse redirect
@@ -353,7 +356,7 @@ void MGparser::do_assignment(std::string header, std::string field, std::vector<
     return;
   }
 
-  if (left_type == DEV_KEY || left_type == DEV_AXIS) {
+  if (left_type == DEV_KEY || left_type == DEV_AXIS || left_type == DEV_REL) {
     auto it = rhs.begin();
     event_translator* trans = nullptr;
     try {
@@ -692,6 +695,7 @@ int read_ev_code(std::string& code, out_type type) {
 //Handles those automagic simple cases.
 #define SPEC_REL_BTN 3
 #define SPEC_REL_AXIS 10
+#define SPEC_REL_REL 1
 event_translator* MGparser::parse_special_trans(enum entry_type intype, complex_expr* expr) {
   if (!expr) return nullptr;
 
@@ -702,7 +706,7 @@ event_translator* MGparser::parse_special_trans(enum entry_type intype, complex_
   }
 
   //Axis or key to an axis or rel. (Detect +/- directions)
-  if ((intype == DEV_AXIS || intype == DEV_KEY) && expr->params.size() == 0) {
+  if ((intype == DEV_AXIS || intype == DEV_KEY || intype == DEV_REL) && expr->params.size() == 0) {
     std::string outevent = expr->ident;
     int direction = 1;
     if (outevent.size() > 0) {
@@ -727,6 +731,7 @@ event_translator* MGparser::parse_special_trans(enum entry_type intype, complex_
       int out_rel = read_ev_code(outevent, OUT_REL);
       if (out_rel >= 0 && intype == DEV_AXIS) return new axis2rel(out_rel, SPEC_REL_AXIS*direction);
       if (out_rel >= 0 && intype == DEV_KEY)  return new btn2rel(out_rel, SPEC_REL_BTN*direction);
+      if (out_rel >= 0 && intype == DEV_REL)  return new rel2rel(out_rel, SPEC_REL_REL*direction);
     }
   }
 
@@ -1007,7 +1012,8 @@ bool MGparser::print_special_def(entry_type intype, MGTransDef& def, std::ostrea
 
   //check for being simply mapped to an axis or rel
   if ((intype == DEV_KEY && (def.identifier == "btn2axis" || def.identifier == "btn2rel"))
-    || (intype == DEV_AXIS && (def.identifier == "axis2axis" || def.identifier == "axis2rel"))) {
+    || (intype == DEV_AXIS && (def.identifier == "axis2axis" || def.identifier == "axis2rel"))
+    || (intype == DEV_REL && (def.identifier == "rel2rel"))) {
     if (def.fields.size() >= 2 &&  def.fields[1].type == MG_INT) {
       const char* name = nullptr;
       const char* suffix = "";
@@ -1059,7 +1065,7 @@ bool MGparser::print_special_def(entry_type intype, MGTransDef& def, std::ostrea
       entry_type context = intype;
       def.fields[0].trans->fill_def(innerdef);
       //Quick heuristic: if it is a "2rel" translation, it is a mouse movement.
-      if (innerdef.identifier == "btn2rel" || innerdef.identifier == "axis2rel") {
+      if (innerdef.identifier == "btn2rel" || innerdef.identifier == "axis2rel" || innerdef.identifier == "rel2rel") {
         output << "mouse(";
       } else {
         output << "key(";

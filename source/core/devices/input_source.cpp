@@ -315,6 +315,9 @@ bool notable_event(const entry_type type, const int64_t value, const int64_t old
     //not a problem. Hats will be affected, but only at the very start.
     return (val_sign != oldval_sign) && oldvalue != 0;
   }
+  if (type == DEV_REL) {
+    return true;
+  }
   return false;
 }
 
@@ -323,12 +326,15 @@ int64_t apply_direction(entry_type type, int64_t value, int8_t direction) {
     return -value;
   if (type == DEV_KEY && direction == -1)
     return !value;
+  if (type == DEV_REL && direction == -1)
+    return -value;
   return value;
 }
 
 void input_source::send_value(int id, int64_t value) {
-  if (id < 0 || (uint)id > events.size() || events[id].value == value)
+  if (id < 0 || (uint)id > events.size() || (events[id].value == value && !(events[id].type == DEV_REL))) {
     return;
+  }
   bool blocked = false;
   for (auto group_trans : ev_map.at(id).attached) {
     //check to see if an attached group translator "claims" this event, blocking further translation.
@@ -354,8 +360,9 @@ void input_source::send_value(int id, int64_t value) {
 
   value = apply_direction(events[id].type, value, ev_map[id].direction);
 
-  if (ev_map.at(id).trans && out_dev) ev_map.at(id).trans->process({value}, out_dev.get());
-    
+  if (ev_map.at(id).trans && out_dev) {
+    ev_map.at(id).trans->process({value}, out_dev.get());
+  }
 
 }
 
@@ -471,6 +478,8 @@ void input_source::handle_internal_message(input_internal_msg& msg) {
         add_listener(ev_id, direction, msg.group.trans, trans_index);
         listened.push_back(events[ev_id]);
         if (direction < 0 && listened.back().type == DEV_AXIS)
+          listened.back().value = - listened.back().value;
+        if (direction < 0 && listened.back().type == DEV_REL)
           listened.back().value = - listened.back().value;
         if (direction < 0 && listened.back().type == DEV_KEY)
           listened.back().value = !listened.back().value;

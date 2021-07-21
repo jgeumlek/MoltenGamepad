@@ -10,7 +10,7 @@ simple_chord::simple_chord(std::vector<MGField>& fields) {
 bool simple_chord::set_mapped_events(const std::vector<source_event>& listened) {
   num_events = listened.size();
   for (auto ev : listened) {
-    if ((ev.type != DEV_KEY) && (ev.type != DEV_AXIS))
+    if ((ev.type != DEV_KEY) && (ev.type != DEV_AXIS) && (ev.type != DEV_REL))
       return false;
     event_vals.push_back(ev.value);
     event_thres.push_back(ev.type == DEV_KEY?0:ABS_RANGE/2);

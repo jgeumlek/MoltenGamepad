@@ -1,0 +1,1593 @@
+.TH moltengamepad 1 "May 2020" moltengamepad "User Manual"
+
+.SH NAME
+.PP
+moltengamepad \- Make using game controllers painless
+
+
+.SH SYNOPSIS
+.PP
+moltengamepad [options]
+
+
+.SH Description
+
+.SH MoltenGamepad
+.PP
+\fIFlexible input device remapper, geared towards gamepads\fP
+
+.PP
+(Tested mainly on Arch Linux, 64\-bit. Debian packaging contributed by mbenkmann)
+
+.SH Motivation
+.PP
+Do you have input devices that you wish sent different events? MoltenGamepad is a daemon that can replace input devices with virtual ones while providing a way to translate or remap events.
+
+.PP
+Its main focus is on game controllers. They come in many shapes with many features, but most games make a lot of assumptions about what a controller should look like. MoltenGamepad allows for the diverse real input devices to all appear virtually as a "standard" game pad that most games understand.
+
+.PP
+The goal is to make any controller "just work", even as they are inserted or removed from the system. For complicated input devices, this can even involve writing specialized support to fully exploit their features.
+
+.SH Features
+.RS
+.IP \(bu 2
+Create virtual gamepads that almost all games can use.
+.IP \(bu 2
+Virtual gamepads are persistent, which fixes the numerous games that break when controllers are disconnected.
+.IP \(bu 2
+Flexible generic device driver framework, where only a text file is needed to support input sources that don't need special features.
+.IP \(bu 2
+All configuration files are designed to be human\-readable and editable.
+.IP \(bu 2
+Easy loading and saving of event mappings that can be changed at run time.
+.IP \(bu 2
+Specialized userspace driver for Wii remotes that make full use of extension controller hotswapping.
+.IP \(bu 2
+Supports a command FIFO or socket for controlling a running instance of MoltenGamepad via scripting.
+.IP \(bu 2
+Can handle cases where one event device represents multiple logical controllers (like an arcade stick), or vice versa.
+.IP \(bu 2
+Virtual devices can process rumble events (but this is disabled by default. See \fB\fCdocumentation/rumble.md\fR\&.)
+
+.RE
+
+.PP
+MoltenGamepad targets a set\-it\-and\-forget\-it daemon\-like usage pattern,  where devices can connect or disconnect freely. Its main purpose is letting a user "standardize" their software to expect just one type of controller, and then automagically transform connected input devices to match that standardized abstraction.
+
+.SH Building
+.PP
+.RS
+
+.nf
+make
+
+.fi
+.RE
+
+.PP
+If you get undefined KEY\_* errors, you'll need to remove those lines from the eventlists. The following command should rebuild these eventlists to match your system. Afterwards you can try running \fB\fCmake\fR again. If this fails with \fB\fCnot found\fR you may need to update a variable in the Makefile to tell it where your key codes are defined.
+
+.PP
+.RS
+
+.nf
+make eventlists
+
+.fi
+.RE
+
+.PP
+The only linked libraries under this default target are libudev, libpthread, and libdl.
+
+.PP
+Currently three plugins can optionally be built into MoltenGamepad when compiling, \fB\fCwiimote\fR, \fB\fCjoycon\fR, and \fB\fCsteamcontroller\fR\&. By default, only the wiimote plugin is set to be built. Modify the lines at the beginning of the Makefile to control whether these plugins are included.
+
+.PP
+Plugins can also be set to be built as external plugins. These plugins will need to be moved to a \fB\fCplugins\fR folder inside MG's config directory in order to be found and loaded. (Plugins will only be loaded if MG is started with the \fB\fC\-\-load\-plugins\fR option).
+
+.PP
+Note that the Steam Controller plugin requires the scraw
+\[la]https://gitlab.com/dennis-hamester/scraw\[ra] and scrawpp
+\[la]https://gitlab.com/dennis-hamester/scrawpp\[ra] libraries.
+
+.SH Installing
+.PP
+The \fB\fCinstallation\fR directory has files and scripts to help you get MoltenGamepad up and running quickly. Look in there for the udev rules required to give MoltenGamepad the appropriate permissions.
+
+.PP
+The installation above is bare\-bones, and MoltenGamepad won't know very many devices. See the MG\-Files repo
+\[la]https://github.com/jgeumlek/MG-Files\[ra] and get the crowd\-sourced device configs to fully enjoy the MoltenGamepad experience.
+
+.SH Running
+.PP
+.RS
+
+.nf
+\&./moltengamepad
+
+.fi
+.RE
+
+.PP
+MoltenGamepad will start up, search existing devices, and wait for devices to show up. MoltenGamepad will read commands from its standard input.
+
+.PP
+.RS
+
+.nf
+\&./moltengamepad \-\&\-\&help
+
+.fi
+.RE
+
+.PP
+to see the available command line arguments.
+
+.PP
+Type \fB\fChelp\fR into MG to see the available runtime commands.
+
+.PP
+You'll need appropriate permissions on the uinput device node, as well as any device nodes you wish MoltenGamepad to work with. See the \fB\fCinstallation\fR folder for more details.
+
+.PP
+You might need to use \fB\fC\-\-uinput\-path\fR to tell MoltenGamepad where the uinput device is on your system. (You might even need to modprobe uinput.)
+
+.SH Sending Commands
+.PP
+As MoltenGamepad might be running as a background task, there are two additional ways to send commands to MoltenGamepad.
+
+.PP
+A FIFO can be made with \fB\fC\-\-make\-fifo\fR\&. It acts as a special file where commands written to it will be read by MG. There is not bidirectional; MG cannot send any information back through the FIFO.
+
+.PP
+A socket can be made with \fB\fC\-\-make\-socket\fR\&. This also creates a special file, one that supports sending and receiving data. You'll need a client such as moltengamepadctl
+\[la]https://github.com/jgeumlek/moltengamepadctl\[ra] that knows the appropriate way to communicate with MG.
+
+.SH Configuration Locations
+.PP
+Configuration files follow the XDG specification.  \fB\fC$XDG\_CONFIG\_HOME\fR is checked first before falling back to check the listed directories in \fB\fC$XDG\_CONFIG\_DIRS\fR\&. A \fB\fCmoltengamepad\fR folder is used within these directories.
+
+.PP
+With the default values for these XDG variables the following behavior applies:
+
+.RS
+.IP \(bu 2
+User specific files are located in \fB\fC\~/.config/moltengamepad/\fR
+.IP \(bu 2
+Systemwide files are located in \fB\fC/etc/xdg/moltengamepad/\fR
+
+.RE
+
+.PP
+Profiles are located in a \fB\fCprofiles\fR subdirectory of a configuration directory.
+
+.PP
+Generic driver specifications are in a \fB\fCgendevices\fR subdirectory of a configuration directory.
+
+.SH Quick Summary: The Big Picture
+.PP
+MoltenGamepad creates virtual game pad devices, known as output slots. These output slots are what will ultimately be read by your other software.
+
+.PP
+MoltenGamepad also listens for input sources it recognizes, such as Wii remotes. Each input source declares a set of events it exposes.
+
+.PP
+The mapping from input source events to output slot events is stored in a profile. Every device maintains its own profile.
+
+.PP
+Input sources can be assigned to and moved from output slots freely.
+
+.PP
+This is the big picture of MoltenGamepad: input sources being translated according to profiles into the output slots they have been assigned. The profiles and the slot assignments can be changed while MoltenGamepad is running.
+
+.SH Getting Started
+.PP
+This is just a very quick introduction to get you on your feet and a little more able to discover what MG can do for you.
+
+.PP
+When started, MoltenGamepad will create its virtual outputs, wait for input sources it recognizes, and will assign them to a slot upon their first event.
+
+.PP
+WARNING: Out of the box, MoltenGamepad will only have the included wiimote driver. Unless you are using wiimotes, you'll need to create some config files describing a generic driver for your device before MoltenGamepad will do anything useful. (See \fB\fCdocumentation/gendev.md\fR for details.) Community contributed configuration files can be found in the MG\-Files repo
+\[la]https://github.com/jgeumlek/MG-Files\[ra]\&.
+
+.PP
+MoltenGamepad will also listen on stdin for user commands, such as changing a mapping or moving an input source to a different virtual output.
+
+.PP
+Useful command options:
+
+.RS
+.IP \(bu 2
+\fB\fC\-\-mimic\-xpad\fR Make the virtual controllers appear to be wired Xbox 360 controllers, which most games (and Steam) expect.
+.IP \(bu 2
+\fB\fC\-\-rumble\fR if you want rumble and understand the risks
+.IP \(bu 2
+\fB\fC\-\-load\-plugins\fR if you have any external plugins you wish to load.
+
+.RE
+
+.PP
+When MoltenGamepad starts, take a moment to look over what is printed to get an idea of how MG initializes.
+
+.PP
+Run \fB\fCprint drivers\fR to see the drivers you have loaded. Pick one and try printing its profile, ex \fB\fCprint profiles wiimote\fR\&.
+
+.PP
+Next, go a head and connect a recognized input device. You should see it be identified and given a name.
+
+.PP
+Try pressing a button on your input device, and you should see it get assigned an output slot.
+
+.PP
+Try \fB\fCprint profiles\fR, and notice how there are profiles for each driver and each device. Changes to a driver profile will propagate to all connected devices and future connected devices! The \fB\fCgamepad\fR profile will propagate changes to the appropriate driver profiles.
+
+.PP
+Try changing an input mapping
+
+.PP
+.RS
+
+.nf
+wiimote.wm\_a = start
+
+.fi
+.RE
+
+.PP
+or
+
+.PP
+.RS
+
+.nf
+wiimote.wm\_a = key(key\_a)
+
+.fi
+.RE
+
+.PP
+Try changing the output slot assignment:
+
+.PP
+.RS
+
+.nf
+move <device name> to virtpad2 
+
+.fi
+.RE
+
+.PP
+Try printing out the event name aliases of a device or driver
+
+.PP
+.RS
+
+.nf
+print aliases wiimote
+
+.fi
+.RE
+
+.PP
+Or print the events to see their descriptions
+
+.PP
+.RS
+
+.nf
+print events wiimote
+
+.fi
+.RE
+
+.SH Additional Documentation
+.PP
+See this README, the various files in the \fB\fCdocumentation\fR folder, the output of \fB\fC\&./moltengamepad \-\&\-\&help\fR, and the output of the \fB\fChelp\fR command while running MoltenGamepad.
+
+.PP
+Documentation for the plugins is located in their source directory. (e.g. \fB\fCsource/plugins/wiimote/\fR).
+
+.SH Known Issues
+.RS
+.IP \(bu 2
+Changing input mappings does not clear out previous values, potentially leading to stuck inputs.
+.IP \(bu 2
+Multiple inputs mapped to the same output event clobber each other. Desired behavior uncertain.
+.IP \(bu 2
+Will likely add some amount of input latency, though it hasn't been measured beyond playtests.
+
+.RE
+
+.SH Troubleshooting FAQ\-ish Section
+.SS What's this about file permissions for the devices?
+.PP
+MoltenGamepad will fail if you don't have the right permissions, and you likely won't have the right permissions unless you do some extra work. Though not recommended for regular use, running MoltenGamepad as a super\-user can be a useful way to try it out before you have the permissions sorted out.
+
+.PP
+You need write access to uinput to create the virtual gamepads.
+
+.PP
+You need read access to the various event devices you wish to read. Most systems automatically tag event devices that look like joysticks/gamepads to be readable by the current user. Unorthodox devices like a wiimote will need special udev rules.
+
+.PP
+If you enable rumble support, you need write access to the various event devices in order to send the rumble events.
+
+.PP
+See the \fB\fCudev.rules\fR files in the \fB\fCinstallation\fR directory for more information.
+
+.SS What is a MoltenGamepad driver?
+.PP
+A driver handles a certain class of input devices. Its responsibilities include identifying appropriate devices and knowing when they are removed. A driver also includes an implementation of an input source, providing the code to actually read and process input events.
+
+.PP
+One included driver is the Wiimote driver. It handles the gritty details of the Linux kernel event devices made by a wiimote. Extra features include swapping active events when a wiimote extension is changed, along with combining the extension inputs with the wiimote inputs.
+
+.PP
+MoltenGamepad also contains support to read special configuration files to create generic drivers. These drivers can identify input devices by their reported name or vendor/product ids, and can provide meaningful names to their event codes. This \fB\fCgendevices\fR functionality can support any reasonable device recognized by your kernel.
+
+.PP
+The dream here is to have a variety of drivers, enabling interesting features of certain hardware or gathering unorthodox input sources. Perhaps one might read controller inputs off the network/chatroom. Or expose controller inputs onto the file system.
+
+.PP
+REMINDER: At the moment, only the wiimote driver will be active on a default installation of MoltenGamepad.
+
+.SS How does setting a mapping work?
+.PP
+The general syntax is
+
+.PP
+.RS
+
+.nf
+<profile>.<in event> = <out event>
+
+.fi
+.RE
+
+.PP
+For example,
+
+.PP
+.RS
+
+.nf
+wiimote.wm\_a = primary
+
+.fi
+.RE
+
+.PP
+Every driver has a profile, as does every device. Their profiles are named the same. (Ex. the \fB\fCwiimote\fR driver has a a profile named \fB\fCwiimote\fR). Changing a mapping in a driver's profile will change that mapping in all connected devices of that driver, along with any future connected devices. Changing a mapping in a device's profile changes it for just that device, and may be overwritten by a future change to the driver's profile.
+
+.PP
+The profiles form a tree\-shaped hierarchy, where a change to a mapping in one is propagated to its subordinates. It looks roughly like the following.
+
+.PP
+.RS
+
+.nf
+gamepad
+ +<driver profile>
+ |  +<device profile>
+ |  +<device profile>
+ |
+ +<driver profile>
+   +<device profile>
+
+.fi
+.RE
+
+.SS Slots?
+.PP
+Slots refer to the virtual output devices, so named to echo the "player slots" seen on game consoles as well as avoiding using the word "device" everywhere in every context. By default, MoltenGamepad creates 4 virtual gamepad slots, one virtual keyboard slot and one blank dummy slot. Input sources are assigned to the first virtual gamepad that has no connected devices. If none are available, the input source is placed onto the dummy slot.
+
+.PP
+Note that slots can only process appropriate events. Sending a keyboard key press to a virtual gamepad will lead to it being silently ignored.
+
+.PP
+Why not create a virtual device that can send all events? Some software expects gamepads to only have certain event codes, and not others. Keeping separate virtual devices greatly aids autodetection magic.
+
+.PP
+To move a device to a different slot, use this syntax:
+
+.PP
+.RS
+
+.nf
+move <device> to <slot>
+
+.fi
+.RE
+
+.PP
+Need to find a device name or slot name?
+
+.PP
+.RS
+
+.nf
+print slots
+print devices
+
+.fi
+.RE
+
+.SS First, Second, Third, Fourth? What are those?
+.PP
+These are the face buttons on a controller. Commonly labelled A,B,X,Y. The default mapping looks like:
+
+.RS
+.IP \(bu 2
+first == BTN\_SOUTH (BTN\_A)
+.IP \(bu 2
+second == BTN\_EAST (BTN\_B)
+.IP \(bu 2
+third == BTN\_NORTH (BTN\_X)
+.IP \(bu 2
+fourth == BTN\_WEST (BTN\_Y)
+
+.RE
+
+.PP
+Names in parentheses are deprecated event names for these event codes, and do not necessarily correlate with the printed labels seen on controllers. The names in MoltenGamepad were chosen to reflect intuitive purposes for the buttons, and avoid the quagmire of the inconsistent/ambiguous labels A,B,X,Y.
+
+.PP
+Since all event codes are recognized, one may use \fB\fCbtn\_south\fR instead of \fB\fCfirst\fR in one's profiles.
+
+.SS How do I connect a wiimote?
+.PP
+That is outside the scope of MoltenGamepad. Your bluetooth system handles this. This software assumes your bluetooth stack and kernel wiimote driver are already working and usable. A simple session with \fB\fCbluetoothctl\fR works well. It is possible to pair wiimotes such that they remember your bluetooth adapter and will attempt to connect to it when any button is pressed.
+
+.PP
+See 
+\[la]https://wiki.archlinux.org/index.php/XWiimote\[ra] for more information on connecting wiimotes. (Do not install the X.Org wiimote driver, it is not needed, and would conflict somewhat with MoltenGamepad. The xwiimote library is not needed, but its utilities can be useful for inspecting wiimotes)
+
+.PP
+Note that this uses the kernel driver, not one of the various wiimote libraries like cwiid that do handle connections, so the info on 
+\[la]https://wiki.archlinux.org/index.php/Wiimote\[ra] is not applicable. To use MoltenGamepad with wiimotes, do not use cwiid and wminput.
+
+.PP
+Aside from seeing the device entries created by the kernel driver, a successful connection can be verified by the Wiimote LEDs switching to having just the left\-most one lit. Prior to that, all 4 LEDs will be blinking while the wiimote is in sync mode.
+
+.PP
+There are two separate types of global options for MoltenGamepad one might wish to configure:
+
+.RS
+.IP "  1." 5
+Start\-up options that cannot be changed later.
+.IP "  2." 5
+Dynamic global options normally accessible via the \fB\fCset\fR command.
+
+.RE
+
+
+.SH Start\-up Options: \fB\fCmoltengamepad.cfg\fR
+.PP
+An optional configuration file \fB\fCmoltengamepad.cfg\fR can be created in the config directory. This file is used to store information about how MoltenGamepad should behave. The contents are similar to the various command line arguments that can be passed to MoltenGamepad, and are unable to be changed after MoltenGamepad has started.
+
+.PP
+Comments can be included in the file via \fB\fC#\fR\&.
+
+.PP
+A sample .cfg can be printed out using the \fB\fC\-\-print\-cfg\fR option. This sample .cfg contains all available options to be set.
+
+.SH Location
+.PP
+The XDG spec is followed, using \fB\fC$XDG\_CONFIG\_HOME\fR and \fB\fC$XDG\_CONFIG\_DIRS\fR\&. Only the first \fB\fCmoltengamepad.cfg\fR discovered is used.
+
+.PP
+By default this means the following locations ordered by preference:
+
+.RS
+.IP "  1." 5
+\fB\fC\~/.config/moltengamepad/moltengamepad.cfg\fR
+.IP "  2." 5
+\fB\fC/etc/xdg/moltengamepad/moltengamepad.cfg\fR
+
+.RE
+
+.SH Setting options
+.PP
+Most long\-form command line arguments can be specified in this file instead. Compared to the commandline arguments, the following changes are required:
+
+.RS
+.IP \(bu 2
+Instead of hyphens, underscores are used
+.IP \(bu 2
+True or false values are assigned instead of negation prefixes (i.e. \fB\fCenumerate=false\fR instead of \fB\fCno\_enumerate\fR)
+
+.RE
+
+.PP
+The \fB\fCdaemon\fR,\fB\fCpidfile\fR, and \fB\fCstay\-alive\fR settings can not be specified in this file. They are exclusively commandline arguments.
+
+.PP
+The full list of available options can be seen by running
+
+.PP
+.RS
+
+.nf
+moltengamepad \-\-print\-cfg
+
+.fi
+.RE
+
+.SH Loading Profiles at Start\-up
+.PP
+Profile files can be loaded at the start of MoltenGamepad by specifying them in the config file.
+
+.PP
+They are loaded after drivers are initialized but before any devices are added. As such, these profiles can only affect driver\-level profiles.
+
+.PP
+.RS
+
+.nf
+load profiles from "<filename>"
+
+.fi
+.RE
+
+.PP
+File paths are relative to the profiles directory.
+
+.SH Command Line Arguments
+.PP
+When an option is expressed both in the config file and in the arguments, the value implied in the command line arguments takes precedence.
+
+.SH Example
+.PP
+.RS
+
+.nf
+#useful settings
+mimic\_xpad = true
+make\_fifo = true
+
+#load preferred default mappings
+load profiles from default\_map
+
+.fi
+.RE
+
+.PP
+This of course requires a file \fB\fCdefault\_map\fR in the profiles directory
+
+
+.SH Global Options: \fB\fCoptions/*.cfg\fR
+.PP
+MoltenGamepad has a second notion of global options, those that can be changed while MoltenGamepad is running. They are separated into categories, and these categories can be displayed with the \fB\fCprint options\fR command.
+
+.PP
+These option categories are initialized with a matching \fB\fC\&.cfg\fR file in the \fB\fC/options/\fR subdirectory of the config directory. Similar to the above, \fB\fC$XDG\_CONFIG\_DIRS\fR is respected.
+
+.SH Example
+.PP
+For this example, we wish to set the option \fB\fCauto\_assign\fR in the \fB\fCslots\fR category to \fB\fCtrue\fR\&. Normally this would require the command \fB\fCset slots auto\_assign = true\fR to be entered after MoltenGamepad has started.
+
+.PP
+Instead, one can create the file \fB\fCoptions/slots.cfg\fR with the following contents:
+
+.PP
+.RS
+
+.nf
+auto\_assign = true
+
+.fi
+.RE
+
+.PP
+Note how the file name matches the category of the options being set.
+
+
+.SH MoltenGamepad Profile Documentation
+.PP
+This file documents the behavior and use of MoltenGamepad profiles. These profiles contain event mappings and device\-level options. Profiles do not include global/driver\-level options such as those reached by the \fB\fCset\fR command.
+
+.PP
+This document has a few key sections:
+
+.RS
+.IP "  1." 5
+An overview into the semantics of a profile
+.IP "  2." 5
+A guided tour on profile features and how to use them
+.IP "  3." 5
+A description of the root "gamepad" profile
+.IP "  4." 5
+Extra details/advanced features
+
+.RE
+
+.SH Overview
+.PP
+A Profile contains all the information one might want to configure about a device: the event mappings and the device options.
+
+.PP
+Naturally every input source carries its own profile, where the profile has the same name as the device.
+
+.PP
+Each driver also carries a profile. This profile is inherited by all the devices arising from that driver. Changes to the driver profile are propagated to the relevant devices. The driver profile is very useful for setting up devices that haven't been connected yet. Remember that driver\-level options are stored in a profile; the driver profile is specifically for device\-level information!
+
+.PP
+There is also a special profile, "gamepad", that acts like a root profile. Drivers can optionally subscribe to the gamepad profile. Thus changes to the gamepad profile can propagate to all gamepad devices in MoltenGamepad, even though they may belong to different drivers.
+
+.PP
+For demonstration purposes, this file will deal with \fB\fCwiimote\fR driver, and will assume two wiimotes are connected (\fB\fCwm1\fR and \fB\fCwm2\fR).
+
+.SH Tour of Features
+.PP
+This section is both a rough "getting started" guide and a collection of reference information.
+
+.SS Changing a profile
+.PP
+A profile can be altered by issuing a command of this form:
+
+.PP
+.RS
+
+.nf
+<profile>.<event name> = <out event>
+
+.fi
+.RE
+
+.PP
+For example,
+
+.PP
+.RS
+
+.nf
+wiimote.wm\_a = select
+
+.fi
+.RE
+
+.PP
+would set all wiimotes to emit a select button event when their "a" button is pressed.
+
+.PP
+.RS
+
+.nf
+wm2.wm\_a = start
+
+.fi
+.RE
+
+.PP
+Would set \fB\fCwm2\fR to emit a start button event when its "a" button is pressed, while \fB\fCwm1\fR\&'s profile would be unmodified.
+
+.PP
+An event's mapping can be cleared by setting it to \fB\fCnothing\fR\&.
+
+.PP
+.RS
+
+.nf
+wiimote.wm\_a = nothing
+
+.fi
+.RE
+
+.SS Listing Profiles
+.PP
+.RS
+
+.nf
+print profiles
+
+.fi
+.RE
+
+.PP
+will list all profiles currently in use. At the moment, this will simply be a list of all drivers and their devices, plus the special gamepad profile.
+
+.PP
+.RS
+
+.nf
+print profiles <profile name>
+
+.fi
+.RE
+
+.PP
+will print out the mappings in that profile, in the same format as the commands used to set them.
+
+.PP
+.RS
+
+.nf
+print profiles wiimote
+
+.fi
+.RE
+
+.PP
+This will display the already populated wiimote default profile, which gives a nice example.
+
+.SS Listing Input Events
+.PP
+.RS
+
+.nf
+print events <device or driver>
+
+.fi
+.RE
+
+.PP
+Unfortunately this does not work for the gamepad profile, but it does work for the devices and drivers. It will print out the events along with their descriptions.
+
+.PP
+.RS
+
+.nf
+print devices <device>
+
+.fi
+.RE
+
+.PP
+This prints out information of a device, which also includes its event list.
+
+.SS Possible Output Events
+.PP
+The following are specially recognized as gamepad button events for output. The entries are in this order (event code, MoltenGamepad name, description):
+
+.RS
+.IP \(bu 2
+{BTN\_SOUTH, "first", "Primary face button (Confirm)"},
+.IP \(bu 2
+{BTN\_EAST, "second", "Second face button (Go Back)"},
+.IP \(bu 2
+{BTN\_WEST, "third", "Third face button"},
+.IP \(bu 2
+{BTN\_NORTH, "fourth", "Fourth face button"},
+.IP \(bu 2
+{BTN\_START, "start", "Start button"},
+.IP \(bu 2
+{BTN\_SELECT, "select", "Select button"},
+.IP \(bu 2
+{BTN\_MODE, "mode", "Special button, often with a logo"},
+.IP \(bu 2
+{BTN\_TL, "lt", "Upper left trigger"},
+.IP \(bu 2
+{BTN\_TL2,"lt2", "Lower left trigger"},
+.IP \(bu 2
+{BTN\_TR, "tr", "Upper right trigger"},
+.IP \(bu 2
+{BTN\_TR2, "tr2", "Lower left trigger"},
+.IP \(bu 2
+{BTN\_THUMBL, "thumbl", "Left thumb stick click"},
+.IP \(bu 2
+{BTN\_THUMBR, "thumbr", "Right thumb sitck click"},
+.IP \(bu 2
+{BTN\_DPAD\_UP,"up", "Up on the dpad"},
+.IP \(bu 2
+{BTN\_DPAD\_DOWN, "down", "Down on the dpad"},
+.IP \(bu 2
+{BTN\_DPAD\_LEFT,"left", "Left on the dpad"},
+.IP \(bu 2
+{BTN\_DPAD\_RIGHT,"right","Right on the dpad"},
+
+.RE
+
+.PP
+Those last four aren't available if your system is using an old event list in your kernel.
+
+.PP
+The following are specially recognized as gamepad axis events for output:
+
+.RS
+.IP \(bu 2
+{ABS\_X, "left\_x", "Left stick X\-axis"},
+.IP \(bu 2
+{ABS\_Y, "left\_y", "Left stick Y\-axis"},
+.IP \(bu 2
+{ABS\_RX, "right\_x", "Right stick X\-axis"},
+.IP \(bu 2
+{ABS\_RY, "right\_y", "Right stick Y\-axis"},
+.IP \(bu 2
+{ABS\_HAT2Y, "tl2\_axis", "Analog lower left trigger"},
+.IP \(bu 2
+{ABS\_HAT2X, "tr2\_axis", "Analog lower right trigger"},
+
+.RE
+
+.PP
+If the four dpad event codes were not available on your system, two extra axis events are added:
+
+.RS
+.IP \(bu 2
+{ABS\_HAT0X,"leftright", "left/right on the dpad"},
+.IP \(bu 2
+{ABS\_HAT0Y, "updown", "up/own on the dpad"},
+
+.RE
+
+.PP
+(The \fB\fC\-\-dpad\-as\-hat\fR option does the appropriate mapping of four dpad events to a hat when your system has the four dpad event codes available. There is not much need for these two extra axes on such systems, but they are still available as \fB\fCabs\_hat0x\fR if truly needed.)
+
+.PP
+In addition, the full range of evdev events (of type KEY or ABS) are also available, using lower case identifiers. Here are a subset just to demonstrate:
+
+.RS
+.IP \(bu 2
+key\_a
+.IP \(bu 2
+key\_space
+.IP \(bu 2
+key\_esc
+.IP \(bu 2
+btn\_south
+.IP \(bu 2
+abs\_x
+.IP \(bu 2
+key\_playpause
+.IP \(bu 2
+key\_nextsong
+.IP \(bu 2
+key\_previoussong
+.IP \(bu 2
+key\_volumeup
+
+.RE
+
+.SS Mapping a button to a button
+.PP
+.RS
+
+.nf
+wiimote.wm\_a = primary
+
+.fi
+.RE
+
+.PP
+That's it.
+
+.SS Mapping an axis to an axis
+.PP
+.RS
+
+.nf
+wiimote.cc\_left\_x = left\_x
+wiimote.cc\_left\_x = left\_x+
+wiimote.cc\_left\_x = left\_x\-
+
+.fi
+.RE
+
+.PP
+The first two are equivalent. The last one inverts the axis direction.
+
+.SS Mapping a button to an axis
+.PP
+.RS
+
+.nf
+wiimote.wm\_a = left\_x+
+wiimote.wm\_a = left\_x\-
+
+.fi
+.RE
+
+.PP
+The +/\- represents whether the button should output in the positive or negative direction. When pressed, the button maxes out that axis in that direction. When not released, the button sets that axis to zero.
+
+.SS Mapping a button to a relative event
+.PP
+Unlike an axis that represents absolute values, relative events express only changes. They are seen from mice, which have no idea where the mouse is, only how fast it is moving.
+
+.PP
+.RS
+
+.nf
+wiimote.wm\_a = rel\_x+
+wiimote.wm\_a = rel\_x\-
+
+.fi
+.RE
+
+.PP
+The +/\- represents whether the button should output in the positive or negative direction.
+
+.PP
+While pressed, a relative event will be generate at a regular rate.
+
+.SS Mapping an axis to buttons
+.PP
+.RS
+
+.nf
+wiimote.cc\_left\_x = left,right
+
+.fi
+.RE
+
+.PP
+The first output button is pressed when the axis gets sufficiently negative. The second output button is pressed when the axis gets sufficiently positive. When the axis is not at either extreme, both buttons are released.
+
+.SS Mapping an axis to a relative event.
+.PP
+.RS
+
+.nf
+wiimote.cc\_left\_x = rel\_x
+wiimote.cc\_left\_x = rel\_x+
+wiimote.cc\_left\_x = rel\_x\-
+
+.fi
+.RE
+
+.PP
+The first two are equivalent. The last one inverts the direction.
+
+.PP
+Similar to the button\-to\-relative mapping, these events are generated at a fixed rate. Unlike the button mapping, an axis can express a range of speeds for smoother control.
+
+.SS Mapping a thumb stick
+.PP
+To generate events for a thumb stick, one generally wants to consider the two axes simultaneously to make a decision. This requires using "group translators" that can read from multiple events.
+
+.PP
+.RS
+
+.nf
+wiimote.(cc\_left\_x,cc\_left\_y) = stick(left\_x,left\_y)
+wiimote.(cc\_right\_x,cc\_right\_y) = dpad
+
+.fi
+.RE
+
+.PP
+The former maps to the left stick of the virtual output device. The latter maps to the dpad of the virtual output device.
+This more\-complicated dpad\-mapping is only needed for analog axes like a thumb stick. For an input device with the dpad represented as a hat, the section "mapping an axis to buttons" suffices.
+
+.PP
+Note how the multiple input events are simply listed inside parentheses. To clear a "group translator", just set its input combination to "nothing". The mapping is ordering\-sensitive!
+
+.PP
+.RS
+
+.nf
+wiimote.(cc\_left\_x,cc\_left\_y) = nothing
+
+.fi
+.RE
+
+.PP
+Aliases can also map to input event lists, making this easier. The following two lines are equivalent due to the built in alias "left\_stick":
+
+.PP
+.RS
+
+.nf
+wiimote.(cc\_left\_x,cc\_left\_y) = dpad
+wiimote.left\_stick = dpad
+
+.fi
+.RE
+
+.PP
+When using these combined translators, the individual translators on the axes should be set to "nothing". Certain group translators, such as \fB\fCstick\fR and \fB\fCdpad\fR, will enforce this automatically (setting the group to \fB\fCdpad\fR clears the individual mappings, and setting any individual mapping will clear out the group \fB\fCdpad\fR mapping.)
+
+.SS Inverted mapping
+.PP
+The input event on the left side can have an optional \fB\fC\-\fR added to the end to invert the events sent. For an axis, this is negation, while a button is inverted logically.
+
+.PP
+.RS
+
+.nf
+wiimote.wm\_accel\_x\- = left\_x
+
+.fi
+.RE
+
+.SS Multiple outputs
+.PP
+An event can be sent to multiple translators with \fB\fCmulti\fR:
+
+.PP
+.RS
+
+.nf
+wiimote.wm\_a = multi(start,select)
+
+.fi
+.RE
+
+.SS Keyboard Redirect
+.PP
+Recall that the virtual gamepad output slots cannot emit keyboard events. However, a special translator can redirect these events to the correct keyboard slot.
+
+.PP
+.RS
+
+.nf
+wiimote.wm\_a = key(key\_a)
+
+.fi
+.RE
+
+.PP
+This maps the wiimote a button to \fB\fCkey\_a\fR on the keyboard slot, regardless of what slot the wiimote is currently in.
+
+.PP
+The device still must be assigned to slot for these events to occur.
+
+.SS Mouse Redirect
+.PP
+.RS
+
+.nf
+wiimote.cc\_left\_x = mouse(rel\_x)
+
+.fi
+.RE
+
+.PP
+Similar to the above.
+
+.SH The Gamepad profile
+.PP
+There is a special profile named \fB\fCgamepad\fR\&. Drivers can subscribe to this profile, such that any changes to the gamepad profile apply to the driver (and thus the driver's devices as well).
+
+.PP
+For example
+
+.PP
+.RS
+
+.nf
+gamepad.select = start
+
+.fi
+.RE
+
+.PP
+This sets the select button of all game pad devices to send start\-button events. This is achieved by each driver internally having a table of aliases, mapping the gamepad event names to the event names of the driver. There is a limitation here, in that each alias can only have one result (e.g. each driver has at most one "select" event).
+
+.PP
+For Wii devices, all such mappings affect only the classic controller control scheme.
+
+.PP
+It has the following events:
+
+.RS
+.IP \(bu 2
+left\_x,left\_y: The two axes of the left stick. Right and Down are the positive directions.
+.IP \(bu 2
+right\_x, right\_y: The two axes of the right stick. Same directions apply.
+.IP \(bu 2
+primary,secondary,third,fourth: The four action buttons, or "face" buttons. The exact arrangement is left to the driver.
+.IP \(bu 2
+up,down,left,right: The four digital events of a dpad.
+.IP \(bu 2
+updown, leftright: The two axes of a dpad that is represented as a hat.
+.IP \(bu 2
+start, select: the conventional extra buttons, often used for  in\-game menus.
+.IP \(bu 2
+mode: The additional meta button common on modern game pads, like the Wii Home button or the Xbox Guide button.
+.IP \(bu 2
+tr, tl: The two upper shoulder buttons, or "bumpers".
+.IP \(bu 2
+tr2, tl2: The digital two lower shoulder buttons or trigger. (ONLY FOR DEVICES WITHOUT ANALOG TRIGGERS)
+.IP \(bu 2
+tr2\_axis, tl2\_axis: The analog axes for the two analog triggers, if present.
+.IP \(bu 2
+tr2\_axis\_btn, tl2\_axis\_btn: The generally superfluous digital events emitted by analog triggers. (ONLY FOR DEVICES WITH ANALOG TRIGGERS)
+
+.RE
+
+.PP
+Why the concern over "tr2\_axis\_btn"? When we have analog values, we generally want to ignore these events. But when we don't have analog values to read, we want to pay attention to the digital events.
+
+.PP
+Thus "tr2" is an event that is generally mapped to do something, while "tr2\_axis\_btn" is generally mapped to be ignored.
+
+.PP
+Currently MoltenGamepad only supports output devices with just digital or just analog triggers. Listening to both "tr2" and "tr2\_axis" would lead to the two events clobbering each other.
+
+.PP
+If MoltenGamepad supports output devices with combined digital/analog triggers, then we'd probably want to make the digital value respect the conventions of the output device and activate at certain levels. This would still involve ignoring the "tr2\_axis\_btn".
+
+.PP
+Why have an event we almost always want to ignore? To standardize it and to give explicit guidelines to tell driver writers to not map these events to tr2/tl2.
+
+.SH Extra Details
+.PP
+MoltenGamepad keeps track of whether a input event is a key/button (has only two values: pressed or not), or an axis/absolute (range of values). Similarly, MoltenGamepad uses output event names rather than numeric codes to know whether the output is a key or axis. Then an appropriate event translator is chosen to make this match. In general, MoltenGamepad attempts to do "the right thing".
+
+.PP
+These event translators can be specified directly.
+
+.PP
+.RS
+
+.nf
+wiimote.wm\_a = start
+#IS EQUIVALENT TO
+wiimote.wm\_a = btn2btn(btn\_start)
+
+.fi
+.RE
+
+.PP
+The following are available:
+
+.RS
+.IP \(bu 2
+btn2btn(event code) maps a button to the specified event code.
+.IP \(bu 2
+axis2axis(event code, direction) maps an axis to the specified event code, where direction is +1 or \-1
+.IP \(bu 2
+axis2btns(neg event code, pos event code) maps an axis to the two specified buttons
+.IP \(bu 2
+btn2axis(event code, direction) maps a button to the specified event code, where direction is +1 or \-1
+.IP \(bu 2
+btn2rel(event code, speed) maps a button to a relative event, generating events periodically while held
+.IP \(bu 2
+axis2rel(event code, speed) maps an axis to a relative event, generating events periodically
+
+.RE
+
+.PP
+See \fB\fCprint translators\fR for more details. It will show translator declarations like the following:
+
+.PP
+.RS
+
+.nf
+key = btn2axis(axis\_code, int direction=1)
+
+.fi
+.RE
+
+.PP
+where the \fB\fCkey\fR left of the \fB\fC=\fR denotes this should be mapped to an input event that is a key (or button) press. The first argument should be an axis code like \fB\fCabs\_x\fR or \fB\fC0\fR\&. The second argument is an integer that defaults to 1, and the argument is named "direction".
+
+.PP
+The arguments follow this pattern: \fB\fCtype [name] [= default value]\fR\&. Arguments that aren't named must be specified positionally. Arguments without default values must be provided.
+
+.PP
+A \fB\fC[]\fR after an argument represents that it is variadic. It is thus a place holder for an argument list of arbitrary size. This is seen in
+
+.PP
+.RS
+
+.nf
+ event = multi(trans [])
+
+.fi
+.RE
+
+.PP
+where \fB\fCmulti(btn\_start)\fR, \fB\fCmulti(btn\_start,btn\_select)\fR, \fB\fCmulti(btn\_start,btn\_select,btn\_mode)\fR are all valid.
+
+.PP
+The following are all equivalent, noting that \fB\fCABS\_X\fR is axis 0 and is the same as \fB\fCleft\_x\fR:
+
+.PP
+.RS
+
+.nf
+btn2axis(0)
+btn2axis(abs\_x,1)
+btn2axis(direction=1,abs\_x)
+btn2axis(0,direction=1)
+btn2axis(left\_x)
+
+.fi
+.RE
+
+.SH Group Translators
+.PP
+As mentioned in the section about mapping sticks, some translations really need to look at multiple events.
+
+.PP
+\fB\fCchord(key\_trans)\fR fires its internal event whenever all of its inputs are pressed. ex. \fB\fCwiimote.(wm\_a,wm\_b) = chord(tr)\fR will send a \fB\fCtr\fR press when both the A and B buttons are held. The original events \fB\fCwm\_a\fR and \fB\fCwm\_b\fR are also fired. The chord is released when any of the involved buttons are released.
+
+.PP
+\fB\fCexclusive(key\_trans)\fR is an exclusive chord action, where all involved buttons must be pressed down at the same time. It exclusively fires its internal event, as if the involved buttons weren't pressed at all. For example, \fB\fCwiimote.(wm\_a,wm\_b) = exclusive(tr)\fR will send the \fB\fCwm\_a\fR or \fB\fCwm\_b\fR events only if they are pressed separately. MoltenGamepad does not support creating complicated layers of exclusive chords, the behavior for two simultaneous overlapping exclusive chords is not well defined.
+
+.PP
+\fB\fCstick\fR and \fB\fCdpad\fR were described in the mapping a thumb stick section.
+
+.SH Saving
+.PP
+.RS
+
+.nf
+save profiles to <filename>
+
+.fi
+.RE
+
+.PP
+Will save all currently used driver profiles (not device profiles!) to the specified file, placed in the \fB\fCprofiles\fR config directory.
+
+.PP
+You'll likely want to put your filename in quotes.
+
+.PP
+You'll also likely want to open up this file later in your favorite text editor and clean it up.
+
+.SH Loading
+.PP
+.RS
+
+.nf
+load profiles from <filename>
+
+.fi
+.RE
+
+.PP
+Will load profile mappings from the specified file. No concern is taken over whether this affects driver or device profiles, and any commands referencing currently nonexistent profiles will be ignored.
+
+.PP
+Sometimes these files will be referred to as a "profile", but this is inacurrate. These files can contain information for many of the profiles in MG.
+
+.SH Headers
+.PP
+Specifying a profile name in square brackets will set the implicit profile name for all following commands
+
+.PP
+.RS
+
+.nf
+[wiimote]
+wm\_a = start
+wm\_b = select
+
+.fi
+.RE
+
+.PP
+Note how \fB\fCwm\_a\fR sufficed, instead of \fB\fCwiimote.wm\_a\fR
+
+.SH EXPERIMENTAL FEATURES. USE AT YOUR OWN RISK
+.PP
+These features are in development, and the syntax is subject to change, and full functionality not guaranteed:
+
+.SS Recursive load
+.PP
+Profile files are allowed to use the load command, allowing for a form of inheritance, along with a bag of worms. This will likely be disabled in the future.
+
+
+.SH MoltenGamepad Generic Device Driver Documentation
+.SH Intro
+.PP
+MoltenGamepad can translate button and axis events from any evdev device, such those in \fB\fC/dev/input/event#\fR\&. To do this, MoltenGamepad needs some basic information on how to handle these devices. Creating a Generic Driver is an easy way to get enable basic functionality of MoltenGamepad for a device.
+
+.PP
+A configuration file has four main parts/purposes:
+
+.RS
+.IP "  1." 5
+Specify what criteria a device must meet for this generic driver to apply.
+.IP "  2." 5
+Specify information about this generic driver, including options
+.IP "  3." 5
+Specify raw events read from the device and appropriate names to be exposed for these events.
+.IP "  4." 5
+Specify any event name aliases the device needs.
+
+.RE
+
+.PP
+Default event mappings are NOT handled by these configs. That is to be handled by loading the desired profile at start up.
+
+.PP
+The format for these config files is designed to be simple yet flexible. There is a lot of flexibility required for generic drivers, so the full spec can be daunting. Look at the example files to get a good idea of how this all works.
+
+.SH Generic Driver Config File
+.PP
+A generic driver can be specified by creating a \fB\fC<filename>.cfg\fR file in a \fB\fCgendevices\fR config directory.
+
+.PP
+Such a file has the following form, where \fB\fC#\fR starts comments. All \fB\fC<values>\fR MUST be placed in quotes when spaces/punctuation are present. (Limited escaping applies, \fB\fC\\"\fR for a literal quote, \fB\fC\\\\\fR for a literal backslash)
+
+.PP
+This is the full spec. See the examples for a simpler view.
+
+.PP
+.RS
+
+.nf
+# 1. Device Matching
+#specify devices details to match against. If any match, the device will be claimed by this driver.
+#see the section "Matching Devices" for more details
+[<Device Match>]
+[<Additional Device Match>]
+[<Additional Device Match>]
+
+# 2. Driver Info
+name= <driver name> #set the name of this driver seen in MoltenGamepad
+devname= <device name prefix> #set the name assigned to identified devices
+
+#    Driver Settings (if omitted, the default values shown are used)
+
+##Should we grab the device exclusively, preventing events from being seen by others?
+##This hides incoming events, but it DOES NOT hide the device node. It merely makes it appear silent.
+#exclusive="false" 
+
+##Should we block all permissions after opening, preventing others from even opening the device?
+##This is generally effective at making software ignore the original device entirely.
+##Note: requires active user to be the device node owner.
+#change\_permissions="false"
+
+##Assuming change\_permissions="true", should we go even further to hide any hidraw nodes
+##in addition to the event device we read from? This is handy when MG needs to speak
+##with the event device, but still wishes to hide the hidraw nodes from other software.
+##Note: requires active user to be the hidraw node owner.
+#change\_hid\_permissions="false" 
+
+##Should we coalesce all identified devices into one virtual input source?
+##(Helpful for annoying devices that create a dead duplicate node,
+## or if you know you want to combine all devices of this type)
+#flatten="false"
+
+##Should we try to forward rumble (force\-feedback) events?
+##This setting has no effect unless MoltenGamepad was run with rumble enabled.
+##You cannot enable both rumble and flatten.
+#rumble="false"
+
+
+##How many input sources should we generate for this device?
+##Useful for device nodes that may represent two or more controllers together.
+#split = 1
+
+##Specify the device types. This is used for allocating output slots.
+##Can be an any identifier string, but the following are special:
+## "gamepad" \- a normal gamepad device. (default device type)
+## "keyboard" \- forces the keyboard output slot to be used.
+## Anything else leads to MG attempting to allocate no more than one of that
+## type in each slot.
+#device\_type = "gamepad"
+#
+##If split is greater than one, each split can be given a different device type.
+#1.device\_type = "gamepad"
+#2.device\_type = "gamepad"
+#...
+
+##Should we forcefully listen to the root "gamepad" profile to get our event mappings?
+##By default, we listen non\-forcefully: only when the driver has "gamepad" type devices.
+##Reminder: The default device type is "gamepad"!
+#gamepad\_subscription = false
+
+# 3. Specify Events
+
+#begin event identification, repeat for each event
+<event code name> = <name>,<description>
+
+#<event code name> is the evdev event name, such as btn\_left or key\_esc
+# NOTE: If you need to specify an event by number, use the following notation:
+#       key(306)          [the same as btn\_c]
+#       abs(1)            [the same as abs\_y]
+#<name> is the name of the event seen in MoltenGamepad
+#<description> is the description of the event seen in MoltenGamepad
+
+#If split is greater than one, prefix the <event code name> with the desired subdevice number
+#followed by a dot ( . ), 
+1.<event code name> = <name>,<description>
+
+# 4. Specify aliases
+
+#alias external\_name local\_name
+
+#local\_name must be one the declared event <name>s
+#Aliases are for convenience, and for handling being subscribed to a different profile.
+
+.fi
+.RE
+
+.PP
+If multiple \fB\fC[<Device Match>]\fR declarations are in a row, they are presumed to be alternative devices that should be grouped under the same driver. If they are not in a row, it is assumed that the user is beginning a new generic driver specification. (Yes, multiple generic drivers can be specified in one file.)
+
+
+.SH Matching Devices
+.PP
+The most basic way to match a device is via it's reported name string. Putting it in quotes is recommended.
+
+.PP
+.RS
+
+.nf
+["Sony Computer Entertainment Wireless Controller"]
+
+.fi
+.RE
+
+.PP
+Other traits can be specified in match declaration using \fB\fC<field>=\fR notation. Available fields to match against are
+
+.RS
+.IP \(bu 2
+\fB\fCname\fR : the reported name string
+.IP \(bu 2
+\fB\fCvendor\fR : the hexadecimal vendor id
+.IP \(bu 2
+\fB\fCproduct\fR : the hexadecimal product id
+.IP \(bu 2
+\fB\fCuniq\fR : a (potentially missing) uniquely identifying string for the device
+.IP \(bu 2
+\fB\fCdriver\fR : the name of the linux driver for this event device
+.IP \(bu 2
+\fB\fCevents\fR : can be one of \fB\fCsuperset\fR, \fB\fCsubset\fR, or \fB\fCexact\fR\&. Superset matches if the device contains all the events of this generic driver. Subset matches if the device has no reported events not listed in this driver, but it must have at least one event in common with this driver. Exact requires both of the conditions of superset and subset to hold. That is, the device has exactly the events of this driver; no more, no less.
+.IP \(bu 2
+\fB\fCmin\_common\_events\fR : An integer that specifies extra information for the \fB\fCevents=subset\fR constraint. By default, the \fB\fCsubset\fR match requires, at minimum, one event in common. Setting \fB\fCmin\_common\_events\fR to an integer greater than one changes this requirement. For example, \fB\fCevents=subset min\_common\_events=8\fR will require the exposed events to be a subset of the ones in the driver, and further require the device exposes at least 8 of them.
+.IP \(bu 2
+\fB\fCorder\fR : A positive integer indicating the order to consider matches. When a device has multiple matches, the one with the lowest \fB\fCorder\fR is taken. If not specified, a match has an \fB\fCorder\fR of \fB\fC1\fR, which is the lowest allowed value. Ties are broken based on whichever match is read first.
+
+.RE
+
+.PP
+Putting this together results in a match line that may resemble the following.
+
+.PP
+.RS
+
+.nf
+[name="Microsoft X\-Box 360 pad" vendor=045e product=028e]
+
+.fi
+.RE
+
+.PP
+The first field is assumed to be the name. Thus the following is valid as long as ambiguity is avoided.
+
+.PP
+.RS
+
+.nf
+["Microsoft X\-Box 360 pad" vendor=045e product=028e]
+
+.fi
+.RE
+
+.PP
+When a match line specifies multiple fields, a device is considered a match only if ALL specified fields are matched.
+
+.PP
+Remember that multiple match lines can be used, in which a device matches the driver if ANY individual match line is matched.
+
+.PP
+The \fB\fCorder\fR property of matches is for cases where a device might match two separate generic drivers.
+
+.SH Finding Event Codes and Name Strings
+.PP
+The \fB\fCevtest\fR utility (not included with MoltenGamepad) is incredibly useful for this. Run it to see all devices you currently have read access to. Select a device, and it will print out events as they happen. Interact with your input device, and make note of the events generated.
+
+.PP
+Near the top of the \fB\fCevtest\fR output will be the vendor and product ids as well.
+
+.SH Example 1
+.PP
+Here is a short example using the split functionality:
+
+.PP
+.RS
+
+.nf
+["AlpsPS/2 ALPS GlidePoint"]
+
+name = "touchpad"
+devname = "pad"
+exclusive = "true"
+flatten = "true"
+split = 2
+
+1.btn\_left = "hit","Player 1 action."
+2.btn\_right = "hit","Player 2 action."
+
+.fi
+.RE
+
+.PP
+This creates a driver named \fB\fCtouchpad\fR\&. When an \fB\fCAlpsPS/2 ALPS GlidePoint\fR device is found, two input sources are made, \fB\fCpad1\fR and \fB\fCpad2\fR\&. Each will have an event named \fB\fChit\fR, mappable directly (such as \fB\fCpad1.hit = ...\fR) or via the driver profile to affect both (\fB\fCtouchpad.hit = ...\fR).
+
+.PP
+Splitting is useful for arcade panels and some controller hubs, which can appear as a single event device.
+
+.SH Example 2
+.PP
+Here is a longer file, showing a configuration for a Dualshock 4 controller.
+
+.PP
+.RS
+
+.nf
+["Sony Computer Entertainment Wireless Controller"]
+
+name = "dualshock4"
+devname = "ds\_"
+exclusive = "true"
+#since the original device is also a gamepad by most standards, we need change\_permissions in
+#order to hide the original DS4 devices.
+#Reminder: change\_permissions requires a udev rule to make the current user the owner of the device
+change\_permissions = "true"
+flatten = "false"
+rumble = "true"
+
+
+btn\_tl2 = "share", "Share Button"
+btn\_tr2 = "options", "Options Button"
+
+btn\_thumbl = "touchpad\_press", "Touchpad click action"
+btn\_select = "l3", "Left stick click"
+btn\_start = "r3", "Right stick click"
+
+abs\_hat0x = "leftright", "D\-pad left/right axis"
+abs\_hat0y = "updown", "D\-pad up/down axis"
+
+btn\_east = "cross", "The cross (X) button"
+btn\_c = "circle", "The circle button"
+btn\_north = "triangle", "The triangle button"
+btn\_south = "square", "The square button"
+
+btn\_west = "l1", "The left top trigger"
+btn\_z = "r1", "The right top trigger"
+
+btn\_tl = "l2", "The left lower trigger"
+abs\_rx = "l2\_axis", "The left lower trigger analog values"
+
+btn\_tr = "r2", "The right lower trigger"
+abs\_ry = "r2\_axis", "The right lower trigger analog values"
+
+abs\_x = "left\_x", "The left stick x axis"
+abs\_y = "left\_y", "The left stick y axis"
+
+abs\_z = "right\_x", "The right stick x axis"
+abs\_rz = "right\_y", "The right stick y axis"
+
+#The default device type is "gamepad", and
+#this leads to the driver subscribing to the gamepad profile.
+#But the gamepad profile uses some different event names.
+#So these aliases let us inherit the appropriate event mappings.
+
+alias first cross
+alias second circle
+alias third square
+alias fourth triangle
+
+alias thumbl l3
+alias thumbr r3
+
+alias start options
+alias select share
+
+alias tr r1
+alias tr2\_axis\_btn r2
+alias tl l1
+alias tl2\_axis\_btn l2
+
+alias tr2\_axis r2\_axis
+alias tl2\_axis l2\_axis
+
+.fi
+.RE
+
+.SH More Examples
+.PP
+See the MG\-Files repo
+\[la]https://github.com/jgeumlek/MG-Files\[ra] for more contributed generic driver cfgs.
+
+
+.SH FURTHER READING
+.PP
+More information can be found here:
+
+.PP
+
+\[la]https://github.com/mbenkmann/MoltenGamepad/tree/devel/documentation\[ra]
