@@ -17,7 +17,6 @@ bool rels2axes::set_mapped_events(const std::vector<source_event>& listened) {
   if (listened.size() >= 2) {
     movement_goal[0] += listened[0].value;
     movement_goal[1] += listened[1].value;
-    // std::cout << "rels2axes::set_mapped_events" << std::endl;
   }
   return true;
 }
