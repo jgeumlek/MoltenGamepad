@@ -503,8 +503,8 @@ void profile::build_default_gamepad_profile() {
     (*map)["left_y"] = {nullptr, DEV_AXIS, 1, nullptr};
     (*map)["right_x"] = {nullptr, DEV_AXIS, 1, nullptr};
     (*map)["right_y"] = {nullptr, DEV_AXIS, 1, nullptr};
-    (*map)["tl2_axis"] = {new axis2axis(ABS_Z, 1), DEV_AXIS, 1, nullptr};
-    (*map)["tr2_axis"] = {new axis2axis(ABS_RZ, 1), DEV_AXIS, 1, nullptr};
+    (*map)["tl2_axis"] = {new axis2axis(ABS_Z, 1, -ABS_RANGE, 0, ABS_RANGE), DEV_AXIS, 1, nullptr};
+    (*map)["tr2_axis"] = {new axis2axis(ABS_RZ, 1, -ABS_RANGE, 0, ABS_RANGE), DEV_AXIS, 1, nullptr};
     (*map)["tl2_axis_btn"] = {nullptr, DEV_KEY, 1, nullptr};
     (*map)["tr2_axis_btn"] = {nullptr, DEV_KEY, 1, nullptr};
 

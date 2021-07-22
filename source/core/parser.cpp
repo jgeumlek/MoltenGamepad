@@ -724,7 +724,7 @@ event_translator* MGparser::parse_special_trans(enum entry_type intype, complex_
       }
       //Check for it being an axis
       int out_axis = read_ev_code(outevent, OUT_ABS);
-      if (out_axis >= 0 && intype == DEV_AXIS) return new axis2axis(out_axis, direction);
+      if (out_axis >= 0 && intype == DEV_AXIS) return new axis2axis(out_axis, direction, -ABS_RANGE, 0, ABS_RANGE);
       if (out_axis >= 0 && intype == DEV_KEY)  return new btn2axis(out_axis, direction);
 
       //Check for it being a rel
