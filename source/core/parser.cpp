@@ -299,6 +299,7 @@ void MGparser::load_translators(moltengamepad* mg) {
   MAKE_GEN(btn2rel);
   MAKE_GEN(axis2rel);
   MAKE_GEN(rel2rel);
+  MAKE_GEN(rel2btns);
   RENAME_GEN(redirect,redirect_trans);
   RENAME_GEN(multi,multitrans);
   //add a quick mouse redirect
@@ -743,6 +744,13 @@ event_translator* MGparser::parse_special_trans(enum entry_type intype, complex_
     if (neg_btn >= 0 && pos_btn >= 0) return new axis2btns(neg_btn, pos_btn);
   }
 
+  //Rel to buttons.
+  if ((intype == DEV_REL) && expr->ident.empty() && expr->params.size() == 2) {
+    int neg_btn = read_ev_code(expr->params[0]->ident, OUT_KEY);
+    int pos_btn = read_ev_code(expr->params[1]->ident, OUT_KEY);
+    if (neg_btn >= 0 && pos_btn >= 0) return new rel2btns(neg_btn, pos_btn);
+  }
+
   return nullptr;
 }
 
@@ -1044,8 +1052,8 @@ bool MGparser::print_special_def(entry_type intype, MGTransDef& def, std::ostrea
       return true;
     }
   }
-  //Check for simple mappings of an axis to two buttons
-  if (intype == DEV_AXIS && def.identifier == "axis2btns" && def.fields.size() >= 2 && def.fields[0].type == MG_KEY && def.fields[1].type == MG_KEY) {
+  //Check for simple mappings of an axis/rel to two buttons
+  if (((intype == DEV_AXIS && def.identifier == "axis2btns") || (intype == DEV_REL && def.identifier == "rel2btns")) && def.fields.size() >= 2 && def.fields[0].type == MG_KEY && def.fields[1].type == MG_KEY) {
     const char* nameneg = get_key_name(def.fields[0].key);
     const char* namepos = get_key_name(def.fields[1].key);
     output << "(";

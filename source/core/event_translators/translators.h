@@ -9,6 +9,7 @@
 #include "axis/axis2rel.h"
 
 #include "rel/rel2rel.h"
+#include "rel/rel2btns.h"
 
 #include "general/multitrans.h"
 #include "general/redirect_trans.h"
