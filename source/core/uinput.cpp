@@ -223,10 +223,10 @@ int uinput::make_mouse(const uinput_ids& ids) {
   }
 
   /*Set basic mouse events*/
-  static int rel[] = { REL_X, REL_Y};
+  static int rel[] = { REL_X, REL_Y, REL_WHEEL, REL_WHEEL_HI_RES };
 
   ioctl(fd, UI_SET_EVBIT, EV_REL);
-  for (i = 0; i < 2; i++) {
+  for (i = 0; i < 4; i++) {
     ioctl(fd, UI_SET_RELBIT, rel[i]);
   }
 
