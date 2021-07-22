@@ -300,6 +300,7 @@ void MGparser::load_translators(moltengamepad* mg) {
   MAKE_GEN(axis2rel);
   MAKE_GEN(rel2rel);
   MAKE_GEN(rel2btns);
+  MAKE_GEN(rels2axes);
   RENAME_GEN(redirect,redirect_trans);
   RENAME_GEN(multi,multitrans);
   //add a quick mouse redirect

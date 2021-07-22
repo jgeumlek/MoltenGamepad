@@ -17,6 +17,7 @@
 #include "group/simple_chord.h"
 #include "group/exclusive_chord.h"
 #include "group/thumbstick.h"
+#include "group/rels2axes.h"
 #include "group/stick_dpad.h"
 
 #include "group/wiigyromouse.h"
