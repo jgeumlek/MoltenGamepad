@@ -37,7 +37,6 @@ rel2btns::rel2btns(std::vector<MGField>& fields) {
   BEGIN_READ_DEF;
   READ_KEY(neg_btn);
   READ_KEY(pos_btn);
-  std::cout << "rel2btns init vec " << neg_btn << " " << pos_btn << std::endl;
 }
 void rel2btns::fill_def(MGTransDef& def) {
   BEGIN_FILL_DEF("rel2btns");
