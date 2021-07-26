@@ -43,11 +43,13 @@ void rels2axes::attach(input_source* source) {
 rels2axes::~rels2axes() {
 }
 
+// on input, add to movement_goal
 bool rels2axes::claim_event(int id, mg_ev event) {
   movement_goal[id] += event.value;
   return false;
 };
 
+// constantly output joystick
 void rels2axes::process_syn_report(virtual_device* out) {
   // get time delta
   struct timeval new_time;
