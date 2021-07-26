@@ -141,7 +141,7 @@ The first two are equivalent. The last one inverts the axis direction.
 
 #### Optional Parameters
 
-Optionally, additional parameters can be used to reverse direction calibrate an uncalibrated axis:
+Optionally, additional parameters can be used to reverse direction or calibrate an uncalibrated axis:
 
     wiimote.cc_left_x = axis2axis(left_x, 1, -26648, -10, 28179)
 
@@ -149,6 +149,8 @@ Optionally, additional parameters can be used to reverse direction calibrate an 
 - **minimum input**: minimum input value that should be stretched to the minimum value of -32768
 - **center**: center value that should be stretched to the output value of 0
 - **maximum input**: maximum input value that should be stretched to the maximum value of 32768
+
+An external tool like jstest-gtk can be useful to find the min/center/max values of an uncalibrated joystick.
 
 ### Mapping a button to an axis
 
@@ -240,7 +242,9 @@ Mouse or mousewheel movement can be mapped
 
     mymouse.rel_x = mouse(rel_x)
 
-Optionally, a scale can be given
+#### Optional Parameters
+
+Optionally, a scale can be given:
 
     mymouse.rel_x = mouse(rel2rel(rel_x, 2))
 
@@ -262,7 +266,7 @@ Mouse movement can be mapped to a joystick, e.g. camera movement.
 
 #### Optional Parameters
 
-It has some optional parameters
+It has some optional parameters:
 
     mymouse.(rel_x, rel_y) = rels2axes(abs_rx, abs_ry, .5, .1, .5)
 
