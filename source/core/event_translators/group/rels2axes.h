@@ -11,7 +11,7 @@ public:
   struct timeval last_time = {0, 0}; // time stamp for last time output was calculated (for delta-time in calculation)
   float scale; // scale from input to output (higher value = mouse "moves" more = joystick is moved more/longer for the same mouse movement)
   float antideadzone; // use to adjust for a joystick deadzone: won't output inside this deadzone (deadzone is fraction out of 1)
-  float curve_adjust; // use to adjust for a joystick curve response: smaller values (<1) will counteract a joystick that has increased sensitivity for smaller values
+  float curve_adjust; // use to adjust for a joystick curve response: smaller values (<1) will counteract a joystick that has increased sensitivity for smaller values. (Uses an exponential mapping: ``output = input^adjustment``, where input and output are between 0 and 1)
 
   //setting field_flags is optional, but this surpresses printing out those default values later.
   //note that this constructor is only called in hard-coded situations, not during parsing.

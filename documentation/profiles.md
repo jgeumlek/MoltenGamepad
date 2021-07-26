@@ -139,6 +139,17 @@ That's it.
 
 The first two are equivalent. The last one inverts the axis direction.
 
+#### Optional Parameters
+
+Optionally, additional parameters can be used to reverse direction calibrate an uncalibrated axis:
+
+    wiimote.cc_left_x = axis2axis(left_x, 1, -26648, -10, 28179)
+
+- **direction**: -1 if reversed
+- **minimum input**: minimum input value that should be stretched to the minimum value of -32768
+- **center**: center value that should be stretched to the output value of 0
+- **maximum input**: maximum input value that should be stretched to the maximum value of 32768
+
 ### Mapping a button to an axis
 
     wiimote.wm_a = left_x+
@@ -222,6 +233,42 @@ The device still must be assigned to slot for these events to occur.
     wiimote.cc_left_x = mouse(rel_x)
     
 Similar to the above.
+
+### Mouse to Mouse
+
+Mouse or mousewheel movement can be mapped
+
+    mymouse.rel_x = mouse(rel_x)
+
+Optionally, a scale can be given
+
+    mymouse.rel_x = mouse(rel2rel(rel_x, 2))
+
+### Mouse to Buttons
+
+Mouse or mousewheel movement can be mapped to a pair of buttons: one button for any positive movement, and one button for any negative movement.
+
+    mymouse.rel_wheel = rel2btns(left, right)
+
+Can be mapped to keyboard keys, too:
+
+    mymouse.rel_wheel = key(rel2btns(key_a, key_b))
+
+### Mouse to Joystick
+
+Mouse movement can be mapped to a joystick, e.g. camera movement. 
+
+    mymouse.(rel_x, rel_y) = rels2axes(abs_rx, abs_ry)
+
+#### Optional Parameters
+
+It has some optional parameters
+
+    mymouse.(rel_x, rel_y) = rels2axes(abs_rx, abs_ry, .5, .1, .5)
+
+- **scale**: scale from input to output (higher value = mouse "moves" more = joystick is moved more/longer for the same mouse movement)
+- **anti-deadzone**: use to adjust for a joystick deadzone: won't output inside this deadzone (deadzone is fraction out of 1)
+- **curve adjust**: use to adjust for a joystick curve response: smaller values (<1) will counteract a joystick that has increased sensitivity for smaller values. (Uses an exponential mapping: ``output = input^adjustment``, where input and output are between 0 and 1)
 
 ## The Gamepad profile
 
