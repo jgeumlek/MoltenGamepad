@@ -316,7 +316,7 @@ bool notable_event(const entry_type type, const int64_t value, const int64_t old
     return (val_sign != oldval_sign) && oldvalue != 0;
   }
   if (type == DEV_REL) {
-    return true;
+    return true; // REL inputs are always notable
   }
   return false;
 }
@@ -332,6 +332,7 @@ int64_t apply_direction(entry_type type, int64_t value, int8_t direction) {
 }
 
 void input_source::send_value(int id, int64_t value) {
+  // is input valid? Also: ignore repeat events for button and joystick
   if (id < 0 || (uint)id > events.size() || (events[id].value == value && !(events[id].type == DEV_REL))) {
     return;
   }
@@ -360,9 +361,8 @@ void input_source::send_value(int id, int64_t value) {
 
   value = apply_direction(events[id].type, value, ev_map[id].direction);
 
-  if (ev_map.at(id).trans && out_dev) {
-    ev_map.at(id).trans->process({value}, out_dev.get());
-  }
+  if (ev_map.at(id).trans && out_dev) ev_map.at(id).trans->process({value}, out_dev.get());
+
 
 }
 

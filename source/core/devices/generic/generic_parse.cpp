@@ -212,6 +212,7 @@ void generic_assignment_line(std::vector<token>& line, generic_driver_info*& inf
     return;
   }
 
+  // parse REL sources
   if (field == "rel" && numeric_literal >= 0) {
     code = numeric_literal;
   } else {
