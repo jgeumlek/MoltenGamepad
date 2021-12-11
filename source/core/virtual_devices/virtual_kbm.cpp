@@ -20,15 +20,17 @@ virtual_keyboard::~virtual_keyboard() {
 void virtual_keyboard::take_event(struct input_event in) {
   //Relative events go to a separate mouse device.
   //SYN events should go to both!
-  if (in.type == EV_REL || in.type == EV_SYN) {
+  if (in.type == EV_REL || in.type == EV_SYN || (in.type == EV_KEY && (in.code >= BTN_MOUSE && in.code <= BTN_MIDDLE))) {
     ssize_t res = write(rel_mouse_fd, &in, sizeof(in));
     if (res < 0)
       perror("write to virt rel mouse");
     if (in.type == EV_REL) return;
   }
-  ssize_t res = write(kb_fd, &in, sizeof(in));
-  if (res < 0)
-      perror("write to virt keyboard");
+  if (in.type != EV_REL && !(in.type == EV_KEY && (in.code >= BTN_MOUSE && in.code <= BTN_MIDDLE))) {
+    ssize_t res = write(kb_fd, &in, sizeof(in));
+    if (res < 0)
+        perror("write to virt keyboard");
+  }
 };
 
 void virtual_keyboard::destroy_uinput_devs() {

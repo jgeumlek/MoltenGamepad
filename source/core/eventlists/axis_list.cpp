@@ -26,6 +26,7 @@ const event_listing axis_list[] = {
   {ABS_TOOL_WIDTH, "abs_tool_width", ""},
   {ABS_VOLUME, "abs_volume", ""},
   {ABS_MISC, "abs_misc", ""},
+  {ABS_RESERVED, "abs_reserved", ""},
   {ABS_MT_SLOT, "abs_mt_slot", ""},
   {ABS_MT_TOUCH_MAJOR, "abs_mt_touch_major", ""},
   {ABS_MT_TOUCH_MINOR, "abs_mt_touch_minor", ""},

@@ -211,6 +211,24 @@ void generic_assignment_line(std::vector<token>& line, generic_driver_info*& inf
     info->events.push_back(ev);
     return;
   }
+
+  // parse REL sources
+  if (field == "rel" && numeric_literal >= 0) {
+    code = numeric_literal;
+  } else {
+    code = get_rel_id(field.c_str());
+  }
+  if (code != -1) {
+    gen_source_event ev;
+    ev.name = value;
+    ev.code = code;
+    ev.descr = descr;
+    ev.type = DEV_REL;
+    ev.split_id = split_id;
+    info->events.push_back(ev);
+    return;
+  }
+
   mg->drivers.err(0,"gendev: " + field + " was not recognized as an option or event.", context.path, context.line_number);
 }
 

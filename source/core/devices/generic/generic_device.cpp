@@ -75,6 +75,9 @@ void generic_device::process(void* tag) {
     if (ev.type == EV_KEY) {
       methods.send_value(ref, id, ev.value);
     }
+    if (ev.type == EV_REL) { // process input REL events
+      methods.send_value(ref, id, ev.value);
+    }
     if (ev.type == EV_ABS) {
       //do some ABS rescaling.
       //currently ignoring old deadzone ("flat")
