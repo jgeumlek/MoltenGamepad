@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <thread>
 #include <map>
+#include <memory>
 
 struct uinput_ids {
   std::string device_string;
